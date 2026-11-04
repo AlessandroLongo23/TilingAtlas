@@ -1,13 +1,16 @@
 // Run folders and the tilesearch processes in them. Each run is a folder under the output folder:
 // input.board, run.json (the options it was started with, so a resume repeats them), then
 // solver_<name>/ once the engine starts. census.txt ending in MAX means finished; otherwise roots.done
-// lists the finished roots and `tilesearch --resume` runs the rest.
+// lists the finished roots, units.done the finished units of the others (in a run split into units), and
+// `tilesearch --resume` runs the rest.
 import { spawn, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { Estimate, OutFile, Rule, Run, RunOptions } from "../src/bridge";
+import { pipeline } from "node:stream/promises";
+import zlib from "node:zlib";
+import type { Estimate, OutFile, RaiseRule, Rule, Run, RunOptions } from "../src/bridge";
 
 /** The environment that forces `rule` on tilesearch and tileestimate. */
 export const ruleEnv = (rule?: Rule): Record<string, string> =>
@@ -16,17 +19,72 @@ import { parse } from "../src/board";
 
 export const MIN_FREE_BYTES = 10 * 2 ** 30;
 const LOG_LINES = 2000;
+/** The engine's `branching: on the face nearest to closing` (or `on the fewest options`) line, as a rule. */
+const ruleOf = (line: string): Rule | null =>
+	line.startsWith("branching:") ? (line.includes("face") ? "face" : "fewest") : null;
 
+// the engine on Windows ends its lines with \r\n (census.txt's MAX line among them): read as \n
 const read = (f: string) => {
 	try {
-		return fs.readFileSync(f, "utf8");
+		return fs.readFileSync(f, "utf8").replace(/\r/g, "");
 	} catch {
 		return "";
 	}
 };
 
+// Tilings per certificate file, counted when the window shows a run's files (never at startup: the output
+// folder can hold gigabytes), one file at a time, then only over the bytes appended since: the engine only
+// appends, except when it undoes a merge cut short, which shrinks the file and recounts it. A run keeps its
+// counts in tilings.json, so they are counted once.
+const counted = new Map<string, { bytes: number; n: number }>();
+const counting = new Set<string>();
+const MARK = Buffer.from("Number of vertices");
+async function countTilings(p: string, bytes: number) {
+	if (counting.has(p)) return;
+	counting.add(p);
+	try {
+		if (p.endsWith(".gz")) {
+			// a compressed file no longer grows: counted once, through gunzip
+			let n = 0;
+			let carry = Buffer.alloc(0);
+			for await (const got of fs.createReadStream(p).pipe(zlib.createGunzip())) {
+				const chunk = Buffer.concat([carry, got as Buffer]);
+				for (let i = chunk.indexOf(MARK); i >= 0; i = chunk.indexOf(MARK, i + 1)) n++;
+				carry = chunk.subarray(Math.max(0, chunk.length - MARK.length + 1));
+			}
+			return void counted.set(p, { bytes, n });
+		}
+		const had = counted.get(p);
+		const from = had && had.bytes <= bytes ? had.bytes : 0;
+		let n = from ? had!.n : 0;
+		// a mark that started before `from` and ended after it was not counted then
+		let pos = Math.max(0, from - MARK.length + 1);
+		const fh = await fs.promises.open(p, "r");
+		const buf = Buffer.alloc(1 << 20);
+		let carry = Buffer.alloc(0);
+		try {
+			for (let got; (got = (await fh.read(buf, 0, buf.length, pos)).bytesRead); pos += got) {
+				const chunk = Buffer.concat([carry, buf.subarray(0, got)]);
+				for (let i = chunk.indexOf(MARK); i >= 0; i = chunk.indexOf(MARK, i + 1)) n++;
+				carry = chunk.subarray(Math.max(0, chunk.length - MARK.length + 1));
+			}
+		} finally {
+			await fh.close();
+		}
+		counted.set(p, { bytes: pos, n });
+	} catch {
+		// unreadable: not tried again until its size changes
+		counted.set(p, { bytes, n: -1 });
+	} finally {
+		counting.delete(p);
+	}
+}
+
+/** Past this many roots the overview draws a bar, so the finished ones are not sent one by one. */
+const MAX_DRAWN_ROOTS = 4096;
+
 // <name>solver_<kk>_<labels>[_o]_<E>.txt
-const OUT_FILE = /solver_(\d+)_(.+?)(_o)?_(\d+)\.txt$/;
+const OUT_FILE = /solver_(\d+)_(.+?)(_o)?_(\d+)\.txt(?:\.gz)?$/;
 
 /**
  * File names print label numbers in hex (A30 is A1e) and free symbols as X<n>. Rewrite them as the
@@ -36,7 +94,8 @@ export function decodeLabels(s: string, symbols: string[], free: Record<string, 
 	const byPrinted = new Map<string, string>([["Pi", "Pi"]]);
 	for (const sym of symbols) {
 		const m = /^([SMLABCDEFG]?)([1-9][0-9]*|oo)$/.exec(sym);
-		if (m) byPrinted.set(m[1] + (m[2] === "oo" ? "oo" : Number(m[2]).toString(16)), sym);
+		// a free symbol prints as itself since runs began naming them, as X<n> before
+		byPrinted.set(m ? m[1] + (m[2] === "oo" ? "oo" : Number(m[2]).toString(16)) : sym, sym);
 	}
 	for (const [x, sym] of Object.entries(free)) byPrinted.set("X" + Number(x.slice(1)).toString(16), sym);
 	const keys = [...byPrinted.keys()].sort((a, b) => b.length - a.length);
@@ -62,7 +121,12 @@ export function runEstimator(
 	env: Record<string, string>,
 	onEstimate: (e: Estimate) => void,
 ) {
-	const child = spawn(exe, args, { cwd, stdio: ["ignore", "pipe", "ignore"], windowsHide: true, env: { ...process.env, ...env } });
+	const child = spawn(exe, args, {
+		cwd,
+		stdio: ["ignore", "pipe", "ignore"],
+		windowsHide: true,
+		env: { ...process.env, ...env },
+	});
 	if (child.pid)
 		try {
 			os.setPriority(child.pid, 19);
@@ -108,6 +172,8 @@ export interface Session {
 	exit?: number;
 	seconds?: number;
 	finished?: boolean;
+	/** The roots the engine reported, so a stopped run can say how many are left. */
+	roots?: number;
 }
 
 const engineHashes = new Map<string, string>();
@@ -125,7 +191,18 @@ function engineHash(exe: string): string {
 }
 
 /** A run folder's own stamp, `<name>-YYYYMMDD-HHMMSS[-n]`, which the list shows as a date. */
-const STAMP = /-(\d{4})(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)(?:-\d+)?$/;
+export const STAMP = /-(\d{4})(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)(?:-\d+)?$/;
+
+/** Bytes in a folder and every folder under it, counted without blocking the main process. */
+async function folderBytes(dir: string): Promise<number> {
+	let total = 0;
+	for (const e of await fs.promises.readdir(dir, { withFileTypes: true }).catch(() => [])) {
+		const p = path.join(dir, e.name);
+		if (e.isDirectory()) total += await folderBytes(p);
+		else total += await fs.promises.lstat(p).then((st) => st.size, () => 0);
+	}
+	return total;
+}
 
 export class RunFolder {
 	/** Where the run lives; renaming or moving the folder changes it. */
@@ -134,7 +211,8 @@ export class RunFolder {
 	/** The board's name: the engine writes solver_<name>/ under the run folder. */
 	private readonly boardName: string;
 	private readonly symbols: string[];
-	private kRange: [number, number];
+	/** The k range it runs: run.json's when it ran with one, else the board's. */
+	kRange: [number, number];
 	state: Run["state"] = "stopped";
 	note = "";
 	counts: Record<number, number> = {};
@@ -144,12 +222,34 @@ export class RunFolder {
 	private before = 0;
 	rate = 0;
 	roots = { done: 0, all: 0 };
+	/** The finished roots by number (roots.done, then `roots` lines), and the ones in hand (`active` lines). */
+	private finishedRoots = new Set<number>();
+	private active: NonNullable<Run["roots"]["active"]> = [];
 	stage: Run["stage"] = null;
 	options: RunOptions | null = null;
+	/** replaces.txt: the run this one deletes once it finishes (Raise k), by folder; a study's row follows it. */
+	replaces: string | null = null;
+	/** raised.txt: its raise rule went on to a run of the next k, so it is not raised again. */
+	raised = false;
+	/** It finished in this session and main has not yet compressed it (compressFinished). */
+	fresh = false;
+	/** capped.txt: a ceiling of its raise rule stopped it (why); a study counts its row done. */
+	capped: string | null = null;
 	files: OutFile[] = [];
+	/** latest.txt: a tiling the engine found in a root still open, rewritten at most every 30 s. */
+		private latest: { text: string; at: number } | null = null;
+	/** The folder's size on disk, walked in the background: every 15 s while running, every 2 min otherwise. */
+	private disk: { bytes: number | null; at: number; walking: boolean } = { bytes: null, at: 0, walking: false };
+	private measure() {
+		const wait = this.state === "running" ? 15_000 : 120_000;
+		if (this.disk.walking || Date.now() - this.disk.at < wait) return;
+		this.disk.walking = true;
+		void folderBytes(this.dir).then((bytes) => (this.disk = { bytes, at: Date.now(), walking: false }));
+	}
 	log: string[] = [];
 	free: Record<string, string> = {};
 	stats: string | null = null;
+	branching: Rule | null = null;
 	estimate: Estimate | null = null;
 	/** Nodes the engine has visited, when its progress line reports them (`nodes <n>`), with their history. */
 	private nodesDone: { t: number; n: number }[] = [];
@@ -178,9 +278,13 @@ export class RunFolder {
 		} catch {
 			this.options = null;
 		}
+		this.replaces = read(path.join(dir, "replaces.txt")).trim() || null;
+		this.raised = fs.existsSync(path.join(dir, "raised.txt"));
+		this.capped = read(path.join(dir, "capped.txt")).trim() || null;
 		this.readDisk();
 		this.elapsed = this.before = Number(read(path.join(dir, "elapsed.txt"))) || this.timeFromFiles();
 		this.log = read(path.join(dir, "log.txt")).split("\n").filter(Boolean);
+		for (const l of this.log) this.branching = ruleOf(l) ?? this.branching;
 		try {
 			this.estimate = JSON.parse(read(path.join(dir, "estimate.json"))) as Estimate;
 		} catch {
@@ -202,29 +306,72 @@ export class RunFolder {
 		);
 	}
 
-	/** What the files say: a finished run's census, or the sum of roots.done for a stopped one. */
+	/** What the files say: a finished run's census, or for a stopped one the sum of roots.done and of units.done
+	 *  (the units finished by roots not yet finished; a run without units has none). */
 	readDisk() {
 		const counts: Record<number, number> = {};
 		const census = read(path.join(this.out, "census.txt"));
 		const done = read(path.join(this.out, "roots.done")).split("\n").filter(Boolean);
+		this.finishedRoots = new Set(done.map((l) => Number(l.split(" ")[0])));
 		this.readSymbols();
 		if (census.endsWith("MAX\n")) {
 			for (const m of census.matchAll(/k=(\d+) -- (\d+)/g)) counts[Number(m[1])] = Number(m[2]);
 			this.state = "finished";
 			this.roots = { done: done.length, all: done.length };
 		} else {
-			// a stopped run's half-done root is not counted: resuming runs it again from the start
-			for (const line of done)
+			// a half-done root counts only its finished units: resuming runs the rest
+			const seen = new Set<string>();
+			const units = read(path.join(this.out, "units.done"))
+				.split("\n")
+				.filter((l) => {
+					const [r, u] = l.split(" ");
+					const fresh = !!u && !this.finishedRoots.has(Number(r)) && !seen.has(`${r} ${u}`);
+					seen.add(`${r} ${u}`);
+					return fresh;
+				})
+				.map((l) => l.split(" ").slice(1).join(" "));
+			for (const line of [...done, ...units])
 				for (const kv of line.split(" ").slice(1)) {
 					const [k, n] = kv.split(":").map(Number);
 					if (Number.isFinite(k) && Number.isFinite(n)) counts[k] = (counts[k] ?? 0) + n;
 				}
 			this.roots.done = done.length;
+			if (!this.roots.all)
+				try {
+					const told = (JSON.parse(read(path.join(this.dir, "sessions.json")) || "[]") as Session[]).findLast(
+						(x) => x.roots,
+					);
+					this.roots.all = told?.roots ?? 0;
+				} catch {}
 			if (this.state !== "failed" && this.state !== "running") this.state = "stopped";
 		}
 		this.counts = counts;
 		this.total = Object.values(counts).reduce((a, b) => a + b, 0);
+		this.readFind();
 		this.scanFiles();
+	}
+
+	private countsRead = false;
+	private countingFiles = false;
+	/** Count the tilings of every file not counted at its size, one file at a time; keep them in tilings.json. */
+	async countFiles() {
+		if (this.countingFiles) return;
+		this.countingFiles = true;
+		try {
+			for (const f of this.files) if (counted.get(f.path)?.bytes !== f.bytes) await countTilings(f.path, f.bytes);
+			const keep = Object.fromEntries(
+				this.files.flatMap((f) => {
+					const c = counted.get(f.path);
+					return c && c.n >= 0 ? [[f.name, [c.bytes, c.n]]] : [];
+				}),
+			);
+			fs.writeFileSync(path.join(this.out, "tilings.json"), JSON.stringify(keep));
+		} catch {
+			// a run being deleted or moved: counted again next time
+		} finally {
+			this.countingFiles = false;
+			this.scanFiles();
+		}
 	}
 
 	scanFiles() {
@@ -236,6 +383,19 @@ export class RunFolder {
 		}
 		// a run started here had no symbols.txt when it was opened: read it once the engine has written it
 		if (!Object.keys(this.free).length && names.includes("symbols.txt")) this.readSymbols();
+		if (!this.countsRead && names.includes("tilings.json")) {
+			this.countsRead = true;
+			try {
+				const kept = JSON.parse(read(path.join(this.out, "tilings.json"))) as Record<string, [number, number]>;
+				for (const [name, [bytes, n]] of Object.entries(kept)) counted.set(path.join(this.out, name), { bytes, n });
+			} catch {}
+		}
+		if (!names.includes("latest.txt")) this.latest = null;
+		else
+			try {
+				const at = fs.statSync(path.join(this.out, "latest.txt")).mtimeMs;
+				if (at !== this.latest?.at) this.latest = { text: read(path.join(this.out, "latest.txt")), at };
+			} catch {}
 		this.files = names
 			.map((name) => {
 				const m = OUT_FILE.exec(name);
@@ -245,6 +405,7 @@ export class RunFolder {
 				try {
 					bytes = fs.statSync(p).size;
 				} catch {}
+				const c = counted.get(p);
 				return {
 					name,
 					path: p,
@@ -253,6 +414,7 @@ export class RunFolder {
 					orientable: !!m[3],
 					edges: Number(m[4]),
 					bytes,
+					tilings: c && c.n >= 0 && c.bytes === bytes ? c.n : null,
 				};
 			})
 			.filter((f): f is OutFile => f !== null)
@@ -276,7 +438,12 @@ export class RunFolder {
 	start(engine: string, options: RunOptions, estimator?: string, app = ""): string | null {
 		if (this.state === "running" || this.state === "finished") return null;
 		const resume = fs.existsSync(this.out);
-		if (resume && this.options) options = { ...options, k: this.options.k }; // --resume needs the same k
+		// --resume needs the same k; the run keeps its own raise rule, and drops it once a ceiling stopped it: a
+		// resume then finishes this search and raises no further
+		if (resume && this.options) options = { ...options, k: this.options.k, raise: this.capped ? undefined : this.options.raise };
+		this.uncap();
+		// a find run started again stays one: it has no solver folder until it ends, and skips the steps it finished
+		if (this.options?.find && !options.find) options = { ...options, find: this.options.find };
 		fs.writeFileSync(path.join(this.dir, "run.json"), JSON.stringify(options, null, "\t") + "\n");
 		this.options = options;
 		if (options.k) this.kRange = options.k;
@@ -285,7 +452,8 @@ export class RunFolder {
 		if (options.k) args.push("--k", String(options.k[0]), String(options.k[1]));
 		// --nice is setpriority, which Windows lacks; there the app lowers the process priority itself
 		if (options.nice && !windows) args.push("--nice", String(options.nice));
-		if (resume) args.push("--resume");
+		if (options.find) args.push("--find", "--seconds", String(options.find.seconds));
+		else if (resume) args.push("--resume");
 		let child: ChildProcess;
 		try {
 			child = spawn(engine, args, {
@@ -309,6 +477,7 @@ export class RunFolder {
 		this.elapsed = this.before;
 		this.rate = 0;
 		this.stats = null;
+		this.branching = null; // a resume plans again, and may pick the other rule
 		this.stage = null;
 		this.last = { t: this.before, n: this.total };
 		this.state = "running";
@@ -336,7 +505,7 @@ export class RunFolder {
 		});
 		child.on("exit", (code) => this.finished(code ?? 0));
 		this.nodesDone = [];
-		if (estimator && fs.existsSync(estimator)) this.startEstimator(estimator);
+		if (estimator && fs.existsSync(estimator) && !options.find) this.startEstimator(estimator);
 		return null;
 	}
 
@@ -353,6 +522,82 @@ export class RunFolder {
 				fs.writeFileSync(path.join(this.dir, "estimate.json"), JSON.stringify(e) + "\n");
 			} catch {}
 		});
+	}
+
+		/** Files compressed (or decompressed, `unpack`) so far while Compress or Decompress runs. */
+	packing: { done: number; all: number; unpack: boolean } | null = null;
+
+	/** find.json: a find run's steps, reread when the engine moves to a step or a k (its `stage find` lines). */
+	find: Run["find"] = null;
+	private readFind() {
+		try {
+			this.find = JSON.parse(read(path.join(this.dir, "find.json")) || "null") as Run["find"];
+		} catch {} // being replaced: the next stage line reads it again
+	}
+
+		/**
+	 * A finished run's certificate files gzipped in place (.txt → .txt.gz; certificate text shrinks 10 to
+	 * 90 times by kind), or with `unpack` back to plain text. Each file is written whole before its original goes,
+	 * so a stop midway leaves every file readable. The app and zcat read gzipped files as they are, and the
+	 * `gzip` marker tells a resume which kind to write. Unpacking stops while under MIN_FREE_BYTES free.
+	 */
+	async compress(unpack = false, free = () => Infinity): Promise<{ error?: string }> {
+		if (unpack ? this.state === "running" : this.state !== "finished")
+			return { error: unpack ? "Stop the run first." : "Only a finished run can be compressed." };
+		if (this.packing) return {};
+		const todo = this.files.filter((f) => f.path.endsWith(".gz") === unpack);
+		this.packing = { done: 0, all: todo.length, unpack };
+		try {
+			for (const f of todo) {
+				if (unpack && free() < MIN_FREE_BYTES) return { error: "Decompressing stopped: under 10 GB free on disk." };
+				const to = unpack ? f.path.slice(0, -3) : `${f.path}.gz`;
+				const step = unpack ? zlib.createGunzip() : zlib.createGzip({ level: 6 });
+				await pipeline(fs.createReadStream(f.path), step, fs.createWriteStream(`${to}.part`));
+				fs.renameSync(`${to}.part`, to);
+				fs.rmSync(f.path);
+				this.packing.done++;
+			}
+			const marker = path.join(this.out, "gzip");
+			if (unpack) fs.rmSync(marker, { force: true });
+			else fs.writeFileSync(marker, "");
+			return {};
+		} catch (e) {
+			return { error: `${unpack ? "Decompressing" : "Compressing"} stopped: ${(e as Error).message}` };
+		} finally {
+			this.packing = null;
+			this.disk.at = 0; // measured again on the next status
+			this.scanFiles();
+		}
+	}
+
+	/** Its raise rule, changed or taken off, in run.json (its time kept: an old run's search time is read from it). */
+	setRaise(rule: RaiseRule | null) {
+		if (!this.options || this.raised) return;
+		const { raise: _, ...rest } = this.options;
+		this.options = rule ? { ...rest, raise: rule } : rest;
+		const f = path.join(this.dir, "run.json");
+		try {
+			const st = fs.statSync(f);
+			fs.writeFileSync(f, JSON.stringify(this.options, null, "\t") + "\n");
+			fs.utimesSync(f, st.atime, st.mtime);
+		} catch {}
+	}
+
+	/** No longer held by a ceiling it passed, going on under `rule`: none when resumed by hand (it finishes its
+	 *  search), its own without ceilings when a study lifts its limits, a study's new rule (Study.raise). */
+	uncap(rule: RaiseRule | null = null) {
+		if (!this.capped) return;
+		this.capped = null;
+		fs.rmSync(path.join(this.dir, "capped.txt"), { force: true });
+		this.setRaise(rule);
+	}
+
+	/** Stopped by a ceiling of its raise rule: kept as capped.txt, so a study counts its row done and moves on. */
+	cap(why: string) {
+		if (this.state !== "running") return;
+		fs.writeFileSync(path.join(this.dir, "capped.txt"), why + "\n");
+		this.capped = why;
+		this.stop(why);
 	}
 
 	stop(why = "") {
@@ -376,17 +621,28 @@ export class RunFolder {
 		const t = line.split(" ");
 		if (t[0] === "stage" && t.length === 4) {
 			this.stage = { name: t[1], done: Number(t[2]) || 0, all: Number(t[3]) || 0 };
+			if (t[1] === "find") this.readFind();
 			return;
 		}
-		if (t[0] === "roots" && t.length === 3) {
+		if (t[0] === "roots" && (t.length === 3 || t.length === 4)) {
 			this.stage = null;
 			this.roots = { done: Number(t[1]) || 0, all: Number(t[2]) || 0 };
+			if (t[3]) this.finishedRoots.add(Number(t[3]));
+			return;
+		}
+		if (t[0] === "active") {
+			// <root>:<units done>/<units found>, the roots in hand
+			this.active = t.slice(1).map((e) => {
+				const [root, done, all] = e.split(/[:/]/).map(Number);
+				return { root, done, all };
+			});
 			return;
 		}
 		if (t[0] === "stats") {
 			this.stats = t.slice(1).join(" ");
 			return;
 		}
+		this.branching = ruleOf(line) ?? this.branching;
 		if (t[0] === "progress") {
 			// `nodes <n>`, when the engine reports it, is what the ETA runs on
 			const i = t.indexOf("nodes");
@@ -415,6 +671,8 @@ export class RunFolder {
 		this.estimator?.kill();
 		this.estimator = null;
 		this.before = this.elapsed;
+		this.active = [];
+		this.stage = null;
 		try {
 			fs.writeFileSync(path.join(this.dir, "elapsed.txt"), `${this.elapsed.toFixed(1)}\n`);
 			fs.writeFileSync(path.join(this.dir, "log.txt"), this.log.join("\n") + "\n");
@@ -426,10 +684,21 @@ export class RunFolder {
 			this.note = board ?? `tilesearch stopped with exit code ${code}; see the log`;
 		} else this.state = "stopped";
 		this.readDisk();
+		const find = !!this.options?.find;
 		if (this.stopping && !this.note)
-			this.note = `Resume runs the ${Math.max(0, this.roots.all - this.roots.done)} unfinished roots`;
-		if ((this.state as Run["state"]) === "finished") this.note = `${this.total.toLocaleString("en")} tilings`;
+			this.note = find
+				? "Resume skips the steps already finished"
+				: `Resume runs the ${Math.max(0, this.roots.all - this.roots.done)} unfinished roots`;
+		if ((this.state as Run["state"]) === "finished")
+			this.note = find
+				? this.total
+					? "Found a tiling meeting every required set"
+					: (this.log.findLast((l) => l.startsWith("proven") || l.startsWith("no tiling")) ?? "No tiling found")
+				: `${this.total.toLocaleString("en")} tiling${this.total === 1 ? "" : "s"}`;
+		// finished in this session: main compresses it, or raises its k, once (a tiny run is never seen running)
+		if ((this.state as Run["state"]) === "finished") this.fresh = true;
 		const s = this.session;
+		this.endedAt = undefined;
 		if (s) {
 			this.session = null;
 			this.writeSessions((all) => {
@@ -439,17 +708,20 @@ export class RunFolder {
 					exit: code,
 					seconds: Math.round((Date.now() - Date.parse(s.started)) / 100) / 10,
 					finished: (this.state as Run["state"]) === "finished",
+					roots: this.roots.all || undefined,
 				});
 			});
 		}
 	}
 
-	snapshot(): Run {
+		snapshot(): Run {
+		this.measure();
 		return {
 			id: this.dir,
 			dir: this.dir,
 			name: path.basename(this.dir).replace(STAMP, "") || path.basename(this.dir),
 			created: this.created(),
+			ended: this.ended(),
 			board: this.board,
 			state: this.state,
 			note: this.note,
@@ -457,17 +729,30 @@ export class RunFolder {
 			total: this.total,
 			elapsed: this.elapsed,
 			rate: this.rate,
-			roots: { ...this.roots },
+			roots: {
+				...this.roots,
+				active: this.state === "running" ? this.active : [],
+				// by number only while few enough to draw one by one (overview.tsx)
+				...(this.finishedRoots.size <= MAX_DRAWN_ROOTS ? { finished: [...this.finishedRoots] } : {}),
+			},
 			stage: this.state === "running" ? this.stage : null,
 			kmin: this.kRange[0],
 			kmax: this.kRange[1],
 			options: this.options,
+			...(this.raised ? { raised: true } : {}),
+			...(this.replaces ? { replaces: this.replaces } : {}),
+			...(this.capped ? { capped: this.capped } : {}),
 			files: this.files,
+			latest: this.state === "running" && this.latest ? this.latest : null,
 			log: this.log.slice(-400),
 			symbols: this.free,
 			stats: this.stats,
+			branching: this.branching,
 			estimate: this.estimate,
 			work: this.state === "running" ? this.work() : null,
+			packing: this.packing && { ...this.packing },
+						find: this.find,
+			disk: this.disk.bytes,
 		};
 	}
 
@@ -485,6 +770,34 @@ export class RunFolder {
 		} catch {
 			return 0;
 		}
+	}
+
+	/** Its last session never recorded an end: the app or the computer went down while it ran. */
+	crashed(): boolean {
+		try {
+			const all = JSON.parse(read(path.join(this.dir, "sessions.json")) || "[]") as Session[];
+			return all.length > 0 && !all[all.length - 1].ended;
+		} catch {
+			return false;
+		}
+	}
+
+	/** When the run last stopped or finished (ms), read once: the last session's end, else census.txt's time
+	 *  for a finished run older than sessions.json. Null while running or never run. */
+	private endedAt: number | null | undefined;
+	private ended(): number | null {
+		if (this.state === "running") return null;
+		if (this.endedAt !== undefined) return this.endedAt;
+		let at: number | null = null;
+		try {
+			const last = (JSON.parse(read(path.join(this.dir, "sessions.json")) || "[]") as Session[]).findLast((s) => s.ended);
+			if (last?.ended) at = Date.parse(last.ended);
+		} catch {}
+		if (at === null && this.state === "finished")
+			try {
+				at = fs.statSync(path.join(this.out, "census.txt")).mtimeMs;
+			} catch {}
+		return (this.endedAt = at);
 	}
 
 	/** When the run was made: its folder's stamp, which outlives a rename that keeps it, else the folder's birth. */
@@ -535,6 +848,8 @@ export function badName(name: string): string | null {
 export class Runs {
 	runs: RunFolder[] = [];
 	folders: string[] = [];
+	/** The folders holding a study (study.json): each is also a folder, and its rows are runs inside it. */
+	studies: string[] = [];
 	constructor(public root: string) {
 		this.rescan();
 	}
@@ -544,6 +859,7 @@ export class Runs {
 		const known = new Map(this.runs.map((r) => [r.dir, r]));
 		const runs: RunFolder[] = [];
 		const folders: string[] = [];
+		const studies: string[] = [];
 		const walk = (dir: string, depth: number) => {
 			let entries: fs.Dirent[];
 			try {
@@ -558,6 +874,7 @@ export class Runs {
 				if (run) runs.push(run);
 				else if (depth < 6) {
 					folders.push(p);
+					if (fs.existsSync(path.join(p, "study.json"))) studies.push(p);
 					walk(p, depth + 1);
 				}
 			}
@@ -567,6 +884,7 @@ export class Runs {
 		for (const r of this.runs) if (r.state === "running" && !runs.includes(r)) runs.push(r);
 		this.runs = runs.sort((a, b) => path.basename(b.dir).localeCompare(path.basename(a.dir)));
 		this.folders = folders.sort((a, b) => a.localeCompare(b));
+		this.studies = studies;
 	}
 
 	/** The runs at `p` or inside it. */
@@ -606,7 +924,8 @@ export class Runs {
 		const error = this.locked(p) ?? badName(name);
 		if (error) return { error };
 		// a run keeps its stamp: the date it was made is not the app's to change, only the name before it
-		const stamp = fs.existsSync(path.join(p, "run.json")) ? (STAMP.exec(path.basename(p))?.[0] ?? "") : "";
+		const stamped = fs.existsSync(path.join(p, "run.json")) || fs.existsSync(path.join(p, "study.json"));
+		const stamp = stamped ? (STAMP.exec(path.basename(p))?.[0] ?? "") : "";
 		const to = path.join(path.dirname(p), name.trim() + stamp);
 		if (to === p) return { path: p };
 		return this.wrap(this.relocate(p, to), to);
@@ -652,8 +971,8 @@ export class Runs {
 		return error ? { error } : { path: p };
 	}
 
-	/** A new run folder for `board`, in `folder` when that is one of the output folder's folders. */
-	create(board: string, name: string, folder?: string): RunFolder {
+	/** A new, empty folder `<name>-<date stamp>` in `folder` when that is one of the output folder's folders. */
+	stampedDir(name: string, folder?: string): string {
 		const parent = folder && this.folders.includes(folder) ? folder : this.root;
 		const d = new Date();
 		const p = (n: number) => String(n).padStart(2, "0");
@@ -661,6 +980,12 @@ export class Runs {
 		let dir = path.join(parent, `${name}-${stamp}`);
 		for (let i = 2; fs.existsSync(dir); i++) dir = path.join(parent, `${name}-${stamp}-${i}`);
 		fs.mkdirSync(dir, { recursive: true });
+		return dir;
+	}
+
+	/** A new run folder for `board`, in `folder` when that is one of the output folder's folders. */
+	create(board: string, name: string, folder?: string): RunFolder {
+		const dir = this.stampedDir(name, folder);
 		fs.writeFileSync(path.join(dir, "input.board"), board);
 		const run = RunFolder.open(dir)!;
 		this.runs.unshift(run);

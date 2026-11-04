@@ -1,39 +1,49 @@
 // The runs: every run folder under the output folder, live progress for the running ones, and per run
 // its counts per k, its output files and the certificates in them.
 import {
+	ArchiveRestore,
+	ArrowDownUp,
 	Check,
 	ChevronRight,
 	ChevronsDownUp,
+	Archive,
 	ChevronsUp,
 	ChevronsUpDown,
 	FilePen,
 	Folder,
 	FolderOpen,
 	FolderPlus,
+	HardDrive,
 	Pencil,
 	Play,
+	Rows3,
 	RotateCcw,
 	Square,
+	Telescope,
 	Trash2,
 } from "lucide-react";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox, CheckboxBox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
-import { ContextMenu } from "@/components/ui/context-menu";
+import { ActionMenu, ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
 import { Dropdown } from "@/components/ui/dropdown";
 import { HoverPill } from "@/components/ui/hover-pill";
 import { Input } from "@/components/ui/input";
 import { InfoDot } from "@/components/ui/info-dot";
 import { Modal } from "@/components/ui/modal";
 import { OptionWall } from "@/components/ui/option-wall";
+import { RangeInput } from "@/components/ui/range-input";
+import { Reveal } from "@/components/ui/reveal";
 import { Tabs } from "@/components/ui/tabs";
+import { Toggle } from "@/components/ui/toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils/cn";
-import { parse, serialize } from "./board";
-import type { OutFile, Rule, Run, RunOptions, Status } from "./bridge";
-import { RunOverview } from "./overview";
+import { MAX_K, parse, serialize } from "./board";
+import { describeRaise, type OutFile, type RaiseRule, type Rule, type Run, type RunOptions, type Status, type StudySummary } from "./bridge";
+import { FindMark, FindOverview, findState } from "./find";
+import { percent, RunOverview } from "./overview";
 import { filesOf, GroupPicker, groupOfK, resolveGroup, TilingsView, type Group } from "./tilings";
 
 const api = () => window.tilesearch;
@@ -72,6 +82,35 @@ export const store = (k: string, v: string) => {
 	} catch {}
 };
 const OPEN_FOLDERS = "tilesearch:open-folders";
+/** A study or run folder's date stamp, left out of a name as people read it. */
+const STAMP_SUFFIX = /-\d{8}-\d{6}(?:-\d+)?$/;
+/** How each folder's runs are ordered: by name, newest started first, or last ended first (what ran overnight). */
+const RUN_ORDER = "tilesearch:run-order";
+type Order = "name" | "started" | "ended";
+const ORDERS: { key: Order; label: string }[] = [
+	{ key: "name", label: "By name" },
+	{ key: "started", label: "Newest started first" },
+	{ key: "ended", label: "Last ended first" },
+];
+const byOrder = (o: Order) => (a: Run, b: Run) =>
+	o === "started" ? b.created - a.created : o === "ended" ? (b.ended ?? -1) - (a.ended ?? -1) || b.created - a.created : 0;
+const CLOSED_SECTIONS = "tilesearch:closed-sections";
+
+/** The run list's sections, by state; each holds the folder tree of its own runs. */
+type Section = { key: string; label: string; keep: (r: Run) => boolean };
+const SECTIONS: Section[] = [
+	{ key: "running", label: "Running", keep: (r) => r.state === "running" || !!r.queued },
+	{ key: "unfinished", label: "Unfinished", keep: (r) => !r.queued && (r.state === "stopped" || r.state === "failed") },
+	{ key: "finished", label: "Finished", keep: (r) => r.state === "finished" },
+];
+/** The section that also shows the folders holding no run, and a folder being made. */
+const HOME = "finished";
+const sectionOf = (r: Run) => SECTIONS.find((s) => s.keep(r))!;
+/** A study's section: going (checking or running), paused, or done. */
+const studySection = (s: StudySummary) => (s.state === "paused" ? "unfinished" : s.state === "done" ? "finished" : "running");
+/** Rows settled, of all: what a study's progress bar shows. */
+const studyDone = (s: StudySummary) =>
+	(["found", "none", "ruled-out", "same", "failed", "conflict", "limit"] as const).reduce((t, k) => t + (s.tally[k] ?? 0), 0);
 /** The finished runs opened since they finished, by folder. */
 const INSPECTED = "tilesearch:inspected";
 const loadSet = (k: string): Set<string> | null => {
@@ -83,8 +122,8 @@ const loadSet = (k: string): Set<string> | null => {
 	}
 };
 
-const parentOf = (p: string) => p.replace(/[\\/][^\\/]*$/, "");
-const baseOf = (p: string) => p.slice(parentOf(p).length + 1);
+export const parentOf = (p: string) => p.replace(/[\\/][^\\/]*$/, "");
+export const baseOf = (p: string) => p.slice(parentOf(p).length + 1);
 /** Whether `p` is `folder` or inside it. */
 /** The run tree draws its highlighted path one piece every RAIL_STEP ms (app.css .ta-rail). */
 const RAIL_STEP = 70;
@@ -104,7 +143,114 @@ export function estimatedTotal(e: NonNullable<Run["estimate"]>, k: number): [num
 	return [(e.base[k] ?? 0) + u[0], u[1]];
 }
 
+/** A run's certificate files by bytes: plain text, and gzipped. */
+export const packOf = (r: Run) => {
+	let [plain, gz] = [0, 0];
+	for (const f of r.files) if (f.path.endsWith(".gz")) gz += f.bytes;
+	else plain += f.bytes;
+	return { plain, gz };
+};
+/** Compress and Decompress for a run's menus, or its progress while one goes. */
+export function packItems(r: Run, onError: (e: string) => void): ContextMenuItem[] {
+	if (r.packing)
+		return [
+			{
+				icon: r.packing.unpack ? ArchiveRestore : Archive,
+				label: `${r.packing.unpack ? "Decompressing" : "Compressing"} ${r.packing.done} of ${r.packing.all}`,
+				disabled: true,
+				onSelect: () => {},
+			},
+		];
+	const { plain, gz } = packOf(r);
+	const go = (unpack: boolean) => async () => onError((await api().compress(r.id, unpack)).error ?? "");
+	return [
+		...(r.state === "finished" && plain ? [{ icon: Archive, label: `Compress files (${bytes(plain)})`, onSelect: go(false) }] : []),
+		...(r.state !== "running" && gz ? [{ icon: ArchiveRestore, label: `Decompress files (${bytes(gz)})`, onSelect: go(true) }] : []),
+	];
+}
+/** The runs a bulk Compress or Decompress would take, and their bytes. */
+export function packable(runs: Run[], unpack: boolean) {
+	const take = runs.filter(
+		(r) => !r.packing && (unpack ? r.state !== "running" && packOf(r).gz > 0 : r.state === "finished" && packOf(r).plain > 0),
+	);
+	return { take, bytes: take.reduce((t, r) => t + packOf(r)[unpack ? "gz" : "plain"], 0) };
+}
+/** Compress (or decompress) runs one after another, stopping at the first error. */
+export async function packRuns(runs: Run[], unpack: boolean, onError: (e: string) => void) {
+	for (const r of runs) {
+		const { error } = await api().compress(r.id, unpack);
+		if (error) return onError(`${r.name}: ${error}`);
+	}
+	onError("");
+}
+/** Bulk Compress and Decompress items for the runs in a folder, or every run. */
+export function packAllItems(runs: Run[], onError: (e: string) => void): ContextMenuItem[] {
+	return ([false, true] as const).flatMap((unpack) => {
+		const { take, bytes: b } = packable(runs, unpack);
+		return take.length
+			? [
+					{
+						icon: unpack ? ArchiveRestore : Archive,
+						label: `${unpack ? "Decompress" : "Compress"} ${take.length} run${take.length === 1 ? "" : "s"} (${bytes(b)})`,
+						onSelect: () => void packRuns(take, unpack, onError),
+					},
+				]
+			: [];
+	});
+}
+
 const TONE = { running: "accent", stopped: "neutral", finished: "success", failed: "danger" } as const;
+/** A run's state as it reads: a finished run searched every root, a stopped one has roots left. */
+export const stateLabel = (r: Run) =>
+	r.queued
+		? `queued · ${r.queued === 1 ? "next" : `#${r.queued}`}`
+		: r.options?.find
+		? findState(r)
+		: r.state === "finished"
+			? "complete"
+			: r.state === "stopped"
+				? `stopped · ${r.roots.done} of ${r.roots.all || "?"} roots`
+				: r.state;
+
+/** A run's files gzipped, as an icon: pulsing while Compress or Decompress goes. */
+export function PackMark({ run, className }: { run: Run; className?: string }) {
+	const { plain, gz } = packOf(run);
+	if (!run.packing && !(gz && !plain)) return null;
+	const Icon = run.packing?.unpack ? ArchiveRestore : Archive;
+	const what = run.packing
+		? `${run.packing.unpack ? "Decompressing" : "Compressing"}: ${run.packing.done} of ${run.packing.all} files`
+		: `Compressed: ${bytes(gz)} of gzipped files, read here as they are`;
+	return (
+		<span title={what} aria-label={what} className={cn("inline-flex shrink-0", className)}>
+			<Icon size={13} className={run.packing ? "animate-pulse text-accent" : "text-fg-muted"} />
+		</span>
+	);
+}
+
+/** A run row's progress: the roots finished and, while it runs, the share of the estimated work, with a bar. */
+function Progress({ run }: { run: Run }) {
+	const { roots, work } = run;
+	if (run.options?.find) return <span className="mt-1 block truncate text-xs text-fg-secondary">{findState(run)}</span>;
+	return (
+		<span className="mt-1 flex items-center gap-2 text-xs text-fg-secondary tabular-nums">
+			{work ? (
+				<span className="h-1 w-12 shrink-0 overflow-hidden rounded-full bg-surface-sunken">
+					<span className="block h-full bg-accent" style={{ width: `${work.share * 100}%` }} />
+				</span>
+			) : null}
+			<span className="truncate">
+				{roots.all
+					? `${n(roots.done)} of ${n(roots.all)} roots`
+					: roots.done
+						? `${n(roots.done)} roots done`
+						: run.state === "running"
+							? "starting"
+							: "no root finished yet"}
+				{work ? ` · ≈ ${percent(work.share)}` : ""}
+			</span>
+		</span>
+	);
+}
 
 /** A name typed in place: Enter saves, Escape or leaving the field cancels. `save` answers with an error or null. */
 function NameField({
@@ -127,31 +273,30 @@ function NameField({
 		if (e) setError(e);
 		else done();
 	};
+	// the suffix goes under the field: beside it, deep in the tree, it left the field no room
 	return (
 		<div className="min-w-0 flex-1">
-			<div className="flex items-center gap-1.5">
-				<Input
-					value={name}
-					size="sm"
-					autoFocus
-					onFocus={(e) => e.currentTarget.select()}
-					onChange={(e) => (setName(e.target.value), setError(""))}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") void commit();
-						if (e.key === "Escape") done();
-					}}
-					onBlur={() => !error && done()}
-					aria-label="Name"
-				/>
-				{suffix ? <span className="shrink-0 font-mono text-xs text-fg-muted">{suffix}</span> : null}
-			</div>
+			<Input
+				value={name}
+				size="sm"
+				autoFocus
+				onFocus={(e) => e.currentTarget.select()}
+				onChange={(e) => (setName(e.target.value), setError(""))}
+				onKeyDown={(e) => {
+					if (e.key === "Enter") void commit();
+					if (e.key === "Escape") done();
+				}}
+				onBlur={() => !error && done()}
+				aria-label="Name"
+			/>
+			{suffix ? <p className="mt-1 truncate font-mono text-[11px] text-fg-muted">{suffix}</p> : null}
 			{error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
 		</div>
 	);
 }
 
 /** What a delete takes with it: a run, or a folder and every run in it. */
-/** Run a run's board again, to a higher k (Improve) or over the same k (`again`), under a name of its
+/** Run a run's board again, to a higher k (Raise k) or over the same k (`again`), under a name of its
  *  choosing, in a folder of its choosing, and maybe replace it. */
 const folderOptions = (status: Status) =>
 	[status.root, ...status.folders].map((f) => ({
@@ -159,8 +304,9 @@ const folderOptions = (status: Status) =>
 		label: f === status.root ? "the output folder" : f.slice(status.root.length + 1),
 	}));
 
+export const RULE_NAME: Record<Rule, string> = { fewest: "Fewest options", face: "Face first" };
 export const RULE_HINT =
-	"Auto measures both rules on small k and keeps the cheaper one, and can guess wrong. Forcing one changes the time, never the tilings.";
+	"Auto samples the search under both rules at your k, for a second or so, and keeps the faster. When the two are close it may keep the slightly slower one. Forcing one changes the time, never the tilings.";
 /** The branching rule for a run: Auto lets the engine measure and pick, the others force one. */
 export function RuleField({ rule, onChange }: { rule?: Rule; onChange: (r: Rule | undefined) => void }) {
 	return (
@@ -168,8 +314,8 @@ export function RuleField({ rule, onChange }: { rule?: Rule; onChange: (r: Rule 
 			columns={3}
 			options={[
 				{ value: "auto", label: "Auto" },
-				{ value: "fewest", label: "Fewest options" },
-				{ value: "face", label: "Face first" },
+				{ value: "fewest", label: RULE_NAME.fewest },
+				{ value: "face", label: RULE_NAME.face },
 			]}
 			selected={rule ?? "auto"}
 			onChange={(v) => onChange(v === "auto" ? undefined : (v as Rule))}
@@ -177,10 +323,155 @@ export function RuleField({ rule, onChange }: { rule?: Rule; onChange: (r: Rule 
 	);
 }
 
-function ImproveModal({
+const RAISE_HINT =
+	"Raised by itself, the searches go one k at a time: the first to the lowest k, and each that finishes without finding what you ask is followed by one to the next k, which replaces it. A search covers every k up to its own, so starting low finds the first k cheaply. Time and disk are ceilings on each search: one that passes either stops there, keeping what it finished, and the raising ends; in a study that row is done and the study goes on. An enumeration only.";
+const RAISE_TESTS = [
+	{ key: "found", lead: "finds at least", unit: "tilings", start: 1, least: 1 },
+	{ key: "minutes", lead: "runs over", unit: "minutes", start: 3, least: 0.1 },
+	{ key: "gigabytes", lead: "writes over", unit: "GB", start: 5, least: 0.1 },
+] as const;
+/**
+ * Raise k by itself (bridge.ts RaiseRule): off, or what ends it. On the board page the searches go from the board's
+ * lowest k to its highest (`to`); in Raise k, from the k chosen to a highest k set here.
+ */
+/**
+ * k for a search: one range, searched once (`range`, the caller's inputs), or raised by itself one k at a time by a
+ * rule (bridge.ts RaiseRule). The switch comes first and shows one or the other. `from` is where the climbing
+ * starts and `upTo` its highest k: on the board page both are the board's own k.
+ */
+export function KField({
+	hint,
+	range,
+	rule,
+	onRule,
+	from,
+	onFrom,
+	upTo,
+	onUpTo,
+}: {
+	hint: ReactNode;
+	range: ReactNode;
+	rule?: RaiseRule;
+	onRule: (r: RaiseRule | undefined) => void;
+	from: number;
+	onFrom?: (k: number) => void;
+	upTo?: number;
+	onUpTo?: (k: number) => void;
+}) {
+	const r: RaiseRule = rule ?? { found: 1, minutes: 3, upTo: upTo ?? Math.min(MAX_K, from + 4) };
+	return (
+		<div className="space-y-2">
+			<div className="ta-label flex items-center gap-1.5">
+				k
+				<InfoDot>
+					{hint} {RAISE_HINT}
+				</InfoDot>
+			</div>
+			<Toggle
+				leftValue="fixed range"
+				rightValue="raise by itself"
+				value={rule ? "raise by itself" : "fixed range"}
+				onChange={(v) => onRule(v === "raise by itself" ? r : undefined)}
+			/>
+			{rule ? (
+				<RaiseConditions rule={r} onChange={onRule} from={from} onFrom={onFrom} upTo={upTo} onUpTo={onUpTo} />
+			) : (
+				range
+			)}
+		</div>
+	);
+}
+
+/** A raise rule's range and conditions: KField's, and a study's Raise k. The range edits `from` and `upTo` through
+ *  the caller when it passes them (the board's k), the rule's own `upTo` when not. */
+export function RaiseConditions({
+	rule: r,
+	onChange,
+	from,
+	onFrom,
+	upTo,
+	onUpTo,
+}: {
+	rule: RaiseRule;
+	onChange: (r: RaiseRule) => void;
+	from: number;
+	onFrom?: (k: number) => void;
+	upTo?: number;
+	onUpTo?: (k: number) => void;
+}) {
+	const set = (x: Partial<RaiseRule>) => onChange({ ...r, ...x });
+	const kOf = (v: string) => Math.min(MAX_K, Math.max(1, Math.round(Number(v)) || 1));
+	const test = (t: (typeof RAISE_TESTS)[number]) => {
+		const v = r[t.key];
+		return (
+			<label key={t.key} className="flex items-center gap-2">
+				<CheckboxBox checked={v !== undefined} onCheckedChange={(c) => set({ [t.key]: c ? t.start : undefined })} />
+				<span className={cn("w-24", v === undefined && "text-fg-muted")}>{t.lead}</span>
+				<Input
+					type="number"
+					min={t.least}
+					value={v ?? t.start}
+					disabled={v === undefined}
+					onChange={(e) => {
+						const x = Number(e.target.value) || t.least;
+						set({ [t.key]: t.key === "found" ? Math.max(1, Math.round(x)) : Math.max(t.least, x) });
+					}}
+					className="w-20"
+					aria-label={`A search ${t.lead} (${t.unit})`}
+				/>
+				<span className={cn(v === undefined && "text-fg-muted")}>{t.unit}</span>
+			</label>
+		);
+	};
+	return (
+		<div className="space-y-2 text-sm text-fg-secondary">
+			<div className="flex items-center gap-2">
+				from
+				{onFrom ? (
+					<Input
+						type="number"
+						min={1}
+						max={MAX_K}
+						value={from}
+						onChange={(e) => onFrom(kOf(e.target.value))}
+						className="w-20"
+						aria-label="First k"
+					/>
+				) : (
+					<span className="text-fg">{from}</span>
+				)}
+				up to
+				<Input
+					type="number"
+					min={from}
+					max={MAX_K}
+					value={upTo ?? r.upTo}
+					onChange={(e) => (onUpTo ? onUpTo(kOf(e.target.value)) : set({ upTo: kOf(e.target.value) }))}
+					className="w-20"
+					aria-label="Highest k"
+				/>
+			</div>
+			<p className="text-xs text-fg-muted">Each search goes one k higher than the last.</p>
+			<p className="pt-1 text-xs text-fg-muted">Stop raising when a search</p>
+			{test(RAISE_TESTS[0])}
+			<p className="pt-1 text-xs text-fg-muted">Stop any search that</p>
+			{test(RAISE_TESTS[1])}
+			{test(RAISE_TESTS[2])}
+		</div>
+	);
+}
+
+/** Threads for a run, up to twice the cores. */
+export function ThreadsInput({ value, cores, onChange }: { value: number; cores: number; onChange: (n: number) => void }) {
+	return <RangeInput min={1} max={Math.max(1, cores * 2)} value={value} onChange={onChange} aria-label="Threads" />;
+}
+export const threadsHint = (cores: number) => `This computer has ${cores} cores. Threads never change the result.`;
+
+export function ImproveModal({
 	run,
 	status,
 	options,
+	cores,
 	again = false,
 	onClose,
 	onStarted,
@@ -188,30 +479,62 @@ function ImproveModal({
 	run: Run;
 	status: Status;
 	options: RunOptions;
+	cores: number;
 	again?: boolean;
 	onClose: () => void;
 	onStarted: (id: string) => void;
 }) {
 	const [name, setName] = useState(run.name);
-	const [to, setTo] = useState(String(run.kmax + 1));
+	// for this run only: the saved setting stays as the board left it
+	const [threads, setThreads] = useState(options.threads);
+	// a find run asks a question again, with any k range and time limit: nothing it found is carried over
+	const finding = !!run.options?.find;
+	const [from, setFrom] = useState(String(run.kmin));
+	const [to, setTo] = useState(String(again ? run.kmax : run.kmax + 1));
+	const [seconds, setSeconds] = useState(String(run.options?.find?.seconds ?? 120));
 	// an improved run holds every tiling of the old one, so by default it takes its place
-	const [replace, setReplace] = useState(!again);
+	const [replace, setReplace] = useState(!again && !finding);
 	// beside the run it improves, unless moved
 	const [folder, setFolder] = useState(parentOf(run.dir));
 	const [error, setError] = useState("");
 	const [rule, setRule] = useState<Rule | undefined>(run.options?.rule);
-	const k = again ? run.kmax : Math.round(Number(to));
-	const ok = Number.isFinite(k) && (again || (k > run.kmax && k <= 64)) && !!name.trim();
+	// its own rule, if any, going higher than the k it reached: a raise by hand asks for more
+	const [raise, setRaise] = useState<RaiseRule | undefined>(() => {
+		const r = run.options?.raise;
+		return r && { ...r, upTo: Math.min(MAX_K, Math.max(r.upTo, run.kmax + 5)) };
+	});
+	const lo = finding ? Math.round(Number(from)) : run.kmin;
+	const k = again && !finding ? run.kmax : Math.round(Number(to));
+	const secs = Math.round(Number(seconds));
+	// why the run cannot start yet, shown under the form; empty when it can
+	const problem = !name.trim()
+		? "The run needs a name."
+		: !Number.isFinite(k) || !Number.isFinite(lo)
+			? "k must be a whole number."
+			: finding && (lo < 1 || k < lo)
+				? "k needs 1 ≤ from ≤ to."
+				: !finding && !again && k <= run.kmax
+					? `Raise k past ${run.kmax}.`
+					: k > MAX_K
+						? `k goes up to ${MAX_K}.`
+						: raise && !finding && raise.upTo < k
+							? `Raise k up to at least ${k}.`
+						: finding && !(secs >= 5)
+							? "Give each k at least 5 seconds."
+							: "";
+	const ok = !problem;
 	const start = async () => {
 		// from the same lowest k, so the new run holds every tiling the old one did
 		const res = await api().start(
 			run.board,
 			name.trim(),
-			{ ...options, k: [run.kmin, k], ...(rule ? { rule } : {}) },
+			finding
+				? { ...options, threads, k: [lo, k], find: { seconds: secs } }
+				: { ...options, threads, k: [run.kmin, k], ...(rule ? { rule } : {}), ...(raise ? { raise } : {}) },
 			replace ? run.dir : undefined,
 			folder,
 		);
-		if ("error" in res) return setError(res.error);
+		if (res.error) return setError(res.error);
 		onStarted(res.id);
 		onClose();
 	};
@@ -219,16 +542,26 @@ function ImproveModal({
 		<Modal
 			isOpen
 			onOpenChange={(o) => !o && onClose()}
-			title={again ? `Run “${run.name}” again` : `Improve “${run.name}”`}
+			title={again ? `Run “${run.name}” again` : `Raise k of “${run.name}”`}
 			size="md"
-			description={again ? "Run the same board over the same k" : "Run the same board again to a higher k"}
+			description={
+				finding
+					? "Look again for one tiling meeting every required set. The new run starts from scratch."
+					: again
+						? "Run the same board over the same k"
+						: "Search the board again up to a higher k. A finished run cannot be extended: every branch of the search grows with k, so the work below the old k is done again."
+			}
 			footer={
 				<div className="flex justify-end gap-2">
 					<Button label="Cancel" onClick={onClose} />
 					<Button
 						variant="primary"
 						icon={Play}
-						label={`Run k ${run.kmin}–${ok ? k : "?"}`}
+						label={
+							finding
+								? `Find a tiling, k ${ok ? lo : "?"}–${ok ? k : "?"}`
+								: `Run k ${run.kmin}–${ok ? k : "?"}${raise && ok && raise.upTo > k ? `, raising to ${raise.upTo}` : ""}`
+						}
 						disabled={!ok}
 						onClick={start}
 					/>
@@ -250,27 +583,104 @@ function ImproveModal({
 						ariaLabel="Folder for the new run"
 					/>
 				</label>
-				<div className={cn("space-y-1.5", again && "hidden")}>
-					<span className="ta-label">k</span>
-					<div className="flex items-center gap-2">
-						<span className="text-fg-secondary">from {run.kmin} to</span>
-						<Input
-							type="number"
-							min={run.kmax + 1}
-							max={64}
-							value={to}
-							onChange={(e) => setTo(e.target.value)}
-							className="w-24"
-							aria-label="k up to"
-						/>
-						<span className="text-fg-muted">this run went to {run.kmax}</span>
-					</div>
-				</div>
-				<div className="space-y-1.5">
+				{finding ? (
+					<>
+						<div className="space-y-1.5">
+							<span className="ta-label flex items-center gap-1.5">
+								k
+								<InfoDot>
+									Starting higher skips what is already settled: below the k this run proved, there is nothing to find.
+								</InfoDot>
+							</span>
+							<div className="flex items-center gap-2">
+								<span className="text-fg-secondary">from</span>
+								<Input
+									type="number"
+									min={1}
+									value={from}
+									onChange={(e) => setFrom(e.target.value)}
+									className="w-20"
+									aria-label="k from"
+								/>
+								<span className="text-fg-secondary">to</span>
+								<Input
+									type="number"
+									min={1}
+									max={MAX_K}
+									value={to}
+									onChange={(e) => setTo(e.target.value)}
+									className="w-20"
+									aria-label="k up to"
+								/>
+								{run.find?.proven ? <span className="text-fg-muted">none below {run.find.proven}, proven</span> : null}
+							</div>
+						</div>
+						<div className="space-y-1.5">
+							<span className="ta-label">Time limit</span>
+							<div className="flex items-center gap-2">
+								<Input
+									type="number"
+									min={5}
+									value={seconds}
+									onChange={(e) => setSeconds(e.target.value)}
+									className="w-20"
+									aria-label="Seconds per k"
+								/>
+								<span className="text-fg-secondary">seconds per k, in each step</span>
+							</div>
+						</div>
+					</>
+				) : null}
+				{finding ? null : (
+					// the new top k, or the first of a climb raised by itself (its highest set there)
+					<KField
+						hint="This run's search, again to a higher k: every k from its lowest up is searched once more."
+						range={
+							again ? (
+								<p className="text-fg-secondary">
+									Over the same k, {run.kmin} to {run.kmax}.
+								</p>
+							) : (
+								<div className="flex items-center gap-2">
+									<span className="text-fg-secondary">from {run.kmin} to</span>
+									<Input
+										type="number"
+										min={run.kmax + 1}
+										max={MAX_K}
+										value={to}
+										onChange={(e) => setTo(e.target.value)}
+										className="w-24"
+										aria-label="k up to"
+									/>
+									<span className="text-fg-muted">this run went to {run.kmax}</span>
+								</div>
+							)
+						}
+						rule={raise}
+						onRule={setRaise}
+						from={Number.isFinite(k) ? k : run.kmax}
+						onFrom={again ? undefined : (v) => setTo(String(v))}
+					/>
+				)}
+				<div className={cn("space-y-1.5", finding && "hidden")}>
 					<span className="ta-label flex items-center gap-1.5">
 						Branching rule <InfoDot>{RULE_HINT}</InfoDot>
 					</span>
 					<RuleField rule={rule} onChange={setRule} />
+					{run.branching ? (
+						<p className="text-xs text-fg-muted">
+							This run searched with {RULE_NAME[run.branching]}
+							{run.options?.rule ? "" : ", picked by Auto"}.
+						</p>
+					) : null}
+				</div>
+				<div className="space-y-1.5">
+					<span className="ta-label">Threads · {threads}</span>
+					<ThreadsInput value={threads} cores={cores} onChange={setThreads} />
+					<p className="text-xs text-fg-muted">
+						{threadsHint(cores)}
+						{run.options && run.options.threads !== threads ? ` This run used ${run.options.threads}.` : ""}
+					</p>
 				</div>
 				<Checkbox
 					label={`Delete “${run.name}” when the new run finishes`}
@@ -278,12 +688,13 @@ function ImproveModal({
 					onCheckedChange={setReplace}
 					hint={
 						<InfoDot>
-							Only once it finishes: stopped or failed, the old run stays. The new run covers k {run.kmin}
-							{again ? `–${run.kmax}, as this one did` : " upward"}, so it holds every tiling this one has.
+							{finding
+								? "Only once it finishes: stopped or failed, the old run stays."
+								: `Only once it finishes: stopped or failed, the old run stays. The new run covers k ${run.kmin}${again ? `–${run.kmax}, as this one did` : " upward"}, so it holds every tiling this one has.`}
 						</InfoDot>
 					}
 				/>
-				{error ? <p className="text-danger">{error}</p> : null}
+				{error || problem ? <p className="text-danger">{error || problem}</p> : null}
 			</div>
 		</Modal>
 	);
@@ -294,11 +705,14 @@ export function DeleteModal({
 	runs,
 	onClose,
 	onDeleted,
+	what = "folder",
 }: {
 	target: string | null;
 	runs: Run[];
 	onClose: () => void;
 	onDeleted: () => void;
+	/** What the folder is, for the title: a study is a folder of runs. */
+	what?: string;
 }) {
 	const [error, setError] = useState("");
 	const [busy, setBusy] = useState(false);
@@ -312,7 +726,7 @@ export function DeleteModal({
 		<Modal
 			isOpen
 			onOpenChange={(o) => !o && (setError(""), onClose())}
-			title={run ? `Delete the run “${name}”?` : `Delete the folder “${name}”?`}
+			title={run ? `Delete the run “${name}”?` : `Delete the ${what} “${name.replace(STAMP_SUFFIX, "")}”?`}
 			size="sm"
 			description="Deleting removes the folder from the disk for good"
 			footer={
@@ -360,6 +774,15 @@ export function RunList({
 	selected: string | null;
 	onSelect: (id: string | null) => void;
 }) {
+	// a study's rows and folders stay inside it: the list shows the study as one entry, its page shows its rows
+	const inStudy = (p: string) => status.studies.some((x) => isWithin(p, x.dir));
+	const allRuns = status.runs.filter((r) => !inStudy(r.dir));
+	const allFolders = status.folders.filter((f) => !inStudy(f));
+	// a study's row picked: its study is the entry the list marks
+	const studyOf = (id: string | null) => status.studies.find((x) => id !== null && isWithin(id, x.dir));
+	const entry = studyOf(selected)?.dir ?? selected;
+	const fullRuns = status.runs;
+	status = { ...status, runs: allRuns, folders: allFolders };
 	// the folders shown open: none at first, and kept across pages and launches
 	const [opened, setOpened] = useState<Set<string>>(() => loadSet(OPEN_FOLDERS) ?? new Set());
 	useEffect(() => store(OPEN_FOLDERS, JSON.stringify([...opened])), [opened]);
@@ -381,39 +804,68 @@ export function RunList({
 	// a run picked inside closed folders (one just started there, say) opens them, or it would be out of sight;
 	// only on a new pick, so coming back to this page keeps the folders as they were left
 	const [seen, setSeen] = useState(selected);
+	const [closed, setClosed] = useState<Set<string>>(() => loadSet(CLOSED_SECTIONS) ?? new Set());
+	useEffect(() => store(CLOSED_SECTIONS, JSON.stringify([...closed])), [closed]);
+	const [creating, setCreating] = useState<string | null>(null);
+	// A folder shows in a section when it holds one of the section's runs; the home section also shows the
+	// folders holding no run at all and the folders a new folder is being made in.
+	const studiesIn = (s: Section, folder: string) =>
+		status.studies.filter((x) => studySection(x) === s.key && parentOf(x.dir) === folder);
+	const shows = (s: Section, f: string) =>
+		status.runs.some((r) => s.keep(r) && isWithin(r.dir, f)) ||
+		status.studies.some((x) => studySection(x) === s.key && isWithin(x.dir, f)) ||
+		(s.key === HOME && (!status.runs.some((r) => isWithin(r.dir, f)) || (creating !== null && isWithin(creating, f))));
+	const foldersIn = (s: Section, folder: string) => status.folders.filter((f) => parentOf(f) === folder && shows(s, f));
+	const [order, setOrder] = useState<Order>(() => (ORDERS.find((o) => o.key === load(RUN_ORDER))?.key ?? "name"));
+	useEffect(() => store(RUN_ORDER, order), [order]);
+	const runsIn = (s: Section, folder: string) =>
+		status.runs.filter((r) => s.keep(r) && parentOf(r.dir) === folder).sort(byOrder(order));
 	// The highlighted path to the selected run, as the rail pieces it is drawn with, top to bottom: in each
-	// folder below the top level, "pass" for the entries above the one it enters and "on" for that entry.
+	// folder below the top level, "pass" for the entries above the one it enters and "on" for that entry,
+	// each tagged with the run's section.
 	const pathTo = (sel: string | null) => {
 		const pieces: string[] = [];
-		for (let folder = status.root, depth = 0; sel && folder !== sel; depth++) {
+		const run = status.runs.find((r) => r.id === sel);
+		const study = status.studies.find((x) => x.id === sel);
+		if (!sel || (!run && !study)) return pieces;
+		const s = run ? sectionOf(run) : SECTIONS.find((x) => x.key === studySection(study!))!;
+		for (let folder = status.root, depth = 0; folder !== sel; depth++) {
 			const entries = [
-				...status.folders.filter((f) => parentOf(f) === folder),
-				...status.runs.filter((r) => parentOf(r.dir) === folder).map((r) => r.dir),
+				...foldersIn(s, folder),
+				...studiesIn(s, folder).map((x) => x.dir),
+				...runsIn(s, folder).map((r) => r.dir),
 			];
 			const on = entries.findIndex((e) => isWithin(sel, e));
 			if (on < 0) break;
-			if (depth) pieces.push(...entries.slice(0, on).map((e) => `pass ${e}`), `on ${entries[on]}`);
+			if (depth) pieces.push(...entries.slice(0, on).map((e) => `pass ${s.key} ${e}`), `on ${s.key} ${entries[on]}`);
 			folder = entries[on];
 		}
 		return pieces;
 	};
 	// On a new pick only what changed is drawn: from the first piece where the new path leaves the old one.
 	const [from, setFrom] = useState(0);
-	if (seen !== selected) {
-		const [was, now] = [pathTo(seen), pathTo(selected)];
+	if (seen !== entry) {
+		const [was, now] = [pathTo(seen), pathTo(entry)];
 		let i = 0;
 		while (i < now.length && was[i] === now[i]) i++;
 		setFrom(i);
-		setSeen(selected);
-		const up = selected ? status.folders.filter((f) => isWithin(selected, f) && !opened.has(f)) : [];
+		setSeen(entry);
+		const up = entry ? status.folders.filter((f) => isWithin(entry, f) && !opened.has(f)) : [];
 		if (up.length) setOpened(new Set([...opened, ...up]));
+		const run = status.runs.find((r) => r.id === entry);
+		const st = status.studies.find((x) => x.id === entry);
+		const key = run ? sectionOf(run).key : st ? studySection(st) : null;
+		if (key && closed.has(key)) setClosed(new Set([...closed].filter((x) => x !== key)));
 	}
-	const [renaming, setRenaming] = useState<string | null>(null);
-	const [creating, setCreating] = useState<string | null>(null);
+	// what is being renamed, and in which section: a folder can show in more than one
+	const [renaming, setRenaming] = useState<{ section: string; path: string } | null>(null);
+	const isRenaming = (s: Section, p: string) => renaming?.section === s.key && renaming.path === p;
 	const [deleting, setDeleting] = useState<string | null>(null);
 	const [over, setOver] = useState<string | null>(null);
 	const [error, setError] = useState("");
-	const countIn = (f: string) => status.runs.filter((r) => isWithin(r.dir, f)).length;
+	const countIn = (s: Section, f: string) =>
+		status.runs.filter((r) => s.keep(r) && isWithin(r.dir, f)).length +
+		status.studies.filter((x) => studySection(x) === s.key && isWithin(x.dir, f)).length;
 	// drop target props: a run or a folder dragged here moves into `folder`
 	const drop = (folder: string) => ({
 		onDragOver: (e: React.DragEvent) => {
@@ -464,10 +916,10 @@ export function RunList({
 			</li>
 		) : null;
 
-	const path = new Map(pathTo(selected).map((piece, i) => [piece, i]));
-	const mark = (entry: string) => {
+	const path = new Map(pathTo(entry).map((piece, i) => [piece, i]));
+	const mark = (sec: Section, entry: string) => {
 		for (const role of ["on", "pass"]) {
-			const i = path.get(`${role} ${entry}`);
+			const i = path.get(`${role} ${sec.key} ${entry}`);
 			if (i !== undefined)
 				return {
 					[`data-rail-${role}`]: "",
@@ -476,18 +928,17 @@ export function RunList({
 		}
 		return {};
 	};
-	const level = (folder: string): React.ReactNode => {
-		const folders = status.folders.filter((f) => parentOf(f) === folder);
-		const runs = status.runs.filter((r) => parentOf(r.dir) === folder);
+	const level = (sec: Section, folder: string): React.ReactNode => {
+		const folders = foldersIn(sec, folder);
+		const runs = runsIn(sec, folder);
 		return (
 			<>
-				{newFolder(folder)}
+				{sec.key === HOME ? newFolder(folder) : null}
 				{folders.map((f) => {
 					const open = opened.has(f);
-					const toggle = () =>
-						setOpened(open ? new Set([...opened].filter((x) => x !== f)) : new Set([...opened, f]));
+					const toggle = () => setOpened(open ? new Set([...opened].filter((x) => x !== f)) : new Set([...opened, f]));
 					return (
-						<li key={f} {...drop(f)} {...mark(f)}>
+						<li key={f} {...drop(f)} {...mark(sec, f)}>
 							<ContextMenu
 								{...drag(f)}
 								items={[
@@ -499,7 +950,11 @@ export function RunList({
 											setCreating(f);
 										},
 									},
-									{ icon: Pencil, label: "Rename", onSelect: () => setRenaming(f) },
+																		{ icon: Pencil, label: "Rename", onSelect: () => setRenaming({ section: sec.key, path: f }) },
+									...packAllItems(
+										status.runs.filter((r) => isWithin(r.dir, f)),
+										setError,
+									),
 									{ icon: Trash2, label: "Delete", onSelect: () => setDeleting(f), danger: true },
 								]}
 								className={cn(
@@ -507,7 +962,7 @@ export function RunList({
 									over === f && "bg-accent/15 ring-1 ring-accent",
 								)}
 							>
-								{renaming === f ? (
+								{isRenaming(sec, f) ? (
 									<span className="flex w-full items-center gap-1.5 pr-1 pl-2">
 										<Folder size={15} className="shrink-0 text-fg-secondary" />
 										<NameField initial={baseOf(f)} save={(name) => rename(f, name)} done={() => setRenaming(null)} />
@@ -523,7 +978,7 @@ export function RunList({
 										<Folder size={15} className="shrink-0 text-fg-secondary" />
 										<span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">{baseOf(f)}</span>
 										<span className="font-mono text-[11px] text-fg-muted tabular-nums opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-											{countIn(f)}
+											{countIn(sec, f)}
 										</span>
 										<ChevronRight
 											size={14}
@@ -536,66 +991,122 @@ export function RunList({
 								)}
 							</ContextMenu>
 							{/* the rail: a folder's contents hang off a line under its icon (app.css .ta-rail) */}
-							{open ? <ul className="ta-tree-reveal ta-rail mt-0.5">{level(f)}</ul> : null}
+							{open ? <ul className="ta-tree-reveal ta-rail mt-0.5">{level(sec, f)}</ul> : null}
 						</li>
 					);
 				})}
+				{studiesIn(sec, folder).map((x) => (
+					<li key={x.id} className="[--rail-mid:26px]" {...mark(sec, x.dir)}>
+						<ContextMenu
+							{...drag(x.dir)}
+							items={[
+								...(x.state === "running" || x.state === "checking"
+									? []
+									: [{ icon: Pencil, label: "Rename", onSelect: () => setRenaming({ section: sec.key, path: x.dir }) }]),
+								{ icon: FolderOpen, label: "Show folder", onSelect: () => void api().reveal(x.dir) },
+								...(x.state === "running" || x.state === "checking"
+									? []
+									: [{ icon: Trash2, label: "Delete", onSelect: () => setDeleting(x.dir), danger: true }]),
+							]}
+						>
+							{isRenaming(sec, x.dir) ? (
+								<span className="flex items-center py-2 pr-1 pl-1">
+									<NameField
+										initial={x.name}
+										suffix={baseOf(x.dir).slice(x.name.length)}
+										save={(name) => rename(x.dir, name)}
+										done={() => setRenaming(null)}
+									/>
+								</span>
+							) : (
+								<StudyEntry study={x} selected={entry === x.id} onClick={() => onSelect(x.id)} />
+							)}
+						</ContextMenu>
+					</li>
+				))}
 				{runs.map((r) => (
-					<li key={r.id} className="[--rail-mid:26px]" {...mark(r.dir)}>
+					<li key={r.id} className="[--rail-mid:26px]" {...mark(sec, r.dir)}>
 						<ContextMenu
 							{...drag(r.dir)}
 							items={[
 								...(r.state === "running"
 									? []
-									: [{ icon: Pencil, label: "Rename", onSelect: () => setRenaming(r.dir) }]),
-								{ icon: FolderOpen, label: "Show folder", onSelect: () => void api().reveal(r.dir) },
+									: [
+											{ icon: Pencil, label: "Rename", onSelect: () => setRenaming({ section: sec.key, path: r.dir }) },
+										]),
+																{ icon: FolderOpen, label: "Show folder", onSelect: () => void api().reveal(r.dir) },
+								...packItems(r, setError),
 								...(r.state === "running"
 									? []
 									: [{ icon: Trash2, label: "Delete", onSelect: () => setDeleting(r.dir), danger: true }]),
 							]}
 						>
-						{renaming === r.dir ? (
-							<span className="flex items-center gap-3 py-2 pr-3 pl-3">
-								<NameField
-									initial={r.name}
-									suffix={baseOf(r.dir).slice(r.name.length)}
-									save={(name) => rename(r.dir, name)}
-									done={() => setRenaming(null)}
-								/>
-							</span>
-						) : (
-						<button
-							type="button"
-							onClick={() => onSelect(r.id)}
-							aria-current={selected === r.id || undefined}
-							className={cn(
-								"flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 pl-3 text-left transition-colors",
-								selected === r.id ? "bg-surface-overlay" : "hover:bg-surface-overlay",
-							)}
-						>
-							<span
-								className={cn(
-									"h-2 w-2 shrink-0 rounded-full",
-									r.state === "running"
-										? "animate-pulse bg-accent"
-										: r.state === "failed"
-											? "bg-danger"
-											: r.state === "finished"
-												? inspected?.has(r.id)
-													? "bg-fg"
-													: "animate-pulse bg-green-500"
-												: "bg-yellow-400",
-								)}
-							/>
-							<span className="min-w-0 flex-1">
-								<span className="block truncate text-sm font-medium text-fg">{r.name}</span>
-								<span className="block truncate text-xs text-fg-muted">
-									{when(r.created)} · k {r.kmin}–{r.kmax} · {r.state}
+							{isRenaming(sec, r.dir) ? (
+								<span className="flex items-center py-2 pr-1 pl-1">
+									<NameField
+										initial={r.name}
+										suffix={baseOf(r.dir).slice(r.name.length)}
+										save={(name) => rename(r.dir, name)}
+										done={() => setRenaming(null)}
+									/>
 								</span>
-							</span>
-							<span className="font-mono text-xs text-fg-secondary tabular-nums">{n(r.total)}</span>
-						</button>
-						)}
+							) : (
+								<button
+									type="button"
+									onClick={() => onSelect(r.id)}
+									aria-current={selected === r.id || undefined}
+									className={cn(
+										"flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 pl-3 text-left transition-colors",
+										selected === r.id ? "bg-surface-overlay" : "hover:bg-surface-overlay",
+									)}
+								>
+									{/* the run's state in one colour; a find run (existence, not a count) wears a telescope for its dot */}
+									{(() => {
+										// [dot, telescope] for the run's state, written out so Tailwind sees every class
+										const [dot, ink] = r.queued
+											? ["border border-fg-muted", "text-fg-muted"]
+											: r.state === "running"
+												? ["animate-pulse bg-accent", "animate-pulse text-accent"]
+												: r.state === "failed"
+													? ["bg-danger", "text-danger"]
+													: r.state === "finished"
+														? inspected?.has(r.id)
+															? ["bg-fg", "text-fg"]
+															: ["animate-pulse bg-green-500", "animate-pulse text-green-500"]
+														: ["bg-yellow-400", "text-yellow-400"];
+										return r.options?.find ? (
+											<Telescope className={cn("-mx-1 h-4 w-4 shrink-0", ink)} aria-label="Existence search" />
+										) : (
+											<span className={cn("h-2 w-2 shrink-0 rounded-full", dot)} />
+										);
+									})()}
+									<span className="min-w-0 flex-1">
+										<span className="block truncate text-sm font-medium text-fg">{r.name}</span>
+										<span className="block truncate text-xs text-fg-muted">
+											{/* ordered by end: the end time, so the night's runs read in the order they ended */}
+											{order === "ended" && r.ended
+												? `Ended ${when(r.ended)}${r.options?.find ? "" : ` · k ${r.kmin}–${r.kmax}`}`
+												: r.options?.find
+													? `Existence · ${when(r.created)}`
+													: `${when(r.created)} · k ${r.kmin}–${r.kmax}`}
+											{r.state === "failed" ? " · failed" : ""}
+										</span>
+										{r.queued ? (
+											<span className="mt-1 block truncate text-xs text-fg-secondary">
+												{r.queued === 1 ? "Queued: next to start" : `Queued: #${r.queued}`}
+											</span>
+										) : r.state === "running" || r.state === "stopped" ? (
+											<Progress run={r} />
+										) : null}
+									</span>
+																		<PackMark run={r} />
+									{r.options?.find ? (
+										<FindMark run={r} />
+									) : (
+										<span className="font-mono text-xs text-fg-secondary tabular-nums">{n(r.total)}</span>
+									)}
+								</button>
+							)}
 						</ContextMenu>
 					</li>
 				))}
@@ -607,6 +1118,13 @@ export function RunList({
 		<div {...drop(status.root)} className={cn("flex min-h-full flex-col", over === status.root && "bg-accent/5")}>
 			<div className="flex items-center justify-between gap-2 px-5 pt-4 pb-1">
 				<span className="ta-label flex-1">Runs in the output folder</span>
+				<ActionMenu
+					label="Order the runs"
+					trigger={
+						<Button size="icon" variant="ghost" icon={ArrowDownUp} aria-label={`Order the runs: ${ORDERS.find((o) => o.key === order)!.label.toLowerCase()}`} />
+					}
+					items={ORDERS.map((o) => ({ label: o.label, icon: o.key === order ? Check : undefined, onSelect: () => setOrder(o.key) }))}
+				/>
 				{status.folders.length ? (
 					<Tooltip label={opened.size ? "Collapse all folders" : "Expand all folders"}>
 						<Button
@@ -618,6 +1136,15 @@ export function RunList({
 						/>
 					</Tooltip>
 				) : null}
+				<Tooltip label={`Output folder: ${status.root}. Change it…`}>
+					<Button
+						size="icon"
+						variant="ghost"
+						icon={HardDrive}
+						aria-label="Change the output folder"
+						onClick={() => void api().chooseRoot()}
+					/>
+				</Tooltip>
 				<Tooltip label="New folder">
 					<Button
 						size="icon"
@@ -629,25 +1156,105 @@ export function RunList({
 				</Tooltip>
 			</div>
 			{error ? <p className="px-5 py-1 text-xs text-danger">{error}</p> : null}
-			{status.runs.length || status.folders.length || creating ? (
+			{status.runs.length || status.folders.length || status.studies.length || creating ? (
 				<ul className="relative mx-2 my-2 space-y-0.5">
 					{/* the atlas's gliding hover (components/ui/hover-pill.tsx), over every row in the tree */}
 					<HoverPill />
-					{level(status.root)}
+					{SECTIONS.map((sec) => {
+						const count =
+							status.runs.filter(sec.keep).length + status.studies.filter((x) => studySection(x) === sec.key).length;
+						if (!count && !(sec.key === HOME && (foldersIn(sec, status.root).length || creating))) return null;
+						const open = !closed.has(sec.key);
+						return (
+							<li key={sec.key} className="pt-1">
+								<button
+									type="button"
+									onClick={() =>
+										setClosed(open ? new Set([...closed, sec.key]) : new Set([...closed].filter((x) => x !== sec.key)))
+									}
+									aria-expanded={open}
+									className="flex w-full cursor-pointer items-center gap-1.5 rounded-control px-2 py-1 text-left"
+								>
+									<ChevronRight
+										size={13}
+										className={cn(
+											"shrink-0 text-fg-muted transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none",
+											open && "rotate-90",
+										)}
+									/>
+									<span className="ta-label flex-1">{sec.label}</span>
+									<span className="font-mono text-[11px] text-fg-muted tabular-nums">{count}</span>
+								</button>
+								{open ? <ul className="mt-0.5 space-y-0.5">{level(sec, status.root)}</ul> : null}
+							</li>
+						);
+					})}
 				</ul>
 			) : (
 				<p className="px-5 py-6 text-sm text-fg-muted">No runs yet. Build a board and press Run search.</p>
 			)}
 			<DeleteModal
 				target={deleting}
-				runs={status.runs}
+				runs={fullRuns}
 				onClose={() => setDeleting(null)}
 				onDeleted={() => {
 					if (selected && deleting && isWithin(selected, deleting)) onSelect(null);
 					setDeleting(null);
 				}}
+				what={deleting && status.studies.some((x) => x.dir === deleting) ? "study" : undefined}
 			/>
 		</div>
+	);
+}
+
+/** A study in the run list: its state as an icon, its rows, and how far it has come. */
+function StudyEntry({ study: x, selected, onClick }: { study: StudySummary; selected: boolean; onClick: () => void }) {
+	const going = x.state === "running" || x.state === "checking";
+	const done = studyDone(x);
+	const share = x.state === "checking" ? x.checked / Math.max(1, x.rowCount) : done / Math.max(1, x.rowCount);
+	const found = x.tally.found ?? 0;
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			aria-current={selected || undefined}
+			className={cn(
+				"flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 pl-3 text-left transition-colors",
+				selected ? "bg-surface-overlay" : "hover:bg-surface-overlay",
+			)}
+		>
+			<Rows3
+				className={cn(
+					"-mx-1 h-4 w-4 shrink-0",
+					going ? "animate-pulse text-accent" : x.state === "paused" ? "text-yellow-400" : "text-fg",
+				)}
+				aria-label="Study"
+			/>
+			<span className="min-w-0 flex-1">
+				<span className="block truncate text-sm font-medium text-fg">{x.name}</span>
+				<span className="block truncate text-xs text-fg-muted">
+					Study · {n(x.rowCount)} row{x.rowCount === 1 ? "" : "s"} · k {x.kmin}–{x.kmax}
+				</span>
+				{x.state !== "done" ? (
+					<span className="mt-1 flex items-center gap-2 text-xs text-fg-secondary tabular-nums">
+						<span className="h-1 w-12 shrink-0 overflow-hidden rounded-full bg-surface-sunken">
+							<span className="block h-full bg-accent" style={{ width: `${share * 100}%` }} />
+						</span>
+						<span className="truncate">
+							{x.state === "checking"
+								? `checked ${n(x.checked)} of ${n(x.rowCount)}`
+								: `${n(done)} of ${n(x.rowCount)} rows done`}
+						</span>
+					</span>
+				) : null}
+			</span>
+			<Tooltip label={`${n(found)} row${found === 1 ? "" : "s"} with tilings`}>
+				<span className="flex items-center gap-1 font-mono text-xs text-fg-secondary tabular-nums">
+					<Check className="h-3.5 w-3.5 text-success" />
+					{n(found)}
+				</span>
+			</Tooltip>
+		</button>
 	);
 }
 
@@ -655,31 +1262,34 @@ export function RunView({
 	run,
 	status,
 	options,
+	cores,
 	onEdit,
 	onSelect,
 }: {
 	run: Run;
 	status: Status;
 	options: RunOptions;
+	cores: number;
 	onEdit: (board: string) => void;
 	onSelect: (id: string | null) => void;
 }) {
 	const [tab, setTab] = useState("Tilings");
 	const [deleting, setDeleting] = useState(false);
-	// Improve (a higher k) or Run again (the same k): both open the same modal
+	// Raise k or Run again (the same k): both open the same modal
 	const [improving, setImproving] = useState<"improve" | "again" | null>(null);
 	const [group, setGroup] = useState<Group | null>(null);
 	const [error, setError] = useState("");
 	const running = run.state === "running";
+	const finding = !!run.options?.find;
 	const shown = resolveGroup(run, group);
 	const shownK = shown && shown.k !== "all" ? shown.k : null;
 	return (
-		<div className="flex h-full flex-col gap-5 overflow-y-auto p-6">
+		<div className="flex h-full flex-col gap-4 overflow-y-auto p-5">
 			<div className="flex flex-wrap items-start gap-3">
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
 						<h1 className="truncate text-xl font-semibold text-fg">{run.name}</h1>
-						<Badge tone={TONE[run.state]}>{run.state}</Badge>
+						<Badge tone={TONE[run.state]}>{stateLabel(run)}</Badge>
 						{run.stats ? (
 							<InfoDot side="bottom" label="What the engine reported">
 								{run.stats}
@@ -691,10 +1301,27 @@ export function RunView({
 							{error || run.note}
 						</p>
 					) : null}
+					{run.options?.raise && !finding && !run.capped ? (
+						<p className="mt-1.5 flex items-center gap-2 text-sm text-fg-secondary">
+							<ChevronsUp className="h-4 w-4 shrink-0 text-accent" />
+							<span className="min-w-0">
+								{run.raised
+									? `Raised by its rule: the run to k = ${run.kmax + 1} replaces this one when it finishes.`
+									: run.state === "finished" && run.note.includes("Stopped raising")
+										? run.note.slice(run.note.indexOf("Stopped raising"))
+										: `Raises k by itself ${describeRaise(run.options.raise)}.`}
+							</span>
+							{!run.raised && run.state !== "finished" ? (
+								<Button size="sm" variant="ghost" label="Stop raising" onClick={() => void api().setRaise(run.id, null)} />
+							) : null}
+						</p>
+					) : null}
 				</div>
 				<div className="flex gap-2">
 					{running ? (
 						<Button size="sm" variant="danger" icon={Square} label="Stop" onClick={() => void api().stop(run.id)} />
+					) : run.queued ? (
+						<Button size="sm" icon={Square} label="Leave the queue" onClick={() => void api().stop(run.id)} />
 					) : run.state !== "finished" ? (
 						<Button
 							size="sm"
@@ -702,16 +1329,25 @@ export function RunView({
 							icon={Play}
 							label="Resume"
 							onClick={async () =>
-								setError((await api().resume(run.id, { ...options, k: run.options?.k, rule: run.options?.rule })).error ?? "")
+								setError(
+									(
+										await api().resume(run.id, {
+											...options,
+											k: run.options?.k,
+											rule: run.options?.rule,
+											...(run.options?.raise ? { raise: run.options.raise } : {}),
+										})
+									).error ?? "",
+								)
 							}
 						/>
 					) : null}
-					{run.state === "finished" ? (
+					{run.state === "finished" && !finding ? (
 						<Button
 							size="sm"
 							variant="primary"
 							icon={ChevronsUp}
-							label="Improve"
+							label="Raise k"
 							onClick={() => setImproving("improve")}
 						/>
 					) : null}
@@ -725,17 +1361,15 @@ export function RunView({
 						// under the run's name, which a rename may have changed; a board name is one word
 						onClick={() => onEdit(serialize({ ...parse(run.board).board, name: run.name.trim().replace(/\s+/g, "_") }))}
 					/>
-					<Button size="sm" icon={FolderOpen} label="Show folder" onClick={() => void api().reveal(run.dir)} />
-					<Tooltip label="Delete the run and its folder">
-						<Button
-							size="icon"
-							variant="danger"
-							icon={Trash2}
-							aria-label="Delete run"
-							disabled={running}
-							onClick={() => setDeleting(true)}
-						/>
-					</Tooltip>
+					<ActionMenu
+						label="More actions"
+						className="h-8 w-8"
+						items={[
+							{ label: "Show folder", icon: FolderOpen, onSelect: () => void api().reveal(run.dir) },
+														...packItems(run, setError),
+							{ label: "Delete run", icon: Trash2, danger: true, disabled: running, onSelect: () => setDeleting(true) },
+						]}
+					/>
 				</div>
 			</div>
 			{improving ? (
@@ -743,6 +1377,7 @@ export function RunView({
 					run={run}
 					status={status}
 					options={options}
+					cores={cores}
 					again={improving === "again"}
 					onClose={() => setImproving(null)}
 					onStarted={onSelect}
@@ -755,19 +1390,21 @@ export function RunView({
 				onDeleted={() => (setDeleting(false), onSelect(null))}
 			/>
 
-			<RunOverview
-				run={run}
-				k={shownK}
-				onPick={(k) => {
-					setGroup(groupOfK(run, k, shown?.edges));
-					setTab("Tilings");
-				}}
-			/>
+			{finding ? (
+				<FindOverview run={run} />
+			) : (
+				<RunOverview
+					run={run}
+					k={shownK}
+					onPick={(k) => {
+						setGroup(groupOfK(run, k, shown?.edges));
+						setTab("Tilings");
+					}}
+				/>
+			)}
 
-			<section
-				className="shrink-0 overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm"
-				style={{ height: "clamp(480px, calc(100vh - 120px), 780px)" }}
-			>
+			{/* the rest of the page: the tilings start on the first screen, and a short window scrolls the page instead */}
+			<section className="flex min-h-[400px] flex-1 flex-col overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm">
 				<Tabs
 					value={tab}
 					onValueChange={setTab}
@@ -813,6 +1450,9 @@ export function RunView({
 
 /** The certificate files by k, each with its size against the largest; a row opens its tilings. */
 function Files({ run, group, onOpen }: { run: Run; group: Group | null; onOpen: (f: OutFile) => void }) {
+	// counted while the tab is open: again when the files grow, which they do only while the run is going
+	const size = run.files.reduce((t, f) => t + f.bytes, 0);
+	useEffect(() => void api().countFiles(run.id), [run.id, size]);
 	if (!run.files.length)
 		return (
 			<div className="flex h-full items-center justify-center p-8 text-sm text-fg-muted">
@@ -828,16 +1468,25 @@ function Files({ run, group, onOpen }: { run: Run; group: Group | null; onOpen: 
 			<table className="w-full text-sm">
 				<thead className="sticky top-0 z-10 bg-surface-raised">
 					<tr className="text-left">
-						{["Corners", "Edge orbits", "Orientable", "Size"].map((h, i) => (
+						{["Corners", "Edge orbits", "Orientable", "Tilings", "Size"].map((h, i) => (
 							<th
 								key={h}
 								className={cn(
 									"ta-label border-b border-line-subtle py-2.5 font-medium",
 									i ? "px-3" : "pr-3 pl-5",
-									i === 3 && "w-[34%]",
+									i === 3 && "text-right",
+									i === 4 && "w-[30%]",
 								)}
 							>
-								{h}
+								<span className="inline-flex items-center gap-1.5">
+									{h}
+									{i === 0 ? (
+										<InfoDot side="bottom" label="The highlighted files">
+											A blue edge marks the files the Tilings tab is showing: those of the k and edge orbits picked
+											there. Click a file to show its tilings.
+										</InfoDot>
+									) : null}
+								</span>
 							</th>
 						))}
 					</tr>
@@ -849,12 +1498,15 @@ function Files({ run, group, onOpen }: { run: Run; group: Group | null; onOpen: 
 						<tbody key={k}>
 							<tr>
 								<th
-									colSpan={4}
+									colSpan={5}
 									className="bg-surface-sunken/50 py-1.5 pr-3 pl-5 text-left text-xs font-normal text-fg-muted"
 								>
 									<span className="font-mono font-medium text-fg">k = {k}</span>
 									<span className="ml-2 tabular-nums">
 										{fs.length} file{fs.length === 1 ? "" : "s"}, {bytes(fs.reduce((t, f) => t + f.bytes, 0))}
+										{fs.every((f) => f.tilings !== null)
+											? `, ${n(fs.reduce((t, f) => t + f.tilings!, 0))} tilings`
+											: ""}
 									</span>
 								</th>
 							</tr>
@@ -881,6 +1533,9 @@ function Files({ run, group, onOpen }: { run: Run; group: Group | null; onOpen: 
 										<td className="px-3 py-1.5 font-mono text-[13px] tabular-nums">{f.edges}</td>
 										<td className="px-3 py-1.5 text-fg-secondary">
 											{f.orientable ? <Check size={14} aria-label="orientable" /> : null}
+										</td>
+										<td className="px-3 py-1.5 text-right font-mono text-[13px] tabular-nums">
+											{f.tilings === null ? <span className="text-fg-muted">…</span> : n(f.tilings)}
 										</td>
 										<td className="px-3 py-1.5">
 											<div className="flex items-center gap-3">

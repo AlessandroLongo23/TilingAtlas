@@ -1,0 +1,86 @@
+# Star study: every combination of the four 12-pointed stars (tips 30, 60, 90, 120), with regular polygons.
+# Each row allows the regular polygons and its stars, and requires each of its stars.
+
+name a12_stars
+k 1 8
+
+angle A3 60
+angle A4 90
+angle A6 120
+angle A12 150
+angle A12p30 30
+angle A12d30 300
+angle A12p60 60
+angle A12d60 270
+angle A12p90 90
+angle A12d90 240
+angle A12p120 120
+angle A12d120 210
+
+face A3 x 3
+face A4 x 4
+face A6 x 6
+face A12 x 12
+optional A12p30 A12d30 x 12
+optional A12p60 A12d60 x 12
+optional A12p90 A12d90 x 12
+optional A12p120 A12d120 x 12
+
+vertex A12 A12d120
+vertex A12d30 A12p60
+vertex A12d60 A12p90
+vertex A12d90 A12p120
+vertex A3 A12d30
+vertex A4 A12d60
+vertex A6 A12d90
+vertex A3 A12 A12
+vertex A3 A12p30 A12d60
+vertex A3 A12p60 A12d90
+vertex A3 A12p90 A12d120
+vertex A3 A3 A12d90
+vertex A3 A4 A12d120
+vertex A4 A12 A12p120
+vertex A4 A6 A12
+vertex A6 A6 A12p120
+vertex A6 A6 A6
+vertex A3 A3 A12 A12p90
+vertex A3 A3 A12p120 A12p120
+vertex A3 A3 A12p30 A12d120
+vertex A3 A3 A4 A12
+vertex A3 A3 A6 A12p120
+vertex A3 A3 A6 A6
+vertex A3 A4 A12 A12p60
+vertex A3 A4 A12p90 A12p120
+vertex A3 A4 A4 A12p120
+vertex A3 A4 A4 A6
+vertex A3 A4 A6 A12p90
+vertex A3 A6 A12p90 A12p90
+vertex A4 A4 A12p60 A12p120
+vertex A4 A4 A12p90 A12p90
+vertex A4 A4 A4 A12p90
+vertex A4 A4 A4 A4
+vertex A4 A4 A6 A12p60
+vertex A3 A3 A3 A12 A12p30
+vertex A3 A3 A3 A12p60 A12p120
+vertex A3 A3 A3 A12p90 A12p90
+vertex A3 A3 A3 A3 A12p120
+vertex A3 A3 A3 A3 A6
+vertex A3 A3 A3 A4 A12p90
+vertex A3 A3 A3 A4 A4
+vertex A3 A3 A3 A6 A12p60
+vertex A3 A3 A4 A12p30 A12p120
+vertex A3 A3 A4 A12p60 A12p90
+vertex A3 A3 A4 A4 A12p60
+vertex A3 A3 A4 A6 A12p30
+vertex A3 A4 A4 A12p60 A12p60
+vertex A3 A3 A3 A3 A12p30 A12p90
+vertex A3 A3 A3 A3 A12p60 A12p60
+vertex A3 A3 A3 A3 A3 A12p60
+vertex A3 A3 A3 A3 A3 A3
+vertex A3 A3 A3 A3 A4 A12p30
+vertex A3 A3 A3 A4 A12p30 A12p60
+vertex A3 A3 A4 A12p30 A12p60 A12p60
+vertex A3 A3 A3 A3 A12p30 A12p30 A12p60
+vertex A3 A3 A3 A3 A3 A12p30 A12p30
+
+permutations yes

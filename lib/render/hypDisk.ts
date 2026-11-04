@@ -81,9 +81,10 @@ export function diskStyle(
 		scaffold: mode === "edges" && s.freedrawScaffold,
 		colorsMode: mode === "colors",
 		faceHue: mode === "tiling" && !!tiling.faceHue,
+		// a colouring keeps its light-theme colours in the dark theme: they are the picture, not the chrome
 		palette:
 			mode === "colors"
-				? paletteRgb255(tiling.colors ?? 1, s.colorsPalette, dark).map(
+				? paletteRgb255(tiling.colors ?? 1, s.colorsPalette, false).map(
 						([r, g, b]) => [r / 255, g / 255, b / 255] as [number, number, number],
 					)
 				: undefined,

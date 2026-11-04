@@ -20260,3 +20260,737 @@ go and drives closure to rounding; on failure the circle-pattern picture stays. 
 one, 56 of 60 keep their share of reflex corners within 2%, 3 fall back to convex, 1 fails to draw.
 3.4.6.4 raised to 3.4.7.4 comes out with edges equal to within 0.003, the regular tiling up to that
 compromise between angle and length targets. Tests: `dsymFromMap.test.ts` pins n0003 and n0186.
+
+## The Tiling Searcher picks its rule by probing, not by trial searches (2026-10-30, CC)
+
+The minutes before a run's first root were mostly waste. Profiled (experiments/results/tilesearch-preprocess-profile-2026-10-30.log):
+3^7 (bubble, k <= 5) waited 312 s, 299 of them in a round of k <= 4 trials that went past the budget and was
+thrown away whole; Board_0_931302 (k <= 5) waited 501 s, 150 in another discarded round and 344 in counting
+the ranking's depth-3 trees exactly. The trials' budget counted nodes, and a face-rule node there cost 6x a
+fewest-options one. Worse, the trials' carried growth picked the wrong rule: on the 2026-10-28 benchmark
+Auto came within 48% of the best rule in total (6.5x on glider k <= 6).
+
+Now `plan()` probes each (start set, rule) way at the run's own kmax with Knuth's estimator, the one
+tileestimate reports with (est::Sampler, moved from tileestimate.cpp into tilesearch.cpp), and keeps the least
+estimated CPU time. Each way gets 2% of the best estimate on the run's threads, 0.1-1.5 s; a way 8x behind is
+dropped. The ranking estimates the same depth-3 trees by probes. The rule is written to `rule` in the run
+folder: --resume and tileestimate beside a running run read it and plan nothing (they used to run the whole
+trial phase again, the estimator on every core at once, and could settle on the other rule).
+
+Measured: probes picked within 3% of the best rule over 21 benchmark boards with both rules timed
+(tilesearch-probe-rule-2026-10-30.log). Old against new engine, 20 boards run to the end: the same tilings on
+all 20, 448 s -> 318 s in total under heavy load (tilesearch-old-vs-new-2026-10-30.log); search nodes with the
+probe ranking within 5% of the exact ranking's at the same rule. Before the first root: 3^7 312 s -> 3.8 s,
+Board_0_931302 501 s -> 3.7 s. On Board_0_931302 the probes pick the face rule, which the trials had ruled
+out: its k <= 4 count is 19,031 as before, and the k <= 5 search runs at ~2.9 us a node for 1.27e9 nodes,
+about 3,700 CPU s against ~100,000 for the fewest-options run. Engine sources: 52 lines fewer.
+
+⚑ Still open: choosing the rule per ROOT. Each root's subtree can take either rule (the rule orders a
+subtree's branching, never what it finds). Estimated on 8 boards with both rules on one recorded order,
+choosing on one seed and scoring on another: 32-75% less time on 5, 6-7% more on 2, and much more on blob,
+where one seed's per-root numbers were wrong (tilesearch-per-root-rule-2026-10-30.log). It needs a margin
+before a root leaves the global rule, probes after the ranking, per-root rules recorded for resume (units
+are numbered by rule), and real runs to prove it.
+
+## 2026-10-30 — `require face` lines prune (tilesearch)
+
+A `require face` line was a filter on finished tilings only: the search ran as without it. Now
+`required_sets` also adds, per face line, the vertex set of every line holding a corner of one of its faces
+(Pi and edge corners aside, the rule of the app's unused `verticesOfFace`, now deleted). A tiling holding one
+of the faces has a vertex in that set, so the set is a sound start set and prunes on the k budget like a
+`require` line; the face check stays, so output is unchanged. For stars (corners their own) the set is
+exact; for the bubble hexagons (shared corners) it is weaker. A set of every line is left out (bubble all_6).
+Resume: a run whose order.txt predates the sets resumes on that order (recorded_order's fallback); checked by
+killing an old-engine run after 149 of 497 roots and finishing it with the new one: census identical.
+
+Measured (tilesearch-face-sets-2026-10-30.log): the same tilings on all 27 runs that finished. Star boards at
+k <= 7: 2.5-19x fewer nodes, 1.7-4x faster; at the k their runs reached, A3p30,A6p60,A6p90 k <= 10 48.9 s ->
+5.3 s (21x fewer nodes), A3p30,A4p30,A4p60 k <= 9 49.2 s -> 24.4 s. bubble 3,4,6,12 k <= 3 24.8 s -> 7.5 s.
+Colourings gain least (sets cover 90%+ of lines). Small runs pay up to ~1.8 s more planning: each new set is
+one more start set to probe.
+
+## Per-root branching measured on real runs: not shipped (2026-10-30, CC)
+
+Answers the ⚑ in "picks its rule by probing". `TILESEARCH_PER_ROOT=1` (opt-in, off by default) was run against
+the plan's one rule on 38 boards, every geometry and type, A B A B, CPU seconds, 8 threads
+(experiments/results/tilesearch-per-root-bench-2026-10-30.log, second section). Tilings identical on all 35
+boards that finished. Total CPU +2.3% (12 boards with no root switched +0.5%, the probe's cost; 23 with roots
+switched +3.1%). Wins are real (star A12p90,A12p120 -47%, mixed A12a60 -37%, glider5 -28%, hybrid -18%,
+scaled B6,C4 -17%) but so are losses the estimate did not see: mixed A6p30 +140% (nodes 10.8M -> 38M, estimate
+promised -6%), shape house +23%, regular 3,4 +11% (estimate promised 354 s -> 124 s). The per-root estimate
+is too unreliable to act on. A gate on the predicted gain fitted to this table would need a fresh board set to
+validate; not attempted. Per-root stays opt-in.
+
+The benchmark caught a plan bug instead: on star 45degree k <= 14 one plan in four picked face (killed at
+300 s; fewest finishes in 20 s). Face's probe estimate there swings 6.8 s to 2,030 s run to run. A way dropped
+as "8x behind" after two rounds was never reconsidered, so one lucky early draw for face dropped fewest for
+good. Fix: the final pick compares every way's latest estimate, dropped ones included (dropping still stops
+their probing). Plan accuracy, 21 boards with both rules timed: 19/21 right, +4% over the best, worst 2.05x
+(before: 33/42, +7%, worst 3.20x). hyp tiling 0.931302's row is a benchmark error (its run folder was
+replaced mid-session), not an engine failure; its plan picks face 8/8.
+
+## The plan ranks every way before probing it (2026-10-30, CC)
+
+Identical runs of a multi-start-set board varied 7-15x (A12p60,A12p90 k <= 13: 33 s and 498 s CPU, same rule).
+Cause: plan() probed each start set on the board's root order and ranked only the winner, so it compared
+searches no run does (ranking can cut a search to a few % of its nodes, by different amounts per set); and
+with the estimate ~1 s against a true 45-600 s, each set got the 0.1 s minimum of probing, a lottery on a heavy
+tail. Ground truth, each set forced (tilesearch-start-set-truth-2026-10-30.log): A12p30,A12p60,A12p120 k <= 12
+set 1 599 s, set 2 307 s, set 3 49 s CPU; the old plan picked set 1 in 5 of 6 plans. A12p60,A12p90 k <= 13 set 1
+550 s, set 2 35 s.
+
+Fix: each way (start set x rule) gets its own tables, ranked under its own rule, before probing; the pick hands
+its ranked order to the run. Now set 3 5/5 and set 2 4/4, one root order each (plan-variance log), and the
+estimates land near the truth (set 1 260-2,260 s against 599 s; before 0.4-16 s). Cost: ranking per way. Planning
+0.9 -> 2.9 s on the A12 board, 3.3 -> 15 s on 1247_1_0612 (same pick, so nothing gained there), unchanged on
+123_1_4657 (ranking hits RANK_MAX). On the 21 single-set boards of plan_accuracy: 17/21 against 19/21, +8%
+against +4%; the four flips are near-ties or under 2 s. Open: the per-way ranking cost on big single-set boards.
+
+Related measurements the same day (experiments/results/): 52% of board vertex lines appear in no tiling across
+73 finished runs (vertex-usage), and 38% of used lines first appear at the run's top k, so dead lines cannot be
+learned from small k. Removing them (an oracle) cuts star boards 62-99% CPU (dead-lines-oracle); the engine's
+sound --prune-balance reaches -85/-90% on the two A12 boards but its setup does not scale (star24full: 18+ min
+single-threaded; the balance owner is on it). Search-node outcomes (tileestimate --outcomes, scratchpad build):
+68-99.98% of nodes lie in subtrees that find nothing; repeats (mostly non-minimal quotients) are at most ~30%.
+Raise k redoes the work below the old k; only 7-34% of nodes never touch the k budget, so caching it saves little.
+
+## Dead vertex lines: what the adjacency graph can and cannot prove (2026-10-30, CC)
+
+The vertex-configuration adjacency graph is already used twice: locally (candidate lists; and now `local_dead()`
+in tilesearch.cpp: a type every branch of whose whole-alphabet tree hits a contradiction within D vertices is in
+no tiling at any k) and globally (balance.h: a positive circulation of half-edge types). local_dead at D=4 proved
+1,966 lines dead over 74 finished runs, none used (local-death-2026-10-30.log); the balance owner is iterating both
+to a fixpoint behind --prune-balance. Real gains are modest: A12 three-star k <= 12 -24% CPU (balance -42%),
+A12p60,A12p90 k <= 13 -20% (balance -17%), against -98% for removing every never-used line (an oracle).
+
+Why the gap: the never-used lines the tests miss are NOT dead. On A12 three-star, every one of the 88 types left
+after local death closes into a tiling with <= 12 orbits (a whole-alphabet search per type, 1.9M nodes in all).
+They are absent only because the board `require`s the stars: they cannot share a tiling with one. Raising the
+local radius from 4 to 12 kills nothing more. Proving the co-occurrence directly (search from t, closures counted
+only with the required sets) did not finish ONE type in 2.5 min where the whole run takes ~60 s: without the root
+order's exclusions a single type's tree is bigger than the run. So no k-specific per-type test pays here; what is
+left is learning failed partial patterns during the search itself (68-99.98% of nodes lie in subtrees that find
+nothing, tileestimate --outcomes), which is open.
+
+## Barren subtrees: what kills them, and what a memo could save (2026-10-30, CC)
+
+Measured with a scratchpad tileestimate (--outcomes; experiments/results/barren-subtrees-2026-10-30.log). Barren
+(no tiling below): 94% of nodes on star 45degree k <= 14, 99.98% on scaled B4,C6 k <= 10, 91% on spear k <= 7, 56%
+on regular 3,4 k <= 10. By the filter that empties the last move list: face-check contradictions 30-70% of nodes,
+the k budget 5-53%, the required-set budget and rejected closures 0-6% (B4,C6), the root order ~0.
+
+Tried and dropped: a closing check (with no room left, the free half-edges need a perfect matching of pairs that
+pass try_joining's tests). Sound (face checks only tighten as edges are added; 0 cuts above a tiling), but in the
+engine it cut 1% of spear's nodes, not the 51% the walk first reported: almost every cut point was a node that
+dies at the next step anyway, so cutting it saves nothing, and the check cost more than it saved (old vs new:
+same tilings on 13 boards, slower; closing-check-2026-10-30.log). Removed. The k-budget barrenness is breadth
+(many last vertices tried, each dying at once), not depth.
+
+Memo of barren states. Keyed on the open boundary (k, flat, the free half-edges' labels): boundaries recur, but
+30-49% of barren nodes sit under boundaries also seen fruitful, so as a nogood it would lose tilings: the
+interior matters. Keyed on the whole partial tiling (colour refinement, 6 rounds, + k, flat, root): repeats of a
+never-fruitful state cover 28% of nodes on 45degree, 12% on regular 3,4, 7% on spear, 0.3% on B4,C6; equal keys
+with different outcomes 7.8% / 0.3% / 0.1% / 0, which isomorphic states cannot do, so those are hash collisions.
+A sound transposition table needs an exact canonical form of partial tilings; its ceiling on these boards is
+0-28% of nodes, before the cost of hashing every node.
+
+## The plan's estimate ignored the roots it had not reached (2026-10-30, CC)
+
+1247_1_0612 k <= 2: fewest takes 7.57M nodes / 200 s CPU, face 0.68M / 15 s, yet the plan picked fewest (at 4
+threads every time, at 8 threads 2 of 3). Its fewest estimate was ~5e3 nodes with a standard error of 0. Two
+causes in est::Sampler: a root never probed added 0 to the totals, and the first pass walked the roots in their
+order, which the plan now ranks cheapest first; on a board of 1,478 root types the short plan budget reached only
+the cheap ones. Fix: the first pass walks a fixed shuffled order, and totals() treats the probed roots as a random
+sample, scaling up and adding the between-root sampling variance (finite-population corrected). Now face 6/6 at 4
+and 8 threads; estimates fewest 4e6-3.5e7 nodes (truth 7.57M), face 4.8e5-1.1e6 (truth 6.8e5). Unchanged elsewhere:
+plan_accuracy 17/21 (+8%), A12 three-star still set 3, one order. The plan line now prints each way's CPU +- its
+standard error.
+
+Same session: rank_roots' cap is CPU seconds summed over its threads (was wall time, which under load tripped on
+some runs and not others, leaving the board's order); local_dead got a 2 s clock checked every 16 nodes and before
+each type (a6mix, 2,118 lines: ~200 s -> ~5 s per call).
+
+## Doomed subtrees: what a cheap test can catch, and what it costs (2026-10-31, CC)
+
+Experiment harness: experiments/doomed_subtrees.cpp (the engine's own tree, est::Node, one mode per idea). Results
+in experiments/results/doomed-subtrees-, sound-cuts-, sound-cuts-bz2-, transposition-table-2026-10-31.log. Every
+mode is checked by the same unique count as the bare walk.
+
+How doomed subtrees look. The large barren subtrees are deep: maximal barren subtrees of >= 32 nodes hold 56% of
+spear k <= 7's nodes, 90% of 45degree k <= 14's, with heights of 4-13 (spear) and up to 40 glue steps (45degree).
+Lifting k by 4: on spear 46 of those 56 points then reach a closure (the k budget dooms them), on B4,C6 49 of 67;
+on 45degree only 3 of 90 (geometry dooms them). So failure is fixed early and found late, by budget or by shape.
+
+Tried and dropped:
+- One-step lookahead (a free half-edge whose every move leaves a half-edge with no move). Sound, cuts 28-86% of
+  nodes, costs 8-22x CPU (45degree 25 s -> 561 s). Limited to depth <= 6 it barely fires. An incremental version
+  (only the half-edges near the last glue) still 5x. Inherent: each trial move costs about a node.
+- Counting invariants (+-1 on the bipartite components of the half-edge glue graph: a closed tiling sums to 0).
+  Never binding on spear or 3,4: the budget always exceeded what any invariant needed. The doom is not counting.
+- Fail first counting with the budgets (mode 6): reorders the branching; 3,4 +21% nodes.
+- dom/wdeg branching (failure-weighted half-edges, Boussemart et al. 2004): any weight hurt (spear +46% nodes at
+  weight 1, +22% at 0.1); as a tie-break only, -1.3%.
+- Exact transposition table (canonical BFS word of the partial tiling, skip any repeat within a root, keyed to
+  depth D): sound; -3% to -37% nodes but CPU from -13% to +46% (house,spear at D = 6). Not robust, and in the
+  engine it would have to live in each root's head unit. Not shipped.
+- Exact face letters in the ring test: no gain over lengths alone (spear 204,829 vs 204,996 nodes).
+
+Shipped (tilesearch.cpp):
+- Open faces must close (`faces_close`, `ring_check`): an open face's missing corners must be fillable by a chain
+  of half-edge classes passing try_joining's label tests; reachability per (start class, length, end class),
+  cached per thread; only the faces the last glue changed are checked. On with the face rule, off with fail
+  first (TILESEARCH_RING forces it). The plan cannot choose it by probing: its savings lie deep, where probes
+  rarely go (A6p30: probes put the face rule at 1.1M nodes, truth 17.9M, and saw only the check's cost). In the
+  engine, face rule on vs off: A6p30 -81% CPU, B4,C6 -46%, 3-stars -96% nodes, worst 1247 +2%, hyperbolic
+  colorings +7%, freedraw +8%; fail first on vs off: 1247 +39%, B4,C6 +21%.
+- The budgets inside fail first (`Budget` in choose_halfedge): with k spent, the flat budget spent or a required
+  set missing, a half-edge whose counted options are all new vertices the budgets refuse ends the node. Free
+  where it does not bind: 45degree -25%, B3p30 -43%, A12p60,A12p90 -34%, A3p30,A6p60 -41%, B6p30 -33%, spear +5%.
+  Together with the ring test: 45degree -34%, B3p30 -51%, A3p30,A6p60 -44%.
+- Soundness in the engine: sound-cuts-engine-2026-10-31.log, every board under face and fewest with the ring
+  check off and on, against the engine before the cuts: same tilings on every board that finished (examples
+  1-9 incl. both hyperbolic, 1247 (apeirogons), squares_edges, hybrid_2_9830, three hyperbolic runs, spear,
+  45degree, B3p30, A6p30, B4,C6, A3p30,A6p60, colorings, freedraw): 24 boards, 0 different (123_1_4657 k <= 3
+  finished under no rule in 300 s). tileestimate --exact matches the engine with both cuts.
+- Installed engine vs new, each with its own plan (tilesearch-cuts-final-2026-10-31.log, wall s, 4 threads, same
+  tilings on all 10): A6p30 22.0 -> 3.4, 45degree 10.2 -> 1.4 (the plan now takes the face rule with the check),
+  B3p30 15.4 -> 9.7, B4,C6 4.4 -> 3.0, A3p30,A6p60 4.4 -> 3.2, freedraw 13.7 -> 9.6, 1247 20.4 -> 16.8; spear,
+  3-stars, hyperbolic colorings equal.
+
+The per-root branching rule was deleted the same session (68 lines; 10 boards same tilings,
+tilesearch-per-root-removed-2026-10-31.log). Plan noise to know about: on a board with several start sets, a
+harness that plans without the cuts and runs with them picked the 21-line or the 25-line set from run to run
+(B6p30: 3.3M vs 10.1M nodes); the engine's plan probes with its cuts, so this does not apply to it.
+
+## Five more leads on the searcher: what each one gave (2026-10-31 evening, CC)
+
+Benchmark: nine boards at 10 s to 60 s each (A6p30 k <= 18, spear k <= 9, 45degree k <= 20, B4,C6 k <= 12,
+A3p30,A6p60 k <= 11, hyperbolic colorings k <= 3, B3p30 k <= 14, 1247_1_0612 k <= 2, freedraw 3,4,6 k <= 3), 4
+threads, each build's own plan, compared by instructions retired (/usr/bin/time -l): the machine ran two app searches
+of 20 threads throughout (load 40-55), which moved wall and CPU seconds by up to 2x and instructions by a few %.
+Log: experiments/results/searcher-optimizations-2026-10-31.log (experiments/searcher_bench.py). Same tilings in
+every run.
+
+1. Repeats. A tiling is found ~7x on average (complete/unique over 59 logged runs, up to 15x). Split with an
+   instrumented build: almost all of it is non-minimal quotients (45degree: 24,073 covers, 2 true repeats), which a
+   partial tiling cannot reveal. True repeats come from the root: root types with symmetric words (2-, 4-, 6-,
+   12-fold; 1247 finds 3,921 of its 4,630 tilings twice with one root-type vertex each), and tilings with several
+   vertices of the root's type (A6p30: 3 to 12). Shipped `RootSyms`: a node is cut when the root's glued neighbours,
+   read in half-edge order as (type, orbit of the partner half-edge), read greater than through one of the root
+   template's symmetries, or when another vertex of the root's type reads less than the root every way it can be
+   placed (positions decided; a free half-edge leaves it undecided). Sound: the least reading of a tiling's least
+   root-type vertex is never cut, and the search finds every tiling from every placement. A6p30 k <= 18 -56%
+   instructions (25.6M -> 8.7M nodes), B4,C6 -25% nodes, spear and A3p30,A6p60 -8%. TILESEARCH_SYMBREAK=0 turns it
+   off; the units file records it (a run from before resumes without it; tested).
+2. A stronger budget test. Dropped. With no vertex left to add, the free half-edges must pair off: a perfect
+   matching in the can-join graph. Generalised: a maximum matching leaves at most (vertices left x valence) unpaired.
+   Measured (blossom matching at every node): spear k <= 7 under fewest options would cut 3.6% of nodes; boards with
+   flat vertex lines never, since the flat budget makes the bound slack. Not worth an O(n^2) test per node.
+3. Backjumping. Dropped. A harness (single thread) tracked a conflict set per failure (the glues the face walks read,
+   the decisions that used up compatible partners, every vertex added where a budget refused) and skipped siblings as
+   CBJ does: -0.3% (spear), 0% (45degree), -3% (B3p30) nodes under fewest options at +14-20% CPU. And those sets
+   were too small: B4,C6 k <= 8 lost a tiling. A free half-edge's labels come from the decision that added its
+   vertex, and another choice there could have offered a partner, so a sound set holds nearly every vertex added.
+   In the quotient any free half-edge can join any other: failures have no locality to jump over.
+4. The plan. Its estimates were close on these boards (chosen way vs actual CPU: spear 42 s vs 33 s, B4,C6 37 vs
+   33, hyperbolic colorings 49 vs 47); its cost was not. Ranking a fewest-options way (whole-alphabet trees 3 deep)
+   was most of the run where the face rule wins: freedraw 9.2 s of 11.7 s, 1247 10.7 s of 15.5 s. Now the face ways
+   are ranked and probed first, and a fewest way's ranking is capped at max(RANK_SHARE x the best face estimate,
+   RANK_FLOOR s a thread) of CPU, the way dropped past it ("ranking past its cap, dropped"). The probes' moves come
+   from the context cache like the search's (they pushed and face-tested every candidate), which also gives both
+   rules' probes the same cache costs: fewest options was priced against a cold cache and the face rule not, and
+   spear k <= 8 went to the face rule (82G vs 62G instructions). 1247 -78% instructions, freedraw -32%.
+   Tried and removed: probing on while the two cheapest ways are within twice their joint standard error. Without a
+   bound on the estimates' spread it treated a heavy tail as a tie (45degree k <= 20: fewest 11 s +- 9 against face
+   1.0 s +- 0.1 was probed until fewest came out cheaper, once in three runs, 221 s against 2 s); with one, it cost
+   8-15% on boards whose start sets tie for real (B4,C6, hyperbolic colorings) and still left spear to the draw.
+   Kept: a heavy tail that could swap the two cheapest ways (one standard error over half its estimate, and one
+   standard error either way overlapping) gets both ways PLAN_HEAVY = 0.4 s of probes in all, a fixed amount.
+   45degree k <= 20 went to fewest options (79M nodes, 245 s against 1.2 s) in about 1 run of 8 with every build,
+   the engine before today's work included; 1 of 40 with this (once fewest's tail stayed unsampled). The overlap
+   condition keeps it off A6p30 and B4,C6, where the loose estimate is fewest's far above the face rule's.
+   Open: spear k <= 9 (fewest 27.6 s CPU, face 43.9 s, estimates 42 s +- 4 and 46 s +- 4, both firm) goes to the face
+   rule about 1 run in 4.
+5. Profiling (macOS sample on a -g build; experiments: scratchpad prof/lines.py). Face rule, B4,C6: the open-face
+   check 36% of samples, face checks 23%. (a) The check rescanned every half-edge round both glued vertices (~20
+   faces a glue); only the faces through the glued edge and a new vertex's corners can change, found by walking back
+   (cw_step) from the glued half-edges: same nodes. Both the old scan and the walk ran to their step cap (64, then
+   256) on a face already closed, which has no free start: the walk now stops when it is back at its start. That
+   cost was mostly stalls, not instructions: hyperbolic colorings k <= 3 under the face rule 23 s CPU before today,
+   26 s with the 256 cap, 11 s after; A6p30 k <= 18 -33% CPU, B4,C6 k <= 12 -33%, 45degree k <= 20 -29%. (b) The face rule pushed every candidate vertex and let the face
+   test reject it; it now takes the context cache's passing pairs while no budget binds (once one binds most types
+   are refused before any test and filling the cache cost more: freedraw +58% when always on). Fewest options,
+   B3p30: hashing contexts ~35%. (c) Each free half-edge keeps its passing pairs between nodes (`CtxCache`): a glue
+   marks stale only the half-edges whose context walks reach a glued half-edge (walking back from each, both ways;
+   a closed face returns to its start, which the first version missed: 27% of the time went into 260-step walks
+   round closed faces). TILESEARCH_CHECK_CTX=1 recomputes every list handed out: no difference on 10 boards under
+   both rules. B3p30 -19%, A3p30,A6p60 -13%, spear -6%. Fewest options only: the face rule asks for one list a node,
+   and keeping them cost it 8-13% (A6p30, B4,C6, hyperbolic colorings). Tried and reverted: keeping join answers per pair under the
+   same stamps (a 4 MB table a thread; +22-34% instructions), root-bounded cache keys (+9-13% under fewest).
+
+Soundness (experiments/results/sound-optimizations-2026-10-31.log): the final engine against the engine before
+today's work, each board under its own plan and under both rules with the root's symmetries off and on: 23 boards,
+0 different (examples 1-9, 1247, squares_edges, hybrid_2_9830, three hyperbolic runs, spear, 45degree, B3p30, A6p30,
+B4,C6, A3p30,A6p60, colorings, freedraw; 123_1_4657 k <= 3 finishes under no rule in 300 s). Stopping and resuming a
+run with units, and resuming with this engine a run begun by the old one, give the same tilings.
+
+Per iteration, one run of the bench at load 5-10 (20:19), median of 3, wall s and instructions (G); same tilings in
+every run. Builds: v0 before; #1 root symmetry; #5a open-face check narrowed, face rule on the context cache; #4 the
+plan (ranking cap, probes on the cache); #5b kept lists under fewest options, closed faces end the walk.
+
+| board | v0 | #1 | #5a | #4 | #5b (final) |
+|---|---|---|---|---|---|
+| A6p30 k <= 18 | 8.2 s, 300G | 3.5 s, 135G | 3.9 s, 113G | 3.8 s, 112G | 2.6 s, 104G |
+| spear k <= 9 | 4.9 s, 235G | 4.6 s, 219G | 4.7 s, 218G | 4.7 s, 217G | 3.8 s, 205G |
+| 45degree k <= 20 | 1.5 s, 39G | 1.5 s, 39G | 1.6 s, 35G | 1.6 s, 35G (*) | 1.2 s, 34G |
+| B4,C6 k <= 12 | 6.3 s, 312G | 5.8 s, 274G | 6.2 s, 237G | 5.7 s, 227G | 3.6 s, 197G |
+| A3p30,A6p60 k <= 11 | 13.1 s, 456G | 12.1 s, 421G | 12.2 s, 420G | 12.2 s, 424G | 10.0 s, 381G |
+| hyperbolic colorings k <= 3 | 6.7 s, 398G | 6.8 s, 398G | 7.7 s, 333G | 7.4 s, 303G | 3.3 s, 218G |
+| B3p30 k <= 14 | 14.5 s, 624G | 14.3 s, 624G | 14.2 s, 619G | 14.0 s, 618G | 10.2 s, 502G |
+| 1247_1_0612 k <= 2 | 6.2 s, 435G | 5.9 s, 416G | 6.0 s, 414G | 1.9 s, 109G | 1.9 s, 105G |
+| freedraw 3,4,6 k <= 3 | 4.3 s, 264G | 4.1 s, 255G | 4.1 s, 253G | 3.3 s, 197G | 3.2 s, 198G |
+
+(*) the one run that took the face rule; two went to fewest options and took 245 s and 302 s. #5b took fewest options
+once too (227 s); its 1.2 s is the other two. Both are the plan's heavy-tail draw, above, which the final build (v14)
+guards against; v14 against #5b on the nine boards: the same within noise.
+
+Also: tileestimate's multiplicity replay did not record its glues, so best()'s cuts, which read the last glue, never
+fired in the replay; harmless for the open-face check (it only cuts dead ends), wrong for the symmetry cut (it cuts
+duplicates): --exact counted 148 of 242 multiplicities right on 1-regular k <= 4, now all on four boards. --exact
+matches the engine's nodes, completions and tilings on three boards under both rules.
+
+## Marek's 31 October report: four rendering bugs and six requests (2026-11-01, CC)
+
+Marek's messages of 31 October (marek-vault/archive/2026-10-31.md) named four preview bugs and asked for a run
+queue, end times, faster face entry, colours per face, an abstract view and a legality check. What each became:
+
+- **"vertex Pi Pi and vertex Pi Pi close at different edge lengths."** `geometry()` solved the hyperbolic edge
+  from the first vertex line only; a vertex of flat corners closes at every length, so the solve failed and the
+  message named that line twice. It now solves from the first line that fixes the edge (develop.test.ts).
+- **{3,7} polyiamonds drew nothing.** With angles set to multiples of 360/7 every vertex sums to 360° at any
+  edge, so the board was taken for the plane, where a 51.4° triangle cannot close. `geometry()` now checks the
+  faces too: set-angle faces that close only in the hyperbolic plane fix the edge (`faceEdge`: the walk of equal
+  sides and the given turns returns to the identity; 1.0905 for the {3,7} triangle, the closed form), and a face
+  of set angles takes its size from the board face its ring repeats (`setFaceSize`; the rhombus first drew as a
+  triangle, with edges stopping mid-face).
+- **Board_0_790985: edges stopping mid-disk, a vertex that is not in the tiling.** Not reproducible on a Mac;
+  reproduced exactly by porting the shader walk to JS with float32 rounding and Direct3D's division (x times a
+  reciprocal one unit low). The apeirogon branch computed long sides per period as `hd.y / m` and truncated it:
+  6.0 / 3.0 = 1.9999999 became 1, so on Windows an apeirogon with flat corners (m > 1) sent the walk to the wrong
+  side. `imod` now rounds, and the count is integer division (materials.ts, hyperbolicPerPixelGL.ts). The Mac
+  picture is unchanged pixel for pixel.
+- **Freezes and speckle on long apeirogons (Board_1_776488, the 1.619216 family).** The freeze did not reproduce
+  here (k = 6, 168,145 tilings, worst stall 129 ms); the Windows division bug above, which walks every pixel to
+  the 96-step cap, is the likely cause on Marek's machine, unconfirmed. The speckle is float32 itself: an
+  apeirogon edge of ~11 puts a pixel ~e^10 from its face frame's origin, and switching any single stage of the
+  port (walk, table, view, half-plane tests, stroke) to float64 leaves 5,000-7,700 of 281,361 pixels wrong; all
+  of them together fix it. A fix needs per-strip frames for long apeirogons or emulated double precision in the
+  shader; not done.
+- **Queue, end times, settings.** A settings dialog (header gear): default threads and priority, searches at
+  once (0 = no limit; past it a start or resume waits in a queue saved in settings.json), resume interrupted
+  searches on launch (the runs the last quit stopped, and any whose last session never recorded an end), open at
+  login (packaged app only). Checked with a limit of 1 (the second run started the second the first stopped), a
+  quit mid-run and a `kill -9` mid-run (both resumed on the next launch; the engine dies with the app within 3 s,
+  so a resume never doubles one). Runs record and show when they ended; the list orders by name, start or end.
+- **Several faces at once:** "Aoo, B3, Coo" in the face box adds all three.
+- **A colour per face:** already there in the working tree ("By shape", and two faces of one shape are a
+  colouring); on Marek's A^3.B board Aoo and Boo already differ.
+- **Abstract mode** (`abstractBoard`): each apeirogon drawn as the regular polygon of the least common multiple
+  of the periods its rings go round (1 as a triangle, 2 as a square). On the A^3.B board's 64 tilings to k = 2:
+  most hyperbolic, two Euclidean, five spherical (not drawn yet).
+- **Legality check.** The engine already had it (`local_dead` and the balance LP behind `--balance`, from the
+  optimizations session): instant on Marek's boards. The editor now runs it in the background after each edit,
+  tags the vertices no periodic tiling can use and offers to remove them, which is how the result stays with the
+  board. Removing them changed no count: Board_0_790985 (3 of 6 lines) to k = 3, poly37 (10 of 14) to k = 3,
+  Board_1_776488 (1 of 6) to k = 5 (55,165 at k = 5). Marek's "surround" rule was not built: a separate corona
+  search would duplicate the whole-alphabet local search the check already runs.
+
+Test hook added: `TILESEARCH_DATA=<folder>` gives a launch its own data folder, so a dev copy can run beside an
+installed app that is searching. App tests 145 pass; `pnpm build` passes.
+
+## Required sets: 64, in groups, exact (2026-11-01, CC)
+
+The engine allowed at most 16 required sets because their pruning bound (the fewest vertices still needed to
+meet the missing sets, a set cover) was one exact table of 2^sets bytes per root: 60 MB at 16 sets on a board
+of 900 roots, 1 GB at 20, 15 GB at 24. AL wants amalgama-style searches (every one of the 14 regular vertex
+configurations required, then stars on top), which need more. The sets now split into groups that share no
+vertex type; a type helps one group only, so the cover of the missing sets is the sum of the groups' covers,
+each from its own table, and the bound is unchanged. A set alone in its group (one configuration per set, the
+amalgama's case) costs two bitmasks per root and a popcount. A group past 16 sets falls back to counting (its
+missing sets over the most one non-flat type meets), weaker and still sound. Masks are 64-bit: up to 64 sets.
+
+Checked: `TILESEARCH_CHECK_REQ=1` rebuilds the old table and compares it with the new bound for every root and
+every missing subset: 0 wrong on 16 boards with required sets (amalgama-regular's 14 single sets, star12-find
+input's 8.1e9 pairs among them); with `TILESEARCH_GROUP_EXACT=1` the counted bound never exceeds the exact one.
+End to end with --find: amalgama-regular (14 sets) finds the amalgama at k=24 in 196 s, nothing below k=14 (as
+before); the same board with 3 more overlapping sets (17, refused before) finds the same at k=24 in 319 s, the
+extra time in find's pair steps (146 against 101). Log: experiments/results/required-groups-2026-11-01.log.
+
+## k up to 254, and why the 19-set amalgama board finds nothing (2026-11-01, CC)
+
+The app capped k at 64 (Raise k) and 128 (find); the engine at 128, only because its per-k tiling counter was
+a fixed 129-slot array. Now one limit, `MAX_K = 254` in tilesearch.cpp and `MAX_K` in app/src/board.ts: the
+real ceiling is `Required::need`, a byte with 255 meaning "none can", so any kmax up to 254 compares right.
+tileestimate checks the same limit. The Raise k dialog now says why it will not start, not "Run k 1–?".
+Tested: a k 1..200 run completes, 255 is refused by board, --k and tileestimate, census of a 5,604-tiling
+board unchanged; board.test.ts checks app and engine agree on k 1 255.
+
+The run that prompted it (amalgama, 19 required sets: the 14 regular VCs plus 5 with the 6-point star
+A6p30/A6d30) found 0 tilings to k=64 in 0.1 s. Not a dead VC (balance: all 19 alive). Vertex 4,
+`A3 A6d30 A6p30`, occurs in exactly one tiling, the 1-uniform triangle and star tiling: required alone it gives
+1 tiling at k=1 and none above (to k=200), and paired with each of the other 18 it gives none to k=16 on the
+pre-change engine. So the 19 sets cannot coexist at any k; the required-bound self-check also passed on this
+board (524,288 pairs, 0 wrong). The balance check cannot see this: the type can occur, just never with another.
+
+Follow-up, same day: the Tilings per k chart labels the k axis every 1, 2, 5, 10, 20, 50 or 100 k, the
+smallest step whose labels fit the measured width (selected k always labelled), and prints a count only where
+it fits its column (the tooltip has it always). Checked at 64, 80 and 200 k. Windows engines rebuilt with
+mingw (zlib 1.3.1 rebuilt from the official tarball; the old ZLIB_WIN was in a temp dir and gone), checked
+under Wine against the Mac census, and all three installers uploaded to `the-tiling-searcher-latest`.
+
+## Chiral boards: `chiral yes` (2026-11-02, CC)
+
+Marek's scheme (Discord, 2 November): drop vertex templates with a reflection (the one-loop "axis" orbits),
+then give each vertex a side, set by the glue that reaches it, and refuse any glue between half-edges on
+different sides. The same-side rule rejects [x] gluings (an edge glued to its own mirror) and glides alike,
+so the search keeps only tilings with no orientation-reversing symmetry; a tiling and its mirror count once.
+Engine: `struct Sides` in tilesearch.cpp (flip per vertex, push/pop with the extender, settle/unsettle around
+each glue), used by both search and estimate; balance.h's add_line skips reflection templates when the board
+is chiral. App: a "Chiral only" toggle, `chiral yes|no` in the board format.
+
+Checked against an independent filter (`TILESEARCH_CHECK_CHIRAL=1`: a BFS over each found tiling that fails
+when the half-edge graph admits a side assignment conflict, i.e. a reversing symmetry). Same counts at every k
+on all 12 test boards (two heavy ones only to k=2; to k=3 both modes exceed 10 minutes). Regular board k 1-7:
+1, 1, 4, 14, 31, 56, 132, k=1 the snub hexagonal 3.3.3.3.6. Pruning makes it faster than filtering: hyperbolic
+hybrid k 1-2 3 s against 44 s. With chiral off, census identical and times within noise on 6 boards (regular
+k 1-10 3.34 s old, 2.97 s new; the hyperbolic hybrid board swung 660-1830 s run to run under load on both
+binaries). Logs: experiments/results/chiral-{check,speed}-2026-11-02*.log. Not built: a mode counting the two
+hands separately, since Marek's words are canonical up to reflection.
+
+## Studies: one board, a row per combination (2026-11-03, CC)
+
+AL asked for a layer above single runs, after Marek's 1.061275 census (668 tile combinations he was filling by
+hand with targeted searches) and AL's own 71 hand-launched star runs (every subset of the stars of one family,
+regular polygons always allowed). Both are the same thing: one board, a run per combination, one table.
+
+**Board format.** `optional <face>` marks a face a study may leave out; `subsets <min> <max>` bounds how many a
+row holds; `vary n 6..10` makes a row per value, `{n}`, `{2n}`, `{360/n}` filled in exactly below it. A row's
+board keeps the other faces and its subset, requires each face of its subset (`require face`), and keeps the
+vertex lines its faces can make: the tilings that use exactly those optional faces. The engine refuses the three
+statements with a message pointing at the app. `require face … x inf` is new in the engine (an apeirogon holds
+when a face's ring is its period repeated); checked on the 5-tile 1.061275 board to k = 4 against the vertex-set
+form, which is exact there: 3 / 101 / 6,234 / 579,097 both ways.
+
+**Checks before any search** (study.ts `rowMaker`, `splitReason`; main runs `--balance` per row): a required
+face's corner fits no kept line; the balance LP is infeasible; or the required faces cannot touch (connectivity on
+the live lines, a face's own non-Pi corner beside a corner of the other, both ways). The last is new and catches
+what counting cannot: balance adds two tilings into one solution, so B10 and B5, which tile apart, pass it
+together. On Marek's board: 4,095 subsets, 2,880 + 384 + 207 ruled out, 624 to search. The 624 are exactly the
+combinations his hand rules allow, and 48 of his 588 blanks are proven empty (all G3 with only a mixed pair:
+G3 needs A3 with A4, or B4 with Boo; his note said "specifically A3 and A4").
+
+**Adoption.** A row whose search a finished run already did uses that run. Same search (`sameSearch`): same
+faces and flags, the run's lines a subset of the row's and a superset of the row's live lines, the same
+requirements once cut to the live lines, both boards read as spelled-out corner orders. A face whose corners are
+its own required as a face equals the set of lines holding those corners. On AL's A12 star runs 13 of 15 rows
+adopt, whatever the folder names say (one folder was named for two stars and required three). Not adopted: the
+four-star board of 28 hand-picked lines (not a sound pruning), and `A12p30,A12p120-20261028-122314`, whose board
+has a third require line (`require 2 3 5 8 11 14 15 16 19 21`, commented as A12p120 like the line before it but a
+different set): a different search in general, though to k = 8 it finds the same 4 tilings as the study's row.
+
+**Validation.** The A12 study's own rows reproduce AL's runs count for count (A12p30 483 to k = 8, A12p60 133 and
+A12p120 111 to k = 12, every pair). Marek's full board run unrestricted to k = 2 and grouped by exact tile set:
+43 sets, 4,630 tilings, every one equal to the study row's count at its k, no row with a tiling the full run lacks,
+and no set with a tiling ruled out. To k = 3 the same: 58 combinations with tilings, 99 counts by combination and k, 376,314 tilings
+(Marek's "376k at k = 3" is this board), every one equal to the study's. The census study itself (624 rows
+searched, killed once by a session restart and resumed) is logged in
+`experiments/results/study-census-1061275-k3-2026-11-03.log`.
+
+Against Marek's census of 3 November: 78 of his 84 known entries agree. Six do not, and the unrestricted run sides with the
+study on each: {A3, A4, Boo} first at k = 2 (his k = 1), {B5, Boo, Doo} at k = 2 (his 3), {A3, A4, B3, B4} at k = 3
+(his 4), {A3, B10, B3, B4, Boo} at k = 3 (his 2), {A3, B3, Boo} and {A3, B4, B5, Boo} none to k = 3 (his 3). Four of
+his blanks have tilings: {A4, B4, Doo} and {A4, B10, B3, B4, Boo} at k = 2, {A4, B4, B5, Boo} and {A5, B10, B3} at
+k = 3. Not sent to Marek.
+
+**Parameter study, (3.4.n.4)/(4.n.2n), n = 6 to 10, k ≤ 3:** k = 1 has both Archimedean tilings for even n and
+only 3.4.n.4 for odd n (4.n.2n needs n even); n = 6 has the 2-uniform [3.4.6.4; 4.6.12]; hybrids at k = 2 for
+n = 9, at k = 3 for n = 8 and 10, none to k = 3 for n = 7. The two vertices close at one edge length for n = 7 to
+10 (checked numerically), so these hyperbolic hybrids have regular faces.
+
+**App.** Faces get an Optional mark (card, face dialog, pick bar, group menu); the board page shows the rows, the
+subset sizes, rows at once (threads split between them), a time limit per row, and "Run study · N rows". A study
+is one entry in the run list (its rows stay inside it) and has its own page: outcomes as a bar, rows by the k of
+their first tiling, the facts, and the rows (filter, search, sort, per-k columns, pagination, Copy census in
+Marek's format). A row with a run opens it, with a way back. Pause stops the running rows (they resume from
+their finished roots), the time limit stops a row and leaves it until lifted, a quit pauses the study unless
+"resume on launch" is on, and a killed app's study resumes the same way. All exercised in the app (screenshots
+in the session); a blank window was seen once on a relaunch and not again in two retries, one with full logging.
+
+**Speed.** `cyclicKey` is now linear (least rotation, both orientations; checked against the definition on
+20,000 random words): planning Marek's 4,095 rows went from 4 to 7 s to 55 ms, and row boards are built only when
+a row is checked or run.
+
+**Not built.** Marek's symbolic constraint ("one polygon exactly twice the size of another") in abstract mode: its
+meaning in quotient terms needs his definition first. Folding tilings across parameter values (which recur for
+every n). His surround test beyond what `--balance`'s local search already does.
+
+## Setting a study up from the board page (2026-11-03, CC)
+
+AL: a study has to be discoverable, so the board page needs a way to set one up. Until now the only way in was
+the Optional mark inside a face's dialog, and the study's settings appeared only after a face had one.
+
+**The entry.** The sidebar's second choice, under Search: Run, One board or A study, two cards in the style of
+Enumerate / Prove existence (both now one `Choice` component in App.tsx). A study reveals its setup under it: the
+board's faces as chips to make optional (MultiSelect, with All), optional faces per row, the parameters as `n from
+6 to 10` with Add and Remove, and the rows it comes to. With nothing picked it says what to pick and offers the two
+example studies. Rows at once and the time limit moved down beside Threads, where the other ways a search runs are.
+
+**The text stays the truth.** The setup writes `optional`, `subsets` and `vary` lines and nothing else, so a board
+with parameters keeps its `{n}`: a face is flipped between `face` and `optional` on its own line (parse's line map,
+which the text with values filled in shares), and the chips are named as the lines write them (A{n}, A{2n}). One
+board turns every optional face back into a face (Cmd+Z returns the study); a board with parameters cannot choose
+it and says why. Add a parameter writes `vary n 6..10` and opens the text. A parameter no `{…}` reads is now an
+error ("used nowhere yet"), since every row would be the same board. Removing a parameter keeps its first value in
+its lines, the board the visual editor was showing, where dropping the line alone left `A{n}` unreadable and the
+faces with it.
+
+Checked in the app (hidden window, driven by script): the plain star board to 15 rows and back; the hybrid board's
+chips, range 6..12 (21 rows), faces per row 1 (14 rows), One board refused; Add a parameter and its error, then
+Remove back to the plain board. Tests: helpers in study.test.ts. The census check test now has its own 120 s
+timeout: 1,215 engine calls take about 5 s idle, at the 5 s default, and timed out under load.
+
+## Parameters in the visual editor (2026-11-03, CC)
+
+AL: adding a parameter and then switching to the text was a shortcut, not a visual setup. The visual editor was
+inert on any board with `vary`, because it held the board at one value and an edit would have written that value
+over `{n}`. It now edits the board as written.
+
+**How.** The board model carries formulas in the three places a number goes: an angle's value, a face's repeat
+and a required face's repeat. `parse(text, values)` works each out at the values drawn and keeps it as `{ text,
+at }`; `serialize` writes the formula back while the value is still `at`, so an edit that changes the number
+replaces it and every other edit keeps it. Names keep their braces (`A{n}`), and the drawing never needed them:
+a corner's shape comes from its face. So nothing that reads the board changed. The `{…}` arithmetic moved from
+study.ts into board.ts for this (`evaluate`, now `fill` per token too), and the line-by-line editing of last round
+(`withOptional`, the parse line map, App's `withLine`) is gone: every edit is `serialize`.
+
+**What the editor offers.** A Drawn at bar over the board picks the value of each parameter it is drawn and checked
+at. The face dialog's Sides gain n and 2n, and Other takes any formula (n+2); a formula of sides gives the face one
+corner, `A{e}` as Marek names an e-gon's (B for sides of two edges), declared if new, with the angle `{180-360/e}`
+when the board's corners carry angles. The period control rewrites the formula (2n corners every 2 is `x {n}`);
+`times`/`over` keep it short and are checked against `evaluate` on ten formulas, five factors, four values. The
+corner dialog has a Formula angle, filled from the name. Quick setup says it closes vertices at the drawn values.
+Fitting and the balance check answer for the drawn values only, so on such a board they mark vertices ("not at n =
+8") and their remove buttons are hidden: a line dead at n = 8 can be needed at n = 6.
+
+Checked in the app by script: from a plain board, Add a parameter, an n-gon and a 2n-gon from the face dialog, two
+vertices from the corner palette, the drawing at n = 8, both faces optional, 15 rows; the board text came out with
+`vary n 6..10`, `angle A{n} {180-360/n}`, `face A{n} x {n}`. On the hybrid example: the n-gon's dialog, period 2
+(`x {n/2}`) and back, a Formula angle, Permutations on, `{n}` kept throughout. The engine read every row of the
+clicked-together board (fractional angles included). The hybrid example now round-trips exactly through the
+editor (a blank line after its header was the only difference).
+
+## Lengths as edge types in the Searcher's face drawer (2026-11-03, CC)
+
+AL: drawn faces took only whole lengths; any length should be possible, each length an edge type that glues
+only to itself, so Laves tiles and other spaces can be searched. The atlas solved this for tri45 and the
+planigons, so the Searcher now does it the same way instead of a new way.
+
+**The model is the palettes'.** A face drawn with Lengths as edge types has every side typed, S = 1 included, as
+`tri45all` types its tiles: one edge corner per side (`edge Esqrt2 length sqrt2`) and a vertex line gluing it to
+itself. The search sees types only; lengths are drawing. Lengths read in `develop_tri45._len_step`'s grammar plus
+minus, fractions and brackets (`readLength`, board.ts; the old regex's forms all still read). A drawn face still
+closes exactly: `surdPowers` (freeface.ts) is `surd_offsets` ported, √2, √3, √5, √6 as sums of ζ powers, and a
+length the angle unit cannot hold is refused with the N it needs. Closing suggestions come from one exact solver
+for both modes (least squares over the root columns, read back as small fractions, kept only if exact), which
+replaces `edgeFor` and the whole-length loop. Quick setup takes `edge_type_forbidden_pairs`: two corners side by
+side share one side, and its two types must glue (`sidesMeet`, corners.ts; the plane's face-by-face builder checks
+it as it places each corner). Tilings mode now keeps a board's gluing lines.
+
+**Checked from drawn faces to drawn tilings** (edges.test.ts, engine run, every certificate to k = 2 drawn): the
+triangle and squares at both scales 16 / 161 / 1,132, as the hand-written board; the 45-45-90 triangle alone
+2 / 12 / 41; eleven planigons with whole edges 10 / 31. The last two needed their references found again: the
+first tri45 figures (3 / 4 / 12, 08-13) and the planigon-lite control (6 / 27, 08-18) were withdrawn by later fixes.
+2 / 12 / 41 is the shipped tri45 shelf cut to tilings whose every face is a unit-leg triangle, edge to edge
+(checked by script on `public/tri45`, all three k agree); 10 / 31 is the 08-18 recount above. In the app itself,
+by script: the half square and the Laves kite of 3.4.6.4 drawn in the dialog, Quick setup, Run search: 2 / 12 / 41
+and 1 / 0 / 2, every developed face measuring 1 : 1 : √2 or √3 : 1 : 1 : √3, and the kite's k = 3 holding the
+deltoidal trihexagonal tiling (vertex orbits 120×3, 90×4, 60×6).
+
+⚑ Integer lengths with Unit edges keep the old meaning (Pi points along the side, gluing to any unit edges); with
+Lengths as edge types a side of 2 is one edge that glues only to another 2. The two kinds never meet, which the
+dialog says.
+
+## Windows runs read as unfinished; raising k by a rule; studies follow a raised row (2026-11-03, CC)
+
+Marek (Discord, 3 November): every search not running shows as unfinished; he suggested census.txt as the sign of
+a finished one. It already is: a run is finished when census.txt ends in `MAX`. The Windows engine (mingw, text
+mode) ends every line with `\r\n`, so the check `endsWith("MAX\n")` never held there and every finished run on
+Windows was filed under Unfinished. Seen directly: tilesearch.exe under Wine writes `M A X \r \n`. The same line
+endings broke the tilings view on Windows (certificates are split on `---\n`). Fixed where the app reads engine
+files: `read` in electron/runs.ts and studies.ts, and the window's `readFile`, all take `\r` out. runs.test.ts
+opens a run folder with a Windows census.txt; it fails without the fix ("stopped") and passes with it.
+
+**Raise k by a rule** (Marek's "auto-improve", generalized by AL to conditions joined by a boolean operator):
+`RunOptions.raise` / `StudyOptions.raise`, a `RaiseRule` of up to three conditions (found at least N tilings, ran
+over M minutes, wrote over G GB), joined by any (OR) or all (AND), and a highest k. When an enumeration finishes
+and its rule does not hold, main starts the board to k + 1 as a new run that replaces it (replaces.txt, as Raise k
+does) and carries the rule; raised.txt keeps a run from being raised twice. Each search runs to its end: the rule
+decides only whether the next one starts. `raiseStop` (bridge.ts) is the one verdict, used by main and tested.
+The board page has it under k (runs and studies), the Raise k dialog too, a run's page says what its rule does or
+why it stopped with a Stop raising button, and a study's page shows it with a Stop raising k action.
+
+**Study rows follow a replaced run.** AL: after Raise k on a study's row, the study showed it "waiting". The new
+run went into the study folder, the old one was deleted when it finished, and the row still pointed at the
+deleted folder; a finished study never looked again. Rows now follow replaces.txt to the newest run as it starts
+(back to the first if the new one is deleted unfinished), a finished study reopens while one runs, and a row
+reports every k its run reached (no clipping to the study's k, so `later` is gone); the study's k range shows the
+highest any row reached.
+
+**Gzip on finish** (AL: why leave it to the user?): a setting, on by default, compresses a run's certificate files
+as it finishes, with the existing Compress; a run decompressed by hand stays so, and a run its rule raised is left
+to be deleted. Its one cost outside the app: other programs need the files unpacked. fold.ts read "the whole file"
+as compressed-size + 1 bytes of unpacked text, which truncated a gzipped run's certificates; `readFile(p, 0)` now
+reads a whole file either way.
+
+Checked in the app by script: a run requiring a triangle and a dodecagon on the (3.4.6.4)/(4.6.12) board, k 1
+with "until it finds 1": raised itself to k 2, found the 2-uniform, stopped, one run left, compressed. A study of
+the same board (both faces optional) with the same rule: the A3+A12 row raised itself to k 2 and was followed; in
+an earlier run it adopted the single run instead, which had done the same search. Raise k by hand on a finished
+row: the row followed the new run to k 3. The searcher tests now have a 60 s timeout (vite.config.mts): the engine
+tests took 6 to 20 s on a loaded machine and failed at vitest's 5 s.
+
+**Follow-up, same day: high k froze the run view.** AL ran the drawn kite to k = 17; picking a high k hung and
+froze the window. `decode` listed every combination of mirror axes over all vertex types before trying one, and
+with lengths as edge types every side's midpoint is a vertex type with two valid axes: at k = 13 that ran out of
+memory at 4 GB (reproduced outside the app). Each type's tables are now cut, before any combination, to those
+holding every label the gluing line names for it (any other fails whatever the rest are), and the survivors are
+tried one at a time in the old order, so the first that reads is unchanged (develop.test's Python parity holds).
+All 22 kite tilings to k = 17 now develop in under 0.2 s each, every face measuring √3 : 1 : 1 : √3; in the app
+k = 13, 16 and 17 draw in about 1.5 s with the window responsive. edges.test runs the kite to k = 17 and draws
+every certificate.
+
+**The study view, same day (AL).** The rows did not scroll: the Tabs panel is a block, so the table's `flex-1
+overflow-y-auto` never got a height and the panel clipped it. The status tabs are gone for a row of dropdowns
+(Outcome, Faces held, Holds, Lacks, one per parameter, First k), with a Clear and an "N of M rows" count; the bars of
+"Rows by the k of their first tiling" set First k too. Sorts added: most faces together, fewest faces, first k highest,
+fewest tilings. Each row with a run has a Raise k button opening the runs page's dialog (raise-until rules
+included), which writes into the study folder and replaces the old run, so the row follows it. Per k spans the
+study's k (which grows as far as any row was raised) and stops at the k each row's run reached.
+
+⚑ Three rows of `hybrid_34n4_4n2n` (n = 13, 14, 15) had lost their runs: raised by hand at 14:20 to 14:27 in a build
+older than `follow()`, their old runs deleted and the replaces link with them, so study.json still named the dead
+folders and the rows read "Left", their k = 13 to 15 results nowhere. `follow()` now gives a row whose run is gone
+with nothing linking on the newest run in the study folder with its name and board (k aside). Checked on copies of
+both studies (TILESEARCH_ROOT, TILESEARCH_DATA): the three rows come back with 107, 10 and 3 tilings and the study
+reads k 1 to 15.
+
+**A board that could only find nothing, same day (AL's `test`).** A unit square (Add family) and a drawn house (a
+1 × √2 rectangle with a 45-45-90 roof, sides typed by length) found 0 tilings in 0.02 s. Three causes, two of them the
+app's. (1) The first `require face` named a face not on the board: the house had been drawn with three √2 sides,
+required, then edited, and editing never touched the line, so it asked for a face no tiling holds. `followFace` now
+rewrites a required face's lines as it is edited, `withoutFaces` drops a deleted face from them, and the board check
+makes a line naming no face on the board an error. (2) The square had no typed sides, so it never shared a side
+with the house (a typed side glues only at its middle corner) and quick setup wrote only `A4 A4 A4 A4` for it; on a
+board with lengths as edge types quick setup now types a plain face's sides as length 1 (`withUnitSides`), and the
+check warns before a run about plain faces among typed ones. (3) The user's part: three require lines mean all
+three faces, and with the vertex lines written the square could never sit by the house. Fixed board: 1 / 2 / 2 / 5 /
+6 at k 1 to 5 (0 / 1 / 2 / 5 / 6 with both required), the same as the square drawn typed; with the √2-bodied house
+too, 1 / 3 / 7 / 18 / 28. edges.test and board.test hold both.
+
+**Follow-up: a side of length 1 needs no type (AL).** The fix above typed the square's sides `E1` and warned
+about plain faces among typed ones; AL: the type is the length, so a square with sides of 1 already has the
+house's unit type, and no midpoint dot should mark it. A drawn face now types only lengths other than 1
+(`faceOf`), the plain unit edge being length 1; `withoutUnitType` takes an older `E1` off a board's faces,
+required faces and gluing lines (Quick setup in every mode, and Draw a face, do it), and the check warns only
+about plain faces among drawn/hidden or bump/bite sides, or beside a leftover `E1`. The counts are unchanged
+without `E1`: tri45 2 / 12 / 41, tri45all 16 / 161 / 1,132, the kite to k = 17, planigons 10 / 31. Drawing
+was not: a typed side is two darts of its length, a plain one a single dart of 1, so mixed faces did not close
+("These angles do not close round every face"); `dartEdges` now gives a plain dart 2 on a board with edge
+types. Face cards hide the dots of length-type midpoints, as they hid bump and bite ones. Quick setup opens in
+"Edge types, the board's own" on such a board, which is the mode AL had used; the first fix ran only in
+Tilings mode. Checked in the dev app on AL's board: Quick setup takes `E1` off, writes the six mixed
+vertices, no warning, and the run draws 0 / 1 / 2 / 5 (both faces required).
+
+## Raise k by itself, corrected: from the lowest k, with time and disk as ceilings (2026-11-03, CC)
+
+AL, on a 1,023-row star study with "until 1 tiling or 1 min, up to k = 20": a row ran 18 minutes. Two faults of
+the first version. Its first search went to the board's k (1 to 10 in one search, since a search covers every k up
+to its own), so the climbing never started low; and "runs over 1 min" only decided whether a next search starts
+once one finished, so nothing stopped a search past it. Now the first search goes to the lowest k only and each
+next one to k + 1 (a row's first run: `k: [kmin, kmin]` in studies.ts runOptions; the board page's start does the
+same, with the board's highest k as the rule's `upTo`). Minutes and GB are ceilings checked on every tick while a
+search goes (`raiseCeiling`, main `capRunning`): the search stops there, capped.txt keeps why, and the raising ends;
+a study counts that row done ("stopped by its rule", state limit) and goes on. "Found" is still judged on a
+finished search. The any/all join is gone: with ceilings it means nothing.
+
+Also fixed on the way: resuming a run from its page dropped its rule (the resume options left `raise` out), and a
+study resuming a row would have handed it the study's options; RunFolder.start now keeps a resumed run's own k and
+rule. A capped run, resumed, finishes its search with no rule (uncap), and the study's "Lift the time limit" lifts
+the rule's ceilings too, letting those rows finish.
+
+**Runs view: following a raise, and k = 21 drawings (AL, same day).** (1) Watching a run with Raise k by itself
+dropped to the disk map once its successor finished and deleted it. Runs now carry `replaces` to the page, which
+follows the chain: to the new run when the one on screen is raised, and to the newest run still there when the one
+on screen is deleted (a run picked on purpose after its raise stays until then). Checked in the dev app on the
+house board raised from k 19 to 21: the view went 19, 20, 21 and stayed; picking the raised k 19 run, it jumped to
+the running k 21 when k 19 went. (2) AL's square and house at k = 21: "Cannot read this certificate: conflicting
+gluing" and a slow page. `decode` tried whole combinations of mirror axes, at most 10^5, and 22 vertex types with
+two axes each pass that: 29 of 355 sampled k = 21 tilings unread, each burning 10^5 tries. It now chooses type by
+type, depth first, rejecting a choice the moment a gluing it completes conflicts, in the same order (so every
+drawing that read is unchanged; develop.test's Python parity holds); reading is now under 1 ms. 27 of those then
+failed to find a period ("faces cover 0.963 periods"): their cells are long, and the walk widens only four times;
+six attempts draw all 355 (a larger fixed radius did too, but slowed every tiling; a smaller one retried more).
+(3) The thumbnails developed all 60 on the main thread, about 0.1 s each at k = 21: six seconds of a stuttering
+window, most for thumbnails out of sight. They now develop in view or a row from it (IntersectionObserver):
+measured in the dev app on a copy of the run, the stutter ends at 2.3 s instead of 6.4 s, longest frame 133 ms.
+edges.test runs the board to k = 21 and draws the two files that failed (census 935 / 1,410 / 2,034 / 2,996 /
+4,382 at k 17 to 21, matching AL's run).
+
+**Add family: Laves tiles (AL, same day).** A fourth family adds the Laves tiles from the atlas's planigon palette
+(`planigon.json`, imported as is, no copy): the eleven duals of the Archimedean tilings, and with a checkbox the
+four planigons of vertices only k-uniform tilings have. The palette's scale of 6 is divided out, so each tile is
+the dual of its unit-edge tiling: the square's sides are length 1, plain edges, as are a planigon's sides between
+two squares' centres; every other length is its own type with its gluing line, which Add family now carries over
+for the faces kept. Faces carry their Laves name (V4.6.12, the least turn or mirror of the vertex word) as a
+comment, and the family's previews draw each side to its type's length. The planigon-lite test now builds its
+eleven tiles from the family instead of a hand-copied table: still 10 / 31, every tiling drawn.
+
+## Raise k for a whole study; one k field for range or rule (2026-11-03, CC)
+
+AL: a way to raise the rule for a whole study and run the rows again; and with Raise k by itself on, the plain k
+range should not sit above the rule. A study's page has Raise k: the rule set again for the study (`Study.raise`,
+IPC studyRaise), with the rows it sends on counted live in the dialog. A row whose run finished goes on when the
+rule now asks more of it: its run takes the new rule and main's raiseFinished raises it, so the row climbs from the
+k it reached, not from the start. A row a ceiling stopped goes on when it is under the new ceilings. A row that
+adopted a run the rule finds short lets it go and searches for itself (adopted runs are never raised or replaced:
+they are someone else's). Ruled-out rows stay; rows not run yet start under the new rule. Checked by clicks: a
+15-row star study to k 4 left 8 rows with none; Raise k to 9 sent those 8 on, and 7 found their first tiling at k 5
+to 9.
+
+The k setting is one field now (`KField` in runs.tsx): the label k, a switch Fixed range | Raise by itself, then
+either the from/to range or the rule with its own from and up to (on the board page both are the board's k, so the
+text keeps one k range). The Raise k dialog has the same field; a manual raise defaults the rule's top 4 past the
+new k and refuses a top below it. "k for this run" hides while raising. The study-wide dialog and the field share
+`RaiseConditions`. Another session reworked the study page meanwhile (filters, sort, a per-row Raise k); this sits
+beside its work.
+
+**Run preview: zoom out to about five periods (AL, same day).** The run view's tiling stopped zooming out at the
+site's shared floor (ZOOM_MIN, 20 px per unit), which shows a k = 21 cell of the square and house board (vectors
+2.8 and 58.9 long) as a band or two and a square grid as fifty periods. `useFlatCellPreview` takes
+`zoomOutPeriods`: the farthest zoom out then shows about that many periods of the longer lattice vector across,
+whatever the cell, and the home view is held to it; the Searcher passes 5 (AL: "~4/5 periods maximum, so it depends
+on the tiling"). A first try by area (n² copies) undercounted long bands, a second (900 copies) went too far. The
+site's other previews pass nothing and keep the shared window. Checked in the dev app: k = 21 fully out shows five
+bands (zoom 1.64), k = 4 five periods (zoom 14.1).
+
+## The Tiling Searcher 0.4.0 released (2026-11-04, CC)
+
+AL asked for a Windows build for Marek, then for it on the atlas (too big for Discord). The Windows engines were
+from 1 November, before `x inf` and the study keywords, so they were rebuilt with mingw (zlib 1.3.1 from the
+official tarball, SHA-256 9a93b2b7…df23, built into the scratchpad: the previous one was gone again) and checked
+under Wine against the Mac engine: stars to k 5 (12 / 28 / 79 / 184 / 380), edge patterns 13 / 153 / 1,254,
+Marek's 1.061275 board with `require face Boo Pi x inf` 35 / 2,444, the study keywords refused, `--gzip` and
+tileestimate.exe. The app went to 0.4.0 (studies, Raise k by itself, the Windows unfinished fix, gzip on finish),
+macOS and Windows rebuilt from one tree, and the three assets replaced in `the-tiling-searcher-latest`, whose
+title and notes now say 0.4.0 with new checksums. The public setup.exe link was downloaded back and its hash
+matches. The site needed no change (lib/downloads.ts links the fixed tag).

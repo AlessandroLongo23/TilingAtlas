@@ -33,161 +33,6 @@
 
 namespace est {
 
-struct Search {
-	Board b;
-	vertex_classification vc;
-	FastFaces const* faces = nullptr;
-	Candidates const* cand = nullptr;
-	int roots = 0;
-	/** Per template, its symmetries: permutations of its half-edges keeping labels, neighbours and mirrors. */
-	std::vector<std::vector<std::vector<int>>> aut;
-};
-
-static std::vector<std::vector<int>> symmetries(vertex_classification const& vc, int t) {
-	tiling_t x;
-	vc.push_vertex_to(x, t);
-	int const n = x.num_halfedges();
-	std::vector<std::vector<int>> out;
-	for (int s0 = 0; s0 < n; s0++) {
-		std::vector<int> p(n, -1), todo{ 0 };
-		p[0] = s0;
-		bool ok = true;
-		while (ok && !todo.empty()) {
-			index_t a{ todo.back() }, b{ p[todo.back()] };
-			todo.pop_back();
-			ok = x.left_label(a) == x.left_label(b) && x.right_label(a) == x.right_label(b) &&
-				 x.mirror(a).has_value() == x.mirror(b).has_value();
-			for (auto [u, v] : { std::pair{ x.right_neighbour(a), x.right_neighbour(b) },
-								 { x.left_neighbour(a), x.left_neighbour(b) }, { x.mirror(a), x.mirror(b) } }) {
-				if (!ok || !u.has_value()) continue;
-				int& q = p[u.get_value()];
-				if (q < 0) q = v.get_value(), todo.push_back(u.get_value());
-				else ok = q == v.get_value();
-			}
-		}
-		std::vector<bool> hit(n);
-		for (int q : p) ok = ok && q >= 0 && !hit[q] && (hit[q] = true);
-		if (ok) out.push_back(p);
-	}
-	return out;
-}
-
-// One node of the search: the partial tiling, and the template of every vertex in it, in order.
-struct Node {
-	Search const* s;
-	tiling_t conf;
-	std::vector<int> types;
-	int root = 0;
-
-	int k = 0, flat = 0;   // vertices that count toward k, and flat ones (tilesearch.cpp flat_max)
-	bool room(int t) const { return is_flat(s->vc, t) ? flat < (int)flat_max : k < s->b.kmax; }
-	bool can_add() const { return k < s->b.kmax || flat < (int)flat_max; }
-
-	index_t best(bool& dead) {   // Extender::extend's choice (choose_halfedge)
-		return choose_halfedge(conf, *s->faces, *s->faces, s->vc, *s->cand, root, can_add(), dead);
-	}
-	bool join(index_t a, index_t b) {   // Extender::try_joining's tests, the edge left in place when they pass
-		if (!conf.halfedges_compatible(a, b)) return false;
-		if (!s->faces->can_be_adjacent(conf.left_label(a), conf.right_label(b)) ||
-			!s->faces->can_be_adjacent(conf.right_label(a), conf.left_label(b))) return false;
-		conf.add_edge(a, b);
-		if (s->faces->check_adjacent_cw_face(conf, a) && s->faces->check_adjacent_ccw_face(conf, a)) return true;
-		conf.remove_edge(a, b);
-		return false;
-	}
-	void add_vertex(int t) { ++(is_flat(s->vc, t) ? flat : k), s->vc.push_vertex_to(conf, t), types.push_back(t); }
-	void pop_vertex() { --(is_flat(s->vc, types.back()) ? flat : k), conf.pop_vertex(), types.pop_back(); }
-
-	// A child: f glued to an existing half-edge (t < 0), or to half-edge ix of a new vertex of template t.
-	struct Move { int t, ix; };
-	void children(index_t f, std::vector<Move>& out) {   // Extender::extend and extend_by_adding_vertex
-		out.clear();
-		for (auto ix : conf.indices())
-			if (conf.is_free(ix) && join(f, ix)) conf.remove_edge(f, ix), out.push_back({ -1, ix.get_value() });
-		if (!can_add()) return;
-		auto const& list = s->cand->at(conf, f, *s->faces);
-		auto it = std::lower_bound(list.begin(), list.end(), root, [](Candidates::Pair p, int t) { return p.t < t; });
-		uint32_t const miss = required.missing(types);
-		while (it != list.end()) {
-			int const t = it->t, base = conf.num_halfedges();
-			if (!room(t) || !required.may_add(miss, root, t, s->b.kmax - k - !is_flat(s->vc, t))) {   // Extender's tests
-				while (it != list.end() && it->t == t) ++it;
-				continue;
-			}
-			add_vertex(t);
-			for (; it != list.end() && it->t == t; ++it)
-				if (join(f, index_t{ base + it->i })) conf.remove_edge(f, index_t{ base + it->i }), out.push_back({ t, base + it->i });
-			pop_vertex();
-		}
-	}
-	void apply(index_t f, Move m) {
-		if (m.t >= 0) add_vertex(m.t);
-		conf.add_edge(f, index_t{ m.ix });
-	}
-	void undo(index_t f, Move m) {
-		conf.remove_edge(f, index_t{ m.ix });
-		if (m.t >= 0) pop_vertex();
-	}
-};
-
-static Node start(Search const& s, int r) {
-	Node n{ &s, {}, {}, r };
-	n.add_vertex(r);
-	return n;
-}
-
-/** How many times the search reaches the complete tiling `t`: the starts whose replay rebuilds it. */
-static int multiplicity(Node const& t) {
-	Search const& s = *t.s;
-	std::vector<int> start_of, type_of(t.conf.num_halfedges());
-	for (auto ix : t.conf.indices())
-		if (t.conf.neighbourhood(ix).vertex_start == ix) start_of.push_back(ix.get_value());
-	for (int v = 0; v < (int)start_of.size(); v++)
-		for (int j = 0; j < s.vc.valence_of(t.types[v]); j++) type_of[start_of[v] + j] = t.types[v];
-	Node p = start(s, t.root);
-	std::vector<int> phi, psi(t.conf.num_halfedges(), -1);   // p's half-edges in t, and back
-	auto place = [&](int base, int vs, std::vector<int> const& sigma) {
-		phi.resize(base + sigma.size());
-		for (int j = 0; j < (int)sigma.size(); j++) phi[base + j] = vs + sigma[j], psi[vs + sigma[j]] = base + j;
-	};
-	auto unplace = [&](int base) {
-		for (int j = base; j < (int)phi.size(); j++) psi[phi[j]] = -1;
-		phi.resize(base);
-	};
-	std::function<int()> replay = [&]() -> int {
-		bool dead;
-		index_t f = p.best(dead);
-		if (dead) return 0;
-		if (!f.has_value()) return 1;   // closed, and mapped into t: it is t
-		index_t g = t.conf.opposite(index_t{ phi[f.get_value()] });
-		if (!g.has_value()) return 0;
-		if (int ix = psi[g.get_value()]; ix >= 0) {   // glue to a half-edge already placed
-			if (!p.conf.is_free(index_t{ ix }) || !p.join(f, index_t{ ix })) return 0;
-			int r = replay();
-			p.conf.remove_edge(f, index_t{ ix });
-			return r;
-		}
-		int const vs = t.conf.neighbourhood(g).vertex_start.get_value(), tw = type_of[g.get_value()], o = g.get_value() - vs;
-		if (!p.room(tw) || tw < t.root) return 0;
-		int count = 0;
-		for (auto const& sigma : s.aut[tw]) {   // the new vertex, lined up every way that puts a representative on g
-			int i = int(std::find(sigma.begin(), sigma.end(), o) - sigma.begin());
-			if (!s.vc.is_representative_of_orbit(tw, i)) continue;
-			int const base = p.conf.num_halfedges();
-			p.add_vertex(tw);
-			place(base, vs, sigma);
-			if (p.join(f, index_t{ base + i })) count += replay(), p.conf.remove_edge(f, index_t{ base + i });
-			unplace(base);
-			p.pop_vertex();
-		}
-		return count;
-	};
-	int m = 0;
-	for (int v = 0; v < (int)start_of.size(); v++)
-		if (t.types[v] == t.root)
-			for (auto const& sigma : s.aut[t.root]) place(0, start_of[v], sigma), m += replay(), unplace(0);
-	return m;
-}
 
 // ── exact: the whole tree ──
 
@@ -238,208 +83,27 @@ static int exact(Search const& s) {
 	return all.multiplicity_wrong ? 1 : 0;
 }
 
-// ── estimate: random probes ──
-
-struct Moments {
-	double n = 0, s = 0, ss = 0;
-	void add(double x) { n++, s += x, ss += x * x; }
-	double mean() const { return n ? s / n : 0; }
-	double var_of_mean() const { return n > 1 ? std::max(0.0, ss / n - mean() * mean()) / (n - 1) : 0; }
-};
-struct RootStats {
-	Moments nodes, cpu, path_nodes, tilings;
-	double cross = 0;   // sum over probes of cpu * path_nodes, for the ratio's variance
-	std::map<int, Moments> complete, unique;
-	std::mutex m;
-};
-
-using Clock = std::chrono::steady_clock;
-static double since(Clock::time_point t) { return std::chrono::duration<double>(Clock::now() - t).count(); }
-
-// What the engine does at a complete tiling (main's on_tiling): fingerprint it, and write the certificate
-// of a minimal one. Every reach is fingerprinted; a minimal tiling is written once, so its writing is
-// charged at 1/m of the reach.
-static double leaf_cost(Node const& n, original_tiling_writer& writer, bool& minimal, double& write) {
-	auto const t0 = Clock::now();
-	Fingerprints::Key key;
-	minimal = fingerprint_if_minimal(n.conf, key);
-	double const fp = since(t0);
-	write = 0;
-	if (minimal) {
-		auto const t1 = Clock::now();
-		thread_local std::ostringstream text;
-		text.str("");
-		writer.write_content(text, n.conf);
-		write = since(t1);
-	}
-	return fp;
-}
-
-// The engine's time per node, by Knuth's single path: it works on one tiling as the engine's depth-first
-// walk does, so the time measured at a node is the engine's (the level-wide probe below keeps hundreds of
-// tilings in flight and measured 44-71% high). A path's time is noisy, and so is its node count, but
-// together: their ratio, times the level-wide probe's node count, is the CPU estimate (a ratio estimator;
-// experiments/results/searcher-estimate-2026-10-25.md). Returns {weighted time, weighted nodes}.
-static std::pair<double, double> path_cpu(Search const& s, original_tiling_writer& writer, int r, std::mt19937_64& rng) {
-	Node n = start(s, r);
-	double w = 1, cpu = 0, nodes = 0;
-	std::vector<Node::Move> ms;
-	for (;;) {
-		auto const t0 = Clock::now();
-		nodes += w;
-		bool dead;
-		index_t f = n.best(dead);
-		if (dead) return { cpu + w * since(t0), nodes };
-		if (!f.has_value()) {
-			cpu += w * since(t0);
-			if (n.k >= s.b.kmin && !required.missing(n.types)) {
-				bool minimal;
-				double write;
-				cpu += w * leaf_cost(n, writer, minimal, write);
-				if (minimal) cpu += w * write / multiplicity(n);
-			}
-			return { cpu, nodes };
-		}
-		n.children(f, ms);
-		cpu += w * since(t0);
-		if (ms.empty()) return { cpu, nodes };
-		w *= ms.size();
-		n.apply(f, ms[std::uniform_int_distribution<size_t>(0, ms.size() - 1)(rng)]);
-	}
-}
-
-// One probe: Chen's heuristic sampling (SIAM J. Comput. 21, 1992). The tree is walked a level at a time
-// (a level adds one edge), every child of the level's nodes is kept, and children of the same kind (same
-// vertex count, same number of free half-edges) are merged into one representative carrying their total
-// weight, picked among them in proportion to weight. Still unbiased, like Knuth's single path, but rare
-// branches are not lost: a probe sees every kind of node at every level.
-static void probe(Search const& s, original_tiling_writer& writer, int r, std::mt19937_64& rng, RootStats& st) {
-	struct Item { Node n; double w; };
-	std::vector<Item> level{ { start(s, r), 1.0 } };
-	double nodes = 0;
-	std::map<int, double> complete, unique;
-	std::vector<Node::Move> ms;
-	std::uniform_real_distribution<double> u01;
-	auto kind = [](Node const& n) {
-		int free = 0;
-		for (auto ix : n.conf.indices()) free += n.conf.is_free(ix);
-		return std::pair{ (int)n.types.size(), free };   // all vertices: a flat one changes the node too
-	};
-	while (!level.empty()) {
-		std::map<std::pair<int, int>, Item> next;
-		for (auto& [n, w] : level) {
-			nodes += w;
-			bool dead;
-			index_t f = n.best(dead);
-			if (dead) continue;
-			if (!f.has_value()) {
-				int k = n.k;
-				if (k >= s.b.kmin && !required.missing(n.types)) {
-					complete[k] += w;
-					Fingerprints::Key key;
-					if (fingerprint_if_minimal(n.conf, key)) unique[k] += w / multiplicity(n);
-				}
-				continue;
-			}
-			n.children(f, ms);
-			for (auto m : ms) {
-				Node c = n;
-				c.apply(f, m);
-				auto key = kind(c);
-				auto it = next.find(key);
-				if (it == next.end()) next.emplace(key, Item{ std::move(c), w });
-				else if (it->second.w += w; u01(rng) < w / it->second.w) it->second.n = std::move(c);
-			}
-		}
-		level.clear();
-		for (auto& [key, item] : next) level.push_back(std::move(item));
-	}
-	auto const [cpu, path_nodes] = path_cpu(s, writer, r, rng);
-	double total = 0;
-	for (auto [k, u] : unique) total += u;
-	std::lock_guard<std::mutex> l(st.m);
-	st.nodes.add(nodes), st.cpu.add(cpu), st.path_nodes.add(path_nodes), st.tilings.add(total), st.cross += cpu * path_nodes;
-	for (int k = s.b.kmin; k <= s.b.kmax; k++) st.complete[k].add(complete[k]), st.unique[k].add(unique[k]);
-}
 
 static int estimate(Search const& s, std::vector<int> const& roots, double seconds, int threads, uint64_t seed) {
-	std::vector<RootStats> stats(s.roots);
-	std::atomic<uint64_t> next{ 0 }, probes{ 0 };
-	auto const t0 = Clock::now();
-	auto report = [&] {
-		double nodes = 0, nodes_var = 0, cpu = 0, path_nodes = 0;
+	Sampler sm(s, roots, seed);
+	auto report = [&](double t) {
+		Totals const tt = sm.totals();
 		std::map<int, std::array<double, 4>> per_k;   // complete, its variance, unique, its variance
 		for (int r : roots) {
-			auto& st = stats[r];
+			auto& st = sm.stats[r];
 			std::lock_guard<std::mutex> l(st.m);
-			nodes += st.nodes.mean(), nodes_var += st.nodes.var_of_mean();
-			cpu += st.cpu.mean(), path_nodes += st.path_nodes.mean();
 			for (auto& [k, m] : st.complete) per_k[k][0] += m.mean(), per_k[k][1] += m.var_of_mean();
 			for (auto& [k, m] : st.unique) per_k[k][2] += m.mean(), per_k[k][3] += m.var_of_mean();
 		}
-		// seconds per node along the paths, times the nodes. Its relative variance is the nodes' plus the
-		// ratio's (delta method: per root, the variance of cpu - ratio * path_nodes, over path_nodes squared).
-		double const per_node = path_nodes > 0 ? cpu / path_nodes : 0;
-		double ratio_var = 0;
-		for (int r : roots) {
-			auto& st = stats[r];
-			std::lock_guard<std::mutex> l(st.m);
-			if (st.cpu.n < 2) continue;
-			double const n = st.cpu.n, cov = (st.cross / n - st.cpu.mean() * st.path_nodes.mean());
-			double const var = st.cpu.var_of_mean() * (n - 1) + per_node * per_node * st.path_nodes.var_of_mean() * (n - 1) - 2 * per_node * cov;
-			ratio_var += std::max(0.0, var) / (n - 1);
-		}
-		double const rel = (nodes > 0 ? nodes_var / (nodes * nodes) : 0) + (path_nodes > 0 ? ratio_var / (path_nodes * path_nodes) : 0);
-		std::cout << "estimate " << since(t0) << " " << probes.load() << " nodes " << nodes << " " << std::sqrt(nodes_var) << " cpu "
-				  << nodes * per_node << " " << nodes * per_node * std::sqrt(rel) << "\n";
+		std::cout << "estimate " << t << " " << sm.probes.load() << " nodes " << tt.nodes << " " << tt.nodes_se << " cpu " << tt.cpu
+				  << " " << tt.cpu_se << "\n";
 		for (int k = s.b.kmin; k <= s.b.kmax; k++)
 			std::cout << "k " << k << " complete " << per_k[k][0] << " " << std::sqrt(per_k[k][1]) << " unique " << per_k[k][2] << " "
 					  << std::sqrt(per_k[k][3]) << "\n";
 		std::cout << "end" << std::endl;
 	};
-	if (roots.empty()) return report(), 0;
-	// After a first pass of a few probes per root, a tenth of the probes go round-robin and the rest to each
-	// root in proportion to its estimated size in nodes (better than half and half on every board measured), which the probes estimate well (within a few percent on
-	// every board measured). Weighing by each root's observed spread instead (Neyman allocation) was
-	// measured and rejected: a root whose first probes came in low is then starved, and its estimate stays
-	// low (hybrid_2_9830 k = 2 came out 25% low on every seed; experiments/results/searcher-estimate-2026-10-25.md).
-	int const first_pass = 4;
-	double const by_size = std::getenv("TILEESTIMATE_BY_SIZE") ? std::atof(std::getenv("TILEESTIMATE_BY_SIZE")) : 0.9;
-	std::mutex alloc_mutex;
-	std::discrete_distribution<int> pick;
-	bool weighed = false;
-	auto reweigh = [&] {
-		std::vector<double> w;
-		for (int r : roots) w.push_back(stats[r].nodes.mean() + 1e-9);
-		std::lock_guard<std::mutex> l(alloc_mutex);
-		pick = std::discrete_distribution<int>(w.begin(), w.end());
-		weighed = true;
-	};
-	std::vector<std::thread> pool;
-	for (int i = 0; i < threads; i++)
-		pool.emplace_back([&, i] {
-			std::mt19937_64 rng(seed + 0x9e3779b97f4a7c15ULL * (i + 1));
-			original_tiling_writer writer{ s.vc };   // one per thread: it keeps state while writing
-			std::uniform_real_distribution<double> u01;
-			while (since(t0) < seconds) {
-				uint64_t j = next++;
-				int r;
-				if (j < first_pass * roots.size() || !weighed || u01(rng) >= by_size) r = roots[j % roots.size()];
-				else {
-					std::lock_guard<std::mutex> l(alloc_mutex);
-					r = roots[pick(rng)];
-				}
-				probe(s, writer, r, rng, stats[r]);
-				probes++;
-			}
-		});
-	for (double t = 0.5; t < seconds; t += 0.5) {
-		std::this_thread::sleep_for(std::chrono::duration<double>(std::max(0.0, t - since(t0))));
-		if (next >= first_pass * roots.size()) reweigh();
-		if (t == std::floor(t)) report();
-	}
-	for (auto& t : pool) t.join();
-	report();
+	sm.run(seconds, threads, report);
+	report(sm.seconds);
 	return 0;
 }
 
@@ -471,6 +135,7 @@ int main(int argc, char** argv) {
 		else if (a == "--exact") is_exact = true;
 		else { std::cerr << usage; return 2; }
 	}
+	if (s.b.kmin < 1 || s.b.kmax < s.b.kmin || s.b.kmax > MAX_K) { std::cerr << "--k needs 1 <= kmin <= kmax <= " << MAX_K << "\n"; return 2; }
 	// the vertex templates in the engine's order, roots first, and its required sets (tilesearch.cpp): a
 	// running run's recorded order (order.txt beside its roots.done), else the order a new run would rank
 	flat_max = flat_budget(s.b);
@@ -479,6 +144,8 @@ int main(int argc, char** argv) {
 	auto const& order = pl.order;
 	int const root_lines = pl.roots;
 	s.roots = classify(s.b, order, root_lines, s.vc);
+	if (ring_check) s.ring = std::make_shared<RingTables>(s.vc);   // the plan's choice (or the running run's)
+	if (sym_break) s.syms = std::make_shared<RootSyms>(s.vc, s.roots);
 	for (int t = 0; t < s.vc.count(); t++) s.aut.push_back(symmetries(s.vc, t));
 	FastFaces const faces(s.b.faces, s.b.apeirogons);
 	Candidates const cand(s.vc, faces, faces);

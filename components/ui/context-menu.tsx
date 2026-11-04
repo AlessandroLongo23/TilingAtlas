@@ -3,7 +3,7 @@
 import { ContextMenu as Context } from "@base-ui/react/context-menu";
 import { Menu } from "@base-ui/react/menu";
 import { MoreHorizontal, type LucideIcon } from "lucide-react";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { HoverPill } from "@/components/ui/hover-pill";
 import { cn } from "@/lib/utils/cn";
 
@@ -30,7 +30,7 @@ function Items({ items }: { items: ContextMenuItem[] }) {
 							disabled={disabled}
 							className={cn(
 								"flex cursor-default items-center gap-2 rounded-md py-1.5 pr-3 pl-2 text-[13px] outline-none select-none data-disabled:opacity-50 data-highlighted:bg-surface-overlay",
-								danger ? "text-danger" : "text-fg",
+								danger ? "text-danger" : "text-fg-secondary data-highlighted:text-fg",
 							)}
 						>
 							{Icon ? <Icon size={14} className={danger ? undefined : "text-fg-muted"} /> : null}
@@ -63,11 +63,21 @@ export function ActionMenu({
 	items,
 	label,
 	className,
+	trigger,
 }: {
 	items: ContextMenuItem[];
 	label: string;
 	className?: string;
+	/** A button of its own in place of the "more" one. */
+	trigger?: ReactElement;
 }) {
+	if (trigger)
+		return (
+			<Menu.Root>
+				<Menu.Trigger render={trigger} />
+				<Items items={items} />
+			</Menu.Root>
+		);
 	return (
 		<Menu.Root>
 			<Menu.Trigger

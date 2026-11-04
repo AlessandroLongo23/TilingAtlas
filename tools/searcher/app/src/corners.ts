@@ -7,6 +7,7 @@
 // of two edges. Marek's hyperbolic boards are built this way: 1247_1_0612 has faces whose sides are cut
 // into 1, 2, 4 and 7 edges, and edge length 1.0612751; its 121 vertices are exactly the multisets of at
 // most 12 corners that close at that length (checked, with 123_1_4657 and hybrid_2_9830 likewise).
+import Decimal from "decimal.js";
 import type { BubbleGrid } from "@/lib/bubble/pattern";
 import { interiorAngle } from "@/lib/render/hyperbolicDevelopClient";
 import { starDent } from "@/lib/render/hypStarFamily";
@@ -21,6 +22,8 @@ import {
 	type Board,
 	type Face,
 } from "./board";
+// moved to board.ts (pure word logic, which the main process bundles too); kept importable from here
+export { arrangements, withPermutations } from "./board";
 
 export type Shape =
 	| { kind: "pi" }
@@ -190,6 +193,82 @@ export function solveEdge(word: string[], shapes: Map<string, Shape>, g: Geometr
 	return Math.abs(sum(l) - TWO_PI) < 1e-9 ? l : null;
 }
 
+// ── exact closure ──
+//
+// The search for closing vertices runs in floats with a 1e-6 tolerance, so a sum that only comes near 360°
+// passes with the true ones. Every angle here is algebraic once the edge is (sin(α/2) = cos(π/n)/cosh(ks/2)),
+// and a vertex the board already has fixes the edge: rechecking each candidate at 60 digits, with the edge
+// re-solved at that precision from it, keeps the identities and drops the near-misses, which fail by the
+// seventh digit.
+
+const HP = Decimal.clone({ precision: 60 });
+const HP_PI = HP.acos(-1);
+const CLOSED = new HP("1e-40");
+
+/** A corner's angle to 60 digits at edge `edge`, or null where there is no closed form here (a star's corner). */
+function preciseAngle(s: Shape | undefined, g: Geometry, edge: Decimal, deg: string | undefined): Decimal | null {
+	if (s?.kind === "pi") return HP_PI;
+	if (s?.kind === "set") {
+		const m = /^(\d+(?:\.\d+)?)(?:\/(\d+(?:\.\d+)?))?$/.exec(deg ?? "");
+		return m ? new HP(m[1]).div(m[2] ?? 1).times(HP_PI).div(180) : null;
+	}
+	if (s?.kind !== "polygon") return null;
+	if (g === "plane") return s.n === null ? HP_PI : HP_PI.minus(HP_PI.times(2).div(s.n));
+	const c = s.n === null ? new HP(1) : HP_PI.div(s.n).cos();
+	const half = edge.times(s.seg).div(2);
+	if (g === "hyperbolic") return c.div(half.cosh()).asin().times(2);
+	if (s.n === null) return null;
+	const r = c.div(half.cos());
+	return r.gt(1) ? null : r.asin().times(2);
+}
+
+/**
+ * Of `words` (vertices that close to 1e-6 at `edge`), those that close exactly, the edge re-solved to 60 digits
+ * from `seed`, a vertex that closes by definition. A near-miss lands in `dropped`. With no seed (an edge typed
+ * in, or solved with a star's points) or a corner with no closed form, a word is kept and counted `unchecked`.
+ */
+export function exactlyClosing(
+	board: Board,
+	g: Geometry,
+	edge: number,
+	seed: string[] | null,
+	words: string[][],
+): { words: string[][]; dropped: string[][]; unchecked: number } {
+	const shapes = cornerShapes(board);
+	const deg = new Map(board.angles.map((a) => [a.sym, a.value]));
+	const at = (sym: string, l: Decimal) => preciseAngle(shapes.get(sym), g, l, deg.get(sym));
+	const sum = (w: string[], l: Decimal) =>
+		w.reduce<Decimal | null>((t, c) => {
+			const a = t && at(c, l);
+			return t && a ? t.plus(a) : null;
+		}, new HP(0));
+	let l = new HP(edge);
+	if (g !== "plane") {
+		const f = (x: Decimal) => sum(seed ?? [], x)?.minus(HP_PI.times(2)) ?? null;
+		// secant from the float edge: it is good to ~1e-12, so a handful of steps reach 60 digits
+		let [x0, x1] = [l, l.times(1 + 1e-9)];
+		let [f0, f1] = [f(x0), f(x1)];
+		for (let i = 0; seed && f0 && f1 && i < 40 && !f1.abs().lt(CLOSED) && !f1.eq(f0); i++) {
+			[x0, x1] = [x1, x1.minus(f1.times(x1.minus(x0)).div(f1.minus(f0)))];
+			[f0, f1] = [f1, f(x1)];
+		}
+		if (!seed || !f1 || !f1.abs().lt(CLOSED)) return { words, dropped: [], unchecked: words.length };
+		l = x1;
+	}
+	// each corner's angle once: the words share a handful of corners
+	const cache = new Map<string, Decimal | null>();
+	const angle = (c: string) => (cache.has(c) ? cache.get(c)! : (cache.set(c, at(c, l)), cache.get(c)!));
+	const out: string[][] = [];
+	const dropped: string[][] = [];
+	let unchecked = 0;
+	for (const w of words) {
+		const s = w.reduce<Decimal | null>((t, c) => (t && angle(c) ? t.plus(angle(c)!) : null), new HP(0));
+		if (!s) (unchecked++, out.push(w));
+		else (s.minus(HP_PI.times(2)).abs().lt(CLOSED) ? out : dropped).push(w);
+	}
+	return { words: out, dropped, unchecked };
+}
+
 /**
  * The multisets of 3 to `max` of the board's corners that close in `g` at some edge length, each with that
  * length, fewest corners first and at most `limit`: what an edge can be solved from when no board vertex
@@ -238,7 +317,10 @@ export function closingVertices(
 		const s = shapes.get(sym)!;
 		const a = cornerAngle(s, g, edge);
 		if (s.kind === "digon") skipped.push({ sym, why: "a digon marks an edge; it adds no angle" });
-		else if (side) skipped.push({ sym, why: "is the middle of a side, and meets only the edge corners it glues to" });
+		// a styled edge type marks a side's middle and meets only its partner; a plain one (Marek's `edge Pi`)
+		// is a flat point that real corners can meet (A3 A24 Pi)
+		else if (side && (side.style || side.length))
+			skipped.push({ sym, why: "is the middle of a side, and meets only the edge corners it glues to" });
 		else if (a === null || !(a > 1e-9))
 			skipped.push({
 				sym,
@@ -296,58 +378,6 @@ export function starCorner(s: Shape | undefined): "point" | "dent" | null {
 export function pointsCanPart(shapes: Map<string, Shape>, word: string[]): boolean {
 	const points = word.filter((c) => starCorner(shapes.get(c)) === "point").length;
 	return points <= word.length - points;
-}
-
-/**
- * Every cyclic order of the multiset `word`, one per order up to rotation and reflection. With `digons`, each
- * order also comes once for every way to put at most one digon in each gap between its corners: the vertices
- * of an edge system, where a digon in a gap marks the edge there. A vertex with exactly one marked edge is a
- * loose end, kept only with `loose` (Marek's edge systems have none). Fewest marked edges first; null when
- * the orders to try pass `budget`.
- */
-export function arrangements(word: string[], digons: string[] = [], loose = false, budget = 2e6): string[][] | null {
-	const count = new Map<string, number>();
-	for (const s of word) count.set(s, (count.get(s) ?? 0) + 1);
-	const syms = [...count.keys()].sort();
-	const out = new Map<string, string[]>();
-	const cur: string[] = [];
-	let steps = 0;
-	const marks = (order: string[]) => {
-		// each gap, after corner i, holds nothing (-1) or one of the digons
-		const gap = order.map(() => -1);
-		const rec = (i: number, marked: number) => {
-			if (++steps > budget) return;
-			if (i === order.length) {
-				if (marked === 1 && !loose) return;
-				const w = order.flatMap((c, j) => (gap[j] < 0 ? [c] : [c, digons[gap[j]]]));
-				const k = cyclicKey(w);
-				if (!out.has(k)) out.set(k, w);
-				return;
-			}
-			for (let d = -1; d < digons.length; d++) {
-				gap[i] = d;
-				rec(i + 1, marked + (d < 0 ? 0 : 1));
-			}
-		};
-		rec(0, 0);
-	};
-	// every order starts with the first symbol, which loses no order up to rotation
-	const build = () => {
-		if (steps > budget) return;
-		if (cur.length === word.length) return marks(cur);
-		for (const s of syms)
-			if (count.get(s)! > 0 && (cur.length || s === syms[0])) {
-				count.set(s, count.get(s)! - 1);
-				cur.push(s);
-				build();
-				cur.pop();
-				count.set(s, count.get(s)! + 1);
-			}
-	};
-	if (word.length) build();
-	if (steps > budget) return null;
-	const digonCount = (w: string[]) => w.length - word.length;
-	return [...out.values()].sort((x, y) => digonCount(x) - digonCount(y));
 }
 
 // ── star points solved with the edge ──
@@ -455,7 +485,7 @@ export function solvePoints(b: Board, seeds: string[][], g: Geometry): PointSolu
 }
 
 /** Solve the small square system A·x = y (Gaussian elimination, partial pivoting). */
-function gauss(A: number[][], y: number[]): number[] {
+export function gauss(A: number[][], y: number[]): number[] {
 	const n = y.length;
 	const M = A.map((row, i) => [...row, y[i]]);
 	for (let c = 0; c < n; c++) {
@@ -483,7 +513,7 @@ function gauss(A: number[][], y: number[]): number[] {
 // `A6*60` is a star of six 60° points (its dents: 360 − 60 − 60 = 240°), `A3*100` a convex hexagon of 100°
 // and 140° corners, `A2*60` a rhombus.
 
-const LETTERS = "ABCDEFGHIJ";
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /** A face as its shape: n corners (null: an apeirogon), sides of `seg` edges, and for an isotoxal face (a
  *  star, or convex) the angle of its first corners, `n` then counting those. */
@@ -507,7 +537,7 @@ export function isotoxal(n: number, point: number): boolean {
 
 /** `C6`, `Aoo`, `A6*60` or `A6*` (the point Free, for Quick setup to solve) as a FaceSpec, or null. */
 export function readShorthand(text: string): FaceSpec | null {
-	const m = /^([A-J])(\d+|oo)(?:\*(\d+(?:\.\d+)?)?)?$/.exec(text.trim());
+	const m = /^([A-Z])(\d+|oo)(?:\*(\d+(?:\.\d+)?)?)?$/.exec(text.trim());
 	if (!m) return null;
 	const seg = LETTERS.indexOf(m[1]) + 1;
 	const n = m[2] === "oo" ? null : Number(m[2]);
@@ -526,6 +556,13 @@ const degrees = (num: number, den: number) =>
  * The board with face `at` (a new one when absent) set to `spec`, its corners named as Marek names them and
  * declared, a star's with their angles; corners the old face used that nothing uses any more are dropped.
  */
+/** Several faces in Marek's names, comma separated ("Aoo, B3, Coo"); null when any of them does not read. */
+export function readShorthands(text: string): FaceSpec[] | null {
+	const parts = text.split(/[,;]/).map((t) => t.trim()).filter(Boolean);
+	const specs = parts.map(readShorthand);
+	return parts.length && specs.every((s) => s) ? (specs as FaceSpec[]) : null;
+}
+
 export function withFace(b: Board, spec: FaceSpec, at = b.faces.length): Board {
 	const base = `${LETTERS[spec.seg - 1]}${spec.n ?? "oo"}`;
 	const pis = Array.from({ length: spec.seg - 1 }, () => "Pi");
@@ -549,7 +586,7 @@ export function withFace(b: Board, spec: FaceSpec, at = b.faces.length): Board {
 		declare.push({ sym: base });
 		word = [base, ...pis];
 	}
-	const face: Face = { word, repeat: spec.n ?? "inf" };
+	const face: Face = { word, repeat: spec.n ?? "inf", repeatExpr: undefined }; // a new shape: no formula of the old one
 	const faces = at < b.faces.length ? b.faces.map((f, i) => (i === at ? { ...f, ...face } : f)) : [...b.faces, face];
 	let angles = b.angles.map((a) => {
 		const d = declare.find((x) => x.sym === a.sym && x.value !== undefined);
@@ -560,6 +597,32 @@ export function withFace(b: Board, spec: FaceSpec, at = b.faces.length): Board {
 	const used = new Set([...faces, ...b.vertices].flatMap((x) => x.word));
 	angles = angles.filter((a) => !old.includes(a.sym) || used.has(a.sym));
 	return { ...b, angles, faces };
+}
+
+/**
+ * The board with pasted vertex lines added (`vertex A3 A12 Pi`, or the corners alone, one vertex a line;
+ * # starts a comment), leaving out those it has. A corner it does not declare comes with its face when
+ * Marek's name says the face (A3, C6, Hoo), and alone when not: `bare` lists those.
+ */
+export function withVertices(b: Board, text: string): { board: Board; added: number; faces: string[]; bare: string[] } {
+	const key = (w: string[]) => cyclicKey(w, b.permutations);
+	const have = new Set(b.vertices.map((v) => key(v.word)));
+	const words: string[][] = [];
+	for (const line of text.split("\n")) {
+		const w = line.replace(/#.*/, "").trim().split(/[\s,]+/).filter(Boolean);
+		if (w[0] === "vertex") w.shift();
+		if (w.length && !have.has(key(w))) have.add(key(w)), words.push(w);
+	}
+	let board = { ...b, vertices: [...b.vertices, ...words.map((word) => ({ word }))] };
+	const faces: string[] = [];
+	const bare: string[] = [];
+	for (const sym of new Set(words.flat())) {
+		if (board.angles.some((a) => a.sym === sym)) continue;
+		const spec = sym === "Pi" ? null : readShorthand(sym);
+		if (spec) (board = withFace(board, spec)), faces.push(sym);
+		else (board = { ...board, angles: [...board.angles, { sym }] }), sym === "Pi" || bare.push(sym);
+	}
+	return { board, added: words.length, faces, bare };
 }
 
 /** A face read back as a FaceSpec: one corner all round, or an isotoxal face's two; null for any other. */
@@ -585,6 +648,69 @@ export const EDGE_PRESETS = {
 	bubble: { edges: [{ sym: "EB", style: "bump" }, { sym: "EI", style: "bite" }], glue: [["EB", "EI"]] },
 } as const;
 export type EdgePreset = keyof typeof EDGE_PRESETS;
+
+/** The vertex lines that glue the board's edge types: its own (two edge corners), and for a type with none, the
+ *  type to itself. */
+export function glueLines(b: Board): string[][] {
+	const types = b.angles.filter((a) => a.edge).map((a) => a.sym);
+	const lines = b.vertices.filter((v) => v.word.length === 2 && v.word.every((c) => types.includes(c)));
+	return [...lines.map((v) => v.word), ...types.filter((t) => !lines.some((v) => v.word.includes(t))).map((t) => [t, t])];
+}
+
+/** The edge types of the sides either side of corner `i` of a face's `full` word, before and after it: the
+ *  edge corner next to it, "" for a side with none. */
+export function sidesAround(edges: Set<string>, full: string[], i: number): [string, string] {
+	const n = full.length;
+	const at = (k: number) => (edges.has(full[(k + n) % n]) ? full[(k + n) % n] : "");
+	return [at(i - 1), at(i + 1)];
+}
+
+const sidesOf = new WeakMap<Board, { edges: Set<string>; pairs: Map<string, [string, string][]>; glue: Set<string> }>();
+/**
+ * Per corner, its sides as it sits at a vertex, [the side it starts on, the side it ends on] going round, every
+ * way its faces give (a face lies either way round, so both orders); and which types glue, as "s|t", "" to "".
+ */
+export function boardSides(b: Board) {
+	let out = sidesOf.get(b);
+	if (!out) {
+		const edges = new Set(b.angles.flatMap((a) => (a.edge ? [a.sym] : [])));
+		const pairs = new Map<string, [string, string][]>();
+		for (const f of b.faces) {
+			const full = f.repeat === "inf" ? f.word : Array.from({ length: f.repeat }, () => f.word).flat();
+			full.forEach((c, i) => {
+				if (edges.has(c)) return;
+				const [x, y] = sidesAround(edges, full, i);
+				const list = pairs.get(c) ?? [];
+				for (const p of [[x, y], [y, x]] as [string, string][])
+					if (!list.some((q) => q[0] === p[0] && q[1] === p[1])) list.push(p);
+				pairs.set(c, list);
+			});
+		}
+		const glue = new Set(["|", ...glueLines(b).flatMap(([s, t]) => [`${s}|${t}`, `${t}|${s}`])]);
+		sidesOf.set(b, (out = { edges, pairs, glue }));
+	}
+	return out;
+}
+
+/**
+ * Whether the corners of the cyclic `word` can sit round a vertex with every side two neighbours share glued:
+ * the side one corner ends on is the side the next starts on, so their edge types must glue, like to like for
+ * lengths (the atlas's rule, gen_alphabet.py edge_type_forbidden_pairs). A corner in no face passes.
+ */
+export function sidesMeet(b: Board, word: string[]): boolean {
+	const { edges, pairs, glue } = boardSides(b);
+	if (!edges.size) return true;
+	const opts = word.map((c) => pairs.get(c));
+	if (opts.some((o) => !o)) return true;
+	return opts[0]!.some(([first, last]) => {
+		let ends = new Set([last]);
+		for (const o of opts.slice(1)) {
+			ends = new Set(o!.flatMap(([f, l]) => ([...ends].some((e) => glue.has(`${e}|${f}`)) ? [l] : [])));
+			if (!ends.size) return false;
+		}
+		return [...ends].some((e) => glue.has(`${e}|${first}`));
+	});
+}
 
 /** How deep a board's bumps and bites are drawn: the depth is budgeted by its sharpest corner
  *  (lib/bubble/edges.ts boardCornerAngle), so a bump never crosses a neighbouring side. */
@@ -662,15 +788,7 @@ export function decorate(
 	preset: EdgePreset | null,
 	loose = true,
 ): { board: Board; glue: string[][]; vertices: (plain: string[][]) => string[][]; plain: Board } {
-	if (!preset) {
-		const types = b.angles.filter((a) => a.edge).map((a) => a.sym);
-		const lines = b.vertices.filter((v) => v.word.length === 2 && v.word.every((c) => types.includes(c)));
-		const glue = [
-			...lines.map((v) => v.word),
-			...types.filter((t) => !lines.some((v) => v.word.includes(t))).map((t) => [t, t]),
-		];
-		return { board: b, glue, vertices: (ws) => ws, plain: b };
-	}
+	if (!preset) return { board: b, glue: glueLines(b), vertices: (ws) => ws, plain: b };
 	const p = EDGE_PRESETS[preset];
 	const plain = plainOf(b);
 	const ts = p.edges.map((e) => e.sym);

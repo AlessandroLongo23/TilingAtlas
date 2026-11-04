@@ -11,12 +11,14 @@ import { paletteFor } from "@/lib/colors/render";
 import { coloredCorner, cyclicKey, edgeTypes, faceSize, flatOf, type Board, type Face } from "./board";
 import { DEFAULT_BUBBLE_EDGE_STYLE, pushEdge } from "@/lib/bubble/edges";
 import {
+	boardSides,
 	bubbleGrid,
 	cornerAngle,
 	cornerShapes,
 	dentOf,
 	freePoints,
 	polygonOf,
+	sidesAround,
 	specOf,
 	starCorner,
 	withPoints,
@@ -45,7 +47,7 @@ const colorFill = (sym: string) => {
 	return typeof c === "number" ? tileFill(c, 0.85) : c === "dark" ? "rgb(40 40 44)" : tileFill(42, 0.85);
 };
 
-const fillOf = (b: Board, f: Face) => {
+export const fillOf = (b: Board, f: Face) => {
 	const colored = f.word.map(colorFill).find(Boolean);
 	if (colored) return colored;
 	const spec = specOf(b, f);
@@ -63,8 +65,8 @@ type Pt = { x: number; y: number };
 type Walks = {
 	shapes: Map<string, Shape>;
 	faces: [Map<Face, Pt[] | null>, Map<Face, Pt[] | null>];
-	/** per corner: its face and every way it can sit at a vertex (cornerAt) */
-	corners: Map<string, { face: Face; polys: Pt[][]; js: number[] } | null>;
+	/** per corner: its face and every way it can sit at a vertex (cornerAt), with the sides it starts and ends on */
+	corners: Map<string, { face: Face; polys: Pt[][]; sides: [string, string][]; js: number[] } | null>;
 	/** whether two corners' faces overlap, by the corners and the turn between them */
 	pairs: Map<string, boolean>;
 };
@@ -157,10 +159,16 @@ function cornerAt(b: Board, c: string) {
 		else {
 			const n = walked.length;
 			const mirrored = walked.map((p) => ({ x: p.x, y: -p.y })).reverse();
-			const places = new Map<string, Pt[]>();
+			const places = new Map<string, { poly: Pt[]; sides: [string, string] }>();
+			const full = Array.from({ length: face.repeat as number }, () => face.word).flat();
 			face.word.forEach((d, j) => {
 				if (d !== c) return;
-				for (const [poly, i] of [[walked, j], [mirrored, n - 1 - j]] as const) {
+				// walked, the corner starts on the side after it and ends on the side before; mirrored, the other way
+				const [before, after] = sidesAround(boardSides(b).edges, full, j);
+				for (const [poly, i, sides] of [
+					[walked, j, [after, before]],
+					[mirrored, n - 1 - j, [before, after]],
+				] as const) {
 					const [a, e] = [poly[i], poly[(i + 1) % n]];
 					const rot = -Math.atan2(e.y - a.y, e.x - a.x);
 					const [cs, sn] = [Math.cos(rot), Math.sin(rot)];
@@ -168,11 +176,14 @@ function cornerAt(b: Board, c: string) {
 						x: (p.x - a.x) * cs - (p.y - a.y) * sn,
 						y: (p.x - a.x) * sn + (p.y - a.y) * cs,
 					}));
-					places.set(out.map((p) => `${p.x.toFixed(6)},${p.y.toFixed(6)}`).join(" "), out);
+					places.set(`${sides.join("|")} ${out.map((p) => `${p.x.toFixed(6)},${p.y.toFixed(6)}`).join(" ")}`, {
+						poly: out,
+						sides: [...sides],
+					});
 				}
 			});
-			const polys = [...places.values()];
-			corners.set(c, { face, polys, js: polys.map((_, j) => j) });
+			const all = [...places.values()];
+			corners.set(c, { face, polys: all.map((p) => p.poly), sides: all.map((p) => p.sides), js: all.map((_, j) => j) });
 		}
 	}
 	return corners.get(c)!;
@@ -203,13 +214,18 @@ export function overlapping(b: Board, word: string[]): boolean | null {
 	return !fit(b, w, theta);
 }
 
-/** A place for each corner of `w`, turned by `theta`, with no two faces overlapping; null when none works. */
+/** Whether corner `q`, placed right after `p` going round, starts on a side that glues to the one p ends on. */
+const glues = (b: Board, p: At, q: At) =>
+	boardSides(b).glue.has(`${cornerAt(b, p.c)!.sides[p.j][1]}|${cornerAt(b, q.c)!.sides[q.j][0]}`);
+
+/** A place for each corner of `w`, turned by `theta`, with no two faces overlapping and every shared side glued;
+ *  null when none works. */
 function fit(b: Board, w: string[], theta: number[], at: At[] = []): At[] | null {
 	const k = at.length;
-	if (k === w.length) return at;
+	if (k === w.length) return k < 2 || glues(b, at[k - 1], at[0]) ? at : null;
 	for (const j of cornerAt(b, w[k])!.js) {
 		const p = { c: w[k], j };
-		if (at.some((q, i) => clash(b, q, p, theta[k] - theta[i]))) continue;
+		if ((k && !glues(b, at[k - 1], p)) || at.some((q, i) => clash(b, q, p, theta[k] - theta[i]))) continue;
 		const done = fit(b, w, theta, [...at, p]);
 		if (done) return done;
 	}
@@ -284,7 +300,7 @@ export function fittingVertices(b: Board, max: number, budget = 5e7): string[][]
 		const { c, a, dent } = syms[i];
 		for (const j of cornerAt(b, c)!.js) {
 			const p = { c, j };
-			if (cur.some((q, k) => clash(b, q, p, theta - at[k]))) continue;
+			if ((cur.length && !glues(b, cur[cur.length - 1], p)) || cur.some((q, k) => clash(b, q, p, theta - at[k]))) continue;
 			(cur.push(p), curI.push(i), at.push(theta), (dents += dent ? 1 : 0));
 			grow(first, theta + a);
 			(cur.pop(), curI.pop(), at.pop(), (dents -= dent ? 1 : 0));
@@ -294,7 +310,11 @@ export function fittingVertices(b: Board, max: number, budget = 5e7): string[][]
 	const grow = (first: number, theta: number) => {
 		if (++steps > budget) return;
 		if (Math.abs(theta - 2 * Math.PI) < 1e-9) {
-			if (cur.length >= 2 && !(syms[curI[0]].point && syms[curI[curI.length - 1]].point)) {
+			if (
+				cur.length >= 2 &&
+				!(syms[curI[0]].point && syms[curI[curI.length - 1]].point) &&
+				glues(b, cur[cur.length - 1], cur[0])
+			) {
 				const word = cur.map((p) => p.c);
 				const k = cyclicKey(word);
 				if (!out.has(k)) out.set(k, word);
@@ -329,12 +349,13 @@ export function fittingOrder(b: Board, word: string[]): string[] | null {
 	const cur: At[] = [];
 	const at: number[] = [];
 	const place = (theta: number): boolean => {
-		if (cur.length === word.length) return true;
+		if (cur.length === word.length) return glues(b, cur[cur.length - 1], cur[0]);
 		for (const c of cur.length ? syms : syms.slice(0, 1)) {
 			if (!left.get(c)) continue;
 			for (const j of cornerAt(b, c)!.js) {
 				const p = { c, j };
-				if (cur.some((q, i) => clash(b, q, p, theta - at[i]))) continue;
+				if ((cur.length && !glues(b, cur[cur.length - 1], p)) || cur.some((q, i) => clash(b, q, p, theta - at[i])))
+					continue;
 				(left.set(c, left.get(c)! - 1), cur.push(p), at.push(theta));
 				if (place(theta + rad.get(c)!)) return true;
 				(left.set(c, left.get(c)! + 1), cur.pop(), at.pop());
@@ -590,9 +611,16 @@ export function FaceFigure({
 		pts,
 	);
 	const dots = bubble?.at ?? pts;
-	// on a card the curve says bump or bite, so its edge corner's dot would only hide it; the face editor,
-	// where the dots are clicked, keeps them
-	const bare = bubble && !onSlot ? bubble.marker : null;
+	// on a card the curve says bump or bite, and the side's own length says its length type, so their edge
+	// corners' dots would only hide them; the face editor, where the dots are clicked, keeps them
+	const lengthType = new Set(b.angles.flatMap((a) => (a.edge && !a.edge.style ? [a.sym] : [])));
+	const bare = onSlot
+		? null
+		: bubble
+			? bubble.marker
+			: lengthType.size
+				? dots.map((_, i) => lengthType.has(face.word[i % L]))
+				: null;
 	const labelled = bare ? bare.filter((m) => !m).length <= labelsUpTo : label;
 	const outline = bubble
 		? `M ${bubble.outline.map((p) => `${p.x} ${p.y}`).join(" L ")} Z`

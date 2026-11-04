@@ -321,7 +321,8 @@ vec2 cconj(vec2 a) { return vec2(a.x, -a.y); }
 // x mod n as a slot index. GLSL's mod is x - n * floor(x / n), and a GPU whose division is a multiply
 // by a reciprocal can put x / n a hair under a whole number, which makes mod return n itself: one slot
 // past the row. Seen on Firefox on Windows as faces flooding their neighbours, on apeirogon rows of 3 sides.
-int imod(float x, float n) { int r = int(x - n * floor(x / n)), N = int(n); return r >= N ? r - N : r < 0 ? r + N : r; }
+// Both x and n are whole numbers, so the remainder is rounded, never truncated: 0.9999999 is 1, not 0.
+int imod(float x, float n) { int r = int(floor(x - n * floor(x / n) + 0.5)), N = int(n + 0.5); return r >= N ? r - N : r < 0 ? r + N : r; }
 `;
 
 // The shading, after COMPLEX_GLSL. The host shader declares uHueOffset (the hue ring turns the choices
@@ -402,7 +403,7 @@ int sizeStep(Surf s, float n) {
 	float r = s.key;
 	for (int i = 0; i < 16; i++) {
 		if (i >= uRankN) break;
-		if (abs(uRank[i].x - s.key) < 0.5) { r = uRank[i].y; break; }
+		if (abs(uRank[i].x - s.key) < 1e-3) { r = uRank[i].y; break; } // a flat-cornered face's key is fractional
 	}
 	return imod(r + floor(uHueOffset / (360.0 / n) + 0.5), n);
 }

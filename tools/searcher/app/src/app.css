@@ -18,6 +18,26 @@
 	--font-geist-mono: "Geist Mono";
 }
 
+/* The window's layout follows a docs shell (edl-docs, feature/docs-shell): the bar and the sidebar sit on
+   the window's ground with no rules between them, and the working area is one inset sheet, a step lighter,
+   edged by a hairline ring instead of a border. */
+.ts-sheet {
+	background-color: color-mix(in oklab, var(--color-surface-base), var(--color-surface-raised) 50%);
+	border-radius: var(--radius-xl);
+	box-shadow:
+		0 0 0 1px var(--color-border-subtle),
+		0 1px 2px oklch(0 0 0 / 0.04);
+}
+/* Section labels in the app: sans, sentence case, muted, as in the same shell. The site keeps its mono caps;
+   a tool's dense sidebar of a dozen labels reads quieter without them. Unlayered and after globals.css, so it wins. */
+.ta-label {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	font-weight: 400;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
 /* The run tree's rail: an open folder's contents hang off a line under its icon, and each entry branches
    off it with a curve; the line stops at the last entry's curve. --rail-mid is where an entry's row is
    centred (a folder row is 36px tall; a run row sets 26px). The colour is opaque (a mix against the

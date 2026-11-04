@@ -3302,3 +3302,32 @@ DEVELOPMENT_NOTES "TileSearch download buttons on the site".
 Windows x64 installer + zip; the site's download buttons link /releases/latest/download. Windows engine
 cross-compiled with mingw via tools/searcher/win shims, gated under Wine. Detail: DEVELOPMENT_NOTES
 "TileSearch 0.2.0 released".
+
+2026-11-03 · CC · Searcher studies: a board with `optional` faces and `vary` parameters runs as one study, a row
+per combination, each checked before any search (static, balance, faces that cannot meet) and adopting finished
+runs that did the same search. Engine: `require face … x inf`. Marek's 1.061275 census: 3,471 of 4,095 ruled out.
+Uncommitted. Detail: DEVELOPMENT_NOTES "Studies: one board, a row per combination".
+
+2026-11-03 · CC · Studies get a setup on the board page: Run, One board or A study, then optional faces as chips,
+faces per row, parameters (add, range, remove) and the row count, all written as board lines so `{n}` survives.
+Uncommitted. Detail: DEVELOPMENT_NOTES "Setting a study up from the board page".
+
+2026-11-03 · CC · Parameters in the visual editor: the board model keeps formulas (`x {n}`, `{180-360/n}`) in
+angle values and repeats, drawn at a picked value; faces get n/2n/formula sides, corners a Formula angle.
+Value-dependent prunes are hidden on such boards. Uncommitted. Detail: DEVELOPMENT_NOTES "Parameters in the visual editor".
+
+2026-11-03 · CC · Searcher: Windows runs no longer read as unfinished (census.txt's \r\n); runs and study rows can
+raise k by a rule (found / minutes / GB, any or all, up to a k); study rows follow a raised run; finished runs
+gzip by default. Uncommitted. Detail: DEVELOPMENT_NOTES "Windows runs read as unfinished; raising k by a rule".
+
+2026-11-03 · CC · Raise k by itself corrected: searches start at the lowest k and climb one at a time; minutes and GB
+are ceilings that stop a search (capped.txt; a study's row is done and the study goes on). Resume keeps a run's rule.
+Uncommitted. Detail: DEVELOPMENT_NOTES "Raise k by itself, corrected".
+
+2026-11-03 · CC · Searcher: Raise k for a whole study (rows that fall short of the new rule climb on from where they
+stopped); the k setting is one field, Fixed range or Raise by itself, showing one or the other. Uncommitted.
+Detail: DEVELOPMENT_NOTES "Raise k for a whole study; one k field for range or rule".
+
+2026-11-04 · CC · The Tiling Searcher 0.4.0 on the atlas's download buttons (GitHub release the-tiling-searcher-latest,
+assets replaced): Windows engines rebuilt with mingw and checked under Wine; macOS and Windows from one tree.
+Uncommitted source. Detail: DEVELOPMENT_NOTES "The Tiling Searcher 0.4.0 released".

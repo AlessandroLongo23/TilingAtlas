@@ -7,9 +7,11 @@ import {
 	crossing,
 	edgesOf,
 	faceOf,
+	grid,
 	normalize,
 	PRESETS,
 	problemOf,
+	regrid,
 	returns,
 	withDrawnFace,
 	type Edge,
@@ -85,7 +87,8 @@ describe("the board line", () => {
 			const b = withDrawnFace(emptyBoard(), p.edges);
 			const back = edgesOf(b, b.faces[0]);
 			expect(back, p.name).not.toBeNull();
-			expect(faceOf(back!, "F1").face, p.name).toEqual(b.faces[0]);
+			expect(back!.g.n, p.name).toBe(12);
+			expect(faceOf(back!.edges, "F1").face, p.name).toEqual(b.faces[0]);
 		}
 	});
 	it("survives the board text", () => {
@@ -101,9 +104,62 @@ describe("the board line", () => {
 		expect(b.faces).toHaveLength(1);
 		expect(b.angles.map((a) => a.sym).sort()).toEqual(["F1_150", "F1_60", "F1_90"]);
 	});
-	it("does not read a regular pentagon as a drawing", () => {
-		const b = parse("name p\nk 1 1\nangle A5 108\nface A5 x 5\nvertex A5 A5 A5\n").board;
-		expect(edgesOf(b, b.faces[0])).toBeNull();
+	it("reads a regular pentagon at N = 5, and a corner fitting no N as no drawing", () => {
+		const b = parse("name p\nk 1 1\nangle A5 108\nangle X 128\nface A5 x 5\nface X x 3\n").board;
+		expect(edgesOf(b, b.faces[0])?.g.n).toBe(5);
+		expect(edgesOf(b, b.faces[1])).toBeNull();
+	});
+});
+
+describe("other angle units", () => {
+	const reg = (n: number, len = 1) => Array.from({ length: n }, (_, i) => ({ dir: 2 * i, len }));
+	it("closes the regular n-gon at N = n, exactly, for every N up to 36", () => {
+		for (let n = 3; n <= 36; n++) expect(returns(reg(n), grid(n)), `N=${n}`).toBe(true);
+	});
+	it("tells a near miss from a closing at N = 7", () => {
+		const g = grid(7);
+		expect(returns(reg(7).slice(0, 6), g)).toBe(false);
+		expect(returns([...reg(7).slice(0, 6), { dir: 12, len: 2 }], g)).toBe(false);
+	});
+	it("writes a heptagon's corner as a fraction and reads it back", () => {
+		const g = grid(7);
+		const { face, angles } = faceOf(reg(7), "F1", g);
+		expect(face).toEqual({ word: ["F1_900_7"], repeat: 7 });
+		expect(angles).toEqual([{ sym: "F1_900_7", value: "900/7" }]);
+		const b = withDrawnFace(emptyBoard(), reg(7), undefined, g);
+		const back = edgesOf(parse(serialize(b)).board, b.faces[0]);
+		expect(back?.g.n).toBe(7);
+		expect(faceOf(back!.edges, "F1", back!.g).face).toEqual(face);
+	});
+	it("offers closers at N = 36", () => {
+		const g = grid(36);
+		const c = closers(reg(36).slice(0, 34), g);
+		expect(c.length).toBeGreaterThan(0);
+		for (const add of c) expect(returns([...reg(36).slice(0, 34), ...add], g)).toBe(true);
+	});
+	it("keeps a typed length when it moves a drawing between N", () => {
+		const half = PRESETS.find((p) => p.name === "Half square")!.edges;
+		expect(regrid(half, grid(12), grid(24))!.map((e) => e.text)).toEqual(["1", "1", "sqrt2"]);
+		expect(returns(regrid(half, grid(12), grid(24))!, grid(24))).toBe(true);
+	});
+	it("moves a drawing between N when its directions fit", () => {
+		expect(regrid(preset("Trapezoid"), grid(12), grid(6))).toEqual(E([0, 2], [4, 1], [6, 1], [8, 1]));
+		expect(regrid(preset("Rhombus 30°"), grid(12), grid(3))).toBeNull();
+	});
+});
+
+describe("self-intersecting faces", () => {
+	const g = grid(5);
+	const star = [0, 4, 8, 2, 6].map((dir) => ({ dir, len: 1 })); // the pentagram, turning 144° each time
+	it("crosses as a simple face, and is a face when crossing is allowed", () => {
+		expect(problemOf(star, g)).toMatch(/cross/);
+		expect(problemOf(star, g, true)).toBeNull();
+		expect(faceOf(star, "F1", g).face).toEqual({ word: ["F1_36"], repeat: 5 });
+	});
+	it("reads back as a drawing", () => {
+		const b = withDrawnFace(emptyBoard(), star, undefined, g);
+		const back = edgesOf(parse(serialize(b)).board, b.faces[0]);
+		expect(crossing(back!.edges, back!.g)).not.toBeNull();
 	});
 });
 

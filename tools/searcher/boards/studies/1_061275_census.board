@@ -1,0 +1,156 @@
+# Study: Marek's 1.061275 census (3 November 2026). Every tile is optional, so each row is one combination
+# of tiles: the tilings that use exactly those tiles. His board, as sent on 30 October.
+
+name Board_1_061275
+k 1 4
+
+angle A3
+angle A4
+angle A5
+angle A10
+angle A20
+angle B3
+angle B4
+angle B5
+angle B10
+angle Boo
+angle Doo
+angle G3
+edge Pi
+
+optional A3 x 3
+optional A4 x 4
+optional A5 x 5
+optional A10 x 10
+optional A20 x 20
+optional B3 Pi x 3
+optional B4 Pi x 4
+optional B5 Pi x 5
+optional B10 Pi x 10
+optional Boo Pi x inf
+optional Doo Pi Pi Pi x inf
+optional G3 Pi Pi Pi Pi Pi Pi x 3
+
+vertex A3 A4 A10 A20
+vertex A3 A10 A20 Boo
+vertex A4 A10 A20 B4
+vertex A5 A5 A5 A5
+vertex A10 A20 B4 Boo
+vertex A3 A3 A4 A5 A5
+vertex A3 A3 A5 A5 Boo
+vertex A3 A4 A5 A5 B4
+vertex A3 A5 A5 B4 Boo
+vertex A4 A4 A5 A5 Doo
+vertex A4 A5 A5 B4 B4
+vertex A4 A5 A5 Boo Doo
+vertex A5 A5 B3 B10 B10
+vertex A5 A5 B4 B4 Boo
+vertex A5 A5 B5 B5 B5
+vertex A5 A5 Boo Boo Doo
+vertex B10 B10 B10 B10 B10
+vertex A3 A3 A3 A3 A4 A4
+vertex A3 A3 A3 A3 A4 Boo
+vertex A3 A3 A3 A3 Boo Boo
+vertex A3 A3 A3 A4 A4 B4
+vertex A3 A3 A3 A4 B4 Boo
+vertex A3 A3 A3 B4 Boo Boo
+vertex A3 A3 A4 A4 A4 Doo
+vertex A3 A3 A4 A4 B4 B4
+vertex A3 A3 A4 A4 Boo Doo
+vertex A3 A3 A4 B3 B10 B10
+vertex A3 A3 A4 B4 B4 Boo
+vertex A3 A3 A4 B5 B5 B5
+vertex A3 A3 A4 Boo Boo Doo
+vertex A3 A3 B3 B10 B10 Boo
+vertex A3 A3 B4 B4 Boo Boo
+vertex A3 A3 B5 B5 B5 Boo
+vertex A3 A3 Boo Boo Boo Doo
+vertex A3 A4 A4 A4 A4 G3
+vertex A3 A4 A4 A4 B4 Doo
+vertex A3 A4 A4 A4 Boo G3
+vertex A3 A4 A4 B4 B4 B4
+vertex A3 A4 A4 B4 Boo Doo
+vertex A3 A4 A4 Boo Boo G3
+vertex A3 A4 B3 B4 B10 B10
+vertex A3 A4 B4 B4 B4 Boo
+vertex A3 A4 B4 B5 B5 B5
+vertex A3 A4 B4 Boo Boo Doo
+vertex A3 A4 Boo Boo Boo G3
+vertex A3 B3 B4 B10 B10 Boo
+vertex A3 B4 B4 B4 Boo Boo
+vertex A3 B4 B5 B5 B5 Boo
+vertex A3 B4 Boo Boo Boo Doo
+vertex A3 Boo Boo Boo Boo G3
+vertex A4 A4 A4 A4 B4 G3
+vertex A4 A4 A4 A4 Doo Doo
+vertex A4 A4 A4 B4 B4 Doo
+vertex A4 A4 A4 B4 Boo G3
+vertex A4 A4 A4 Boo Doo Doo
+vertex A4 A4 B3 B10 B10 Doo
+vertex A4 A4 B4 B4 B4 B4
+vertex A4 A4 B4 B4 Boo Doo
+vertex A4 A4 B4 Boo Boo G3
+vertex A4 A4 B5 B5 B5 Doo
+vertex A4 A4 Boo Boo Doo Doo
+vertex A4 B3 B4 B4 B10 B10
+vertex A4 B3 B10 B10 Boo Doo
+vertex A4 B4 B4 B4 B4 Boo
+vertex A4 B4 B4 B5 B5 B5
+vertex A4 B4 B4 Boo Boo Doo
+vertex A4 B4 Boo Boo Boo G3
+vertex A4 B5 B5 B5 Boo Doo
+vertex A4 Boo Boo Boo Doo Doo
+vertex A5 A5 B3 B3 B3 B10
+vertex B3 B3 B10 B10 B10 B10
+vertex B3 B4 B4 B10 B10 Boo
+vertex B3 B5 B5 B5 B10 B10
+vertex B3 B10 B10 Boo Boo Doo
+vertex B4 B4 B4 B4 Boo Boo
+vertex B4 B4 B5 B5 B5 Boo
+vertex B4 B4 Boo Boo Boo Doo
+vertex B4 Boo Boo Boo Boo G3
+vertex B5 B5 B5 B5 B5 B5
+vertex B5 B5 B5 Boo Boo Doo
+vertex Boo Boo Boo Boo Doo Doo
+vertex A3 A3 A4 B3 B3 B3 B10
+vertex A3 A3 B3 B3 B3 B10 Boo
+vertex A3 A4 B3 B3 B3 B4 B10
+vertex A3 B3 B3 B3 B4 B10 Boo
+vertex A4 A4 B3 B3 B3 B10 Doo
+vertex A4 B3 B3 B3 B4 B4 B10
+vertex A4 B3 B3 B3 B10 Boo Doo
+vertex A5 A5 B3 B3 B3 B3 B3
+vertex B3 B3 B3 B3 B10 B10 B10
+vertex B3 B3 B3 B4 B4 B10 Boo
+vertex B3 B3 B3 B5 B5 B5 B10
+vertex B3 B3 B3 B10 Boo Boo Doo
+vertex A3 A3 A4 B3 B3 B3 B3 B3
+vertex A3 A3 B3 B3 B3 B3 B3 Boo
+vertex A3 A4 B3 B3 B3 B3 B3 B4
+vertex A3 B3 B3 B3 B3 B3 B4 Boo
+vertex A4 A4 B3 B3 B3 B3 B3 Doo
+vertex A4 B3 B3 B3 B3 B3 B4 B4
+vertex A4 B3 B3 B3 B3 B3 Boo Doo
+vertex B3 B3 B3 B3 B3 B3 B10 B10
+vertex B3 B3 B3 B3 B3 B4 B4 Boo
+vertex B3 B3 B3 B3 B3 B5 B5 B5
+vertex B3 B3 B3 B3 B3 Boo Boo Doo
+vertex B3 B3 B3 B3 B3 B3 B3 B3 B10
+vertex B3 B3 B3 B3 B3 B3 B3 B3 B3 B3
+vertex A5 A5 Pi
+vertex A3 A3 A4 Pi
+vertex A3 A3 Boo Pi
+vertex A3 A4 B4 Pi
+vertex A3 B4 Boo Pi
+vertex A4 A4 Doo Pi
+vertex A4 B4 B4 Pi
+vertex A4 Boo Doo Pi
+vertex B3 B10 B10 Pi
+vertex B4 B4 Boo Pi
+vertex B5 B5 B5 Pi
+vertex Boo Boo Doo Pi
+vertex B3 B3 B3 B10 Pi
+vertex B3 B3 B3 B3 B3 Pi
+vertex Pi Pi
+
+permutations yes

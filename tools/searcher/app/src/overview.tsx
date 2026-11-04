@@ -1,7 +1,7 @@
-// The top of a run's page: how many tilings, how far the search got, and how they spread over k. One
-// panel: the total and the roots on the left, the counts per k as columns on the right, and below them a
-// strip of the facts the run has (a fact it lacks is left out, never shown as a dash).
-import { useEffect, useMemo, useState } from "react";
+// The top of a run's page: how many tilings, how far the search got, and how they spread over k. One short
+// band: the total and the roots, the counts per k as columns, and the facts the run has (a fact it lacks is
+// left out, never shown as a dash).
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { InfoDot } from "@/components/ui/info-dot";
@@ -14,10 +14,10 @@ import type { Run } from "./bridge";
 import { cornerShapes } from "./corners";
 import { INK } from "./figures";
 import { startFold, useFold } from "./fold";
-import { approx, bytes, duration, estimatedTotal, when } from "./runs";
+import { approx, bytes, duration, estimatedTotal, RULE_NAME, when } from "./runs";
 
 const n = (x: number) => x.toLocaleString("en");
-const percent = (x: number) =>
+export const percent = (x: number) =>
 	x >= 0.995 ? "99%" : x < 0.01 ? `${+(x * 100).toFixed(1)}%` : `${Math.round(x * 100)}%`;
 const compact = (x: number) => (x < 1e4 ? n(x) : x < 1e6 ? `${+(x / 1e3).toFixed(1)}K` : `${+(x / 1e6).toFixed(1)}M`);
 
@@ -45,11 +45,18 @@ export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; on
 			});
 	} else if (run.elapsed) facts.push({ label: "Search time", value: duration(run.elapsed) });
 	if (run.created) facts.push({ label: "Started", value: when(run.created) });
+	if (run.ended) facts.push({ label: run.state === "finished" ? "Finished" : "Stopped", value: when(run.ended) });
 	if (run.options)
 		facts.push({
 			label: "Threads",
 			value: String(run.options.threads),
 			sub: run.options.nice === 0 ? "normal priority" : `nice ${run.options.nice}`,
+		});
+	if (run.branching)
+		facts.push({
+			label: "Branching",
+			value: RULE_NAME[run.branching],
+			sub: run.options?.rule ? "forced" : "auto",
 		});
 	facts.push({
 		label: "Files",
@@ -57,46 +64,47 @@ export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; on
 		sub: run.files.length ? bytes(run.files.reduce((t, f) => t + f.bytes, 0)) : undefined,
 	});
 
+	// One band, short enough that the tilings below fit on the first screen: the total and the roots, the
+	// counts per k, and the facts in two columns. On a narrow window the three stack.
 	return (
-		<section className="shrink-0 overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm">
-			<div className="grid grid-cols-[minmax(220px,300px)_minmax(0,1fr)] max-lg:grid-cols-1">
-				<div className="flex flex-col justify-between gap-6 border-r border-line-subtle p-5 max-lg:border-r-0 max-lg:border-b">
-					<div>
-						<div className="ta-label">Tilings</div>
-						<AnimatedNumber
-							value={total}
-							className="mt-2 block text-[44px] leading-none font-semibold tracking-[-0.02em] text-fg"
-						/>
-						<div className="mt-2 text-sm text-fg-secondary">
-							{expected ? (
-								<>
-									of {approx(expected)} expected
-									<span className="ml-1 inline-block align-[-2px]">
-										<InfoDot side="bottom">
-											Estimated from {n(est!.probes)} samples of the search ({Math.round(est!.seconds)} s), duplicates
-											accounted for. The search visits {approx(est!.nodes)} nodes, {duration(est!.cpu[0])} of work on
-											one core.
-										</InfoDot>
-									</span>
-								</>
-							) : (
-								<>
-									{ks.length === 1 ? `k = ${run.kmin}` : `k = ${run.kmin} to ${run.kmax}`}
-									{live ? "" : run.state === "finished" ? ", the whole search" : ", so far"}
-									{folded ? `, each family once (${n(run.total)} in all)` : ""}
-								</>
-							)}
-						</div>
+		<section className="grid shrink-0 grid-cols-[minmax(200px,260px)_minmax(0,1fr)_minmax(240px,320px)] overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm max-xl:grid-cols-[minmax(200px,260px)_minmax(0,1fr)]">
+			<div className="flex flex-col justify-between gap-3 border-r border-line-subtle p-4">
+				<div>
+					<div className="ta-label">Tilings</div>
+					<AnimatedNumber
+						value={total}
+						className="mt-1.5 block text-[32px] leading-none font-semibold tracking-[-0.02em] text-fg"
+					/>
+					{/* one line, never two: a wrap here would change the band's height mid-run and resize everything below */}
+					<div className="mt-1.5 flex h-5 items-center gap-1 text-sm whitespace-nowrap text-fg-secondary">
+						{expected ? (
+							<>
+								<span className="min-w-0 truncate">of {approx(expected)} expected</span>
+								<span className="shrink-0">
+									<InfoDot side="bottom">
+										Estimated from {n(est!.probes)} samples of the search ({Math.round(est!.seconds)} s), duplicates
+										accounted for. The search visits {approx(est!.nodes)} nodes, {duration(est!.cpu[0])} of work on
+										one core.
+									</InfoDot>
+								</span>
+							</>
+						) : (
+							<>{ks.length === 1 ? `k = ${run.kmin}` : `k = ${run.kmin} to ${run.kmax}`}</>
+						)}
 					</div>
+				</div>
+				{/* room for the tallest state (patch, caption, work bar), so the band keeps its height as a run goes */}
+				<div className="flex min-h-[116px] flex-col justify-end">
 					<Roots run={run} />
 				</div>
-				<KChart run={run} ks={ks} selected={k} onPick={onPick} folded={folded?.perK} />
 			</div>
-			<dl className="flex flex-wrap border-t border-line-subtle bg-surface-sunken/40 px-5 py-3.5">
+			<KChart run={run} ks={ks} selected={k} onPick={onPick} folded={folded?.perK} />
+			{/* equal columns, so a live value growing a digit never shifts the facts after it */}
+			<dl className="grid content-start grid-cols-2 gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
 				{facts.map((f) => (
-					<div key={f.label} className="min-w-[7.5rem] border-l border-line-subtle px-5 first:border-l-0 first:pl-0">
+					<div key={f.label} className="min-w-0">
 						<dt className="ta-label">{f.label}</dt>
-						<dd className="mt-1 text-sm font-medium text-fg">
+						<dd className="mt-1 truncate text-sm font-medium text-fg tabular-nums" title={f.sub}>
 							{f.value}
 							{f.sub ? <span className="ml-1.5 text-xs font-normal text-fg-muted">{f.sub}</span> : null}
 						</dd>
@@ -122,7 +130,7 @@ function Families({ run }: { run: Run }) {
 	const v = fold && "view" in fold ? fold.view : null;
 	const rows = v ? [...v.perK].sort((a, b) => a[0] - b[0]) : [];
 	return (
-		<div className="min-w-[7.5rem] border-l border-line-subtle px-5">
+		<div className="col-span-2 min-w-0">
 			<dt className="ta-label flex items-center gap-1.5">
 				Families
 				<InfoDot side="top" label="What folding does">
@@ -176,18 +184,19 @@ const hex = (cx: number, cy: number, r: number) =>
 		.join(" ");
 
 /**
- * The search's roots as a patch of the hexagonal tiling, one hexagon each: the engine searches root by
- * root, and a root's tilings reach the files when it finishes. A finished root is a tile in the hexagon's
- * colour (the app's mark), an unsearched one only its outline, so the patch fills in as the run goes;
- * while it is live, as many cells as it has threads pulse after the finished ones, the roots in hand.
- * Past two thousand roots the cells would be specks, so it becomes a plain bar.
+ * The search's roots as a patch of the hexagonal tiling, one hexagon each in the engine's order: a
+ * root's tilings reach the files when it finishes. A finished root is a tile in the hexagon's colour
+ * (the app's mark), an unsearched one only its outline, so the patch fills in as the run goes; while it
+ * is live the roots in hand pulse, each titled with its units done. Past two thousand roots the cells
+ * would be specks, so it becomes a plain bar.
  */
 // Each caption is one line in the column's narrowest width (180px of text): a few words and a count,
 // with the explanation behind the info dot. The line is a fixed h-5, so the tile never changes height.
 const STAGES: Record<string, string> = {
 	tables: "Building the tables",
-	plan: "Trial searches",
+	plan: "Measuring the rules",
 	rank: "Ordering roots",
+	find: "Stepping stones",
 };
 const LINE = "flex h-5 items-center gap-1.5 text-xs whitespace-nowrap text-fg-secondary";
 
@@ -208,15 +217,15 @@ function Stage({ stage }: { stage: NonNullable<Run["stage"]> }) {
 				<span className="min-w-0 truncate font-medium text-fg">{STAGES[stage.name] ?? "Preparing"}</span>
 				{stage.all ? (
 					<span className="shrink-0 tabular-nums">
-						{stage.name === "plan" ? `k ≤ ${stage.done} of ${stage.all}` : `${n(stage.done)} of ${n(stage.all)}`}
+						{stage.name === "plan" ? `${(stage.done / 10).toFixed(1)} s` : `${n(stage.done)} of ${n(stage.all)}`}
 					</span>
 				) : null}
 				<InfoDot side="bottom" label="What happens before the search">
-					Before its first root the engine builds its tables, then chooses where to start and how to branch: it runs
-					short trial searches, each required set to start from under each branching rule, to k = 1, 2, 3 and on
-					(the count shows the k reached), carries each one&rsquo;s growth on to your k and keeps the cheapest. The
-					trials stop once they have cost a twentieth of that, or two million nodes when that is more. Last it orders
-					the root types so the small ones go first (the count is the types ordered).
+					Before its first root the engine builds its tables, then chooses where to start and how to branch: it
+					samples the search at your k under each branching rule, from each required set it could start from, and
+					keeps the one that will take the least time. The sampling takes a fiftieth of the search&rsquo;s estimated
+					time, between a tenth of a second and a second and a half per way. Last it orders the root types so the
+					small ones go first, again by sampling (the count is the types sampled). A resumed run keeps its rule.
 				</InfoDot>
 			</div>
 		</div>
@@ -225,9 +234,26 @@ function Stage({ stage }: { stage: NonNullable<Run["stage"]> }) {
 
 function Roots({ run }: { run: Run }) {
 	if (run.stage) return <Stage stage={run.stage} />;
-	const { done, all } = run.roots;
+	// a find run has no roots of its own: its steps are separate searches (tilesearch --find)
+	if (run.options?.find) return <div className={LINE}>{run.note || "Stepping stones"}</div>;
+	const { done, all, finished, active = [] } = run.roots;
 	const live = run.state === "running";
+	const inHand = new Map(active.map((a) => [a.root, a]));
+	// the roots by number when the app has them, else (a run from before) the finished first, then the threads
+	const finishedSet = finished ? new Set(finished) : null;
 	const inFlight = live && all ? Math.min(run.options?.threads ?? 1, all - done) : 0;
+	const cell = (i: number) =>
+		finishedSet
+			? finishedSet.has(i)
+				? "done"
+				: inHand.has(i)
+					? "now"
+					: "todo"
+			: i < done
+				? "done"
+				: i < done + inFlight
+					? "now"
+					: "todo";
 	// about twice as wide as tall, with the last row as full as the nearby widths allow
 	const near = Math.ceil(Math.sqrt(all * 4));
 	const cols = Math.min(
@@ -241,10 +267,13 @@ function Roots({ run }: { run: Run }) {
 		<div className="space-y-2">
 			<div className={LINE}>
 				<span className="font-medium text-fg tabular-nums">{all ? `${n(done)} of ${n(all)}` : n(done)}</span>
-				<span className="min-w-0 truncate">roots</span>
+				<span className="min-w-0 truncate">roots{live && active.length ? `, ${n(active.length)} in hand` : ""}</span>
 				<InfoDot side="bottom" label="What a root is">
-					The search starts from each way of placing the first vertex: those are its roots. A root&rsquo;s tilings reach
-					the files when the root finishes, so a stop loses at most the roots in hand, and Resume runs those again.
+					The search is split by the first vertex: root r finds exactly the tilings whose first vertex, in the
+					board&rsquo;s order, is vertex type r, so no two roots find the same tiling. The pulsing cells are the roots
+					in hand; point at one for its units. A root&rsquo;s tilings reach the files when it finishes. In a large run
+					each root is split further into units, one per partial tiling a few edges deep, each kept on disk as it
+					finishes, so a stop loses at most the units in hand, and Resume runs only those again.
 				</InfoDot>
 			</div>
 			{work ? (
@@ -293,17 +322,18 @@ function Roots({ run }: { run: Run }) {
 	const h = (rows - 1) * 1.5 + 2;
 	const pad = 0.06;
 	return (
-		<div className="space-y-3">
+		<div className="space-y-2">
 			<svg
 				viewBox={`${-pad} ${-pad} ${w + 2 * pad} ${h + 2 * pad}`}
-				className="block max-h-40 w-full"
+				className="block h-12 w-full"
 				role="img"
 				aria-label={`${done} of ${all} roots searched`}
 			>
 				{Array.from({ length: all }, (_, i) => {
 					const r = Math.floor(i / cols);
 					const c = i % cols;
-					const state = i < done ? "done" : i < done + inFlight ? "now" : "todo";
+					const state = cell(i);
+					const a = inHand.get(i);
 					return (
 						<polygon
 							key={i}
@@ -316,7 +346,11 @@ function Roots({ run }: { run: Run }) {
 								state === "todo" && "fill-transparent stroke-line",
 							)}
 							style={state === "todo" ? undefined : { fill: state === "done" ? HEX_FILL : undefined, stroke: INK }}
-						/>
+						>
+							{a ? (
+								<title>{`Root ${i + 1}: ${a.all > 1 ? `${n(a.done)} of ${n(a.all)} units done` : "in hand"}`}</title>
+							) : null}
+						</polygon>
 					);
 				})}
 			</svg>
@@ -327,8 +361,8 @@ function Roots({ run }: { run: Run }) {
 
 // ── counts per k ──
 
-const PLOT = 176; // px: the columns' room, the tallest one's label included
-const HEAD = 22; // px of it kept above the tallest column for its label
+const PLOT = 112; // px: the columns' room, the tallest one's label included
+const HEAD = 18; // px of it kept above the tallest column for its label
 
 /**
  * Tilings per k as columns on a log scale: counts grow about twofold per k, so on a linear one every k
@@ -361,6 +395,23 @@ function KChart({
 	const y = (v: number) => (v > 0 ? Math.max(2, (Math.log10(1 + v) / L) * (PLOT - HEAD)) : 0);
 	const ticks = Array.from({ length: Math.floor(Math.log10(top)) }, (_, i) => 10 ** (i + 1));
 	const full = ks.length <= 12;
+	// many k: label the axis every `step` k so the labels never touch, and print a count only where it fits
+	const plot = useRef<HTMLDivElement>(null);
+	const [width, setWidth] = useState(0);
+	useEffect(() => {
+		const el = plot.current;
+		if (!el) return;
+		const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+		ro.observe(el);
+		return () => ro.disconnect();
+	}, []);
+	const col = width ? width / rows.length : Infinity;
+	const CHAR = 7; // px per character at 11px mono, with a little air
+	const kw = String(ks[ks.length - 1] ?? 1).length * CHAR + 6;
+	const step = [1, 2, 5, 10, 20, 50, 100].find((s) => s * col >= kw) ?? 100;
+	// the selected k is always labelled, so the ticks too close to it give way
+	const tick = (k: number) =>
+		k === selected || (k % step === 0 && (selected === null || Math.abs(k - selected) * col >= kw));
 	// columns grow from the rail once, when the panel first shows
 	const [grown, setGrown] = useState(false);
 	useEffect(() => {
@@ -369,7 +420,7 @@ function KChart({
 	}, []);
 
 	return (
-		<div className="flex min-w-0 flex-col gap-4 p-5">
+		<div className="flex min-w-0 flex-col justify-between gap-2 p-4">
 			<div className="flex items-baseline justify-between gap-3">
 				<span className="ta-label">Tilings per k{folded ? ", each family once" : ""}</span>
 				<span className="font-mono text-[11px] text-fg-muted">
@@ -398,10 +449,11 @@ function KChart({
 					{ticks.map((t) => (
 						<div key={t} className="absolute inset-x-0 border-t border-line-subtle/70" style={{ bottom: y(t) }} />
 					))}
-					<div className="absolute inset-0 flex">
+					<div ref={plot} className="absolute inset-0 flex">
 						{rows.map((r, i) => {
 							const on = r.k === selected;
-							const label = r.found === undefined ? "" : full ? n(r.found) : compact(r.found);
+							const text = r.found === undefined ? "" : full ? n(r.found) : compact(r.found);
+							const label = on || text.length * CHAR <= col ? text : "";
 							const all = run.counts[r.k];
 							const tip = `k = ${r.k}: ${r.found === undefined ? "none yet" : `${n(r.found)} tilings`}${folded && all !== r.found ? ` with each family once, of ${n(all)}` : ""}${r.e ? `, ${approx(r.e)} expected` : ""}`;
 							return (
@@ -448,16 +500,19 @@ function KChart({
 					</div>
 				</div>
 				<span className="pt-2 pr-2 text-right font-mono text-[11px] text-fg-muted">k</span>
-				<div className="flex pt-2">
+				<div className="flex h-6 pt-2">
 					{rows.map((r) => (
-						<span
-							key={r.k}
-							className={cn(
-								"min-w-0 flex-1 text-center font-mono text-[11px] tabular-nums",
-								r.k === selected ? "font-medium text-fg" : "text-fg-muted",
-							)}
-						>
-							{r.k}
+						<span key={r.k} className="relative min-w-0 flex-1">
+							{tick(r.k) ? (
+								<span
+									className={cn(
+										"absolute left-1/2 -translate-x-1/2 font-mono text-[11px] tabular-nums",
+										r.k === selected ? "font-medium text-fg" : "text-fg-muted",
+									)}
+								>
+									{r.k}
+								</span>
+							) : null}
 						</span>
 					))}
 				</div>

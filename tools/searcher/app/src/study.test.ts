@@ -1,0 +1,378 @@
+// Studies (study.ts): parameters, row boards, the checks before any search, and how a study recognises a run.
+// The engine checks run where tilesearch is built; Marek's 1.061275 census is the end-to-end case: the checks
+// must rule out exactly the combinations his hand-written rules drop, and more (2026-11-03).
+import { execFile, execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
+import { describe, expect, it } from "vitest";
+import { cyclicKey, evaluate, over, parse, removeVertices, serialize, times, withPermutations, withRequiredFaces } from "./board";
+import {
+	aliveKeys,
+	faceLabels,
+	freeParam,
+	paramText,
+	planStudy,
+	readParams,
+	rowBoard,
+	sameSearch,
+	searchKey,
+	searchShape,
+	splitReason,
+	subsetCount,
+	substitute,
+	vertexKeys,
+	rowText,
+	withParam,
+	type RowPlan,
+	type StudyPlan,
+} from "./study";
+
+const SEARCHER = join(__dirname, "../..");
+const ENGINE = join(SEARCHER, process.platform === "win32" ? "tilesearch.exe" : "tilesearch");
+const STUDIES = join(SEARCHER, "boards/studies");
+const EXAMPLES = join(SEARCHER, "boards/examples");
+const tmp = mkdtempSync(join(tmpdir(), "tilesearch-study-"));
+const run = promisify(execFile);
+let files = 0;
+/** tilesearch --balance on a board text: whether it can have a tiling, and its live lines (1-based). */
+type Report = { feasible: boolean; alive: number[]; orders?: { word: string; alive: boolean }[] };
+async function balance(text: string): Promise<Report> {
+	const f = join(tmp, `b${files++}.board`);
+	writeFileSync(f, text);
+	const { stdout } = await run(ENGINE, [f, "--balance"], { maxBuffer: 1 << 26 });
+	return JSON.parse(stdout.split("\n")[0]) as Report;
+}
+/** Run `f` over `xs` with at most `n` at once. */
+async function pool<T, R>(xs: T[], n: number, f: (x: T) => Promise<R>): Promise<R[]> {
+	const out: R[] = new Array(xs.length);
+	let next = 0;
+	await Promise.all(
+		Array.from({ length: n }, async () => {
+			while (next < xs.length) {
+				const i = next++;
+				out[i] = await f(xs[i]);
+			}
+		}),
+	);
+	return out;
+}
+const dump = (text: string) => {
+	const f = join(tmp, `d${files++}.board`);
+	writeFileSync(f, text);
+	return execFileSync(ENGINE, [f, "--dump"], { encoding: "utf8", stdio: "pipe" });
+};
+let current: StudyPlan;
+const text = (r: RowPlan) => (r.none ? "" : rowText(current, r).text);
+const planOf = (t: string) => (current = planStudy(t));
+
+describe("parameters", () => {
+	it("evaluates whole-number arithmetic exactly", () => {
+		const v = { n: 7, m: 3 };
+		const s = (e: string) => {
+			const x = evaluate(e, v);
+			return x.q === 1 ? String(x.p) : `${x.p}/${x.q}`;
+		};
+		expect(s("n")).toBe("7");
+		expect(s("2n")).toBe("14");
+		expect(s("2*n")).toBe("14");
+		expect(s("360/n")).toBe("360/7");
+		expect(s("180-360/n")).toBe("900/7");
+		expect(s("(n+1)(n-1)")).toBe("48");
+		expect(s("2(n+m)")).toBe("20");
+		expect(s("-n+10")).toBe("3");
+		expect(s("12/4")).toBe("3");
+		expect(() => evaluate("k", v)).toThrow(/not a parameter/);
+		expect(() => evaluate("n/0", v)).toThrow(/division by zero/);
+		expect(() => evaluate("", v)).toThrow(/empty/);
+		expect(() => evaluate("(n", v)).toThrow(/not closed/);
+		expect(() => evaluate("n)", v)).toThrow(/left over/);
+	});
+	it("reads vary lines: lists, ranges, duplicates, and mistakes", () => {
+		const { params, problems } = readParams("name t\nvary n 5..7 9 6\nvary m 1\nface A{n} x {m}\n");
+		expect(problems).toEqual([]);
+		expect(params).toEqual([
+			{ name: "n", values: [5, 6, 7, 9], line: 2 },
+			{ name: "m", values: [1], line: 3 },
+		]);
+		const bad = readParams("vary n\nvary 2x 1\nvary n 1\nvary n 2\nvary p 7..3\nvary q a\nface A{n} x 3\n").problems;
+		expect(bad.map((p) => p.line)).toEqual([1, 2, 4, 5, 6]);
+		// a parameter that no {…} reads, outside comments, would make every row the same board
+		expect(readParams("vary n 3..5\nface A3 x 3   # {n}\n").problems.map((p) => [p.line, p.message])).toEqual([
+			[1, "Parameter n is used nowhere yet: give a face n sides in its dialog, or write {n} in a line."],
+		]);
+		expect(readParams("vary n 3..5\nvary m 1 2\nface A{2n} x {m+1}\n").problems).toEqual([]);
+	});
+	it("substitutes outside vary lines and comments, keeping line numbers", () => {
+		const t = "vary n 5\nface A{n} x {2n}   # {n} stays\nangle A{n} {180-360/n}\n";
+		const { text: out, problems } = substitute(t, { n: 5 });
+		expect(problems).toEqual([]);
+		expect(out).toBe("vary n 5\nface A5 x 10   # {n} stays\nangle A5 108\n");
+		const broken = substitute("name t\nface A{n x 3\nface A{q} x 3\n", { n: 5 }).problems;
+		expect(broken.map((p) => p.line)).toEqual([2, 3]);
+	});
+});
+
+describe("rows", () => {
+	const base = (extra = "") =>
+		parse(
+			[
+				"name t",
+				"k 1 3",
+				"angle A3 60",
+				"angle A4 90",
+				"angle A6 120",
+				"face A3 x 3",
+				"optional A4 x 4",
+				"optional A6 x 6",
+				"vertex A3 A3 A3 A3 A3 A3",
+				"vertex A4 A4 A4 A4",
+				"vertex A3 A3 A4 A4",
+				"vertex A3 A6 A3 A6",
+				"vertex A6 A6 A6",
+				"permutations yes",
+				extra,
+			].join("\n"),
+		).board;
+	it("keeps the faces of its subset, the lines they can make, and requires each optional face", () => {
+		const o = rowBoard(base(), [1], "A4");
+		if (!("board" in o)) throw new Error(o.none);
+		expect(o.board.faces.map((f) => f.word[0])).toEqual(["A3", "A4"]);
+		expect(o.board.faces.some((f) => f.optional)).toBe(false);
+		expect(o.board.vertices.map((v) => v.word.join(" "))).toEqual(["A3 A3 A3 A3 A3 A3", "A4 A4 A4 A4", "A3 A3 A4 A4"]);
+		expect(o.board.require).toEqual([{ set: [], faces: [["A4", "A4", "A4", "A4"]] }]);
+		expect(o.board.angles.map((a) => a.sym)).toEqual(["A3", "A4"]);
+		expect(dump(serialize(o.board))).toContain("require 2 3"); // the engine reads the A4 requirement as a set
+	});
+	it("counts and lists subsets by size, then board order", () => {
+		const b = base();
+		expect(subsetCount(b)).toBe(3);
+		expect(subsetCount({ ...b, subsets: [0, 2] })).toBe(4);
+		expect(subsetCount({ ...b, subsets: [2, 2] })).toBe(1);
+		const plan = planOf(serialize({ ...b, subsets: [0, 2] }));
+		expect(plan.list!.map((r) => r.name)).toEqual(["base", "A4", "A6", "A4,A6"]);
+	});
+	it("rules a row out, with its reason, when it cannot have a tiling", () => {
+		// a face whose corner no line holds once the others are gone
+		const b = parse(
+			"name t\nk 1 2\nangle A3\nangle A4\nface A3 x 3\noptional A4 x 4\nvertex A3 A3 A3 A3 A3 A3\nvertex A3 A3 A4 A4\nvertex A3 A3 A3 A4 A4\npermutations yes\n",
+		).board;
+		expect(rowBoard({ ...b, faces: [b.faces[1]] }, [0], "A4")).toEqual({
+			none: "No vertex is left: each has a corner of a face this row leaves out.",
+		});
+		// a required vertex set that loses every vertex
+		const req = { ...base(), require: [{ set: [2] }] };
+		expect(rowBoard(req, [2], "A6")).toEqual({
+			none: "Required set 1 loses every vertex on this row.",
+		});
+		// initial vertices that all go: never "every tiling", which an empty initial line would mean
+		const init = { ...base(), initial: [4] };
+		expect(rowBoard(init, [1], "A4")).toEqual({ none: "Every initial vertex is gone on this row." });
+		// a required face the row leaves out
+		const rf = parse(serialize(base()) + "require face A6 x 6\n").board;
+		expect(rowBoard(rf, [1], "A4")).toEqual({ none: "No face of required set 1 is on this row's board." });
+		// the empty subset with nothing else left
+		const only = parse("name t\nk 1 2\nangle A4\noptional A4 x 4\nvertex A4 A4 A4 A4\nsubsets 0 1\n").board;
+		expect(rowBoard(only, [], "base")).toEqual({ none: "No face is left on this row's board." });
+	});
+	it("requires an optional apeirogon with x inf, which the engine reads", () => {
+		const b = parse(
+			"name t\nk 1 2\nangle A3\nangle Boo\nedge Pi\nface A3 x 3\noptional Boo Pi x inf\nvertex A3 A3 Boo Boo\nvertex Pi Pi\nvertex A3 A3 A3 Boo Pi\npermutations yes\n",
+		).board;
+		const o = rowBoard(b, [1], "Boo");
+		if (!("board" in o)) throw new Error(o.none);
+		const t = serialize(o.board);
+		expect(t).toContain("require face Boo Pi x inf");
+		expect(parse(t).board.require[0].infinite).toEqual([true]);
+		expect(dump(t)).toBeTruthy();
+	});
+	it("names rows by values and faces, safely, and refuses too many", () => {
+		const t = readFileSync(join(EXAMPLES, "92-study-hybrid.board"), "utf8");
+		const plan = planOf(t);
+		expect(plan.problems).toEqual([]);
+		expect(plan.list!.map((r) => r.name)).toEqual(["n=6", "n=7", "n=8", "n=9", "n=10"]);
+		expect(text(plan.list![1])).toMatch(/face A7 x 7\nface A14 x 14/);
+		const many = planStudy(t.replace("vary n 6..10", "vary n 6..1006\nvary m 1..20"), false);
+		expect(many.rows).toBe(1001 * 20);
+		expect(planOf(t.replace("vary n 6..10", "vary n 6..1006\nvary m 1..20")).list).toBeNull();
+		// a value that breaks the board is an error that names it
+		const broken = planOf(t.replace("vary n 6..10", "vary n 0 6"));
+		expect(broken.problems[0].message).toMatch(/^At n = 0: /);
+	});
+	it("keys two rows alike when a parameter changes nothing, so the second is the same search", () => {
+		const p = planOf("name t{n}\nk 1 2\nvary n 1 2\nangle A4\nface A4 x 4\nvertex A4 A4 A4 A4\n");
+		const [a, b] = p.list!;
+		expect([a.name, b.name]).toEqual(["n=1", "n=2"]);
+		expect(rowText(p, a).key).toBe(rowText(p, b).key);
+		const q = planOf("name t\nk 1 2\nvary n 4 6\nangle A{n}\nface A{n} x {n}\nvertex A{n} A{n} A{n}\n");
+		expect(rowText(q, q.list![0]).key).not.toBe(rowText(q, q.list![1]).key);
+	});
+	it("keeps text round trips of optional faces, subsets and apeirogon requires", () => {
+		const t =
+			"name t\nk 1 2\nvary n 1..3\n\nangle A3\nangle Boo\nedge Pi\n\nface A3 x 3\noptional Boo Pi x inf\n\nvertex A3 A3 Boo Boo\nvertex Pi Pi\n\npermutations yes\nsubsets 0 1\nrequire face Boo Pi x inf | face A3 A3 A3\n";
+		const b = parse(t);
+		expect(b.problems.filter((p) => p.severity === "error")).toEqual([]);
+		expect(serialize(b.board)).toBe(t);
+	});
+});
+
+describe("setting a study up from the board page", () => {
+	const hybrid = readFileSync(join(EXAMPLES, "92-study-hybrid.board"), "utf8");
+	it("reads a board with parameters at chosen values, and writes its formulas back", () => {
+		const t =
+			"name h\nk 1 3\nvary n 6..10\n\nangle A3 60\nangle A{n} {180-360/n}\n\nface A3 x 3\nface A{n} x {n}\n\nvertex A3 A{n} A{n}\n\npermutations no\nrequire face A{n} x {n}\n";
+		const { board, problems } = parse(t, { n: 7 });
+		expect(problems.filter((p) => p.severity === "error")).toEqual([]);
+		expect(board.faces[1]).toMatchObject({ word: ["A{n}"], repeat: 7 });
+		expect(board.angles[1].value).toBe("900/7");
+		expect(board.require[0].faces![0]).toHaveLength(7);
+		expect(serialize(board)).toBe(t);
+		// an edit to a value replaces its formula; the rest keep theirs
+		const five = { ...board, faces: board.faces.map((f, i) => (i === 1 ? { ...f, repeat: 5 } : f)) };
+		expect(serialize(five)).toContain("\nface A{n} x 5\n");
+		expect(serialize(five)).toContain("\nangle A{n} {180-360/n}\n");
+		// requiring a face with a formula requires it at every value
+		const req = withRequiredFaces({ ...board, require: [] }, [board.faces[1]]);
+		expect(serialize(req)).toContain("\nrequire face A{n} x {n}\n");
+		// a formula that does not work out keeps its line, with the problem on it
+		const bad = parse(t.replace("face A{n} x {n}", "face A{n} x {n-6}"), { n: 6 });
+		expect(bad.board.faces).toHaveLength(2);
+		expect(bad.problems.find((p) => p.where.kind === "face")?.message).toMatch(/is 0 here/);
+		// read as the engine reads it, with no values: {n} is no repeat count
+		expect(parse(t).problems.some((p) => p.severity === "error")).toBe(true);
+	});
+	it("edits a board with parameters as the editor does, keeping its {n}", () => {
+		const { board } = parse(hybrid, { n: 8 });
+		// the editor's board is the file: written back unchanged, at any value it is drawn at
+		expect(serialize(board)).toBe(hybrid);
+		expect(board.faces.map((f) => f.repeat)).toEqual([3, 4, 8, 16]);
+		expect(faceLabels(board)).toEqual(["A3", "A4", "A{n}", "A{2n}"]);
+		const on = serialize({ ...board, faces: board.faces.map((f, i) => (i >= 2 ? { ...f, optional: true } : f)) });
+		expect(on).toContain("\noptional A{n} x {n}\noptional A{2n} x {2n}\n");
+		expect(on.replace(/optional/g, "face")).toBe(hybrid);
+		// 5 values of n, each with A{n}, A{2n} or both
+		const plan = planOf(on);
+		expect(plan.problems).toEqual([]);
+		expect(plan.list!.slice(0, 3).map((r) => r.name)).toEqual(["n=6_A6", "n=6_A12", "n=6_A6,A12"]);
+		expect(plan.rows).toBe(15);
+	});
+	it("rewrites a face's count of corners short, keeping its value (n corners every 2 is x {n/2})", () => {
+		const val = (e: string, n: number) => {
+			const v = evaluate(e, { n });
+			return v.p / v.q;
+		};
+		for (const e of ["n", "2n", "3n", "n+1", "2(n+1)", "n/2", "(n+1)/2", "6n/3", "n-1", "12"])
+			for (const k of [1, 2, 3, 4, 6])
+				for (const n of [5, 6, 7, 12]) {
+					expect(val(times(k, e), n)).toBeCloseTo(k * val(e, n), 9);
+					expect(val(over(e, k), n)).toBeCloseTo(val(e, n) / k, 9);
+				}
+		expect([times(2, "n"), over("2n", 2), over("n", 2), times(2, over("n", 2)), times(2, "12")]).toEqual(["2n", "n", "n/2", "n", "24"]);
+		expect([over("2(n+1)", 2), times(2, over("2(n+1)", 2))]).toEqual(["(n+1)", "2(n+1)"]);
+	});
+	it("names faces for picking: the first corner off the sides, numbered when two read alike", () => {
+		const { board } = parse("name t\nk 1 1\nangle A3\nangle Boo\nedge Pi\nface A3 x 3\nface A3 A3 A3\noptional Boo Pi x inf\n");
+		expect(faceLabels(board)).toEqual(["A3_1", "A3_2", "Boo"]);
+	});
+	it("adds, rewrites and removes vary lines", () => {
+		const t = "name t\nk 1 2\nangle A{n}\n";
+		const one = withParam(t, "n", "6..10");
+		expect(one).toBe("name t\nk 1 2\nvary n 6..10\nangle A{n}\n");
+		const two = withParam(one, freeParam(readParams(one).params), "1 2");
+		expect(two).toBe("name t\nk 1 2\nvary n 6..10\nvary m 1 2\nangle A{n}\n");
+		expect(paramText(two, readParams(two).params[1])).toBe("1 2");
+		// a comment on the line stays; removing takes the line out
+		expect(withParam("vary n 6..10   # sizes\n", "n", "3..5")).toBe("vary n 3..5 # sizes\n");
+		expect(withParam(two, "n", null)).toBe("name t\nk 1 2\nvary m 1 2\nangle A{n}\n");
+		expect(withParam("name t\n", "n", "3")).toBe("name t\nvary n 3\n");
+		expect(freeParam([])).toBe("n");
+		// the setup's remove: the lines keep the first value, so the board is the one the editor showed
+		const fixed = withParam(substitute(hybrid, { n: 6 }).text, "n", null);
+		expect(fixed).toContain("\nface A6 x 6\nface A12 x 12\n");
+		expect(readParams(fixed).params).toEqual([]);
+		expect(parse(fixed).problems.filter((p) => p.severity === "error")).toEqual([]);
+	});
+});
+
+describe.skipIf(!existsSync(ENGINE))("the checks before any search", () => {
+	it("rules out Marek's 1.061275 combinations as his rules do, and 48 he left open", async () => {
+		const t = readFileSync(join(STUDIES, "1_061275_census.board"), "utf8");
+		const plan = planOf(t);
+		expect(plan.problems).toEqual([]);
+		expect(plan.rows).toBe(4095);
+		const rows = plan.list!;
+		const open = rows.filter((r) => !r.none);
+		expect(rows.length - open.length).toBe(2880);
+		const verdicts = await pool(open, 12, async (r) => {
+			const b = parse(text(r)).board;
+			const { feasible, alive } = await balance(text(r));
+			return !feasible ? "balance" : splitReason(b, alive) ? "split" : "open";
+		});
+		const count = (v: string) => verdicts.filter((x) => x === v).length;
+		// the probe of 2026-11-03 (experiments: census_probe.py), here through the app's own code
+		expect([count("balance"), count("split"), count("open")]).toEqual([384, 207, 624]);
+		// every combination he found a tiling for is still open: nothing here contradicts a search
+		const found = ["A3,A4", "A5,B3", "A3,A4,G3", "A3,A4,Boo,G3", "B4,Boo,Doo", "A3,A4,A10,A20", "B3,B10"];
+		for (const name of found) expect(verdicts[open.findIndex((r) => r.name === name)], name).toBe("open");
+	}, 120_000); // 1,215 engine calls: about 5 s on an idle machine, several times that on a busy one
+	it("knows a run pruned in the editor for the row it is", async () => {
+		const plan = planOf(readFileSync(join(EXAMPLES, "91-study-stars.board"), "utf8"));
+		const row = plan.list!.find((r) => r.name === "A12p30,A12p60")!;
+		const b = parse(text(row)).board;
+		const report = await balance(text(row));
+		const { alive } = report;
+		const keys = vertexKeys(b);
+		const mine = { ...searchShape(b), alive: aliveKeys(b, report) };
+		const as = searchShape;
+		const dead = keys.flatMap((_, i) => (alive.includes(i + 1) ? [] : [i]));
+		expect(dead.length).toBeGreaterThan(0);
+		const pruned = { ...b, vertices: b.vertices.filter((_, i) => !dead.includes(i)) };
+		expect(sameSearch(mine, as(b))).toBe(true);
+		expect(sameSearch(mine, as(pruned))).toBe(true);
+		// a live line missing: a different search
+		expect(sameSearch(mine, as({ ...b, vertices: b.vertices.filter((_, i) => i !== alive[0] - 1) }))).toBe(false);
+		// a line the row lacks: a different search
+		expect(sameSearch(mine, as({ ...b, vertices: [...b.vertices, { word: ["A12p90", "A12d90", "A4", "A4"] }] }))).toBe(false);
+		// another row's requirements: a different search
+		const other = parse(text(plan.list!.find((r) => r.name === "A12p30")!)).board;
+		expect(sameSearch(mine, as(other))).toBe(false);
+		expect(searchKey(b)).not.toBe(searchKey(pruned));
+		// the star required by its vertices (filter A12p30 OR A12d30, select all, Require) on the pruned board:
+		// the same requirement, as the star's corners are its own
+		const byVertices = (bb: typeof b, star: string) => ({
+			...bb,
+			require: [
+				{
+					set: bb.vertices.flatMap((v, i) =>
+						v.word.some((c) => c === `A12p${star}` || c === `A12d${star}`) ? [i + 1] : [],
+					),
+				},
+				...bb.require.filter((r) => !r.faces?.[0]?.includes(`A12p${star}`)),
+			],
+		});
+		expect(sameSearch(mine, as(byVertices(pruned, "30")))).toBe(true);
+		// one line short of that set is another requirement, unless the missing line is dead
+		const set = byVertices(pruned, "30").require[0].set;
+		const short = { ...byVertices(pruned, "30"), require: [{ set: set.slice(1) }, ...byVertices(pruned, "30").require.slice(1)] };
+		expect(sameSearch(mine, as(short))).toBe(false);
+		// the same board with Permutations off: each set of corners spelled out as its orders
+		expect(sameSearch(mine, as(withPermutations(b, false)!))).toBe(true);
+		const spelled = withPermutations(pruned, false)!;
+		expect(sameSearch(mine, as(spelled))).toBe(true);
+		// an order the balance check leaves alive, dropped from the spelled board: another search
+		const live = spelled.vertices.findIndex((v) => mine.alive.has(cyclicKey(v.word)));
+		expect(live).toBeGreaterThanOrEqual(0);
+		expect(sameSearch(mine, as(removeVertices(spelled, [live])))).toBe(false);
+	});
+	it("finds the 2-uniform [3.4.6.4; 4.6.12] on the hybrid study's n = 6 row", () => {
+		const t = text(planOf(readFileSync(join(EXAMPLES, "92-study-hybrid.board"), "utf8")).list![0]);
+		const dir = mkdtempSync(join(tmp, "row-"));
+		writeFileSync(join(dir, "input.board"), t);
+		execFileSync(ENGINE, ["input.board", "--threads", "4"], { cwd: dir, stdio: "ignore" });
+		const census = readFileSync(join(dir, `solver_${parse(t).board.name}/census.txt`), "utf8");
+		// both vertices required (each face is not optional here, but a hybrid needs both): k = 1 has the two
+		// Archimedean tilings, k = 2 holds the 2-uniform hybrid among others
+		expect(census).toMatch(/k=1 -- 2\nk=2 -- [1-9]/);
+	});
+});

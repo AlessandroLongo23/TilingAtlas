@@ -48,6 +48,7 @@ import {
 	su11Translation,
 } from "@/lib/render/hyperbolic";
 import { type Darts, interiorAngle, medge } from "@/lib/render/hyperbolicDevelopClient";
+import { flatCornerHue } from "@/lib/utils/renderTiling";
 import { bestCentre, dartSymmetry } from "@/lib/render/hyperbolicSymmetry";
 
 export const WALK_REGULAR = 0;
@@ -268,17 +269,20 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		const S = slots[f];
 		const p = lvert[rneig[ring[0]]];
 		const layer = kind[f] >= WALK_IRREGULAR ? -1 : sizes.indexOf(p);
-		// The size the face is coloured by (and ranked by for the materials): its corners, not its unit
-		// sides. A triangle whose sides are cut into two edges (M3 Pi M3 Pi M3 Pi) has p = 6 unit sides and
-		// three corners, and is a triangle. The flat corners are spread evenly round the face, so the share
-		// of them in the ring holds even when the ring is one period of a symmetric face.
+		// The size the face is coloured by (and ranked by for the materials): the shader's polygonHue reads
+		// it. A face with flat corners is coloured as the Euclidean scaled shelf colours it, an (s·n)-gon
+		// drifted off regular (flatCornerHue), so a triangle whose sides are cut into two edges (M3 Pi M3 Pi
+		// M3 Pi: p = 6 unit sides, three corners) is neither the triangle nor the hexagon; the key is that
+		// hue's place on the ramp (polygonHue inverted). The flat corners are spread evenly round the face, so the share of them
+		// in the ring holds even when the ring is one period of a symmetric face.
 		const corners = p === 0 ? 0 : Math.round((p * ring.filter((h) => !flat(h)).length) / ring.length);
 		data.set(
 			[
 				kind[f],
 				S,
 				step[f],
-				corners,
+				// a star's dents pass `flat` too, and it keeps its point count
+				corners === p || kind[f] === WALK_STAR ? corners : 3 * 10 ** (flatCornerHue(corners, p) / 360),
 				darts.faceColor ? darts.faceColor[ring[0]] : 0,
 				layer,
 				...(p === 0 ? [0, run[f]] : layer < 0 ? [0, 0] : islamicWedgeBox(p, edge)),

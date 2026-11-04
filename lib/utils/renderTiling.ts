@@ -129,13 +129,23 @@ export function regularityDefect(vertices: { x: number; y: number }[]): number {
 // outline's distance from regular. A regular tile lands exactly on its ramp hue; a flexing tile slides
 // smoothly onto it as it regularises. sqrt easing so a small skew already shows.
 export function polygonFillHue(vertices: { x: number; y: number }[]): number {
-	const base = polygonHue(vertices.length);
-	const defect = regularityDefect(vertices);
-	// Float noise on an exactly-regular outline would otherwise wrap a base hue of 0 (the triangle) round
-	// to 359.99…; at this threshold the drift is < 0.001°, well under any perceptible step.
-	if (defect < 1e-9) return base;
-	const shift = IRREGULAR_HUE_SPAN * Math.sqrt(defect);
-	return (((base - shift) % 360) + 360) % 360;
+	return driftHue(polygonHue(vertices.length), regularityDefect(vertices));
+}
+
+// Float noise on an exactly-regular outline would otherwise wrap a base hue of 0 (the triangle) round
+// to 359.99…; at this threshold the drift is < 0.001°, well under any perceptible step.
+function driftHue(base: number, defect: number): number {
+	return defect < 1e-9 ? base : (((base - IRREGULAR_HUE_SPAN * Math.sqrt(defect)) % 360) + 360) % 360;
+}
+
+// polygonFillHue of a regular c-gon whose sides run through p unit edges in all, p − c of its corners flat
+// (180°): how the scaled shelf stores a side-s n-gon, as an (s·n)-gon. From the counts alone, so the
+// hyperbolic disk and the Searcher give a side-2 triangle the scaled shelf's colour, apart from the
+// triangle and the hexagon. Real corners turn 360/c, flat ones 0; the p-gon's corners turn 360/p.
+export function flatCornerHue(c: number, p: number): number {
+	const dc = 360 / p - 360 / c;
+	const rms = Math.sqrt((c * dc * dc + (p - c) * (360 / p) ** 2) / p);
+	return driftHue(polygonHue(p), Math.min(1, rms / ANGLE_FULL_DEFECT_DEG));
 }
 
 // Star tiles use the original StarPolygon.calculateHue ramp (lib/classes/polygons/StarPolygon.ts):

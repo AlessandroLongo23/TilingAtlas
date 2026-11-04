@@ -6,7 +6,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } fro
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { deadWeight, moveVertex, parse, printedLabels, removeVertices, serialize } from "./board";
+import { check, cyclicKey, deadWeight, followFace, moveVertex, parse, printedLabels, removeVertices, renameAngle, requiresFaces, serialize, withoutFaces } from "./board";
 
 const SEARCHER = join(__dirname, "../..");
 const ENGINE = join(SEARCHER, process.platform === "win32" ? "tilesearch.exe" : "tilesearch");
@@ -44,6 +44,8 @@ const BROKEN: Record<string, string> = {
 	"multiplier text": base + "face A4 x two\n",
 	"k reversed": base.replace("k 1 2", "k 3 2"),
 	"k three words": base.replace("k 1 2", "k 1 2 3"),
+	"k past the engine's limit": base.replace("k 1 2", "k 1 255"),
+	"chiral neither yes nor no": base + "chiral maybe\n",
 	"name two words": base.replace("name t", "name two words"),
 	"no faces": "name t\nk 1 2\nangle A4\nvertex A4 A4 A4 A4\n",
 	"no name": base.replace("name t\n", ""),
@@ -57,6 +59,8 @@ const BROKEN: Record<string, string> = {
 	"search faces": base + "search faces\n",
 	"geometry euclidean": base + "geometry euclidean\n",
 	"comment only after error": base + "vertex A4 Q   # Q is a typo\n# trailing\n",
+	"power zero": base + "vertex A4^0 A4^4\n",
+	"power of an unknown symbol": base + "vertex A5^4\n",
 };
 const examples = readdirSync(BOARDS)
 	.filter((f) => f.endsWith(".board"))
@@ -72,8 +76,23 @@ describe.skipIf(!existsSync(ENGINE))("board reader agrees with tilesearch --dump
 		expect(ours).not.toBeNull();
 		expect(ours).toBe(engine(text).line);
 	});
+	it("reads A4^2 as A4 A4, as the engine does", () => {
+		const power = base.replace("face A4 x 4", "face A4^2 x 2").replace("vertex A2 A4 A2 A4 A4 A4", "vertex A2 A4 A2 A4^3");
+		expect(power).not.toBe(base);
+		expect(firstError(power)).toBeNull();
+		expect(serialize(parse(power).board)).toBe(serialize(parse(base.replace("face A4 x 4", "face A4 A4 x 2")).board));
+		expect(engine(power).dump).toBe(engine(base.replace("face A4 x 4", "face A4 A4 x 2")).dump);
+	});
 	it.each(examples)("%s survives a visual-editor round trip", (_, text) => {
 		expect(engine(serialize(parse(text).board)).dump).toBe(engine(text).dump);
+	});
+	it("keeps chiral yes through a round trip, as the engine reads it", () => {
+		const chiral = base + "chiral yes\n";
+		expect(firstError(chiral)).toBeNull();
+		expect(parse(chiral).board.chiral).toBe(true);
+		expect(engine(chiral).dump).toContain("chiral 1");
+		expect(engine(serialize(parse(chiral).board)).dump).toBe(engine(chiral).dump);
+		expect(engine(base).dump).toContain("chiral 0");
 	});
 });
 
@@ -125,5 +144,68 @@ describe("board text round trip", () => {
 	it("prints free symbols as X1, X2 in declaration order", () => {
 		const labels = printedLabels(parse("name t\nk 1 1\nangle dent\nangle A4\nangle t60\n").board.angles);
 		expect([...labels.values()]).toEqual(["X1", "A4", "X2"]);
+	});
+});
+
+describe("a name being typed", () => {
+	it("reads an empty name as empty, keeps one name line, and asks for it only before a run", () => {
+		const { board, problems } = parse("name\nk 1 1\nangle A4 90\nface A4 x 4\nvertex A4 A4 A4 A4\n");
+		expect(board.name).toBe("");
+		expect(board.extra).toEqual([]);
+		expect(problems).toEqual([expect.objectContaining({ where: { kind: "name" }, severity: "error", beforeRun: true })]);
+		const again = serialize(board);
+		expect(again.split("\n").filter((l) => l.startsWith("name"))).toEqual(["name"]);
+		expect(serialize(parse(again).board)).toBe(again);
+	});
+});
+
+describe("cyclicKey", () => {
+	// the definition: the least of every rotation of the word and of its mirror, joined
+	const brute = (w: string[]) => {
+		let best: string | null = null;
+		for (const v of [w, [...w].reverse()])
+			for (let i = 0; i < v.length; i++) {
+				const k = [...v.slice(i), ...v.slice(0, i)].join(" ");
+				if (best === null || k < best) best = k;
+			}
+		return best ?? "";
+	};
+	it("is the least rotation of the word or its mirror, on 20,000 random words", () => {
+		const syms = ["A1", "A10", "A12", "A12p30", "A2", "B", "Pi", "Boo", "A4.Ed.Eu", "X1"];
+		let seed = 7;
+		const rand = (n: number) => ((seed = (seed * 1103515245 + 12345) % 2 ** 31), seed % n);
+		for (let t = 0; t < 20000; t++) {
+			const w = Array.from({ length: 1 + rand(14) }, () => syms[rand(1 + rand(syms.length))]);
+			expect(cyclicKey(w)).toBe(brute(w));
+		}
+		expect(cyclicKey([])).toBe("");
+		expect(cyclicKey(["A3", "A3", "A3"])).toBe("A3 A3 A3");
+	});
+});
+
+describe("required faces follow their face", () => {
+	const text =
+		"name r\nk 1 2\nangle A3\nangle A4\nface A3 x 3\nface A4 x 4\nvertex A4 A4 A4 A4\nrequire face A4 x 4 | face A3 x 3\nrequire face A4 x 4\n";
+	const b = parse(text).board;
+	const square = b.faces[1];
+	const rect = { ...square, word: ["A4", "A3"], repeat: 2 };
+	it("an edited face stays required as it is now, never leaving a line for a face the board lost", () => {
+		const next = followFace(b, { ...b, faces: [b.faces[0], rect] }, 1);
+		expect(requiresFaces(next, [rect])).toBe(true);
+		expect(requiresFaces(next, [rect, b.faces[0]])).toBe(true);
+		expect(requiresFaces(next, [square])).toBe(false);
+	});
+	it("a renamed corner is renamed in the lines too", () => {
+		expect(requiresFaces(renameAngle(b, "A4", "Q"), [{ word: ["Q"], repeat: 4 }])).toBe(true);
+	});
+	it("a deleted face leaves its lines, and a line left with no face goes", () => {
+		const next = withoutFaces(b, [1]);
+		expect(next.require).toHaveLength(1);
+		expect(requiresFaces(next, [b.faces[0]])).toBe(true);
+	});
+	it("a required face the board does not hold is an error: no tiling can hold it", () => {
+		const lost = { ...b, faces: [b.faces[0]] };
+		expect(check(lost).filter((p) => p.where.kind === "require").map((p) => p.severity)).toEqual(["error"]);
+		expect(check(b).filter((p) => p.where.kind === "require")).toEqual([]);
 	});
 });

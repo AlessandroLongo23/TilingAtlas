@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
 export interface MultiSelectOption {
@@ -8,7 +9,7 @@ export interface MultiSelectOption {
 }
 
 interface MultiSelectProps {
-	label?: string | null;
+	label?: ReactNode;
 	options: MultiSelectOption[];
 	selected: string[];
 	onSelectedChange: (selected: string[]) => void;

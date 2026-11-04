@@ -212,21 +212,85 @@ function cyclesInto(part: string[], full: string[]): boolean {
 /** The darts of a certificate: the first choice of mirror axes whose faces are the board's. */
 export function decode(text: string, board: Board): Darts {
 	const cert = parseCertificate(text);
-	let combos: VTable[][] = [[]];
-	for (const t of cert.types) {
-		const vs = variants(t.figure, t.tag);
-		combos = combos.flatMap((c) => vs.map((v) => [...c, v]));
-	}
-	let last = "no vertex types";
-	for (const tables of combos) {
-		try {
-			const d = block(cert, tables);
-			if (facesMatch(d, board)) return d;
-			last = "its faces are not the board's";
-		} catch (e) {
-			last = (e as Error).message;
+	// each vertex type's tables, those holding every label the gluing line names for it: any other fails
+	// whatever the rest are. Without this the axes multiply, two for every edge midpoint, and listing their
+	// combinations ran out of memory at k = 13 on a board with lengths as edge types
+	const named = cert.types.map(() => new Set<string>());
+	for (const { kind, items } of cert.structure)
+		for (const [r, star] of [
+			[items[0], false],
+			[items[1] ?? items[0], kind === "[]"],
+		] as const)
+			named[r.orbit]?.add((r.mirror !== star ? "*" : "") + r.pos);
+	const options = cert.types.map((t, o) =>
+		variants(t.figure, t.tag).filter((v) => [...named[o]].every((l) => v.labels.includes(l))),
+	);
+	if (!cert.types.length) throw new Error("Cannot read this certificate: no vertex types.");
+	if (options.some((vs) => !vs.length)) throw new Error("Cannot read this certificate: a label is not in its table.");
+	// the tables type by type, each choice checked against the gluings it completes: a gluing joins half-edges of
+	// two types, and a choice that conflicts with one fails whatever the others are. Depth first, in the order the
+	// combinations were listed in (the last type's table turning fastest), so the first that reads is the one it
+	// always was. Trying whole combinations instead gave up after 10^5 of them, which a board with lengths as edge
+	// types passes by k = 20 (a square and a 1 × √2 house: 29 of 355 tilings at k = 21 unread, and slow)
+	const n = options.length;
+	const size = options.map((vs) => vs[0].rneig.length);
+	const base = size.map((_, o) => size.slice(0, o).reduce((t, x) => t + x, 0));
+	const orbitOf = size.flatMap((m, o) => Array<number>(m).fill(o));
+	const ends = cert.structure.map(({ kind, items }) => [
+		[items[0], false],
+		[items[1] ?? items[0], kind === "[]"],
+	] as const);
+	// the gluings each type completes, chosen in order
+	const due = options.map(() => [] as number[]);
+	ends.forEach((e, s) => due[Math.min(n - 1, Math.max(e[0][0].orbit, e[1][0].orbit))].push(s));
+	const pick = options.map(() => 0);
+	const glue = new Array<number>(orbitOf.length).fill(-1);
+	const changed: number[] = [];
+	const dart = ([r, star]: readonly [Ref, boolean]) => {
+		const l = options[r.orbit]?.[pick[r.orbit]].labels.indexOf((r.mirror !== star ? "*" : "") + r.pos) ?? -1;
+		return l < 0 ? -1 : base[r.orbit] + l;
+	};
+	const mirror = (h: number) => base[orbitOf[h]] + options[orbitOf[h]][pick[orbitOf[h]]].mirro[h - base[orbitOf[h]]];
+	const join = (a: number, b: number) => {
+		if ((glue[a] !== -1 && glue[a] !== b) || (glue[b] !== -1 && glue[b] !== a)) return false;
+		for (const [x, y] of [
+			[a, b],
+			[b, a],
+		])
+			if (glue[x] === -1) (glue[x] = y), changed.push(x);
+		return true;
+	};
+	const place = (s: number) => {
+		const [h0, h1] = [dart(ends[s][0]), dart(ends[s][1])];
+		return h0 >= 0 && h1 >= 0 && join(h0, h1) && join(mirror(h0), mirror(h1));
+	};
+	let last = "conflicting gluing";
+	let nodes = 0;
+	const search = (o: number): Darts | null => {
+		if (o === n) {
+			try {
+				const d = block(
+					cert,
+					pick.map((j, q) => options[q][j]),
+				);
+				if (facesMatch(d, board)) return d;
+				last = "its faces are not the board's";
+			} catch (e) {
+				last = (e as Error).message;
+			}
+			return null;
 		}
-	}
+		for (let j = 0; j < options[o].length && nodes++ < 1e6; j++) {
+			pick[o] = j;
+			const mark = changed.length;
+			const found = due[o].every(place) ? search(o + 1) : null;
+			if (found) return found;
+			while (changed.length > mark) glue[changed.pop()!] = -1;
+		}
+		return null;
+	};
+	const found = search(0);
+	if (found) return found;
 	throw new Error(`Cannot read this certificate: ${last}.`);
 }
 
@@ -256,7 +320,26 @@ export function geometry(board: Board, words: string[][]): Drawing {
 		};
 	const flat = (s: string) => cornerAngle(shapes.get(s), "plane", 0)!;
 	const sums = words.map((w) => w.reduce((t, s) => t + flat(s), 0));
-	if (sums.every((s) => Math.abs(s - TWO_PI) < CLOSE)) return { kind: "plane", turn: flat };
+	if (sums.every((s) => Math.abs(s - TWO_PI) < CLOSE)) {
+		// the vertices close at any edge; a face whose set angles add up to less than a plane polygon's
+		// ({3,7} triangles at 360/7) closes only in the hyperbolic plane, at the edge it fixes
+		const finite = board.faces.filter((f) => f.repeat !== "inf").map((f) => Array.from({ length: f.repeat as number }, () => f.word).flat());
+		const open = finite.filter((w) => Math.abs(w.reduce((t, s) => t + flat(s), 0) - (w.length - 2) * Math.PI) > CLOSE);
+		if (!open.length) return { kind: "plane", turn: flat };
+		const word = open[0].join(" ");
+		if (open.some((w) => w.some((s) => !["set", "pi"].includes(shapes.get(s)!.kind))))
+			return { kind: "none", message: `Face ${word} does not close in the plane, and its corners are not all set: give each an angle to draw it.` };
+		if (open.some((w) => w.reduce((t, s) => t + flat(s), 0) > (w.length - 2) * Math.PI))
+			return { kind: "none", message: `Face ${word} has corners adding up to more than a plane polygon's: a tiling of the sphere, which is not drawn yet.` };
+		const edges = finite.map((w) => faceEdge(w.map(flat)));
+		const l = edges[0];
+		if (l === null || edges.some((e) => e === null || Math.abs(e - l) > 1e-6))
+			return {
+				kind: "none",
+				message: `With equal sides, the faces of this board close at different edge lengths, so it has no drawing in the hyperbolic plane.`,
+			};
+		return { kind: "hyperbolic", edge: l, turn: flat, shape: (s) => shapes.get(s)! };
+	}
 	const deg = (r: number) => `${+((r * 180) / Math.PI).toFixed(2)}°`;
 	if (sums.some((s) => s < TWO_PI - CLOSE)) {
 		const i = sums.findIndex((s) => s < TWO_PI - CLOSE);
@@ -272,17 +355,19 @@ export function geometry(board: Board, words: string[][]): Drawing {
 			message: `The corners add up to more than 360° (${deg(Math.max(...sums))}), and ${list(set.map((s) => `“${s}”`))} ha${set.length === 1 ? "s" : "ve"} a set angle, which stays fixed as the edge grows: in the hyperbolic plane only regular, star and isotoxal faces can be drawn. Clear the angle to draw it with regular faces.`,
 		};
 	// the hyperbolic plane with regular faces: one edge length must close every vertex
-	const l = solveEdge(words[0], shapes, "hyperbolic");
+	// solved from the first vertex that fixes it: one of flat corners only (Pi Pi) closes at every length
+	const seed = words.find((w) => solveEdge(w, shapes, "hyperbolic") !== null);
+	const l = seed ? solveEdge(seed, shapes, "hyperbolic") : null;
 	const bad =
 		l === null
-			? words[0]
+			? words.find((w) => w !== seed)
 			: words.find(
 					(w) => Math.abs(w.reduce((t, s) => t + cornerAngle(shapes.get(s), "hyperbolic", l)!, 0) - TWO_PI) > 1e-6,
 				);
 	if (l === null || bad)
 		return {
 			kind: "none",
-			message: `With regular faces, vertex ${words[0].join(" ")} and vertex ${bad!.join(" ")} close at different edge lengths, so this tiling has no drawing with regular faces. Give its corners angles that close in the plane to draw it there.`,
+			message: `With regular faces, vertex ${(seed ?? words[0]).join(" ")} and vertex ${(bad ?? words[0]).join(" ")} close at different edge lengths, so this tiling has no drawing with regular faces. Give its corners angles that close in the plane to draw it there.`,
 		};
 	return {
 		kind: "hyperbolic",
@@ -290,6 +375,61 @@ export function geometry(board: Board, words: string[][]): Drawing {
 		turn: (s) => cornerAngle(shapes.get(s), "hyperbolic", l)!,
 		shape: (s) => shapes.get(s)!,
 	};
+}
+
+/**
+ * The corners of a face of set angles, from one period of its ring in the quotient: the board face that
+ * period repeats round (A1 A2 once for an A1 A2 A1 A2 rhombus, as its two halves are one orbit).
+ */
+function setFaceSize(board: Board, period: string[]): number {
+	const key = (w: string[]) => w.join(" ");
+	for (const f of board.faces) {
+		if (f.repeat === "inf") continue;
+		const word = Array.from({ length: f.repeat }, () => f.word).flat();
+		if (word.length % period.length) continue;
+		const round = Array.from({ length: word.length / period.length }, () => period).flat();
+		const turns = word.map((_, i) => key([...word.slice(i), ...word.slice(0, i)]));
+		if (turns.includes(key(round)) || turns.includes(key([...round].reverse()))) return word.length;
+	}
+	return 3;
+}
+
+/**
+ * The side at which a face of equal sides and these corner angles closes in the hyperbolic plane, or null
+ * where none does. The walk (a side, then a turn of π − α, on the hyperboloid) returns to its start only
+ * at that side; it is found by scanning the distance the walk ends from its start, then refining.
+ */
+export function faceEdge(alphas: number[]): number | null {
+	type M = number[];
+	const mul = (a: M, b: M) =>
+		[0, 1, 2].flatMap((i) => [0, 1, 2].map((j) => a[3 * i] * b[j] + a[3 * i + 1] * b[3 + j] + a[3 * i + 2] * b[6 + j]));
+	const walk = (s: number) => {
+		const [c, h] = [Math.cosh(s), Math.sinh(s)];
+		const step = [c, 0, h, 0, 1, 0, h, 0, c];
+		return alphas.reduce((m, a) => {
+			const [co, si] = [Math.cos(Math.PI - a), Math.sin(Math.PI - a)];
+			return mul(mul(m, step), [co, -si, 0, si, co, 0, 0, 0, 1]);
+		}, [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+	};
+	// how far the walk is from the identity: the end's distance alone vanishes for a tiny face too, the
+	// turn it is left with does not (a {3,7} triangle drawn small turns by 27° too many)
+	const miss = (s: number) => Math.hypot(...walk(s).map((v, i) => v - (i % 4 === 0 ? 1 : 0)));
+	let best = NaN;
+	let at = 0;
+	for (let i = 1; i <= 600; i++) {
+		const s = 0.01 * Math.pow(3000, i / 600); // 0.01 to 30, evenly in log
+		const d = miss(s);
+		if (!(d >= best)) [best, at] = [d, i];
+	}
+	let [lo, hi] = [0.01 * Math.pow(3000, (at - 1) / 600), 0.01 * Math.pow(3000, (at + 1) / 600)];
+	for (let i = 0; i < 200; i++) {
+		const [a, b] = [lo + (hi - lo) / 3, hi - (hi - lo) / 3];
+		if (miss(a) < miss(b)) hi = b;
+		else lo = a;
+	}
+	const s = (lo + hi) / 2;
+	// a face that closes in the plane closes only as its side shrinks to nothing
+	return miss(s) < 1e-6 && s > 0.02 ? s : null;
 }
 
 const list = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
@@ -313,8 +453,9 @@ export const marksEdges = (board: Board) =>
 
 /**
  * Per dart, the edge line of the side it runs along (its midpoint corner, at one end of the dart or the
- * other), and that edge's length, 1 for a side with no edge line. Every dart is half a side, so a side is
- * drawn twice its length, the same scale for every edge type.
+ * other), and that edge's length. A dart of a typed side is half the side, so the side is drawn twice its
+ * length, the same scale for every edge type; a plain unit edge is one dart, so on a board with edge types it
+ * is 2 (a face of plain sides of length 1 and typed ones, as Lengths as edge types draws it), else 1.
  */
 function dartEdges(d: Darts, board: Board) {
 	const types = edgeTypes(board);
@@ -323,7 +464,8 @@ function dartEdges(d: Darts, board: Board) {
 	const edge = d.rneig.map((_, h) =>
 		[d.corner[h], d.corner[lneig[h]], d.corner[d.glue[h]], d.corner[lneig[d.glue[h]]]].find((c) => types.has(c)),
 	);
-	const length = Float64Array.from(edge, (e) => (e === undefined ? 1 : types.get(e)!.length));
+	const plain = types.size ? 2 : 1;
+	const length = Float64Array.from(edge, (e) => (e === undefined ? plain : types.get(e)!.length));
 	return { types, lneig, edge, length };
 }
 
@@ -384,7 +526,7 @@ function flatPeriod(d: Darts, board: Board, turn: (sym: string) => number) {
 		}
 		return (last = walk);
 	};
-	const built = buildEdgePatch({ classLengths: [...new Set(length)] }, walkAt, { reach: 8, budget: 80000 });
+	const built = buildEdgePatch({ classLengths: [...new Set(length)] }, walkAt, { reach: 8, budget: 80000, attempts: 6 });
 	if (!built.ok) throw new Error(`No period of this tiling was found: ${built.reason}.`);
 	return { patch: built.patch, walk: last!, turns: t, length };
 }
@@ -416,12 +558,59 @@ export function faceColors(board: Board): { count: number; of: (word: string[]) 
 		const count = 1 + Math.max(0, ...board.angles.map((a) => coloredCorner(a.sym)?.color ?? 0));
 		return { count, of: (word) => Math.max(0, ...word.map((c) => coloredCorner(c)?.color ?? 0)) };
 	}
-	const full = board.faces.map((f) => (f.repeat === "inf" ? null : repeat(f.word, f.repeat)));
+	// an apeirogon's walked word is some number of its periods
+	const full = (f: Board["faces"][number], n: number) =>
+		f.repeat !== "inf" ? repeat(f.word, f.repeat) : n % f.word.length ? null : repeat(f.word, n / f.word.length);
 	return {
 		count: board.faces.length,
-		of: (word) => Math.max(0, full.findIndex((w) => w !== null && w.length % word.length === 0 && sameCycle(repeat(word, w.length / word.length), w, false))),
+		of: (word) =>
+			Math.max(
+				0,
+				board.faces.findIndex((f) => {
+					const w = full(f, word.length);
+					return w !== null && w.length % word.length === 0 && sameCycle(repeat(word, w.length / word.length), w, false);
+				}),
+			),
 	};
 }
+
+/**
+ * The board with each apeirogon made finite, for drawing a tiling's combinatorics (Marek's abstract mode,
+ * 2026-10-31): every face of an apeirogon's class goes round its ring in the quotient some number of
+ * periods, and the class becomes the polygon of the least common multiple of those counts, as a regular
+ * polygon whose corners follow the geometry (1 is drawn as a triangle and 2 as a square, the fewest
+ * sides that cover them). Null when the board has no apeirogon, or the tiling none of its faces.
+ */
+export function abstractBoard(board: Board, d: Darts): Board | null {
+	const inf = board.faces.map((f, i) => (f.repeat === "inf" ? i : -1)).filter((i) => i >= 0);
+	if (!inf.length) return null;
+	const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+	const periods = new Map<number, number>(); // board face -> lcm of the periods its rings go round
+	const seen = new Set<number>();
+	for (let h0 = 0; h0 < d.rneig.length; h0++) {
+		if (seen.has(h0)) continue;
+		const ring: number[] = [];
+		for (let h = h0; !seen.has(h); h = d.glue[d.rneig[h]]) seen.add(h), ring.push(h);
+		const word = ring.map((h) => d.corner[h]);
+		const i = inf.find((j) => {
+			const w = board.faces[j].word;
+			return word.length % w.length === 0 && sameCycle(word, repeat(w, word.length / w.length), false);
+		});
+		if (i === undefined) continue;
+		const n = word.length / board.faces[i].word.length;
+		const m = periods.get(i) ?? 1;
+		periods.set(i, (m * n) / gcd(m, n));
+	}
+	if (!periods.size) return null;
+	return {
+		...board,
+		faces: board.faces.map((f, i) => (periods.has(i) ? { ...f, repeat: Math.max(3, periods.get(i)! === 2 ? 4 : periods.get(i)!) } : f)),
+	};
+}
+
+/** A hue per board face, for colouring by shape: the golden angle apart, so faces next to each other on the
+ *  board never come out close. */
+export const shapeHue = (i: number) => (20 + i * 137.508) % 360;
 
 /**
  * One period as the site's flat cell renderer takes it (lib/hooks/useFlatCellPreview.ts, the /theory
@@ -429,10 +618,10 @@ export function faceColors(board: Board): { count: number; of: (word: string[]) 
  * by which board face each is, through the colourings palette (lib/colors/render.ts).
  */
 /**
- * A ring as the tile it is: its straight points dropped (the Pi corners along a side of several edges, so a
- * triangle with sides of two edges is a triangle and takes the triangle's colour), and a ring whose corners
- * alternate convex and reflex marked a star of half as many points, which the atlas colours by its own
- * star ramp (RawPolygon.star).
+ * A ring as the tile it is. A plain tile keeps its straight points (the Pi corners along a side of several
+ * edges), as the atlas's scaled shelf stores a side-2 triangle: a degenerate hexagon, which polygonFillHue
+ * colours apart from the triangle and the hexagon. A ring whose corners alternate convex and reflex is a
+ * star of half as many points, which the atlas colours by its own star ramp (RawPolygon.star).
  */
 function tileOf(ring: number[][]): { v: number[][]; n: number; star?: boolean } {
 	const turn = (v: number[][], i: number) => {
@@ -444,7 +633,7 @@ function tileOf(ring: number[][]): { v: number[][]; n: number; star?: boolean } 
 	const reflex = v.map((_, i) => turn(v, i) * area < 0);
 	const star =
 		v.length >= 6 && v.length % 2 === 0 && reflex.every((r, i) => r === reflex[i % 2]) && reflex[0] !== reflex[1];
-	return star ? { v, n: v.length / 2, star: true } : { v, n: v.length };
+	return star ? { v, n: v.length / 2, star: true } : { v: ring, n: ring.length };
 }
 
 /**
@@ -459,6 +648,8 @@ export function flatCellWithOverlays(
 	d: Darts,
 	board: Board,
 	turn: (sym: string) => number,
+	/** Each board face its own hue (shapeHue), not its side count's: an A3 and a B3 then differ. */
+	byShape = false,
 ): { cell: TranslationalCellData; orbits: OrbitData; symmetry: (() => SymmetryData | null) | null } {
 	const { patch, walk, turns, length } = flatPeriod(d, board, turn);
 	const { T1, T2, verts, polys } = patch;
@@ -488,7 +679,7 @@ export function flatCellWithOverlays(
 	const types = edgeTypes(board);
 	const styleOf = (c: string) => types.get(c)?.style;
 	const bubbly = [...types.values()].some((e) => e.style === "bump" || e.style === "bite");
-	if (!coloring && !bubbly)
+	if (!coloring && !bubbly && !byShape)
 		return {
 			cell: { p: rings.map((v) => tileOf(v)), b: [T1, T2] },
 			orbits,
@@ -553,7 +744,7 @@ export function flatCellWithOverlays(
 					const at = face.ring.map((p) => [p[0] + o[0] - m[0], p[1] + o[1] - m[1]]);
 					tile = curved(at, face.word, "arc");
 				}
-				return coloring ? { ...tile, hue: hueOf(face?.cls ?? 0) } : tile;
+				return coloring ? { ...tile, hue: hueOf(face?.cls ?? 0) } : byShape ? { ...tile, hue: shapeHue(face?.cls ?? 0) } : tile;
 			}),
 			b: [T1, T2],
 		},
@@ -627,6 +818,8 @@ export function hyperbolicDarts(
 	d: Darts,
 	g: Extract<Drawing, { kind: "hyperbolic" }>,
 	board?: Board,
+	/** Each board face its own hue in degrees (shapeHue), for the disk's faceHue mode. */
+	byShape = false,
 ): SiteDarts & { sizes: number[] } {
 	const n = d.rneig.length;
 	// every vertex must close: round a vertex (an orbit of rneig) the angles divide 360°, as develop_ai1.py
@@ -651,7 +844,7 @@ export function hyperbolicDarts(
 	const face = new Array<{ size: number; seg: number; iso?: boolean } | null>(n).fill(null);
 	// a board whose faces of one shape are told apart by their corners (a colouring, bubble tiles): each
 	// face takes the colour of the board face it is, as the plane does
-	const colorsOf = board && isColoring(board) ? faceColors(board) : null;
+	const colorsOf = board && (byShape || isColoring(board)) ? faceColors(board) : null;
 	const cls = new Array<number>(n).fill(0);
 	for (let h0 = 0; h0 < n; h0++) {
 		if (face[h0]) continue;
@@ -672,7 +865,7 @@ export function hyperbolicDarts(
 					? { size: s.n ?? 0, seg: s.seg }
 					: s?.kind === "iso"
 						? { size: 2 * s.n, seg: s.seg, iso: true }
-						: { size: 3, seg: 1 };
+						: { size: board ? setFaceSize(board, orbit.map((h) => d.corner[h])) : 3, seg: 1 };
 		for (const h of orbit) face[h] = f;
 	}
 	// ascending, the apeirogon last (develop_ai1.py's order)
@@ -680,7 +873,8 @@ export function hyperbolicDarts(
 	const lvert = new Array<number>(n);
 	d.rneig.forEach((r, h) => (lvert[r] = face[h]!.size * face[h]!.seg));
 	// cut sides, Pi corners and isotoxal faces all need each dart's own turn
-	const cut = face.some((f) => f!.seg !== 1 || "iso" in f!) || d.corner.some((c) => g.shape(c).kind === "pi");
+	const cut =
+		face.some((f) => f!.seg !== 1 || "iso" in f!) || d.corner.some((c) => ["pi", "set"].includes(g.shape(c).kind));
 	const marked = sizes.includes(2);
 	// bubble sides: the disk curves them (hyperbolicWalk.ts bump)
 	const types = board ? edgeTypes(board) : new Map<string, { style?: string }>();
@@ -690,7 +884,7 @@ export function hyperbolicDarts(
 		glue: d.glue,
 		lvert,
 		seed: 0,
-		...(marked ? {} : { faceColor: colorsOf ? cls : face.map((f) => sizes.indexOf(f!.size)) }),
+		...(marked ? {} : { faceColor: colorsOf ? (byShape ? cls.map(shapeHue) : cls) : face.map((f) => sizes.indexOf(f!.size)) }),
 		...(cut ? { alpha: d.corner.map(g.turn) } : {}),
 		...(bumps ? { bump: d.corner.map((c) => (types.get(c)?.style === "bump" ? 1 : types.get(c)?.style === "bite" ? -1 : 0)) } : {}),
 		sizes,

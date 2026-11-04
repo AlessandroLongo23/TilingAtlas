@@ -3,17 +3,20 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { cyclicKey, parse } from "./board";
+import { cyclicKey, emptyBoard, parse } from "./board";
 import { fittingOrder, fittingVertices, layable, overlapping } from "./figures";
 import {
 	arrangements,
+	withPermutations,
 	closingVertices,
 	cornerAngle,
 	cornerShapes,
+	exactlyClosing,
 	pointsCanPart,
 	pointsTouch,
 	freePoints,
 	readShorthand,
+	readShorthands,
 	seedWords,
 	solveEdge,
 	solvePoints,
@@ -78,7 +81,21 @@ describe("faces in Marek's names", () => {
 		expect(readShorthand("A3*100")).toEqual({ n: 3, seg: 1, point: 100 }); // convex: 100° and 140°
 		expect(readShorthand("A2*60")).toEqual({ n: 2, seg: 1, point: 60 }); // a rhombus
 		// A6*120 is the regular dodecagon, A2*90 the square, A3*60 a "star" of straight dents
-		for (const bad of ["a3", "B2", "A6*120", "A2*90", "A3*60", "A1", "X3"]) expect(readShorthand(bad)).toBeNull();
+		for (const bad of ["a3", "B2", "A6*120", "A2*90", "A3*60", "A1", "a3x"]) expect(readShorthand(bad)).toBeNull();
+	});
+
+	it("reads several faces at once, or none when one does not read", () => {
+		expect(readShorthands("Aoo, B3, Coo")).toEqual([
+			{ n: null, seg: 1 },
+			{ n: 3, seg: 2 },
+			{ n: null, seg: 3 },
+		]);
+		expect(readShorthands("A3")).toEqual([{ n: 3, seg: 1 }]);
+		for (const bad of ["", ",", "A3, a4", "A3,,B2"]) expect(readShorthands(bad)).toBeNull();
+		// added in turn, the shared Pi corner is declared once (Marek's Board_0_790985)
+		const b = readShorthands("Aoo,B3,Coo")!.reduce((acc, f) => withFace(acc, f), parse("name t\nk 1 1\n").board);
+		expect(b.faces.map((f) => f.word.join(" "))).toEqual(["Aoo", "B3 Pi", "Coo Pi Pi"]);
+		expect(b.angles.map((x) => x.sym).sort()).toEqual(["Aoo", "B3", "Coo", "Pi"]);
 	});
 
 	it("writes the face and its corners, and reads them back", () => {
@@ -302,5 +319,60 @@ describe("faces lie either way round", () => {
 		const w = ["F1_90", "F1_90", "F1_30", "F1_60", "F1_60", "F1_30"];
 		expect(overlapping(b, w)).toBe(false);
 		expect(fittingVertices(b, 12)!.map((v) => cyclicKey(v))).toContain(cyclicKey(w));
+	});
+});
+
+describe("vertices that close exactly", () => {
+	// {5,4}'s edge, cosh s = φ, carries twelve polygons and 106 vertices (A3⁴A4² fixes it)
+	let b = emptyBoard();
+	for (const f of ["A3", "A4", "A5", "A10", "A20", "B3", "B4", "B5", "B10", "Boo", "Doo", "G3"]) b = withFace(b, readShorthand(f)!);
+	const seed = ["A3", "A3", "A3", "A3", "A4", "A4"];
+	const l = solveEdge(seed, cornerShapes(b), "hyperbolic")!;
+	const real = (ws: string[][]) => ws.filter((w) => !w.includes("Pi"));
+	it("keeps the 106", () => {
+		expect(Math.cosh(l)).toBeCloseTo((1 + Math.sqrt(5)) / 2, 12);
+		const r = exactlyClosing(b, "hyperbolic", l, seed, closingVertices(b, "hyperbolic", l, 24).words);
+		expect(real(r.words)).toHaveLength(106);
+		expect(r.dropped).toHaveLength(0);
+	});
+	it("drops the near-misses a loose float test lets in", () => {
+		const loose = closingVertices(b, "hyperbolic", l, 24, 1e-3).words;
+		const r = exactlyClosing(b, "hyperbolic", l, seed, loose);
+		expect(real(r.words)).toHaveLength(106);
+		expect(r.dropped.length).toBeGreaterThan(100);
+	});
+	it("checks nothing without a vertex to fix the edge", () =>
+		expect(exactlyClosing(b, "hyperbolic", l, null, [seed]).unchecked).toBe(1));
+});
+
+describe("Permutations turned off and on", () => {
+	// the 10 sets of corners of {3,4,6,12} that close are 14 vertex configurations, as Marek's amalgama needs them
+	const sets = parse(
+		[
+			"angle A3 60", "angle A4 90", "angle A6 120", "angle A12 150",
+			"face A3 x 3", "face A4 x 4", "face A6 x 6", "face A12 x 12",
+			"permutations yes",
+			"vertex A12 A12 A3", "vertex A12 A4 A6", "vertex A6 A6 A6", "vertex A12 A3 A3 A4", "vertex A3 A3 A6 A6",
+			"vertex A3 A4 A4 A6", "vertex A4 A4 A4 A4", "vertex A3 A3 A3 A3 A6", "vertex A3 A3 A3 A4 A4",
+			"vertex A3 A3 A3 A3 A3 A3",
+			"require 4", "require 9 10", "initial 5",
+		].join("\n"),
+	).board;
+	it("spells each set out as its orders, the required sets with them", () => {
+		const orders = withPermutations(sets, false)!;
+		expect(orders.permutations).toBe(false);
+		expect(orders.vertices.length).toBe(14);
+		const at = (w: string) => orders.vertices.findIndex((v) => cyclicKey(v.word) === cyclicKey(w.split(" "))) + 1;
+		expect(orders.require.map((r) => r.set)).toEqual([
+			[at("A12 A3 A3 A4"), at("A12 A3 A4 A3")].sort((x, y) => x - y),
+			[at("A3 A3 A3 A4 A4"), at("A3 A3 A4 A3 A4"), at("A3 A3 A3 A3 A3 A3")].sort((x, y) => x - y),
+		]);
+		expect(orders.initial).toEqual([at("A3 A3 A6 A6"), at("A3 A6 A3 A6")].sort((x, y) => x - y));
+	});
+	it("gathers the orders back into the same sets", () => {
+		const back = withPermutations(withPermutations(sets, false)!, true)!;
+		expect(back.vertices.map((v) => v.word)).toEqual(sets.vertices.map((v) => v.word));
+		expect(back.require).toEqual(sets.require);
+		expect(back.initial).toEqual(sets.initial);
 	});
 });

@@ -52,10 +52,13 @@ export function HyperbolicThumbnail({
 	tiling,
 	mode,
 	size = 256,
+	outline = true,
 }: {
 	tiling: HypDiskSource;
 	mode: HypDiskMode;
 	size?: number;
+	/** Tile outlines; off draws a colouring by its colours alone. */
+	outline?: boolean;
 }) {
 	// Live settings: a hue-ring drag or a stroke change re-bakes, as the flat thumbnails do. A field the
 	// mode does not read is pinned, so changing it re-bakes nothing.
@@ -63,7 +66,7 @@ export function HyperbolicThumbnail({
 		useShallow(
 			(s): HypDiskSettings => ({
 				fillAmount: s.fillAmount,
-				lineWidth: s.lineWidth,
+				lineWidth: outline ? s.lineWidth : 0,
 				hueOffset: mode === "colors" ? 0 : s.hueOffset,
 				hyperbolicLineMode: s.hyperbolicLineMode,
 				hyperbolicDepthShade: s.hyperbolicDepthShade,

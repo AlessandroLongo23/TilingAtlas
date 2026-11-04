@@ -1,0 +1,26 @@
+# Regular polygons: triangles, squares, hexagons and dodecagons meeting edge to edge.
+name regular_polygons
+k 1 5
+
+angle A4 90
+angle A3
+angle A6 120
+angle A12
+
+face A3 x 3
+face A4 x 4
+face A6 x 6
+face A12 x 12
+
+vertex A4 A6 A12
+vertex A3 A12 A12
+vertex A6 A6 A6
+vertex A4 A4 A4 A4
+vertex A4 A4 A3 A6
+vertex A4 A3 A3 A12
+vertex A3 A3 A6 A6
+vertex A4 A4 A3 A3 A3
+vertex A3 A3 A3 A3 A6
+vertex A3 A3 A3 A3 A3 A3
+
+permutations yes

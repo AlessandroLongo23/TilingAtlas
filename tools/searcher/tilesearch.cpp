@@ -4,18 +4,27 @@
 // find_and_write_tilings. This is that main() once, reading the board from a text file. It builds the
 // same arguments his mains build and runs his search, with two changes to how the run is organised
 // (not to what it finds; see search and Fingerprints):
-//   - progress is checkpointed per root vertex, so a stopped run resumes with the roots it had not finished;
+//   - progress is checkpointed per root vertex, and in a large run per unit of a root (UNIT_DEPTH), so a
+//     stopped run resumes with the roots and units it had not finished;
 //   - duplicates are recognised by a 128-bit fingerprint of the canonical form, not the form itself.
 //
 // usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--gzip] [--progress] [--dump]
+//                  [--first] [--seconds <s>] [--find] [--no-local-death] [--balance] [--prune-balance]
 //   --gzip writes the certificate files as .txt.gz (each one a run of gzip members; zcat reads it whole).
 //   --resume continues a stopped run in this folder (the board must be the same).
 //   --progress prints `progress <seconds> <total> <k>:<count>... nodes <n>` twice a second (n: the nodes
-//   visited so far, within 4096 per thread) and `roots <done> <all>` at every root boundary (read by the app).
+//   visited so far, within 4096 per thread) with `active <r>:<units done>/<units>...` (the roots in hand, units
+//   counted as the root's head finds them; one unit when the run has none), and `roots <done> <all> [<r>]` at
+//   every root boundary, r the root just finished (read by the app).
 //   Before the first root it prints `stage <name> <done> <all>`: `tables 0 0` while it builds its tables, then
 //   `roots` (trying each required set as the start, when there are two or more) and `rank` (the root order),
 //   counting root types.
 //   --dump prints the engine arguments the board compiles to and exits (the parser's test hook).
+//   --first writes the first tiling found and exits; --seconds <s> exits with status 4 past s seconds (with --progress).
+//   --find looks for one tiling meeting every required set, by stepping stones (find.h); --seconds is then per k.
+//   --balance prints, as one JSON line, the vertex types no periodic tiling can use (edge balance, balance.h) and exits.
+//   --prune-balance leaves those out of the search, and per root the types that cannot share a tiling with it.
+#include <random>
 #include <sys/resource.h>
 #include <zlib.h>
 #include <atomic>
@@ -27,6 +36,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -48,15 +58,22 @@
 using namespace tilings;
 namespace fs = std::filesystem;
 
+static int const MAX_SETS = 64;   // required sets, initial counting as one: one bit each (Required)
+static int const MAX_K = 254;     // Required::need counts the vertices still to add in a byte, 255 meaning none can
+static bool chiral = false;       // `chiral yes`: only tilings with no reflection or glide reflection (Sides)
+
 struct Board {
     std::string name;
     int kmin = 0, kmax = 0;
     std::vector<std::vector<int>> faces, apeirogons, vertices;
     bool permutations = false;
+    bool chiral = false;                   // `chiral yes`: no reflection or glide reflection among its symmetries
     std::vector<int> initial;              // 0-based vertex lines, empty = all
     std::vector<std::vector<int>> require; // per `require` line: 0-based vertex lines, a tiling holds one of each
-    // per `require face` line: its faces (each written out in full); a tiling holds one of them
+    // per `require face` line: its faces (each written out in full, an apeirogon as its period); a tiling holds one of them
     std::vector<std::vector<std::vector<int>>> require_faces;
+    std::vector<std::vector<char>> require_faces_inf;   // per face of each line: an apeirogon (`x inf`)
+    std::set<int> flat = { 0 };            // corners along a side, which run along many faces: Pi and the edge corners
     bool colors_labeled = false;           // `colors labeled`: all-A and all-B are two tilings
     std::vector<std::string> normalized;   // the board as run: no comments, single spaces
     std::map<std::string, int> codes;      // symbol -> corner code
@@ -104,7 +121,15 @@ static Board read_board(std::string const& path) {
         lineno++;
         std::istringstream ss(raw.substr(0, raw.find('#')));
         std::vector<std::string> t;
-        for (std::string s; ss >> s;) t.push_back(s);
+        for (std::string s; ss >> s;) {
+            // in face, vertex and require lines, A3^2 is shorthand for A3 A3 (board.ts expands it the same way)
+            auto c = s.find('^');
+            bool power = !t.empty() && (t[0] == "face" || t[0] == "vertex" || t[0] == "require") && c != std::string::npos
+                && c > 0 && c + 1 < s.size() && s[c + 1] != '0' && s.find_first_not_of("0123456789", c + 1) == std::string::npos
+                && s.size() - c - 1 <= 4;
+            if (!power) { t.push_back(s); continue; }
+            for (int n = std::atoi(s.c_str() + c + 1); n > 0; n--) t.push_back(s.substr(0, c));
+        }
         if (t.empty()) continue;
         std::string norm = t[0];
         for (size_t i = 1; i < t.size(); i++) norm += " " + t[i];
@@ -113,7 +138,7 @@ static Board read_board(std::string const& path) {
         if (kw == "name" && t.size() == 2) b.name = t[1];
         else if (kw == "k" && t.size() == 3) {
             b.kmin = std::atoi(t[1].c_str()), b.kmax = std::atoi(t[2].c_str()), has_k = true;
-            if (b.kmin < 1 || b.kmax < b.kmin || b.kmax > 128) fail(lineno, "k needs 1 <= kmin <= kmax <= 128");
+            if (b.kmin < 1 || b.kmax < b.kmin || b.kmax > MAX_K) fail(lineno, "k needs 1 <= kmin <= kmax <= " + std::to_string(MAX_K));
         }
         else if ((kw == "angle" && (t.size() == 2 || t.size() == 3)) || (kw == "edge" && t.size() >= 2)) {
             // `edge <sym> [length <L>] [drawn|hidden|bump|bite]`: the 180° corner at the midpoint of a side
@@ -130,6 +155,7 @@ static Board read_board(std::string const& path) {
             for (auto const& [s, other] : b.codes)
                 if (other == c) fail(lineno, "'" + t[1] + "' and '" + s + "' encode to the same corner");
             b.codes[t[1]] = c;   // the value is read by geometry checks, which are not built yet
+            if (kw == "edge") b.flat.insert(c);
         }
         else if (kw == "face" && t.size() >= 2) {
             auto x = std::find(t.begin(), t.end(), "x");
@@ -147,6 +173,7 @@ static Board read_board(std::string const& path) {
         }
         else if (kw == "vertex" && t.size() >= 2) b.vertices.push_back(word(t, 1, t.size()));
         else if (kw == "permutations" && t.size() == 2 && (t[1] == "yes" || t[1] == "no")) b.permutations = t[1] == "yes";
+        else if (kw == "chiral" && t.size() == 2 && (t[1] == "yes" || t[1] == "no")) chiral = b.chiral = t[1] == "yes";
         else if (kw == "initial" && t.size() >= 2) {
             if (t.size() == 2 && t[1] == "all") continue;
             for (size_t i = 1; i < t.size(); i++) {
@@ -158,6 +185,7 @@ static Board read_board(std::string const& path) {
         else if (kw == "require" && t.size() >= 3 && t[1] == "face") {
             // require face a b c [x m] [| face d e f [x m] ...]: one of these faces, each up to turning and mirroring
             std::vector<std::vector<int>> alts;
+            std::vector<char> inf;
             for (size_t i = 1; i < t.size();) {
                 if (t[i] != "face") fail(lineno, "require face takes faces, each written 'face <corners> [x m]', separated by |");
                 size_t e = i + 1;
@@ -165,18 +193,23 @@ static Board read_board(std::string const& path) {
                 auto x = std::find(t.begin() + i + 1, t.begin() + e, "x");
                 size_t end = x - t.begin();
                 int m = 1;
+                bool apeirogon = false;
                 if (end < e) {
                     if (end + 2 != e) fail(lineno, "the repeat count follows x, and ends the face");
-                    m = std::atoi(t[end + 1].c_str());
-                    if (m < 1 || std::to_string(m) != t[end + 1]) fail(lineno, "face multiplier must be a positive integer");
+                    apeirogon = t[end + 1] == "inf";
+                    m = apeirogon ? 1 : std::atoi(t[end + 1].c_str());
+                    if (m < 1 || (!apeirogon && std::to_string(m) != t[end + 1]))
+                        fail(lineno, "face multiplier must be a positive integer or inf");
                 }
                 auto w = word(t, i + 1, end);
                 std::vector<int> full;
                 for (int r = 0; r < m; r++) full.insert(full.end(), w.begin(), w.end());
                 alts.push_back(full);
+                inf.push_back(apeirogon);
                 i = e + 1;
             }
             b.require_faces.push_back(alts);
+            b.require_faces_inf.push_back(inf);
         }
         else if (kw == "require" && t.size() >= 2) {
             std::vector<int> set;
@@ -194,6 +227,8 @@ static Board read_board(std::string const& path) {
         else if (kw == "geometry" && t.size() == 2) {
             if (t[1] != "none") fail(lineno, "geometry checks are not implemented yet");
         }
+        else if (kw == "optional" || kw == "subsets" || kw == "vary")
+            fail(lineno, "'" + kw + "' belongs to a study board, which The Tiling Searcher runs as a study: one board per row");
         else fail(lineno, "cannot read '" + norm + "'");
     }
     if (b.name.empty() || !has_k || b.faces.empty() && b.apeirogons.empty() || b.vertices.empty())
@@ -208,8 +243,8 @@ static Board read_board(std::string const& path) {
         for (int v : set)
             if (v >= (int)b.vertices.size()) fail(lineno, "require names vertex " + std::to_string(v + 1) + ", which does not exist");
     }
-    if (b.require.size() + !b.initial.empty() > 16 && !b.require.empty())
-        fail(lineno, "at most 16 required sets, initial counting as one");
+    if (b.require.size() + !b.initial.empty() > MAX_SETS && !b.require.empty())
+        fail(lineno, "at most 64 required sets, initial counting as one");
     return b;
 }
 
@@ -217,7 +252,8 @@ static Board read_board(std::string const& path) {
 //
 // A closed tiling's face, walked as the face checker walks it (right label, then cw step until it is back),
 // is the quotient of the face's word: its labels repeated round the face give the word, up to turning and
-// mirroring. A tiling passes when every `require face` line has one of its faces among them.
+// mirroring. An apeirogon's ring in the quotient goes round its period some number of times, so there the
+// period repeated gives the ring. A tiling passes when every `require face` line has one of its faces among them.
 static bool same_cycle(std::vector<int> const& seg, std::vector<int> const& w) {
     size_t q = seg.size(), n = w.size();
     if (!q || n % q) return false;
@@ -230,7 +266,8 @@ static bool same_cycle(std::vector<int> const& seg, std::vector<int> const& w) {
         }
     return false;
 }
-template<class Conf> static bool holds_required_faces(std::vector<std::vector<std::vector<int>>> const& req, Conf const& conf) {
+template<class Conf> static bool holds_required_faces(std::vector<std::vector<std::vector<int>>> const& req,
+                                                      std::vector<std::vector<char>> const& inf, Conf const& conf) {
     if (req.empty()) return true;
     thread_local std::vector<std::vector<int>> faces;
     thread_local std::vector<int> seg;
@@ -247,10 +284,12 @@ template<class Conf> static bool holds_required_faces(std::vector<std::vector<st
         }
         faces.push_back(seg);
     }
-    for (auto const& alts : req) {
+    for (size_t r = 0; r < req.size(); r++) {
+        auto const& alts = req[r];
         bool hit = false;
         for (size_t i = 0; i < alts.size() && !hit; i++)
-            for (size_t j = 0; j < faces.size() && !hit; j++) hit = same_cycle(faces[j], alts[i]);
+            for (size_t j = 0; j < faces.size() && !hit; j++)
+                hit = inf[r][i] ? same_cycle(alts[i], faces[j]) : same_cycle(faces[j], alts[i]);
         if (!hit) return false;
     }
     return true;
@@ -484,10 +523,11 @@ static bool orientable(tiling_t const& t) {
 // What one thread has found for one root since it last handed over: tilings are batched per thread and
 // handed to the root once per task, not once per tiling (that lock was the largest wait on squares_edges).
 struct Batch {
-    int root = -1;
+    int root = -1, unit = 0;
     std::map<std::string, std::string> out;
     std::map<int, size_t> counts;
     size_t bytes = 0;
+    std::vector<Fingerprints::Key> keys;
 };
 static thread_local Batch batch;
 
@@ -506,19 +546,68 @@ static thread_local Batch batch;
 // no step of the branch is cut, and the search reaches every such T exactly as often as without pruning.
 // Counting the sets still missing instead (a vertex can be in several) does cut such branches. Tested
 // against the unpruned engine in experiments/results/required-sets-2026-10-26.log.
-struct Required {
-    std::vector<uint32_t> mask;               // per vertex type: the sets it is in
-    uint32_t all = 0;                         // one bit per set; 0 when nothing is required
-    std::vector<std::vector<uint8_t>> cover;  // [root type][sets missing]: the fewest types from it on meeting them
+#include "balance.h"
 
-    uint32_t missing(std::vector<int> const& types) const {
-        uint32_t m = all;
+// ── required sets ──
+//
+// A tiling must hold a vertex of every required set; a branch is cut when the sets it still misses need more
+// vertices than its k has left. That need is a set cover: the fewest types, from the root on in the engine's
+// order (a tiling holds no type before its root), meeting every missing set, flat types free. It was one exact
+// table of 2^sets entries per root, which capped the sets at 16 (60 MB on a board of 900 roots; 20 sets would
+// take 1 GB). The sets split into groups that share no vertex type, and the cover of a union of groups is the
+// sum of their covers (a type helps one group only), so each group keeps a table of its own: exact, and as
+// tight as the one table was. The usual case, one vertex configuration per set (the amalgama's 14 regular
+// ones), is all groups of one, kept as two bitmasks per root and counted by a popcount. A group past
+// GROUP_EXACT sets is bounded by counting instead: its missing sets over the most of them one type meets.
+// MAX_SETS: at the board reader. TILESEARCH_GROUP_EXACT lowers GROUP_EXACT, to test the counted bound.
+static int const GROUP_EXACT = std::getenv("TILESEARCH_GROUP_EXACT") ? std::atoi(std::getenv("TILESEARCH_GROUP_EXACT")) : 16;
+struct Required {
+    std::vector<uint64_t> mask;               // per vertex type: the sets it is in
+    uint64_t all = 0;                         // one bit per set; 0 when nothing is required
+    uint64_t single = 0;                      // the sets in groups of one
+    std::vector<uint64_t> none, free;         // [root]: single sets no type from it on meets; those a flat one meets
+    struct Group {
+        uint64_t bits = 0;
+        std::vector<int> sets;                // its sets, local bit i is global bit sets[i]
+        std::vector<std::vector<uint8_t>> cover;   // exact: [root][local subset] the fewest types from it on
+        std::vector<uint64_t> reach;          // counted: [root] its sets some type from it on meets
+        int most = 1;                         // counted: the most of its sets one non-flat type meets
+        std::vector<uint64_t> costly;         // counted: [root] its sets no flat type from it on meets
+    };
+    std::vector<Group> groups;
+
+    uint64_t missing(std::vector<int> const& types) const {
+        uint64_t m = all;
         for (size_t i = 0; m && i < types.size(); i++) m &= ~mask[types[i]];
         return m;
     }
+    /** The fewest vertices that count (not flat) still to add from `root` on to meet the sets `m`; 255: none can. */
+    int need(int root, uint64_t m) const {
+        if (m & single & none[root]) return 255;
+        int c = std::popcount(m & single & ~free[root]);
+        for (auto const& g : groups) {
+            uint64_t const mm = m & g.bits;
+            if (!mm) continue;
+            if (!g.cover.empty()) {
+                uint32_t local = 0;
+                for (size_t i = 0; i < g.sets.size(); i++) local |= uint32_t((mm >> g.sets[i]) & 1) << i;
+                c += g.cover[root][local];
+            } else {
+                if (mm & ~g.reach[root]) return 255;
+                int const n = std::popcount(mm & g.costly[root]);
+                c += (n + g.most - 1) / g.most;
+            }
+            if (c >= 255) return 255;
+        }
+        return c;
+    }
     /** Whether a vertex of type t may join a tiling rooted at `root` that misses `miss`, with `left` after it. */
-    bool may_add(uint32_t miss, int root, int t, size_t left) const {
-        return !all || cover[root][miss & ~mask[t]] <= left;
+    // --prune-balance: per root, the set of types its subtree may add (balance::per_root)
+    std::vector<int> bal_root;
+    std::vector<std::vector<uint8_t>> bal_sets;
+    bool may_add(uint64_t miss, int root, int t, size_t left) const {
+        if (!bal_root.empty() && !bal_sets[bal_root[root]][t]) return false;
+        return !all || need(root, miss & ~mask[t]) <= (int)left;
     }
 };
 static Required required;
@@ -568,9 +657,30 @@ static size_t flat_budget(Board const& b, int kmax = 0) {   // kmax 0: the board
     return (size_t)kmax * dmax * run;
 }
 
-/** The required sets: the `require` lines, and `initial` as one more when both are given. */
-static std::vector<std::vector<int>> required_sets(Board const& b) {
+/**
+ * The required sets: the `require` lines, one per `require face` line (with `faces`), and `initial` as one more
+ * when there are any. A `require face` line's set is the vertex lines holding a corner of one of its faces, those
+ * along a side aside: a tiling holding one of the faces has a vertex holding each of its corners, so the set
+ * prunes and picks the start soundly, and it says exactly what the line says when no other face has those
+ * corners. The face check on each finished tiling stays, so what is found does not change. A set of every line,
+ * one already there, and those past the 16 the engine takes are left out.
+ */
+static std::vector<std::vector<int>> required_sets(Board const& b, bool faces = true) {
     auto sets = b.require;
+    for (auto const& alts : b.require_faces) {
+        if (!faces || sets.size() + !b.initial.empty() >= MAX_SETS) break;
+        std::set<int> corners;
+        bool bounded = true;
+        for (auto const& f : alts) {   // a face of side corners only would bound nothing
+            bool real = false;
+            for (int c : f) if (!b.flat.count(c)) corners.insert(c), real = true;
+            bounded &= real;
+        }
+        std::vector<int> set;
+        for (int v = 0; bounded && v < (int)b.vertices.size(); v++)
+            if (std::any_of(b.vertices[v].begin(), b.vertices[v].end(), [&](int c) { return corners.count(c); })) set.push_back(v);
+        if (bounded && set.size() < b.vertices.size() && std::find(sets.begin(), sets.end(), set) == sets.end()) sets.push_back(set);
+    }
     if (!sets.empty() && !b.initial.empty()) sets.push_back(b.initial);
     return sets;
 }
@@ -580,8 +690,8 @@ static std::vector<std::vector<int>> required_sets(Board const& b) {
  * of every required set, so the search may start from any one of them: required set `pick`, or by default the
  * one of fewest lines (`plan` picks by measured cost).
  */
-static std::pair<std::vector<int>, int> vertex_order(Board const& b, int pick = -1) {
-    auto const sets = required_sets(b);
+static std::pair<std::vector<int>, int> vertex_order(Board const& b, int pick = -1, bool faces = true) {
+    auto const sets = required_sets(b, faces);
     auto const first = sets.empty() ? b.initial
         : pick >= 0 ? sets[pick]
         : *std::min_element(sets.begin(), sets.end(), [](auto const& x, auto const& y) { return x.size() < y.size(); });
@@ -592,44 +702,138 @@ static std::pair<std::vector<int>, int> vertex_order(Board const& b, int pick = 
 }
 
 /** The vertex types, line by line in `order`, with `required` set up for them; returns how many are roots. */
-static int classify(Board const& b, std::vector<int> const& order, int root_lines, vertex_classification& vc) {
+static int classify(Board const& b, std::vector<int> const& order, int root_lines, vertex_classification& vc, std::vector<int>* line_of = nullptr) {
     auto const sets = required_sets(b);
     required = Required{};
     int roots = 0;
+    // --prune-balance drops the types no tiling uses (balance.h); kept whole when no root type would remain
+    std::set<balance::Word> const* alive = balance::prune ? &balance::alive_words(b) : nullptr;
+    if (alive) {
+        vertex_classification probe;
+        int live = 0;
+        for (int i = 0; i < root_lines; i++) live += balance::add_line(b, b.vertices[order[i]], probe, alive);
+        if (!live) alive = nullptr;
+    }
     for (int i = 0; i < (int)order.size(); i++) {
         auto const& w = b.vertices[order[i]];
-        int const n = b.permutations ? vc.add_vertex_with_permutations(w) : vc.add_vertex(w);
+        int const n = balance::add_line(b, w, vc, alive);
         if (i < root_lines) roots += n;
-        uint32_t m = 0;
+        if (line_of && i < root_lines) line_of->insert(line_of->end(), n, i);
+        uint64_t m = 0;
         for (size_t k = 0; k < sets.size(); k++)
-            if (std::binary_search(sets[k].begin(), sets[k].end(), order[i])) m |= 1u << k;
+            if (std::binary_search(sets[k].begin(), sets[k].end(), order[i])) m |= uint64_t(1) << k;
         required.mask.insert(required.mask.end(), n, m);
     }
+    if (balance::prune && balance::per_root_enabled) balance::per_root(b, vc, roots, required.bal_root, required.bal_sets, std::cout);
+    else required.bal_root.clear(), required.bal_sets.clear();   // no per-root sets: may_add checks none
     if (sets.empty()) return roots;
-    required.all = (1u << sets.size()) - 1;
-    // fewest types from t on meeting each set of sets, each type taken at most once; kept for the roots only
-    std::vector<uint8_t> next(required.all + 1, 255);
-    next[0] = 0;
-    required.cover.resize(roots);
-    for (int t = (int)required.mask.size() - 1; t >= 0; t--) {
-        std::vector<uint8_t> cur(next.size());
-        for (uint32_t m = 0; m <= required.all; m++) {
-            uint8_t const take = next[m & ~required.mask[t]];
-            cur[m] = std::min<int>(next[m], take == 255 ? 255 : take + !is_flat(vc, t));   // a flat vertex is no k
+    int const S = (int)sets.size(), T = (int)required.mask.size();
+    required.all = S == 64 ? ~uint64_t(0) : (uint64_t(1) << S) - 1;
+    // the groups: sets joined when some type is in both (union-find over the sets)
+    std::vector<int> up(S);
+    std::iota(up.begin(), up.end(), 0);
+    std::function<int(int)> top = [&](int x) { return up[x] == x ? x : up[x] = top(up[x]); };
+    for (uint64_t m : required.mask)
+        for (int i = 0, first = -1; i < S; i++)
+            if (m >> i & 1) first < 0 ? void(first = i) : void(up[top(i)] = top(first));
+    std::map<int, uint64_t> bits;
+    for (int i = 0; i < S; i++) bits[top(i)] |= uint64_t(1) << i;
+    // groups of one: per root, the single sets no type from it on meets, and those a flat type meets (free)
+    for (auto [r, g] : bits) if (std::popcount(g) == 1) required.single |= g;
+    required.none.assign(roots, 0), required.free.assign(roots, 0);
+    uint64_t any = 0, flat = 0;
+    for (int t = T - 1; t >= 0; t--) {
+        any |= required.mask[t] & required.single;
+        if (is_flat(vc, t)) flat |= required.mask[t] & required.single;
+        if (t < roots) required.none[t] = required.single & ~any, required.free[t] = flat;
+    }
+    for (auto [r, g] : bits) {
+        if (std::popcount(g) == 1) continue;
+        Required::Group G;
+        G.bits = g;
+        for (int i = 0; i < S; i++) if (g >> i & 1) G.sets.push_back(i);
+        int const n = (int)G.sets.size();
+        auto local = [&](uint64_t m) {
+            uint32_t l = 0;
+            for (int i = 0; i < n; i++) l |= uint32_t((m >> G.sets[i]) & 1) << i;
+            return l;
+        };
+        if (n <= GROUP_EXACT) {
+            // fewest types from t on meeting each subset of the group, each type taken at most once; roots only
+            uint32_t const full = (uint32_t(1) << n) - 1;
+            std::vector<uint8_t> next(full + 1, 255);
+            next[0] = 0;
+            G.cover.resize(roots);
+            for (int t = T - 1; t >= 0; t--) {
+                uint32_t const mt = local(required.mask[t]);
+                if (mt) {
+                    std::vector<uint8_t> cur(next.size());
+                    for (uint32_t m = 0; m <= full; m++) {
+                        uint8_t const take = next[m & ~mt];
+                        cur[m] = std::min<int>(next[m], take == 255 ? 255 : take + !is_flat(vc, t));   // a flat vertex is no k
+                    }
+                    next.swap(cur);
+                }
+                if (t < roots) G.cover[t] = next;
+            }
+        } else {
+            G.reach.assign(roots, 0), G.costly.assign(roots, 0);
+            uint64_t reach = 0, cheap = 0;
+            for (int t = T - 1; t >= 0; t--) {
+                uint64_t const mt = required.mask[t] & g;
+                reach |= mt;
+                if (is_flat(vc, t)) cheap |= mt;
+                else G.most = std::max(G.most, std::popcount(mt));
+                if (t < roots) G.reach[t] = reach, G.costly[t] = g & ~cheap;
+            }
         }
-        next.swap(cur);
-        if (t < roots) required.cover[t] = next;
+        required.groups.push_back(std::move(G));
+    }
+    // TILESEARCH_CHECK_REQ: the groups against the one table they replaced, every root and every missing subset
+    if (std::getenv("TILESEARCH_CHECK_REQ") && S <= 20) {
+        std::vector<uint8_t> next(size_t(1) << S, 255);
+        next[0] = 0;
+        size_t bad = 0, checked = 0;
+        for (int t = T - 1; t >= 0; t--) {
+            std::vector<uint8_t> cur(next.size());
+            for (uint64_t m = 0; m < next.size(); m++) {
+                uint8_t const take = next[m & ~required.mask[t]];
+                cur[m] = std::min<int>(next[m], take == 255 ? 255 : take + !is_flat(vc, t));
+            }
+            next.swap(cur);
+            if (t < roots)
+                for (uint64_t m = 0; m < next.size(); m++, checked++)
+                    if (bool exact = required.groups.empty() || std::all_of(required.groups.begin(), required.groups.end(), [](auto const& g) { return !g.cover.empty(); });
+                        exact ? required.need(t, m) != next[m] : required.need(t, m) > next[m])
+                        bad++;
+        }
+        std::cerr << "required check: " << checked << " (root, subset) pairs, " << required.groups.size() << " groups of 2+ sets, "
+                  << std::popcount(required.single) << " single sets, " << bad << " wrong" << std::endl;
+        if (bad) std::abort();
     }
     return roots;
 }
 
-struct Root {
-    Fingerprints seen;
-    std::atomic<int> tasks{ 1 };         // queued or running subtrees; 0 means the root is finished
-    std::mutex mutex;                    // guards counts and buffered output
+// One unit of a root (see search): its output until the root is merged, and the keys it added to the root's
+// `seen`, kept so a checkpoint can write them and a resume can load them.
+struct Unit {
+    std::atomic<int> tasks{ 1 };         // queued or running subtrees; 0 means the unit is finished
     std::map<int, size_t> counts;
     std::map<std::string, std::string> out;
     size_t buffered = 0;
+    std::vector<Fingerprints::Key> keys;
+};
+struct Root {
+    Fingerprints seen;                   // shared by its units, so dedup spans them
+    std::atomic<int> tasks{ 1 };         // queued or running subtrees of all its units; 0 means the root is finished
+    std::mutex mutex;                    // guards units and counts
+    std::map<int, Unit> units;           // the units in hand, 0 the head
+    std::map<int, size_t> counts;        // over all its units, earlier sessions' included
+    std::set<int> skip;                  // units finished in an earlier session
+    std::atomic<int> next_unit{ 1 }, units_done{ 0 };
+    std::atomic<bool> started{ false };
+    int depth = 0;                       // its units start at this many edges (search)
+    Root() { units[0]; }
 };
 
 // Counters for the end-of-run statistics, kept per thread and summed when a worker exits.
@@ -641,6 +845,17 @@ static std::atomic<uint64_t> node_cap{ UINT64_MAX };
 static std::atomic<bool> capped{ false };
 // Hand-off depth in edges below a task's start; 2 measured best across the bench boards. TILESEARCH_SPLIT overrides it.
 static int split_depth = 2;
+// Units (search): when the plan predicts UNIT_NODES nodes or more per root (a minute or more of one thread at
+// 1-3 us a node), each root is split into one unit per node at the least depth where it has UNIT_TARGET nodes, at
+// most UNIT_DEPTH edges. Depth in edges alone does not do: at 3 edges a root of squares_edges has 3,245 nodes and
+// one of 123_1_4657 has 2 to 6 (its first moves are forced). Below UNIT_NODES a stop loses little, and a board of
+// thousands of small roots would write a units.done line per unit for nothing. The run keeps UNIT_DEPTH and the
+// rule in `units` (the numbering depends on the rule, and a resume's plan may pick the other one); without that
+// file a run has no units. TILESEARCH_UNITS=<depth> forces the most depth, 0 no split.
+static int const UNIT_DEPTH = 12, UNIT_TARGET = 64;
+static double const UNIT_NODES = 5e7;
+// latest.txt, the tiling the app shows while no root has closed: rewritten at most this often
+static int64_t const LATEST_MS = std::getenv("TILESEARCH_LATEST_MS") ? std::atoll(std::getenv("TILESEARCH_LATEST_MS")) : 30000;
 
 // A LIFO task stack like jtg::thread_pool's, plus atomic counts of queued tasks and of idle threads, so
 // a running search can ask "is anyone waiting for work?" without taking the lock.
@@ -701,6 +916,15 @@ struct FastFaces {
     std::vector<int> letters;                              // sorted distinct labels of the face words
     std::vector<uint64_t> adj;                             // adjacency bits, rows of `stride` words
     std::vector<std::vector<std::pair<int, int>>> starts;  // per letter id: (word, offset) carrying it
+    // Every open stretch of a finite face, read either way, once per distinct content: the open-segment test is
+    // then one hash lookup and an exact compare, not a scan of `starts` (a6mix: 645 faces over 26 labels, so
+    // starts[EB] held 3,741 entries and a failing test walked them all, 140 us a node).
+    // `closes`: the stretch, read as a whole closed face, is that face (word size a multiple of len, len a multiple of
+    // its period: the test the scan below applies to loops).
+    struct Stretch { int word, offset, dir, len; bool closes; };
+    std::unordered_map<uint64_t, std::vector<Stretch>> stretches;
+    std::vector<int> infinite;                             // apeirogon words: an open stretch of any length fits
+    bool indexed = false;   // only where some label starts many stretches: on small boards the scan is faster
     int stride = 0;
     // id(): a perfect hash of the letters, found at startup (one multiply and one compare per lookup;
     // the binary search it replaces ran four times per glue attempt).
@@ -742,6 +966,31 @@ struct FastFaces {
                 set(a, b), set(b, a);
                 starts[a].push_back({ wi, i });
             }
+        for (auto const& st : starts) indexed = indexed || st.size() > 64;
+        for (int wi = 0; indexed && wi < (int)words.size(); wi++) {
+            auto const& w = words[wi];
+            if (w.size() == 0) { infinite.push_back(wi); continue; }
+            for (int p = 0; p < w.rotational_generator(); p++)
+                for (int dir : { 1, -1 }) {
+                    uint64_t h = HASH0;
+                    for (int len = 1; len <= w.size(); len++) {
+                        h = step(h, w.letter(p + dir * (len - 1)));
+                        bool const closes = w.size() % len == 0 && len % w.rotational_generator() == 0;
+                        auto& bucket = stretches[h];
+                        bool seen = false;
+                        for (auto const& o : bucket) seen = seen || (o.len == len && o.closes == closes && same(o, w, p, dir, len));
+                        if (!seen) bucket.push_back({ wi, p, dir, len, closes });
+                    }
+                }
+        }
+    }
+    static constexpr uint64_t HASH0 = 0xcbf29ce484222325ULL;
+    static uint64_t step(uint64_t h, int c) { return (h ^ (uint32_t)c) * 0x100000001b3ULL; }
+    // whether stretch o reads as word w from offset p in direction dir, for len letters
+    bool same(Stretch const& o, cyclic_word_with_symmetries const& w, int p, int dir, int len) const {
+        auto const& v = words[o.word];
+        for (int i = 0; i < len; i++) if (v.letter(o.offset + o.dir * i) != w.letter(p + dir * i)) return false;
+        return true;
     }
     int id(int c) const {
         uint32_t h = (uint32_t)c * mul >> shift;
@@ -766,6 +1015,19 @@ struct FastFaces {
         }
         int const s0 = id(seg[0]), q = (int)seg.size();
         if (s0 < 0) return false;
+        if (indexed) {
+            uint64_t h = HASH0;
+            for (int x : seg) h = step(h, x);
+            if (auto it = stretches.find(h); it != stretches.end())
+                for (auto const& o : it->second) {
+                    if (o.len != q || (is_loop && !o.closes)) continue;
+                    auto const& w = words[o.word];
+                    bool ok = true;
+                    for (int i = 0; i < q && ok; i++) ok = seg[i] == w.letter(o.offset + o.dir * i);
+                    if (ok) return true;
+                }
+            if (infinite.empty()) return false;
+        }
         for (auto [wi, p] : starts[s0]) {   // cyclic_word_lookuptable::find_quotient / find_partial_quotient
             auto const& w = words[wi];
             if (is_loop ? (w.size() % q != 0 || q % w.rotational_generator() != 0) : (w.size() > 0 && q > w.size())) continue;
@@ -811,7 +1073,7 @@ struct HalfedgesOf : tiling_t { static constexpr auto member = &HalfedgesOf::m_h
 // adjacent in some face word. Keyed by the free half-edge's mirror type and the ids of its two corner
 // labels; each list is in the order tiling_extender visits pairs (template ascending, then offset).
 struct Candidates {
-    struct Pair { int t, i; };
+    struct Pair { int t, i; bool operator==(Pair const&) const = default; };
     std::vector<std::vector<Pair>> lists;
     // What the face test sees of a fresh vertex glued at half-edge i: the corner labels on both sides of i and
     // of its mirror, and the mirror flags. Pairs with one signature pass or fail together (`passing_pairs`).
@@ -953,16 +1215,17 @@ struct SharedContexts {
 };
 static SharedContexts shared_contexts;
 
-/** The candidate pairs of g, from every type, that pass try_joining's tests; valid until this thread's next call. */
+/** The candidate pairs of g, from every type, that pass try_joining's tests; the reference is valid until this thread's
+ *  next call, the list it holds for as long as it is kept. */
 template<class Faces>
-static std::vector<Candidates::Pair> const& passing_pairs(tiling_t& conf, Faces const& faces, FastFaces const& ids,
-                                                          vertex_classification const& vc, Candidates const& cand, index_t g) {
+static PairList const& passing_list(tiling_t& conf, Faces const& faces, FastFaces const& ids,
+                                    vertex_classification const& vc, Candidates const& cand, index_t g) {
     thread_local std::unordered_map<Fingerprints::Key, PairList, ContextHash> mine;
     thread_local size_t held = 0;             // pairs kept, plus 8 a context for its key and node
     thread_local std::vector<int8_t> by_sig;   // one test per signature (Candidates::sig)
     auto key = context_of(conf, g);
     feed(key, cand.id), key.b |= 1;
-    if (auto it = mine.find(key); it != mine.end()) return *it->second;
+    if (auto it = mine.find(key); it != mine.end()) return it->second;
     if (held > (4u << 20)) mine.clear(), held = 0;   // ~40 MB a thread
     auto& sh = shared_contexts.shard[key.b >> 60];
     PairList list;
@@ -996,13 +1259,84 @@ static std::vector<Candidates::Pair> const& passing_pairs(tiling_t& conf, Faces 
         sh.map.emplace(key, list);
     }
     held += list->size() + 8;
-    return *mine.emplace(key, std::move(list)).first->second;
+    return mine.emplace(key, std::move(list)).first->second;
 }
+template<class Faces>
+static std::vector<Candidates::Pair> const& passing_pairs(tiling_t& conf, Faces const& faces, FastFaces const& ids,
+                                                          vertex_classification const& vc, Candidates const& cand, index_t g) {
+    return *passing_list(conf, faces, ids, vc, cand, g);
+}
+
+// ── each free half-edge's passing pairs, kept from node to node ──
+// Fail first asks for the pairs of every free half-edge at every node, and hashing their contexts took ~35% of its time
+// (B3p30 k <= 12). A glue changes only the contexts whose face walks (context_chain) reach a half-edge it glued: a walk
+// reads each half-edge's labels and whether it is free, and only the glued ones changed. Walking back from each glued
+// half-edge, both ways, finds the one free half-edge whose walk reaches it (the walks are deterministic); it and its
+// mirror are marked changed at the glue and again at its undo, and a new vertex's half-edges when it is pushed. Every
+// other half-edge keeps the list it had. The face rule asks for one list a node, and keeping them cost it 8-13%
+// (A6p30, B4,C6, hyperbolic colorings), so it neither keeps nor marks them. TILESEARCH_CHECK_CTX=1 recomputes every list it hands out and aborts on a
+// difference (checked on the bench boards and the sound-cuts set, 2026-10-31).
+static bool const check_ctx = std::getenv("TILESEARCH_CHECK_CTX") != nullptr;
+struct CtxCache {
+    std::vector<uint64_t> changed;                     // per half-edge: when its context last changed
+    std::vector<std::pair<uint64_t, PairList>> entry;  // per half-edge: when its list was found, and the list
+    uint64_t clock = 0;
+    void grow(size_t n) { if (changed.size() < n) changed.resize(n, 0), entry.resize(n); }
+    void touch(int h) { grow(h + 1), changed[h] = ++clock; }
+    struct Changed { int n = 0; int h[24]; void add(int x) { h[n++] = x; } };
+    /** The half-edges whose context gluing a to its opposite changes (with the glue in place). */
+    static Changed changed_by(tiling_t const& c, index_t a) {
+        Changed out;
+        auto owner = [&](index_t o) { out.add(o.get_value()); if (c.mirror(o).has_value()) out.add(c.mirror(o).get_value()); };
+        for (index_t e : { a, c.opposite(a), c.mirror(a), c.mirror(c.opposite(a)) }) {
+            if (!e.has_value()) continue;
+            out.add(e.get_value());
+            // walks run right_neighbour(h), ccw_step...: back is opposite(left_neighbour(x)), to a free one; and
+            // left_neighbour(h), cw_step...: back is opposite(right_neighbour(x)). Each step is a permutation, so a closed
+            // face (no free half-edge on it, no owner) brings the walk back to e.
+            index_t x = e;
+            for (int i = 0; i < 260; i++) { index_t const l = c.left_neighbour(x); if (c.is_free(l)) { owner(l); break; } x = c.opposite(l); if (x == e) break; }
+            x = e;
+            for (int i = 0; i < 260; i++) { index_t const r = c.right_neighbour(x); if (c.is_free(r)) { owner(r); break; } x = c.opposite(r); if (x == e) break; }
+        }
+        return out;
+    }
+    template<class Faces>
+    PairList const& list(tiling_t& conf, Faces const& faces, FastFaces const& ids, vertex_classification const& vc, Candidates const& cand, index_t g) {
+        int const h = g.get_value();
+        grow(h + 1);
+        auto& [made, l] = entry[h];
+        if (l && made > changed[h]) {
+            if (check_ctx && *passing_list(conf, faces, ids, vc, cand, g) != *l) { std::cerr << "CHECK_CTX: a kept list is stale\n"; std::abort(); }
+            return l;
+        }
+        l = passing_list(conf, faces, ids, vc, cand, g), made = ++clock;
+        return l;
+    }
+};
+
+/**
+ * What the node may still add: vertices toward k, room for a flat one, and the required sets still missing. Fail
+ * first counts a half-edge's options from the root on whenever any vertex may be added, so once a budget binds, a
+ * half-edge whose options are all new vertices the budgets refuse still counted as open, and the search walked on
+ * to find it a step or more later. With this, such a half-edge ends the node: 45degree k <= 14 -25% CPU, B3p30
+ * k <= 13 -43%, A12p60,A12p90 k <= 13 -34%, spear +5%, the same tilings (experiments/results/sound-cuts-bz2-2026-10-31.log).
+ */
+struct Budget {
+    int k_left = 1;
+    bool flat_room = true;
+    uint64_t miss = 0;
+    bool binds() const { return k_left <= 0 || !flat_room || miss; }
+    bool fits(vertex_classification const& vc, int root, int t) const {   // Extender's room and required tests
+        bool const flat = is_flat(vc, t);
+        return (flat ? flat_room : k_left > 0) && required.may_add(miss, root, t, k_left - !flat);
+    }
+};
 
 /** The free half-edge to branch on; none when the tiling is closed, or when `dead` (some free half-edge has no option). */
 template<class Faces>
 static index_t choose_halfedge(tiling_t& conf, Faces const& faces, FastFaces const& ids, vertex_classification const& vc,
-                               Candidates const& cand, int root, bool can_add, bool& dead) {
+                               Candidates const& cand, int root, bool can_add, bool& dead, Budget const& budget = {}, CtxCache* cc = nullptr) {
     dead = false;
     index_t best{};
     int least = std::numeric_limits<int>::max();
@@ -1023,22 +1357,353 @@ static index_t choose_halfedge(tiling_t& conf, Faces const& faces, FastFaces con
     known.assign(n * n, -1);
     // newest first: a half-edge with no option is most often on the vertex just added, and finding it ends
     // the node before the older half-edges are counted
+    bool const binds = can_add && budget.binds();
     for (size_t i = n; i-- > 0;) {
         index_t const g = free[i];
-        int k = 0;
+        int k = 0, joins = 0;
+        Candidates::Pair const *lo = nullptr, *hi = nullptr;
         if (can_add) {
-            auto const& list = passing_pairs(conf, faces, ids, vc, cand, g);
-            k = int(list.end() - std::lower_bound(list.begin(), list.end(), root, [](Candidates::Pair p, int t) { return p.t < t; }));
+            auto const& list = cc ? *cc->list(conf, faces, ids, vc, cand, g) : passing_pairs(conf, faces, ids, vc, cand, g);
+            hi = list.data() + list.size();
+            lo = list.data() + (std::lower_bound(list.begin(), list.end(), root, [](Candidates::Pair p, int t) { return p.t < t; }) - list.begin());
+            k = int(hi - lo);
         }
-        for (size_t j = 0; j < n && k < least; j++) {
+        auto join = [&](size_t j) {
             int8_t& r = known[i * n + j];
             if (r < 0) r = known[j * n + i] = can_join(conf, faces, g, free[j]);
-            k += r;
-        }
+            return (int)r;
+        };
+        for (size_t j = 0; j < n && k < least; j++) { int const r = join(j); k += r, joins += r; }
         if (k == 0) { dead = true; return {}; }
+        if (binds && joins == 0) {   // all counted options are new vertices: does any still fit the budgets?
+            bool fits = false;
+            for (auto p = lo; p != hi && !fits; ++p) fits = budget.fits(vc, root, p->t);
+            for (size_t j = 0; j < n && !fits; j++) fits = join(j);   // the count may have stopped before the joins
+            if (!fits) { dead = true; return {}; }
+        }
         if (k < least) least = k, best = g;
     }
     return best;
+}
+
+/** A template's symmetries: the permutations of its half-edges that keep labels, neighbours and mirrors (p[j]: j's image). */
+static std::vector<std::vector<int>> symmetries(vertex_classification const& vc, int t) {
+    tiling_t x;
+    vc.push_vertex_to(x, t);
+    int const n = x.num_halfedges();
+    std::vector<std::vector<int>> out;
+    for (int s0 = 0; s0 < n; s0++) {
+        std::vector<int> p(n, -1), todo{ 0 };
+        p[0] = s0;
+        bool ok = true;
+        while (ok && !todo.empty()) {
+            index_t a{ todo.back() }, b{ p[todo.back()] };
+            todo.pop_back();
+            ok = x.left_label(a) == x.left_label(b) && x.right_label(a) == x.right_label(b) &&
+                 x.mirror(a).has_value() == x.mirror(b).has_value();
+            for (auto [u, v] : { std::pair{ x.right_neighbour(a), x.right_neighbour(b) },
+                                 { x.left_neighbour(a), x.left_neighbour(b) }, { x.mirror(a), x.mirror(b) } }) {
+                if (!ok || !u.has_value()) continue;
+                int& q = p[u.get_value()];
+                if (q < 0) q = v.get_value(), todo.push_back(u.get_value());
+                else ok = q == v.get_value();
+            }
+        }
+        std::vector<bool> hit(n);
+        for (int q : p) ok = ok && q >= 0 && !hit[q] && (hit[q] = true);
+        if (ok) out.push_back(p);
+    }
+    return out;
+}
+
+// ── the root's symmetries ──
+// A root template with symmetries (a word like A B A B, not folded) is placed in a tiling in |aut| ways, and the
+// search, which fixes the root, reaches every tiling once per way: its dead ends too. A node is kept only while the
+// root's glued neighbours, read in half-edge order, are no greater than read through any symmetry g (lex-leader).
+// A neighbour reads as its type and its half-edge's orbit under that type's symmetries, which no placement changes;
+// a free half-edge ends the comparison undecided. Sound: of the placements of a tiling's vertex, the least reading
+// is never cut (a cut needs a decided greater position, which the least has against no g), and the search finds
+// every tiling from every placement. TILESEARCH_SYMBREAK=0 turns it off.
+static bool sym_break = !std::getenv("TILESEARCH_SYMBREAK") || std::string(std::getenv("TILESEARCH_SYMBREAK")) != "0";
+struct RootSyms {
+    std::vector<std::vector<int>> orbit;              // per type, per half-edge: the least half-edge of its orbit
+    std::vector<std::vector<std::vector<int>>> aut;   // per type: its symmetries but the identity
+    RootSyms(vertex_classification const& vc, int roots) : orbit(vc.count()), aut(roots) {
+        for (int t = 0; t < vc.count(); t++) {
+            auto const all = symmetries(vc, t);
+            orbit[t].resize(all.empty() ? 0 : all[0].size());
+            for (int j = 0; j < (int)orbit[t].size(); j++) {
+                orbit[t][j] = j;
+                for (auto const& p : all) orbit[t][j] = std::min(orbit[t][j], p[j]);
+            }
+            if (t < roots)
+                for (auto const& p : all)
+                    for (int j = 0; j < (int)p.size(); j++)
+                        if (p[j] != j) { aut[t].push_back(p); break; }
+        }
+    }
+    /** Whether the node made by gluing a to its opposite is cut: by the root's symmetries, or by a vertex of the root's
+     *  type that reads less than the root (the tiling is then found from that vertex as root). */
+    bool cut(tiling_t const& c, std::vector<int> const& types, index_t a) const {
+        int const r = types[0], n = (int)orbit[r].size();
+        // what the glue changed: the root's reading, or that of another vertex of the root's type
+        auto other = [&](index_t h) { auto const& nb = c.neighbourhood(h); return nb.vertex_ix != 0 && types[nb.vertex_ix] == r; };
+        index_t const b = c.opposite(a);
+        if (a.get_value() >= n && b.get_value() >= n && !other(a) && !other(b)) return false;
+        auto const& G = aut[r];
+        auto val = [&](int h) -> int64_t {
+            if (c.is_free(index_t{ h })) return -1;
+            index_t const p = c.opposite(index_t{ h });
+            auto const& nb = c.neighbourhood(p);
+            int const t = types[nb.vertex_ix];
+            return (int64_t)t << 20 | orbit[t][p.get_value() - nb.vertex_start.get_value()];
+        };
+        thread_local std::vector<int64_t> v;
+        v.resize(n);
+        for (int j = 0; j < n; j++) v[j] = val(j);
+        for (auto const& g : G)   // the root's own placements: a decided greater position cuts
+            for (int j = 0; j < n; j++) {
+                int64_t const x = v[j], y = v[g[j]];
+                if (x < 0 || y < 0 || x < y) break;
+                if (x > y) return true;
+            }
+        // another vertex of the root's type that reads less than the root every way it can be placed (each decided)
+        auto less = [&](int s, std::vector<int> const* g) {
+            for (int j = 0; j < n; j++) {
+                int64_t const x = val(s + (g ? (*g)[j] : j));
+                if (x < 0 || v[j] < 0 || x > v[j]) return false;
+                if (x < v[j]) return true;
+            }
+            return false;
+        };
+        for (int i = 1, s = n; i < (int)types.size(); s += (int)orbit[types[i]].size(), i++) {
+            if (types[i] != r || !less(s, nullptr)) continue;
+            bool all = true;
+            for (auto const& g : G) all = all && less(s, &g);
+            if (all) return true;
+        }
+        return false;
+    }
+};
+static RootSyms const* run_syms = nullptr;   // the run's (main), for the Extender
+
+// ── open faces must close ──
+// An open face of a partial tiling runs from a free half-edge f back through glued edges to the free half-edge g
+// at its other end, and the face words say how many corners r are missing. In the plane, any completion puts r
+// vertices there whose consecutive half-edges pass try_joining's label tests. A vertex of the ring enters through a
+// half-edge of class `in` and leaves through its left neighbour (class `out`), so whether the face can close is
+// reachability over half-edge classes (a class: the two corner labels and the mirror kind): from f, r ring
+// vertices, then g. A glue changes only the faces through it, so a node checks those; every answer is cached per
+// thread. Sound: no tiling is lost (sound-cuts-engine-2026-10-31.log). Fail first finds most of these dead
+// ends a step later anyway; the face rule never looks, and there it cut A6p30 k <= 15 from 24 s to 4.6 s.
+static bool ring_check = false;
+// On with the face rule, off with fail first; TILESEARCH_RING=0/1 forces it. The plan cannot choose it by probing:
+// what it saves lies deep, where probes rarely reach (A6p30 k <= 15: probes put the face rule at 1.1M nodes, the
+// truth is 17.9M; they saw the check's cost and not its 81% saving). In the engine, face rule on vs off: A6p30
+// -81% CPU, B4,C6 -46%, 3-stars -96% nodes; worst 1247 +2%, hyperbolic colorings +7%. Fail first on vs off: 1247
+// +39%, B4,C6 +21% (fail first already finds most of these a step later). sound-cuts-engine-2026-10-31.log.
+static bool ring_for(bool face) {
+    if (char const* e = std::getenv("TILESEARCH_RING")) return std::string(e) == "1";
+    return face;
+}
+struct RingTables;
+static RingTables const* run_ring = nullptr;   // the run's tables (main), for the Extender
+struct RingTables {
+    std::vector<std::array<int, 3>> key;              // per class: label, left label, mirror kind
+    std::vector<std::vector<int>> cls;                // per template, per half-edge offset: its class
+    std::vector<std::vector<uint64_t>> outs;          // per in class: the out classes some template pairs with it
+    int W = 0;                                        // words per class bitset
+    uint64_t serial;                                  // the threads' caches go by this, never by an address
+    explicit RingTables(vertex_classification const& vc) {
+        static std::atomic<uint64_t> made{ 0 };
+        serial = ++made;
+        std::map<std::array<int, 3>, int> id;
+        std::vector<std::vector<std::pair<int, int>>> io(vc.count());
+        for (int t = 0; t < vc.count(); t++) {
+            tiling_t x;
+            vc.push_vertex_to(x, t);
+            std::vector<int> c;
+            for (auto ix : x.indices()) {
+                std::array<int, 3> k{ x.label(ix), x.left_label(ix), !x.mirror(ix).has_value() ? 0 : x.is_mirror(ix) ? 1 : 2 };
+                c.push_back(id.try_emplace(k, (int)key.size()).first->second);
+                if ((int)key.size() < (int)id.size()) key.push_back(k);
+            }
+            for (auto ix : x.indices()) io[t].push_back({ c[ix.get_value()], c[x.left_neighbour(ix).get_value()] });
+            cls.push_back(std::move(c));
+        }
+        W = ((int)key.size() + 63) / 64;
+        outs.assign(key.size(), std::vector<uint64_t>(W, 0));
+        for (auto const& v : io) for (auto [i, o] : v) outs[i][o / 64] |= 1ULL << (o % 64);
+    }
+};
+template<class F> static void each_bit(std::vector<uint64_t> const& b, F f) {
+    for (int w = 0; w < (int)b.size(); w++) for (uint64_t x = b[w]; x; x &= x - 1) f(w * 64 + __builtin_ctzll(x));
+}
+// The open faces the glue at a changed or made: the faces through its edge and its mirror's, each by its free start f
+// (a face is read from f forward, x -> opposite(right_neighbour(x)), so f lies back from the glued half-edge by
+// cw_step), and when the glue brought a vertex in, its other corners, each a face of one corner so far.
+static void near_glue(tiling_t const& c, index_t a, std::vector<index_t>& out) {
+    out.clear();
+    auto add = [&](index_t y) { if (std::find(out.begin(), out.end(), y) == out.end()) out.push_back(y); };
+    for (index_t e : { a, c.opposite(a), c.mirror(a), c.mirror(c.opposite(a)) }) {
+        if (!e.has_value()) continue;
+        index_t y = e;   // a closed face has no free start: the walk comes back to e
+        for (int i = 0; i < 256 && !c.is_free(y); i++) if ((y = c.cw_step(y)) == e) break;
+        if (c.is_free(y)) add(y);
+    }
+    for (index_t e : { a, c.opposite(a) }) {   // a fresh vertex: glued at e (and its mirror) only
+        bool fresh = true;
+        for (index_t x = c.right_neighbour(e); fresh && x != e; x = c.right_neighbour(x)) fresh = c.is_free(x) || x == c.mirror(e);
+        if (!fresh) continue;
+        for (index_t x = c.right_neighbour(e); x != e; x = c.right_neighbour(x)) if (c.is_free(x)) add(x);
+    }
+}
+static bool faces_close(tiling_t const& c, std::vector<int> const& types, RingTables const& T, FastFaces const& F, index_t last) {
+    struct Cache {
+        uint64_t serial = 0;
+        std::vector<std::vector<uint64_t>> join;   // per class a, computed when first needed: classes b that join(a, b) passes
+        std::unordered_map<uint64_t, bool> memo;   // (a, r, g) -> closes
+    };
+    thread_local Cache cache;
+    if (cache.serial != T.serial) cache = Cache{ T.serial, std::vector<std::vector<uint64_t>>(T.key.size()), {} };
+    auto join = [&](int a) -> std::vector<uint64_t> const& {
+        auto& row = cache.join[a];
+        if (row.empty()) {
+            row.assign(T.W, 0);
+            for (int b = 0; b < (int)T.key.size(); b++)
+                if (T.key[a][2] == T.key[b][2] && F.can_be_adjacent(T.key[a][1], T.key[b][0]) && F.can_be_adjacent(T.key[a][0], T.key[b][1]))
+                    row[b / 64] |= 1ULL << (b % 64);
+        }
+        return row;
+    };
+    auto cls = [&](index_t ix) { auto const& nb = c.neighbourhood(ix); return T.cls[types[nb.vertex_ix]][ix.get_value() - nb.vertex_start.get_value()]; };
+    auto closes = [&](int a, int r, int g) {
+        uint64_t const key = (uint64_t)a << 40 | (uint64_t)g << 16 | (uint64_t)r;
+        if (auto it = cache.memo.find(key); it != cache.memo.end()) return it->second;
+        std::vector<uint64_t> layer(T.W, 0), in(T.W);
+        layer[a / 64] |= 1ULL << (a % 64);
+        for (int step = 0; step < r; step++) {
+            std::fill(in.begin(), in.end(), 0);
+            each_bit(layer, [&](int x) { auto const& j = join(x); for (int w = 0; w < T.W; w++) in[w] |= j[w]; });
+            std::fill(layer.begin(), layer.end(), 0);
+            each_bit(in, [&](int i) { for (int w = 0; w < T.W; w++) layer[w] |= T.outs[i][w]; });
+        }
+        bool ok = false;
+        each_bit(layer, [&](int x) { ok = ok || (join(x)[g / 64] >> (g % 64) & 1); });
+        return cache.memo[key] = ok;
+    };
+    thread_local std::vector<index_t> ends;
+    thread_local std::vector<int> seg;
+    near_glue(c, last, ends);
+    for (index_t f : ends) {
+        seg.clear();
+        index_t x = f;
+        bool loop = false;
+        for (int i = 0; i < 256 && !loop; i++) {
+            seg.push_back(c.label(x));
+            index_t const rn = c.right_neighbour(x);
+            if (c.is_free(rn)) break;
+            x = c.opposite(rn);
+            loop = x == f;
+        }
+        if (loop || seg.size() >= 256) continue;
+        int const a = cls(f), g = cls(c.right_neighbour(x)), q = (int)seg.size();
+        bool ok = false;
+        uint64_t tried = 0;   // the missing lengths already tested
+        auto reading = [&](int wi, int r) {
+            if (F.words[wi].size() == 0 || r >= 64) { ok = true; return; }   // an apeirogon, or past the cache key: alive
+            if (!(tried >> r & 1)) tried |= 1ULL << r, ok = closes(a, r, g);
+        };
+        if (F.indexed) {   // the readings of exactly this stretch, by its hash (FastFaces' index)
+            if (!F.infinite.empty()) continue;
+            uint64_t h = FastFaces::HASH0;
+            for (int s : seg) h = FastFaces::step(h, s);
+            auto it = F.stretches.find(h);
+            if (it == F.stretches.end()) continue;
+            for (auto const& o : it->second) {
+                if (ok || o.len != q) continue;
+                auto const& w = F.words[o.word];
+                bool same = true;
+                for (int i = 0; i < q && same; i++) same = seg[i] == w.letter(o.offset + o.dir * i);
+                if (same) reading(o.word, w.size() - q);
+            }
+        } else {
+            int const s0 = F.id(seg[0]);
+            if (s0 < 0) continue;
+            for (auto [wi, p] : F.starts[s0]) {
+                auto const& w = F.words[wi];
+                if (ok || (w.size() > 0 && q > w.size())) continue;
+                bool fwd = true, rev = true;
+                for (int i = 1; i < q && fwd; i++) fwd = seg[i] == w.letter(p + i);
+                for (int i = 1; i < q && rev; i++) rev = seg[i] == w.letter(p - i);
+                if (fwd || rev) reading(wi, w.size() - q);
+            }
+        }
+        if (!ok) return false;
+    }
+    return true;
+}
+
+// ── chiral boards ──
+// Marek's half-edge structure holds every vertex orbit twice, once per hand: a template is two loops of m
+// half-edges, the second the mirror of the first, and a glue also glues the two mirrors. (A template whose
+// symmetry has a reflection is one loop: a vertex on a mirror axis.) A tiling has no reflection and no glide
+// reflection exactly when the two hands never meet: its half-edges split into two halves, mirror images of
+// each other, with no glue between them. So (Marek, 2 November 2026) `chiral yes` drops the templates on an
+// axis (balance::add_line) and keeps, per vertex, which of its loops is on the root's side: a glue must join
+// two half-edges on the same side. That rejects a half-edge glued to its own mirror (an edge across an axis)
+// and any cycle of glues that comes back mirrored (a glide). A new vertex takes its side from its first glue.
+struct Sides {
+    std::vector<int8_t> flip;   // per vertex: 1 when its second loop is on the root's side; -1 before its first glue
+    void push() { flip.push_back(flip.empty() ? 0 : -1); }
+    void pop() { flip.pop_back(); }
+    // the side of half-edge ix, -1 while its vertex has none
+    int side(tiling_t const& c, vertex_classification const& vc, std::vector<int> const& types, index_t ix) const {
+        auto const& n = c.neighbourhood(ix);
+        int const f = flip[n.vertex_ix];
+        return f < 0 ? -1 : f ^ int(ix - n.vertex_start >= vc.valence_of(types[n.vertex_ix]) / 2);
+    }
+    bool ok(tiling_t const& c, vertex_classification const& vc, std::vector<int> const& types, index_t a, index_t b) const {
+        int const sa = side(c, vc, types, a), sb = side(c, vc, types, b);
+        return sa < 0 || sb < 0 || sa == sb;
+    }
+    // gives b's vertex a's side when it has none (a's when a's has none); returns the vertex set, else -1
+    int settle(tiling_t const& c, vertex_classification const& vc, std::vector<int> const& types, index_t a, index_t b) {
+        if (side(c, vc, types, b) >= 0) std::swap(a, b);
+        int const sa = side(c, vc, types, a);
+        if (sa < 0 || side(c, vc, types, b) >= 0) return -1;
+        auto const& n = c.neighbourhood(b);
+        int const v = n.vertex_ix, loop = b - n.vertex_start >= vc.valence_of(types[v]) / 2;
+        flip[v] = int8_t(sa ^ loop);   // so side(b) == sa
+        return v;
+    }
+    void unsettle(int v) { if (v >= 0) flip[v] = -1; }
+};
+// TILESEARCH_CHECK_CHIRAL (tests): a run without `chiral yes` keeps only the tilings whose half-edges never reach
+// their own mirror, found by walking neighbours and glues; it shares nothing with Sides, so its census must match
+// the same board's with `chiral yes`.
+static bool const check_chiral = std::getenv("TILESEARCH_CHECK_CHIRAL") != nullptr;
+static bool reverses(tiling_t const& c) {
+    int const n = c.num_halfedges();
+    std::vector<int8_t> seen(n, -1);   // the side each half-edge was reached on
+    std::vector<int> todo;
+    for (int s = 0; s < n; s++) {
+        if (seen[s] >= 0) continue;
+        seen[s] = 0, todo.assign(1, s);
+        while (!todo.empty()) {
+            index_t const h{ todo.back() };
+            todo.pop_back();
+            int const sd = seen[h.value];
+            auto reach = [&](index_t x, int sx) {
+                if (!x.has_value()) return true;
+                if (seen[x.value] < 0) { seen[x.value] = int8_t(sx), todo.push_back(x.value); return true; }
+                return seen[x.value] == sx;
+            };
+            if (!reach(c.left_neighbour(h), sd) || !reach(c.right_neighbour(h), sd) || !reach(c.opposite(h), sd) ||
+                !reach(c.mirror(h), 1 - sd)) return true;
+        }
+    }
+    return false;
 }
 
 // tiling_extender (tiling_extender.h): the same search, glue for glue, with two costs removed.
@@ -1059,19 +1724,27 @@ struct Extender {
     size_t num_iterations = 0, max_num_vertices = 0, num_vertices_added = 0;   // vertices that count toward k
     size_t num_flat = 0, max_flat = 0;                                         // and flat ones (flat_max)
     int first_vertex = 0;
+    int unit = 0;            // which unit of the root (search)
+    Unit* part = nullptr;
     size_t task_nodes = 0;   // nodes this task has visited
     int base_edges = 0;      // edges when this task started
     std::vector<int> types;  // each vertex's type, for the required sets
+    index_t last{};          // the half-edge of the glue that made this node (ring_check)
+    CtxCache ctx;            // the free half-edges' passing pairs, kept between nodes
+    Sides sides;             // chiral: each vertex's side
 
     void add_vertex(int t) {
         auto& h = conf.*HalfedgesOf::member;
         size_t need = h.size() + vc->valence_of(t);
         if (h.capacity() < need) h.reserve(std::max(2 * h.capacity(), need));
         ++(is_flat(*vc, t) ? num_flat : num_vertices_added);
+        int const base = conf.num_halfedges();
         vc->push_vertex_to(conf, t);
         types.push_back(t);
+        if (chiral) sides.push();
+        if (!face_first) for (int i = base; i < conf.num_halfedges(); i++) ctx.touch(i);   // indices are reused after a pop
     }
-    void remove_last_vertex() { --(is_flat(*vc, types.back()) ? num_flat : num_vertices_added); conf.pop_vertex(); types.pop_back(); }
+    void remove_last_vertex() { --(is_flat(*vc, types.back()) ? num_flat : num_vertices_added); conf.pop_vertex(); types.pop_back(); if (chiral) sides.pop(); }
     bool room(int t) const { return is_flat(*vc, t) ? num_flat < max_flat : num_vertices_added < max_num_vertices; }
     bool can_add() const { return num_vertices_added < max_num_vertices || num_flat < max_flat; }
 
@@ -1079,11 +1752,14 @@ struct Extender {
         num_iterations++;
         task_nodes++;
         if (!iteration(*this)) return;
+        if (sym_break && run_syms && last.has_value() && run_syms->cut(conf, types, last)) return;
+        if (ring_check && run_ring && last.has_value() && !faces_close(conf, types, *run_ring, *ids, last)) return;
         bool dead;
-        index_t const f = choose_halfedge(conf, *faces, *ids, *vc, *cand, first_vertex, can_add(), dead);
+        Budget const budget{ int(max_num_vertices) - int(num_vertices_added), num_flat < max_flat, required.missing(types) };
+        index_t const f = choose_halfedge(conf, *faces, *ids, *vc, *cand, first_vertex, can_add(), dead, budget, &ctx);
         if (dead) return;
         if (!f.has_value()) {
-            if (!required.missing(types)) solution(*this);
+            if (!required.missing(types) && !(check_chiral && reverses(conf))) solution(*this);
             return;
         }
         for (auto ix : conf.indices())
@@ -1091,12 +1767,16 @@ struct Extender {
         if (can_add()) extend_by_adding_vertex(f);
     }
     void extend_by_adding_vertex(index_t f) {
-        // fail first knows which pairs pass (a copy: the table may be emptied further down)
-        std::vector<Candidates::Pair> passing;
-        if (!face_first) passing = passing_pairs(conf, *faces, *ids, *vc, *cand, f);
-        auto const& list = face_first ? cand->at(conf, f, *ids) : passing;
+        // Fail first knows which pairs pass (the context cache; a copy, as the table may be emptied further down). The
+        // face rule asks the cache too while no budget binds (B4,C6 k <= 10 -16% CPU, spear k <= 8 -21%); once one
+        // binds, most types are refused before any test, and filling the cache for all of them cost more (freedraw
+        // 3,4,6 k <= 3 +58%), so it pushes the candidates and lets try_joining test them, as his search did.
+        bool const cached = !face_first || (num_vertices_added < max_num_vertices && (num_flat < max_flat || !max_flat) && !required.missing(types));
+        // held, so it stays valid below; the kept lists are fewest options' (the face rule asks once a node)
+        PairList const passing = !cached ? nullptr : face_first ? passing_list(conf, *faces, *ids, *vc, *cand, f) : ctx.list(conf, *faces, *ids, *vc, *cand, f);
+        auto const& list = cached ? *passing : cand->at(conf, f, *ids);
         auto it = std::lower_bound(list.begin(), list.end(), first_vertex, [](Candidates::Pair p, int t) { return p.t < t; });
-        uint32_t const miss = required.missing(types);
+        uint64_t const miss = required.missing(types);
         while (it != list.end()) {
             int const t = it->t, base = conf.num_halfedges();
             if (!room(t) || !required.may_add(miss, first_vertex, t, max_num_vertices - num_vertices_added - !is_flat(*vc, t))) {
@@ -1112,9 +1792,18 @@ struct Extender {
         if (!conf.halfedges_compatible(a, b)) return;
         if (!faces->can_be_adjacent(conf.left_label(a), conf.right_label(b)) ||
             !faces->can_be_adjacent(conf.right_label(a), conf.left_label(b))) return;
+        if (chiral && !sides.ok(conf, *vc, types, a, b)) return;
+        int const settled = chiral ? sides.settle(conf, *vc, types, a, b) : -1;
         conf.add_edge(a, b);
-        if (faces->check_adjacent_cw_face(conf, a) && faces->check_adjacent_ccw_face(conf, a)) extend();
+        if (faces->check_adjacent_cw_face(conf, a) && faces->check_adjacent_ccw_face(conf, a)) {
+            index_t const was = last;
+            auto const changed = face_first ? CtxCache::Changed{} : CtxCache::changed_by(conf, a);   // fewest options' lists only
+            for (int i = 0; i < changed.n; i++) ctx.touch(changed.h[i]);
+            last = a, extend(), last = was;
+            for (int i = 0; i < changed.n; i++) ctx.touch(changed.h[i]);
+        }
         conf.remove_edge(a, b);
+        sides.unsettle(settled);
     }
 };
 
@@ -1127,168 +1816,616 @@ struct Extender {
 // With --progress, the startup's long steps print `stage <name> <done> <total>` twice a second, so a board of
 // thousands of root types does not look frozen before its first `roots` line.
 static bool show_stages = false;
+// --first: write the first tiling found and exit; --seconds: exit with status 4 past this many seconds
+// (checked with the progress line). Both serve --find (find.h), which runs this executable per step.
+static bool first_only = false;
+static double time_limit = 0;
 
-// The vertex types and gluing tables of one order, kept so trials that walk the same order share one (3 s to
-// build on a star board of 77,075 root types); the ranking drops it.
-struct SmallTables {
-    Board const* board;
-    std::vector<int> order, line_of;   // line_of: per root type, its line's place in `order`
-    int root_lines;
-    vertex_classification vc{};
-    FastFaces fast;
-    std::unique_ptr<Candidates> cand;
-    SmallTables(Board const& b, std::vector<int> const& o, int lines) : board(&b), order(o), root_lines(lines), fast(b.faces, b.apeirogons) {
-        if (show_stages) std::cout << "stage tables 0 0" << std::endl;
-        for (int i = 0; i < (int)order.size(); i++) {
-            auto const& w = b.vertices[order[i]];
-            int const n = b.permutations ? vc.add_vertex_with_permutations(w) : vc.add_vertex(w);
-            if (i < root_lines) line_of.insert(line_of.end(), n, i);
-        }
-        cand = std::make_unique<Candidates>(vc, fast, fast);
+/** The least depth in edges, below `most`, at which root r's search has UNIT_TARGET nodes; else `most`. */
+template<class Faces>
+static int unit_depth_of(int r, int most, int kmax, vertex_classification const& vc, Faces const& faces, FastFaces const& ids, Candidates const& cand) {
+    for (int d = 1; d < most; d++) {
+        int n = 0;
+        Extender p{ tiling_t{}, &faces, &ids, &vc, &cand, [&](auto const& s) { return s.conf.num_edges() < d || (n++, false); }, [](auto const&) {} };
+        p.add_vertex(r);
+        p.first_vertex = r, p.max_num_vertices = kmax, p.max_flat = flat_max;
+        p.extend();
+        if (n >= UNIT_TARGET) return d;
     }
-};
-static std::unique_ptr<SmallTables> small_tables;
-
-static std::vector<uint64_t> small_trees(Board const& b, std::vector<int> const& order, int root_lines, int depth, bool whole,
-                                         int threads, std::vector<int>& line_of, char const* stage, uint64_t cap = UINT64_MAX) {
-    if (!small_tables || small_tables->board != &b || small_tables->order != order || small_tables->root_lines != root_lines)
-        small_tables = std::make_unique<SmallTables>(b, order, root_lines);
-    auto const& vc = small_tables->vc;
-    auto const& fast = small_tables->fast;
-    auto const& cand = *small_tables->cand;
-    line_of = small_tables->line_of;
-    Required const kept = std::exchange(required, Required{});
-    std::vector<uint64_t> tree(line_of.size());
-    std::atomic<int> next{ 0 }, done{ 0 };
-    std::atomic<uint64_t> shared{ 0 };   // nodes so far, added 4096 at a time; past `cap` every tree stops
-    std::atomic<bool> over{ false };
-    std::vector<std::thread> pool;
-    for (int i = 0; i < std::max(1, threads); i++) pool.emplace_back([&] {
-        uint64_t mine = 0;   // this thread's nodes, over all its trees
-        for (int t; (t = next++) < (int)tree.size(); done++) {
-            uint64_t nodes = 0;
-            auto node = [&](auto const&) {
-                if (over.load(std::memory_order_relaxed)) return false;
-                nodes++;
-                if (++mine % 4096 == 0 && (shared += 4096) >= cap) over = true;
-                return true;
-            };
-            Extender s{ tiling_t{}, &fast, &fast, &vc, &cand, node, [](auto const&) {} };
-            s.add_vertex(t);
-            s.first_vertex = whole ? 0 : t;
-            s.max_num_vertices = depth;
-            s.max_flat = flat_max;
-            s.extend();
-            tree[t] = nodes;
-        }
-    });
-    auto report = [&] { std::cout << "stage " << stage << " " << done << " " << tree.size() << std::endl; };
-    if (show_stages) report();
-    while (show_stages && done < (int)tree.size()) std::this_thread::sleep_for(std::chrono::milliseconds(500)), report();
-    for (auto& th : pool) th.join();
-    required = kept;
-    return tree;
+    return most;
 }
 
 // for_each_tiling_threaded (tiling_extender.h) with every root counted, so the caller learns when each
-// one finishes. on_tiling(r, conf), on_task_end() and on_root_done(r) run on worker threads.
+// one finishes. With unit_depth > 0 each root is split into units: its head (unit 0) searches the nodes
+// above the root's depth (unit_depth_of, at most unit_depth edges) on one thread, so it meets the rest in the same order every time, and numbers
+// each node at that depth 1, 2, ...; each becomes a task of its own. A unit in the root's `skip`
+// is not searched (the head still runs, to number the others). on_tiling(r, u, conf, k), on_task_end()
+// and on_unit_done(r, u, root_done) run on worker threads; on_unit_done runs when a unit finishes or,
+// with root_done, when its root does (that unit's own call may then come after it).
 template<class FaceType, class FT, class FE, class FD>
 static void search(std::vector<int> const& roots, int kmax, vertex_classification const& vc, FaceType const& faces,
                    FastFaces const& ids, Candidates const& cand, int threads, std::vector<std::unique_ptr<Root>>& state, FT on_tiling, FE on_task_end,
-                   FD on_root_done) {
+                   FD on_unit_done, int unit_depth = 0) {
     Pool pool;
-    // A task hands over its output before its root's count drops, so a root that reaches 0 has all of it.
-    auto finish = [&](int r) { on_task_end(); if (--state[r]->tasks == 0) on_root_done(r); };
+    // A task hands over its output before its counts drop, so a unit or root that reaches 0 has all of it.
+    auto finish = [&](int r, int u, Unit* p) {
+        on_task_end();
+        bool const whole = --p->tasks == 0;
+        if (whole) state[r]->units_done++;
+        bool const root = --state[r]->tasks == 0;
+        if (whole || root) on_unit_done(r, u, root);
+    };
+    thread_local std::vector<std::function<void()>> found;   // the head's units, pushed once it is done
     for (int r : roots) {
         Extender s{ tiling_t{}, &faces, &ids, &vc, &cand,
             [&](auto const& s) {
+                if ((++my_nodes & 4095) == 0 && live_nodes.fetch_add(4096, std::memory_order_relaxed) + 4096 >= node_cap.load(std::memory_order_relaxed))
+                    capped.store(true, std::memory_order_relaxed);
+                if (capped.load(std::memory_order_relaxed)) return false;
+                if (unit_depth && !s.unit) {   // the head is never handed off
+                    Root& st = *state[s.first_vertex];
+                    if (s.conf.num_edges() < st.depth) return true;
+                    int const u = st.next_unit++;
+                    if (st.skip.count(u)) return false;
+                    auto clone{ s };
+                    clone.unit = u, clone.task_nodes = 0, clone.base_edges = clone.conf.num_edges();
+                    { std::lock_guard<std::mutex> l(st.mutex); clone.part = &st.units[u]; }
+                    st.tasks++;
+                    found.push_back([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
+                    return false;
+                }
                 // Give this node's subtree away only when a thread is waiting for work, and only near the top
                 // of this task's own subtree, where the work is (his engine gave away whatever node it was at,
                 // every 10 nodes while 64 tasks were not yet queued: mostly small deep subtrees, handed back and
                 // forth through the lock). Never at a task's first node, or a task would only pass itself on.
-                if ((++my_nodes & 4095) == 0 && live_nodes.fetch_add(4096, std::memory_order_relaxed) + 4096 >= node_cap.load(std::memory_order_relaxed))
-                    capped.store(true, std::memory_order_relaxed);
-                if (capped.load(std::memory_order_relaxed)) return false;
                 if (s.task_nodes < 2 || !pool.hungry() || s.conf.num_edges() - s.base_edges > split_depth) return true;
                 auto clone{ s };
                 clone.task_nodes = 0;
                 clone.base_edges = clone.conf.num_edges();
                 state[clone.first_vertex]->tasks++;
-                pool.push([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex); });
+                clone.part->tasks++;
+                pool.push([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
                 return false;
             },
-            [&](auto const& s) { my_complete++; on_tiling(s.first_vertex, s.conf, (int)s.num_vertices_added); } };
+            [&](auto const& s) { my_complete++; on_tiling(s.first_vertex, s.unit, s.conf, (int)s.num_vertices_added); } };
         s.add_vertex(r);
         s.first_vertex = r;
+        s.part = &state[r]->units[0];
         s.max_num_vertices = kmax;
         s.max_flat = flat_max;
-        pool.push([s, &finish]() mutable { s.extend(); finish(s.first_vertex); });
+        pool.push([s, &finish, &pool, &state, unit_depth, kmax, &vc, &faces, &ids, &cand]() mutable {
+            state[s.first_vertex]->started = true;
+            if (unit_depth) state[s.first_vertex]->depth = unit_depth_of(s.first_vertex, unit_depth, kmax, vc, faces, ids, cand);
+            s.extend();
+            // last first: the stack is LIFO, so one thread runs the units in the head's order
+            for (auto it = found.rbegin(); it != found.rend(); ++it) pool.push(std::move(*it));
+            found.clear();
+            finish(s.first_vertex, 0, s.part);
+        });
     }
     pool.run(threads);
+}
+
+// ── probes: Knuth's estimator, shared by the plan below and tileestimate.cpp ──
+
+namespace est {
+
+struct Search {
+	Board b;
+	vertex_classification vc;
+	FastFaces const* faces = nullptr;
+	Candidates const* cand = nullptr;
+	int roots = 0;
+	/** Per template, its symmetries: permutations of its half-edges keeping labels, neighbours and mirrors. */
+	std::vector<std::vector<std::vector<int>>> aut;
+	int depth = 0;        // the most vertices, when not the board's kmax (the plan's ranking: its shallow trees)
+	bool whole = false;   // trees over the whole alphabet, not only the types from the root on (the ranking)
+	std::shared_ptr<RingTables const> ring;   // for ring_check; none: the check is skipped
+	std::shared_ptr<RootSyms const> syms;     // for sym_break; none: the check is skipped
+	int kmax() const { return depth ? depth : b.kmax; }
+};
+
+// One node of the search: the partial tiling, and the template of every vertex in it, in order.
+struct Node {
+	Search const* s;
+	tiling_t conf;
+	std::vector<int> types;
+	int root = 0;
+
+	int k = 0, flat = 0;   // vertices that count toward k, and flat ones (tilesearch.cpp flat_max)
+	bool room(int t) const { return is_flat(s->vc, t) ? flat < (int)flat_max : k < s->kmax(); }
+	bool can_add() const { return k < s->kmax() || flat < (int)flat_max; }
+
+	std::vector<index_t> glued;   // the half-edge of each glue on the way here (ring_check needs the last)
+	Sides sides;                  // chiral: each vertex's side (set when a move places it)
+	index_t best(bool& dead) {   // Extender::extend's choice (choose_halfedge), after its symmetry and ring checks
+		if (sym_break && s->syms && !glued.empty() && s->syms->cut(conf, types, glued.back())) { dead = true; return {}; }
+		if (ring_check && s->ring && !glued.empty() && !faces_close(conf, types, *s->ring, *s->faces, glued.back())) { dead = true; return {}; }
+		return choose_halfedge(conf, *s->faces, *s->faces, s->vc, *s->cand, root, can_add(), dead, Budget{ s->kmax() - k, flat < (int)flat_max, required.missing(types) });
+	}
+	bool join(index_t a, index_t b) {   // Extender::try_joining's tests, the edge left in place when they pass
+		if (!conf.halfedges_compatible(a, b)) return false;
+		if (!s->faces->can_be_adjacent(conf.left_label(a), conf.right_label(b)) ||
+			!s->faces->can_be_adjacent(conf.right_label(a), conf.left_label(b))) return false;
+		if (chiral && !sides.ok(conf, s->vc, types, a, b)) return false;
+		conf.add_edge(a, b);
+		if (s->faces->check_adjacent_cw_face(conf, a) && s->faces->check_adjacent_ccw_face(conf, a)) return true;
+		conf.remove_edge(a, b);
+		return false;
+	}
+	void add_vertex(int t) { ++(is_flat(s->vc, t) ? flat : k), s->vc.push_vertex_to(conf, t), types.push_back(t); if (chiral) sides.push(); }
+	void pop_vertex() { --(is_flat(s->vc, types.back()) ? flat : k), conf.pop_vertex(), types.pop_back(); if (chiral) sides.pop(); }
+
+	// A child: f glued to an existing half-edge (t < 0), or to half-edge ix of a new vertex of template t.
+	struct Move { int t, ix; };
+	void children(index_t f, std::vector<Move>& out) {   // Extender::extend and extend_by_adding_vertex
+		out.clear();
+		for (auto ix : conf.indices())
+			if (conf.is_free(ix) && join(f, ix)) conf.remove_edge(f, ix), out.push_back({ -1, ix.get_value() });
+		if (!can_add()) return;
+		uint64_t const miss = required.missing(types);
+		// the pairs that pass the join tests, from the context cache while no budget binds (Extender's rule)
+		bool const cached = k < s->kmax() && (flat < (int)flat_max || !flat_max) && !miss;
+		std::vector<Candidates::Pair> passing;
+		if (cached) passing = passing_pairs(conf, *s->faces, *s->faces, s->vc, *s->cand, f);
+		auto const& list = cached ? passing : s->cand->at(conf, f, *s->faces);
+		auto it = std::lower_bound(list.begin(), list.end(), root, [](Candidates::Pair p, int t) { return p.t < t; });
+		while (it != list.end()) {
+			int const t = it->t, base = conf.num_halfedges();
+			if (!room(t) || !required.may_add(miss, root, t, s->kmax() - k - !is_flat(s->vc, t))) {   // Extender's tests
+				while (it != list.end() && it->t == t) ++it;
+				continue;
+			}
+			if (cached) {
+				for (; it != list.end() && it->t == t; ++it) out.push_back({ t, base + it->i });
+				continue;
+			}
+			add_vertex(t);
+			for (; it != list.end() && it->t == t; ++it)
+				if (join(f, index_t{ base + it->i })) conf.remove_edge(f, index_t{ base + it->i }), out.push_back({ t, base + it->i });
+			pop_vertex();
+		}
+	}
+	void apply(index_t f, Move m) {
+		if (m.t >= 0) add_vertex(m.t);
+		if (chiral) sides.settle(conf, s->vc, types, f, index_t{ m.ix });
+		conf.add_edge(f, index_t{ m.ix });
+		glued.push_back(f);
+	}
+	void undo(index_t f, Move m) {
+		glued.pop_back();
+		conf.remove_edge(f, index_t{ m.ix });
+		if (m.t >= 0) pop_vertex();
+	}
+};
+
+static Node start(Search const& s, int r) {
+	Node n{ &s, {}, {}, s.whole ? 0 : r };
+	n.add_vertex(r);
+	return n;
+}
+
+/** How many times the search reaches the complete tiling `t`: the starts whose replay rebuilds it. */
+static int multiplicity(Node const& t) {
+	Search const& s = *t.s;
+	std::vector<int> start_of, type_of(t.conf.num_halfedges());
+	for (auto ix : t.conf.indices())
+		if (t.conf.neighbourhood(ix).vertex_start == ix) start_of.push_back(ix.get_value());
+	for (int v = 0; v < (int)start_of.size(); v++)
+		for (int j = 0; j < s.vc.valence_of(t.types[v]); j++) type_of[start_of[v] + j] = t.types[v];
+	Node p = start(s, t.root);
+	std::vector<int> phi, psi(t.conf.num_halfedges(), -1);   // p's half-edges in t, and back
+	auto place = [&](int base, int vs, std::vector<int> const& sigma) {
+		phi.resize(base + sigma.size());
+		for (int j = 0; j < (int)sigma.size(); j++) phi[base + j] = vs + sigma[j], psi[vs + sigma[j]] = base + j;
+	};
+	auto unplace = [&](int base) {
+		for (int j = base; j < (int)phi.size(); j++) psi[phi[j]] = -1;
+		phi.resize(base);
+	};
+	std::function<int()> replay = [&]() -> int {
+		bool dead;
+		index_t f = p.best(dead);
+		if (dead) return 0;
+		if (!f.has_value()) return 1;   // closed, and mapped into t: it is t
+		index_t g = t.conf.opposite(index_t{ phi[f.get_value()] });
+		if (!g.has_value()) return 0;
+		if (int ix = psi[g.get_value()]; ix >= 0) {   // glue to a half-edge already placed
+			if (!p.conf.is_free(index_t{ ix }) || !p.join(f, index_t{ ix })) return 0;
+			p.glued.push_back(f);   // best()'s cuts read the last glue, as the search's do
+			int r = replay();
+			p.glued.pop_back();
+			p.conf.remove_edge(f, index_t{ ix });
+			return r;
+		}
+		int const vs = t.conf.neighbourhood(g).vertex_start.get_value(), tw = type_of[g.get_value()], o = g.get_value() - vs;
+		if (!p.room(tw) || tw < t.root) return 0;
+		int count = 0;
+		for (auto const& sigma : s.aut[tw]) {   // the new vertex, lined up every way that puts a representative on g
+			int i = int(std::find(sigma.begin(), sigma.end(), o) - sigma.begin());
+			if (!s.vc.is_representative_of_orbit(tw, i)) continue;
+			int const base = p.conf.num_halfedges();
+			p.add_vertex(tw);
+			place(base, vs, sigma);
+			if (p.join(f, index_t{ base + i })) p.glued.push_back(f), count += replay(), p.glued.pop_back(), p.conf.remove_edge(f, index_t{ base + i });
+			unplace(base);
+			p.pop_vertex();
+		}
+		return count;
+	};
+	int m = 0;
+	for (int v = 0; v < (int)start_of.size(); v++)
+		if (t.types[v] == t.root)
+			for (auto const& sigma : s.aut[t.root]) place(0, start_of[v], sigma), m += replay(), unplace(0);
+	return m;
+}
+
+// ── estimate: random probes ──
+
+struct Moments {
+	double n = 0, s = 0, ss = 0;
+	void add(double x) { n++, s += x, ss += x * x; }
+	double mean() const { return n ? s / n : 0; }
+	double var_of_mean() const { return n > 1 ? std::max(0.0, ss / n - mean() * mean()) / (n - 1) : 0; }
+};
+struct RootStats {
+	Moments nodes, cpu, path_nodes, tilings;
+	Moments level_cpu;   // CPU seconds timed in the level-wide probe itself (see probe): what the plan compares
+	double cross = 0;   // sum over probes of cpu * path_nodes, for the ratio's variance
+	std::map<int, Moments> complete, unique;
+	std::mutex m;
+};
+
+using Clock = std::chrono::steady_clock;
+static double since(Clock::time_point t) { return std::chrono::duration<double>(Clock::now() - t).count(); }
+// A probe's timings are this thread's CPU time, so a pause while the machine is busy (another search, another
+// program) does not count as work. Wall time made the plan's rule flip between runs: on bubble 4 (k <= 6) the face
+// rule's estimate ranged 173-1,840 s over five runs (experiments/results/tilesearch-plan-variance-2026-10-30.log).
+// Windows keeps the wall clock: its thread clock ticks every 15.6 ms, coarser than a node.
+#ifdef _WIN32
+static double cpu_now() { return std::chrono::duration<double>(Clock::now().time_since_epoch()).count(); }
+#else
+static double cpu_now() { timespec t; clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t); return t.tv_sec + t.tv_nsec * 1e-9; }
+#endif
+
+// What the engine does at a complete tiling (main's on_tiling): fingerprint it, and write the certificate
+// of a minimal one. Every reach is fingerprinted; a minimal tiling is written once, so its writing is
+// charged at 1/m of the reach.
+static double leaf_cost(Node const& n, original_tiling_writer& writer, bool& minimal, double& write) {
+	double const t0 = cpu_now();
+	Fingerprints::Key key;
+	minimal = fingerprint_if_minimal(n.conf, key);
+	double const fp = (cpu_now() - t0);
+	write = 0;
+	if (minimal) {
+		double const t1 = cpu_now();
+		thread_local std::ostringstream text;
+		text.str("");
+		writer.write_content(text, n.conf);
+		write = (cpu_now() - t1);
+	}
+	return fp;
+}
+
+// The engine's time per node, by Knuth's single path: it works on one tiling as the engine's depth-first
+// walk does, so the time measured at a node is the engine's (the level-wide probe below keeps hundreds of
+// tilings in flight and measured 44-71% high). A path's time is noisy, and so is its node count, but
+// together: their ratio, times the level-wide probe's node count, is the CPU estimate (a ratio estimator;
+// experiments/results/searcher-estimate-2026-10-25.md). Returns {weighted time, weighted nodes}.
+static std::pair<double, double> path_cpu(Search const& s, original_tiling_writer& writer, int r, std::mt19937_64& rng) {
+	Node n = start(s, r);
+	double w = 1, cpu = 0, nodes = 0;
+	std::vector<Node::Move> ms;
+	for (;;) {
+		double const t0 = cpu_now();
+		nodes += w;
+		bool dead;
+		index_t f = n.best(dead);
+		if (dead) return { cpu + w * (cpu_now() - t0), nodes };
+		if (!f.has_value()) {
+			cpu += w * (cpu_now() - t0);
+			if (n.k >= s.b.kmin && !required.missing(n.types)) {
+				bool minimal;
+				double write;
+				cpu += w * leaf_cost(n, writer, minimal, write);
+				if (minimal) cpu += w * write / (s.aut.empty() ? 1 : multiplicity(n));   // the plan has no symmetries: write charged whole
+			}
+			return { cpu, nodes };
+		}
+		n.children(f, ms);
+		cpu += w * (cpu_now() - t0);
+		if (ms.empty()) return { cpu, nodes };
+		w *= ms.size();
+		n.apply(f, ms[std::uniform_int_distribution<size_t>(0, ms.size() - 1)(rng)]);
+	}
+}
+
+// One probe: Chen's heuristic sampling (SIAM J. Comput. 21, 1992). The tree is walked a level at a time
+// (a level adds one edge), every child of the level's nodes is kept, and children of the same kind (same
+// vertex count, same number of free half-edges) are merged into one representative carrying their total
+// weight, picked among them in proportion to weight. Still unbiased, like Knuth's single path, but rare
+// branches are not lost: a probe sees every kind of node at every level.
+static void probe(Search const& s, original_tiling_writer& writer, int r, std::mt19937_64& rng, RootStats& st) {
+	struct Item { Node n; double w; };
+	std::vector<Item> level{ { start(s, r), 1.0 } };
+	double nodes = 0, level_cpu = 0;
+	std::map<int, double> complete, unique;
+	std::vector<Node::Move> ms;
+	std::uniform_real_distribution<double> u01;
+	auto kind = [](Node const& n) {
+		int free = 0;
+		for (auto ix : n.conf.indices()) free += n.conf.is_free(ix);
+		return std::pair{ (int)n.types.size(), free };   // all vertices: a flat one changes the node too
+	};
+	while (!level.empty()) {
+		std::map<std::pair<int, int>, Item> next;
+		for (auto& [n, w] : level) {
+			nodes += w;
+			bool dead;
+			double const c0 = est::cpu_now();   // the engine's own work at this node, weighted like its count
+			index_t f = n.best(dead);
+			if (dead) {
+				level_cpu += w * (cpu_now() - c0);
+				continue;
+			}
+			if (!f.has_value()) {
+				int k = n.k;
+				if (k >= s.b.kmin && !required.missing(n.types)) {
+					complete[k] += w;
+					Fingerprints::Key key;
+					bool const minimal = fingerprint_if_minimal(n.conf, key);
+					level_cpu += w * (cpu_now() - c0);
+					// unique counts need the templates' symmetries (tileestimate); the plan skips them
+					if (minimal && !s.aut.empty()) unique[k] += w / multiplicity(n);
+				} else level_cpu += w * (cpu_now() - c0);
+				continue;
+			}
+			n.children(f, ms);
+			level_cpu += w * (cpu_now() - c0);
+			for (auto m : ms) {
+				Node c = n;
+				c.apply(f, m);
+				auto key = kind(c);
+				auto it = next.find(key);
+				if (it == next.end()) next.emplace(key, Item{ std::move(c), w });
+				else if (it->second.w += w; u01(rng) < w / it->second.w) it->second.n = std::move(c);
+			}
+		}
+		level.clear();
+		for (auto& [key, item] : next) level.push_back(std::move(item));
+	}
+	auto const [cpu, path_nodes] = path_cpu(s, writer, r, rng);
+	double total = 0;
+	for (auto [k, u] : unique) total += u;
+	std::lock_guard<std::mutex> l(st.m);
+	st.nodes.add(nodes), st.cpu.add(cpu), st.path_nodes.add(path_nodes), st.tilings.add(total), st.cross += cpu * path_nodes;
+	st.level_cpu.add(level_cpu);
+	for (int k = s.b.kmin; k <= s.b.kmax; k++) st.complete[k].add(complete[k]), st.unique[k].add(unique[k]);
+}
+
+/** Nodes and CPU seconds over a set of roots, each with its standard error. */
+/** Nodes and CPU seconds over a set of roots, each with its standard error. `cpu` is the path ratio estimate (the
+ *  calibrated one tileestimate reports); `level_cpu` is timed in the level-wide probe, whose spread is the nodes',
+ *  far below a single path's: the plan compares ways by it (a path's time swung 10x between runs). */
+struct Totals { double nodes = 0, nodes_se = 0, cpu = 0, cpu_se = 0, level_cpu = 0, level_cpu_se = 0; };
+
+/**
+ * Probes a set of roots, round after round: its counts carry over, so a caller can probe a little, look, and
+ * probe more. After a first pass of a few probes per root, a tenth of the probes go round-robin and the rest to
+ * each root in proportion to its estimated size in nodes (better than half and half on every board measured),
+ * which the probes estimate well (within a few percent on every board measured). Weighing by each root's
+ * observed spread instead (Neyman allocation) was measured and rejected: a root whose first probes came in low
+ * is then starved, and its estimate stays low (hybrid_2_9830 k = 2 came out 25% low on every seed;
+ * experiments/results/searcher-estimate-2026-10-25.md).
+ */
+struct Sampler {
+	static constexpr int FIRST_PASS = 4;
+	Search const& s;
+	std::vector<int> roots;
+	std::vector<RootStats> stats;
+	std::atomic<uint64_t> next{ 0 }, probes{ 0 };
+	uint64_t seed, rounds = 0;
+	double seconds = 0;   // spent probing so far, over every round
+	std::mutex alloc;
+	std::discrete_distribution<int> pick;
+	bool weighed = false;
+	// The first pass visits the roots in a fixed shuffled order, not theirs: the plan ranks roots cheapest first,
+	// so a first pass cut short in that order saw only the cheap ones (1247_1_0612 k <= 2: fewest estimated
+	// ~5e3 nodes against 7.57M). totals() extrapolates the roots not yet probed from the probed ones.
+	std::vector<int> pass;
+	Sampler(Search const& s, std::vector<int> r, uint64_t seed) : s(s), roots(std::move(r)), stats(s.roots), seed(seed), pass(roots) {
+		std::shuffle(pass.begin(), pass.end(), std::mt19937_64(0x51ed5eedULL + seed));
+	}
+
+	void reweigh() {
+		if (next < FIRST_PASS * roots.size()) return;
+		std::vector<double> w;
+		for (int r : roots) w.push_back(stats[r].nodes.mean() + 1e-9);
+		std::lock_guard<std::mutex> l(alloc);
+		pick = std::discrete_distribution<int>(w.begin(), w.end());
+		weighed = true;
+	}
+	/** Probe for `secs` on `threads` threads; `each_second(t)` runs on this thread once a second, t counted over every round. */
+	void run(double secs, int threads, std::function<void(double)> const& each_second = {}) {
+		if (roots.empty()) return;
+		double const by_size = std::getenv("TILEESTIMATE_BY_SIZE") ? std::atof(std::getenv("TILEESTIMATE_BY_SIZE")) : 0.9;
+		auto const t0 = Clock::now();
+		uint64_t const round = rounds++;
+		std::vector<std::thread> pool;
+		for (int i = 0; i < threads; i++)
+			pool.emplace_back([&, i] {
+				std::mt19937_64 rng(seed + 0x9e3779b97f4a7c15ULL * (i + 1) + 0xbf58476d1ce4e5b9ULL * round);
+				original_tiling_writer writer{ s.vc };   // one per thread: it keeps state while writing
+				std::uniform_real_distribution<double> u01;
+				while (since(t0) < secs) {
+					uint64_t const j = next++;
+					int r;
+					if (j < FIRST_PASS * roots.size() || !weighed || u01(rng) >= by_size) r = pass[j % pass.size()];
+					else {
+						std::lock_guard<std::mutex> l(alloc);
+						r = roots[pick(rng)];
+					}
+					probe(s, writer, r, rng, stats[r]);
+					probes++;
+				}
+			});
+		double const before = seconds;
+		for (double t = 0.1; t < secs; t += 0.1) {
+			std::this_thread::sleep_for(std::chrono::duration<double>(std::max(0.0, t - since(t0))));
+			reweigh();
+			if (each_second && std::floor(before + t) > std::floor(before + t - 0.1)) each_second(before + t);
+		}
+		for (auto& t : pool) t.join();
+		reweigh();
+		seconds += secs;
+	}
+	Totals totals() {
+		double nodes = 0, nodes_var = 0, cpu = 0, path_nodes = 0, level = 0, level_var = 0;
+		Moments node_means, level_means;   // over the probed roots: the spread between roots
+		for (int r : roots) {
+			auto& st = stats[r];
+			std::lock_guard<std::mutex> l(st.m);
+			if (!st.nodes.n) continue;
+			nodes += st.nodes.mean(), nodes_var += st.nodes.var_of_mean();
+			cpu += st.cpu.mean(), path_nodes += st.path_nodes.mean();
+			level += st.level_cpu.mean(), level_var += st.level_cpu.var_of_mean();
+			node_means.add(st.nodes.mean()), level_means.add(st.level_cpu.mean());
+		}
+		// Roots not yet probed: the probed ones are a random sample of them (the shuffled first pass), so scale up,
+		// and add the sampling variance of a total from m of N (with the finite-population correction).
+		double const N = roots.size(), m = node_means.n;
+		if (m > 0 && m < N) {
+			double const f = N / m;
+			auto between = [&](Moments const& x) { return N * N * x.var_of_mean() * (1 - m / N); };   // var(N x mean)
+			nodes_var = nodes_var * f + between(node_means), level_var = level_var * f + between(level_means);
+			nodes *= f, cpu *= f, path_nodes *= f, level *= f;
+		}
+		// seconds per node along the paths, times the nodes. Its relative variance is the nodes' plus the
+		// ratio's (delta method: per root, the variance of cpu - ratio * path_nodes, over path_nodes squared).
+		double const per_node = path_nodes > 0 ? cpu / path_nodes : 0;
+		double ratio_var = 0;
+		for (int r : roots) {
+			auto& st = stats[r];
+			std::lock_guard<std::mutex> l(st.m);
+			if (st.cpu.n < 2) continue;
+			double const n = st.cpu.n, cov = (st.cross / n - st.cpu.mean() * st.path_nodes.mean());
+			double const var = st.cpu.var_of_mean() * (n - 1) + per_node * per_node * st.path_nodes.var_of_mean() * (n - 1) - 2 * per_node * cov;
+			ratio_var += std::max(0.0, var) / (n - 1);
+		}
+		double const rel = (nodes > 0 ? nodes_var / (nodes * nodes) : 0) + (path_nodes > 0 ? ratio_var / (path_nodes * path_nodes) : 0);
+		return { nodes, std::sqrt(nodes_var), nodes * per_node, nodes * per_node * std::sqrt(rel), level, std::sqrt(level_var) };
+	}
+};
+
+}   // namespace est
+
+/**
+ * Local death: the words among `alive` that no tiling at any k can use, proven by the search itself. From each
+ * type, search over the whole alphabet (every alive word, no root order) up to `depth` vertices: a branch that
+ * reaches the depth or the flat budget, or closes, may continue into a tiling, so it counts as alive; a type is
+ * dead only when every branch ends in a contradiction first (best() finds a half-edge with no move), which no
+ * larger k changes. Complements the balance LP, which proves by counting (balance.h calls this in its fixpoint).
+ * Over the 74 finished runs of 2026-10-30, depth 4 proved 1,966 never-used lines dead and no used one
+ * (experiments/results/local-death-2026-10-30.log). Returns the dead words, keyed as balance keys them.
+ */
+std::set<balance::Word> local_dead(Board const& b, std::set<balance::Word> const& alive, int depth) {
+    est::Search s;
+    s.b = b;
+    for (auto const& w : b.vertices) balance::add_line(b, w, s.vc, &alive);
+    s.roots = s.vc.count();
+    FastFaces const faces(b.faces, b.apeirogons);
+    Candidates const cand(s.vc, faces, faces);
+    s.faces = &faces, s.cand = &cand, s.whole = true, s.depth = depth;
+    Required const kept = std::exchange(required, Required{});   // no required-set pruning: dead must mean dead
+    size_t const kept_flat = std::exchange(flat_max, flat_budget(b, depth));
+    std::vector<char> dead(s.roots, 0);
+    std::atomic<int> next{ 0 };
+    // A type past LOCAL_NODES nodes, and every type once the call has spent LOCAL_TOTAL, counts as alive: nothing
+    // is proven there, so the caps only weaken the test. Dead types die in small trees (A12 three-star, star24full:
+    // the same deaths at 1e4 as at 1e6), and 2,400 types x 1e6 cost hours on A6p90,A6p90.150.
+    // A clock bounds it too: a node can cost 140 us (a6mix, 2,118 lines), so node caps alone allowed hours.
+    static uint64_t const LOCAL_NODES = 10000, LOCAL_TOTAL = 50000000;
+    static double const LOCAL_SECONDS = 2;
+    std::atomic<uint64_t> spent{ 0 };
+    std::atomic<bool> late{ false };
+    auto const t0 = est::Clock::now();
+    std::function<bool(est::Node&, uint64_t&)> alive_below = [&](est::Node& n, uint64_t& nodes) {
+        if ((++nodes & 15) == 0 && est::since(t0) > LOCAL_SECONDS) late = true;
+        if (late || nodes > LOCAL_NODES || n.k >= s.kmax() || n.flat >= (int)flat_max) return true;
+        bool contradiction;
+        index_t f = n.best(contradiction);
+        if (contradiction) return false;
+        if (!f.has_value()) return true;
+        std::vector<est::Node::Move> ms;
+        n.children(f, ms);
+        for (auto m : ms) {
+            n.apply(f, m);
+            bool const a = alive_below(n, nodes);
+            n.undo(f, m);
+            if (a) return true;
+        }
+        return false;
+    };
+    std::vector<std::thread> pool;
+    for (unsigned i = 0; i < std::max(1u, std::thread::hardware_concurrency()); i++)
+        pool.emplace_back([&] {
+            for (int t; (t = next++) < s.roots;) {
+                est::Node n = est::start(s, t);
+                uint64_t nodes = 0;
+                if (!late && est::since(t0) > LOCAL_SECONDS) late = true;   // most types stop before the 16-node check
+                if (late || spent.load(std::memory_order_relaxed) > LOCAL_TOTAL) continue;   // over budget: alive
+                dead[t] = !alive_below(n, nodes);
+                spent += nodes;
+            }
+        });
+    for (auto& th : pool) th.join();
+    required = kept, flat_max = kept_flat;
+    // a word stands for a type and its mirror image: dead only when every type keyed by it is
+    std::set<balance::Word> out, live;
+    for (int t = 0; t < s.roots; t++) {
+        auto const& cw = s.vc.word_with_symmetries(t);
+        balance::Word x;
+        for (int i = 0; i < cw.size(); i++) x.push_back(cw.letter(i));
+        (dead[t] ? out : live).insert(std::min(balance::least_rotation(x), balance::reversed(x)));
+    }
+    for (auto const& w : live) out.erase(w);
+    return out;
 }
 
 // ── the start set and the branching rule ──
 //
 // A run picks the required set it starts from and its branching rule (fewest options, or the face nearest to
-// closing) by measuring them: each pair runs the real search to k <= 1, 2, 3, ..., its nodes per k are fitted
-// to a growth rate and carried on to kmax, and the fewest predicted nodes win. Measuring to a fixed small depth
-// does not do: the rules' costs cross as k grows. On A12p60.120 fewest options takes fewer nodes up to k = 10
-// and 36x more at k = 22 (33.1M against 0.91M), while on A6a60,C6a60 the face rule loses at every k (23M
-// against 1.36M at k <= 8); one fixed rule, and a trial to 2 or 3 vertices, each got one of them badly wrong
-// (experiments/results/tilesearch-rule-curves-2026-10-28.log). The trials stop once they have cost
-// PLAN_SHARE of the cheapest prediction, so a long search is measured deeper and a short one hardly at all;
-// a pair PLAN_BEHIND times the best at the same k is dropped. They may always spend PLAN_FIRST: the prediction
-// from a few small k can be far too low (B12/120: 5,511 nodes from k <= 4, 2.3M at k <= 20), and 5% of it would
-// stop them there (experiments/results/tilesearch-rule-choice-2026-10-28.log). TILESEARCH_FACE_FIRST / TILESEARCH_FAIL_FIRST
-// force the rule.
-static double const PLAN_SHARE = 0.05, PLAN_BEHIND = 30;
-static uint64_t const PLAN_FIRST = 2000000;   // the least the trials may spend
-static uint64_t const PLAN_TIMED = 20000;     // a trial this big is timed well enough to weigh nodes by seconds
+// closing) by probing each pair at the run's own kmax: Knuth's estimator (est::Sampler, the one tileestimate
+// reports with) gives each pair's search size and CPU time, and the least time wins. It replaced trial searches
+// to k <= 1, 2, 3, ... whose growth was carried on to kmax. The rules' costs cross as k grows (A12p60.120: fewest
+// options takes fewer nodes up to k = 10 and 36x more at k = 22), so the carried growth picked wrong (glider
+// k <= 6: 24 s against 3.7 s); a round of trials past the budget was thrown away whole (3^7 k <= 5: 299 s of
+// trials, none of them used); and the budget counted nodes, where a node of one rule cost 6x one of the other.
+// On the 2026-10-28 benchmark the probes' picks came within 3% of the best rule in total, the trials' within 48%
+// (experiments/results/tilesearch-probe-rule-2026-10-30.log, tilesearch-preprocess-profile-2026-10-30.log).
+// Each pair is probed PLAN_ROUND at a time until it has had PLAN_SHARE of the best estimated search time on the
+// run's threads, at least PLAN_MIN and at most PLAN_MAX; a pair PLAN_BEHIND times the best is dropped.
+// TILESEARCH_FACE_FIRST / TILESEARCH_FAIL_FIRST force the rule.
+static double const PLAN_SHARE = 0.02, PLAN_MIN = 0.1, PLAN_MAX = 1.5, PLAN_ROUND = 0.1, PLAN_BEHIND = 8, PLAN_HEAVY = 0.4;
 
-/** One way to run the search: the required set it starts from, its branching rule, its nodes per k so far. */
+/** One way to run the search: the required set it starts from, its branching rule, and what its probes say. */
 struct Way {
-    int pick;                     // required set (vertex_order), -1 for the default
+    int pick;            // required set (vertex_order), -1 for the default
     bool face;
-    std::vector<uint64_t> nodes;  // [j - 1]: the search's nodes to k <= j
-    double predicted = 0;         // its nodes to kmax
-    double secs = 0;              // its last trial's seconds
+    est::Totals est{};   // its nodes and CPU seconds at kmax
+    double secs = 0;     // probed so far
     bool out = false;
-    double per_node() const { return nodes.empty() ? 0 : secs / std::max<uint64_t>(1, nodes.back()); }
+    bool capped = false;   // dropped before probing: its ranking would have cost more than the plan allows
 };
-static double predict(Way const& w, int kmax) {
-    auto const& n = w.nodes;
-    int const j = (int)n.size();
-    if (j == 0) return 0;
-    double g = 1;   // growth per k, over the last two steps when there are two
-    if (j >= 3) g = std::sqrt((double)n[j - 1] / std::max<uint64_t>(1, n[j - 3]));
-    else if (j == 2) g = (double)n[1] / std::max<uint64_t>(1, n[0]);
-    return n[j - 1] * std::pow(std::max(1.0, g), kmax - j);
-}
 
-/** The vertex types of one start set, with its required-set tables. */
+/** The vertex types of one start set, with its required-set tables, ready to probe. */
 struct SetTables {
-    vertex_classification vc{};
+    est::Search s;
     Required req;
-    int roots = 0;
+    std::vector<int> order, line_of;   // the vertex lines in order; per root type, its line
+    int lines = 0;                     // root lines
     std::unique_ptr<Candidates> cand;
 };
-
-/** The search's nodes to k <= j from every root, under `face`, UINT64_MAX past `cap`; and its seconds. */
-static std::pair<uint64_t, double> trial(Board const& b, SetTables const& t, FastFaces const& fast, bool face, int j, uint64_t cap, int threads) {
-    required = t.req;
-    face_first = face;
-    flat_max = flat_budget(b, j);
-    std::vector<std::unique_ptr<Root>> state(t.roots);
-    std::vector<int> roots(t.roots);
-    for (int r = 0; r < t.roots; r++) roots[r] = r, state[r] = std::make_unique<Root>();
-    total_nodes = 0, live_nodes = 0, node_cap = cap, capped = false;
-    auto const t0 = std::chrono::steady_clock::now();
-    search(roots, j, t.vc, fast, fast, *t.cand, threads, state, [](int, auto const&, int) {}, [] {}, [](int) {});
-    double const secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
-    uint64_t const n = capped ? UINT64_MAX : total_nodes.load();
-    total_nodes = 0, live_nodes = 0, node_cap = UINT64_MAX, capped = false;
-    return { n, secs };
-}
 
 /**
  * The order of the run in `dir` and its roots: its order.txt, whose first lines are one required set (any
@@ -1306,54 +2443,101 @@ static std::pair<std::vector<int>, int> recorded_order(fs::path const& dir, Boar
         if (order.size() == o.size() && same({ order.begin(), order.begin() + n }, { o.begin(), o.begin() + n }) && same(order, o))
             return { order, n };
     }
+    // a run started before `require face` lines gave sets: its order has no start set from them
+    if (auto const [o, n] = vertex_order(b, -1, false); !b.require_faces.empty() && same(order, o)
+        && same({ order.begin(), order.begin() + n }, { o.begin(), o.begin() + n }))
+        return pick = -1, std::pair{ order, n };
     std::cerr << "cannot resume: " << dir / "order.txt" << " does not fit the board\n";
     std::exit(2);
 }
 
 /** What a run settles before it searches, the same in tilesearch and tileestimate: the start set, the rule,
- *  the roots' order, and what the trials measured. */
+ *  the roots' order, and what the probes measured. */
 struct Plan {
     std::vector<int> order;
     int roots = 0;
     int pick = -1;
-    std::vector<Way> ways;   // every way tried, when there was a choice
-    int depth = 0;           // the trials' last k
+    std::vector<Way> ways;   // every way probed, when there was a choice
+    double probed = 0;       // seconds spent probing the ways, and ranking those ranked after the first probes
     bool ranked = false;
-    bool timed = false;      // ways compared by predicted seconds, else nodes
+    bool recorded = false;   // the rule is the run's own (its `rule` file), not measured again
+    double predicted = 0;    // the chosen way's estimated nodes to kmax
 };
 
+static double const RANK_MAX = 30;   // s: the most the ranking may take, per thread
+static double const RANK_SHARE = 0.5, RANK_FLOOR = 1;   // a fewest-options way's ranking cap (plan): see there
 /**
  * Root r searches only the types from r on, so each node of the search is visited from one start only: its
  * first type in the order. Putting first the root lines whose types grow the smallest trees over the whole
  * alphabet (to 3 vertices under fewest options, 2 under the face rule) makes those starts the cheap ones: on
  * A6_30 this cut the search to 3% of its nodes at k <= 4 (experiments/results/vertex-order-2026-10-26.log,
- * search-speedups-2026-10-26.log). Those trees skip the required-set pruning and take the full flat budget, so
- * they can outgrow the search itself (123_1_4657 at k <= 2 ran for hours): past `cap` nodes the board's order
- * stays. Any order finds the same tilings, each once.
+ * search-speedups-2026-10-26.log). The trees' sizes are estimated by probes: counting them exactly took 344 s on
+ * Board_0_931302 (k <= 5) and could outgrow the search itself (123_1_4657 at k <= 2 ran for hours). Unless every
+ * root type is probed within RANK_MAX the board's order stays. Any order finds the same tilings, each once.
  */
-static bool rank_roots(Board const& b, std::vector<int>& order, int root_lines, int threads, uint64_t cap) {
-    int const depth = std::min(face_first ? 2 : 3, b.kmax);
-    if (root_lines < 2) return false;
-    std::vector<int> line_of;   // per root type, its line's place in `order`
-    auto const tree = small_trees(b, order, root_lines, depth, true, threads, line_of, "rank", cap);
-    small_tables.reset();
-    if (std::accumulate(tree.begin(), tree.end(), uint64_t{ 0 }) >= cap) return false;
-    std::vector<uint64_t> weight(root_lines);
-    for (size_t t = 0; t < tree.size(); t++) weight[line_of[t]] += tree[t];
-    std::vector<int> place(root_lines);
+static int const RANK_PROBES = 8;
+/** Ranks `order`'s root lines; false (the order kept) when that would take past `cap` CPU seconds over the threads
+ *  (default RANK_MAX each). */
+static bool rank_roots(Board const& b, SetTables& set, std::vector<int>& order, int threads, double cap = 0) {
+    if (set.lines < 2) return false;
+    Required const kept = std::exchange(required, Required{});   // the trees skip the required-set pruning
+    set.s.depth = std::min(face_first ? 2 : 3, b.kmax), set.s.whole = true;
+    // RANK_PROBES probes per root type, each type's from a seed of its own, so the order does not depend on how the
+    // threads interleave: the same run ranks alike every time.
+    std::vector<est::RootStats> stats(set.s.roots);
+    std::atomic<int> next{ 0 }, done{ 0 };
+    std::atomic<bool> late{ false };
+    // The cap is CPU seconds summed over the threads, not wall time: under load the wall clock stretched past
+    // RANK_MAX on some runs of 1247_1_0612 and not others, and those fell back to the board's order (10x nodes).
+    std::atomic<uint64_t> cpu_us{ 0 };
+    int const workers = std::max(1, threads);
+    double const most_us = 1e6 * (cap > 0 ? cap : RANK_MAX * workers);
+    std::vector<std::thread> pool;
+    for (int i = 0; i < workers; i++)
+        pool.emplace_back([&] {
+            original_tiling_writer writer{ set.s.vc };
+            for (int t; !late && (t = next++) < set.s.roots; done++) {
+                std::mt19937_64 rng(0x9e3779b97f4a7c15ULL * (t + 1));
+                double const c0 = est::cpu_now();
+                for (int j = 0; j < RANK_PROBES && !late; j++) est::probe(set.s, writer, t, rng, stats[t]);
+                if ((cpu_us += uint64_t(1e6 * (est::cpu_now() - c0))) > most_us) late = true;
+            }
+        });
+    while (show_stages && done < set.s.roots && !late) {
+        std::cout << "stage rank " << done << " " << set.s.roots << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
+    for (auto& th : pool) th.join();
+    set.s.depth = 0, set.s.whole = false;
+    required = kept;
+    if (late) return false;
+    std::vector<double> weight(set.lines);
+    for (int t = 0; t < set.s.roots; t++) weight[set.line_of[t]] += stats[t].nodes.mean();
+    std::vector<int> place(set.lines);
     std::iota(place.begin(), place.end(), 0);
     std::stable_sort(place.begin(), place.end(), [&](int x, int y) { return weight[x] < weight[y]; });
     std::vector<int> ranked;
     for (int i : place) ranked.push_back(order[i]);
-    ranked.insert(ranked.end(), order.begin() + root_lines, order.end());
+    ranked.insert(ranked.end(), order.begin() + set.lines, order.end());
     order = ranked;
     return true;
 }
 
 static Plan plan(Board const& b, int threads, fs::path const* resume_dir) {
+    // the ways are probed on the global alive set: per-root balance runs once, in main's classify of the chosen order
+    balance::per_root_enabled = false;
+    struct Restore { ~Restore() { balance::per_root_enabled = true; } } const restore;
     Plan p;
     std::vector<int> recorded;
     if (resume_dir) std::tie(recorded, p.roots) = recorded_order(*resume_dir, b, p.pick);
+    // A resumed run, and tileestimate beside a running one, keep the rule the run chose: probing again could pick
+    // the other, and the estimate would then be of a search the run is not doing.
+    if (std::ifstream rf; resume_dir && (rf.open(*resume_dir / "rule"), rf)) {
+        std::string r, ring;
+        rf >> r >> ring;   // a run before ring_check wrote only the rule
+        face_first = r == "face", ring_check = ring == "ring", p.recorded = true, p.order = recorded;   // as the run chose
+        return p;
+    }
     std::vector<int> picks{ p.pick };
     if (!resume_dir && required_sets(b).size() > 1) {
         picks.clear();
@@ -1365,90 +2549,123 @@ static Plan plan(Board const& b, int threads, fs::path const* resume_dir) {
     for (int pk : picks)
         for (bool f : rules) p.ways.push_back({ pk, f });
 
-    if (b.kmax > 1) {
-        FastFaces const fast(b.faces, b.apeirogons);
-        std::map<int, std::unique_ptr<SetTables>> tables;
-        for (int pk : picks) {
-            auto t = std::make_unique<SetTables>();
-            auto const [order, lines] = vertex_order(b, pk);
-            t->roots = classify(b, order, lines, t->vc);
-            t->req = required;
-            t->cand = std::make_unique<Candidates>(t->vc, fast, fast);
-            tables[pk] = std::move(t);
+    // Each way is probed on the root order it would run: its start set's lines, ranked under its own rule. Probing
+    // the board's order and ranking only the winner compared searches no run does: ranking can cut a search to
+    // a few % of its nodes, and by different amounts per set (tilesearch-start-set-truth-2026-10-30.log).
+    FastFaces const fast(b.faces, b.apeirogons);
+    flat_max = flat_budget(b);
+    std::vector<std::unique_ptr<SetTables>> sets;   // per way
+    std::vector<bool> ranked;
+    auto tables = [&](SetTables& t) {
+        t.s = est::Search{}, t.line_of.clear();
+        t.s.b = b;
+        t.s.roots = classify(b, t.order, t.lines, t.s.vc, &t.line_of);
+        t.req = required;
+        t.cand = std::make_unique<Candidates>(t.s.vc, fast, fast);
+        t.s.faces = &fast, t.s.cand = t.cand.get();
+        t.s.ring = std::make_shared<RingTables>(t.s.vc);
+        t.s.syms = std::make_shared<RootSyms>(t.s.vc, t.s.roots);
+    };
+    std::vector<std::unique_ptr<est::Sampler>> samplers(p.ways.size());
+    sets.resize(p.ways.size()), ranked.assign(p.ways.size(), false);
+    // A way's tables, ranked under its rule; a ranking past `cap` CPU seconds drops the way (0: RANK_MAX, kept unranked).
+    auto prepare = [&](size_t i, double cap) {
+        Way& w = p.ways[i];
+        if (show_stages) std::cout << "stage tables 0 0" << std::endl;
+        auto t = std::make_unique<SetTables>();
+        std::tie(t->order, t->lines) = resume_dir ? std::pair{ recorded, p.roots } : vertex_order(b, w.pick);
+        tables(*t);
+        face_first = w.face, ring_check = ring_for(w.face);
+        if (!resume_dir && t->lines >= 2) {
+            ranked[i] = rank_roots(b, *t, t->order, threads, cap);
+            if (ranked[i]) tables(*t);
+            else if (cap > 0) { w.out = w.capped = true; return; }
         }
-        uint64_t spent = 0;
-        auto best = [&] {
-            double m = 0;
-            for (auto const& w : p.ways) if (!w.out && w.nodes.size() > 1 && (m == 0 || w.predicted < m)) m = w.predicted;
-            return m;
-        };
-        for (int j = 1; j < b.kmax; j++) {
-            double const pred = best();
-            double const allowed = std::max<double>(PLAN_FIRST, pred > 0 ? PLAN_SHARE * pred : 0);
-            if (spent >= allowed) break;
-            uint64_t const budget = (uint64_t)allowed - spent;
-            // the cheapest so far first, so the rest are capped by it
-            std::vector<Way*> live;
-            for (auto& w : p.ways) if (!w.out) live.push_back(&w);
-            std::stable_sort(live.begin(), live.end(), [](Way* x, Way* y) {
-                return (x->nodes.empty() ? 0 : x->nodes.back()) < (y->nodes.empty() ? 0 : y->nodes.back()); });
-            uint64_t low = UINT64_MAX, used = 0;
-            bool over = false;
-            for (Way* w : live) {
-                if (show_stages) std::cout << "stage plan " << j << " " << b.kmax - 1 << std::endl;
-                // past what is left of the budget the trials stop, alike for every way; only PLAN_BEHIND drops a way
-                double const left = (double)budget - (double)used, behind = low == UINT64_MAX ? 1e300 : PLAN_BEHIND * low;
-                if (left <= 0) { over = true; break; }
-                uint64_t const cap = std::min(left, behind);
-                auto const [n, secs] = trial(b, *tables[w->pick], fast, w->face, j, cap, threads);
-                if (n == UINT64_MAX && left <= behind) { over = true; break; }
-                used += n == UINT64_MAX ? cap : n;
-                if (n == UINT64_MAX) { w->out = true; continue; }
-                w->nodes.push_back(n);
-                w->secs = secs;
-                low = std::min(low, n);
-            }
-            spent += used;
-            if (over) {   // keep k < j only, alike for every way
-                for (auto& w : p.ways) if (w.nodes.size() == (size_t)j) w.nodes.pop_back();
-                break;
-            }
-            p.depth = j;
-            for (auto& w : p.ways) if (!w.out) w.predicted = predict(w, b.kmax);
-            if (std::count_if(p.ways.begin(), p.ways.end(), [](Way const& w) { return !w.out; }) == 1) break;
+        std::vector<int> roots(t->s.roots);
+        std::iota(roots.begin(), roots.end(), 0);
+        samplers[i] = std::make_unique<est::Sampler>(t->s, roots, 1);
+        sets[i] = std::move(t);
+    };
+    auto probe_round = [&](size_t i) {
+        Way& w = p.ways[i];
+        required = sets[i]->req, face_first = w.face, ring_check = ring_for(w.face);
+        samplers[i]->run(PLAN_ROUND, threads);
+        w.secs += PLAN_ROUND, w.est = samplers[i]->totals();
+    };
+    // The face ways first: their ranking is cheap (trees 2 vertices deep), and a round of probes then prices their
+    // search. That price bounds the ranking a fewest-options way may spend (3 deep, often 10x the cost): no more than
+    // RANK_SHARE of the search it could beat, or RANK_FLOOR a thread. Unbounded, ranking was most of the run where the
+    // face rule wins: freedraw 3,4,6 k <= 3 ranked for 9.2 s of an 11.7 s run, 1247_1_0612 k <= 2 for 10.7 s of 15.5 s.
+    auto const t0 = est::Clock::now();
+    double priced = 0;
+    for (size_t i = 0; i < p.ways.size(); i++)
+        if (p.ways[i].face) {
+            prepare(i, 0), probe_round(i);
+            if (double const c = p.ways[i].est.level_cpu; c > 0 && (priced == 0 || c < priced)) priced = c;
         }
-        flat_max = flat_budget(b);
+    for (size_t i = 0; i < p.ways.size(); i++)
+        if (!p.ways[i].face) prepare(i, priced > 0 ? std::max(RANK_SHARE * priced, RANK_FLOOR * threads) : 0);
+    double budget = PLAN_MIN;
+    for (bool more = true; more;) {
+        more = false;
+        for (size_t i = 0; i < p.ways.size(); i++) {
+            Way& w = p.ways[i];
+            if (w.out || w.secs >= budget) continue;
+            more = true;
+            probe_round(i);
+            if (show_stages) std::cout << "stage plan " << int(10 * est::since(t0)) << " " << int(10 * PLAN_MAX * p.ways.size()) << std::endl;
+        }
+        double best = 0;
+        for (auto const& w : p.ways)
+            if (!w.out && w.est.level_cpu > 0 && (best == 0 || w.est.level_cpu < best)) best = w.est.level_cpu;
+        if (p.ways.size() > 1) budget = std::clamp(PLAN_SHARE * best / threads, PLAN_MIN, PLAN_MAX);
+        for (auto& w : p.ways)
+            if (!w.out && w.secs >= 2 * PLAN_ROUND && best > 0 && w.est.level_cpu > PLAN_BEHIND * best) w.out = true;
     }
-    // The least predicted time: nodes cost differently under the two rules (a node under fewest options took
-    // 1.7-4x the time of one under the face rule on squares_edges and test), so each way's prediction is
-    // weighted by its own seconds per node, once every live way's last trial has PLAN_TIMED nodes to time;
-    // below that, nodes alone. Before any trial, or among equals, the first way (fewest options, default set).
-    bool const timed = std::all_of(p.ways.begin(), p.ways.end(), [](Way const& w) { return w.out || (w.nodes.size() && w.nodes.back() >= PLAN_TIMED); });
-    auto cost = [&](Way const& w) { return w.predicted * (timed ? w.per_node() : 1); };
+    // A heavy tail among the two cheapest ways (a standard error over half its estimate) that could swap them: a few
+    // draws decided the pick.
+    // 45degree k <= 20 went to fewest options (79M nodes, 460 s CPU) once in 12 runs, with fewest 1.3 s +- 0.2 against
+    // the face rule's 6.4 s +- 5.7 (its truth 2.2 s): both rules' trees are heavy-tailed there. Both ways then get
+    // PLAN_HEAVY seconds of probes in all, a fixed amount: probing until the gap looks clear lets a loose estimate stop
+    // on a low draw.
+    {
+        size_t a = SIZE_MAX, c = SIZE_MAX;   // the cheapest way and the next
+        for (size_t i = 0; i < p.ways.size(); i++) {
+            if (p.ways[i].out || p.ways[i].est.level_cpu <= 0) continue;
+            if (a == SIZE_MAX || p.ways[i].est.level_cpu < p.ways[a].est.level_cpu) c = a, a = i;
+            else if (c == SIZE_MAX || p.ways[i].est.level_cpu < p.ways[c].est.level_cpu) c = i;
+        }
+        auto loose = [&](size_t i) { return p.ways[i].est.level_cpu_se > 0.5 * p.ways[i].est.level_cpu; };
+        // and only when one standard error either way could swap them: A6p30's fewest options, 87 s +- 45 against the
+        // face rule's 2.9 s, cannot win and was probed for nothing (+0.7 s on a 2.3 s run)
+        auto reach = [&](size_t i, double sign) { return p.ways[i].est.level_cpu + sign * p.ways[i].est.level_cpu_se; };
+        if (c != SIZE_MAX && (loose(a) || loose(c)) && reach(c, -1) < reach(a, 1))
+            for (size_t i : { a, c })
+                while (p.ways[i].secs < PLAN_HEAVY - 1e-9) probe_round(i);
+    }
+    p.probed = est::since(t0);
+    // Dropped ways count too: a lucky early draw can drop a rule whose rival's estimate then grows past it.
     Way const* pickw = &p.ways[0];
     for (auto const& w : p.ways)
-        if (!w.out && (pickw->out || (w.nodes.size() && cost(w) < cost(*pickw)))) pickw = &w;
-    p.timed = timed;
-    p.pick = pickw->pick;
-    face_first = pickw->face;
-    auto [order, roots] = vertex_order(b, p.pick);
-    p.roots = roots;
-    if (resume_dir) p.order = recorded;
-    else {
-        uint64_t const cap = std::max<double>(1e6, PLAN_SHARE * pickw->predicted);
-        p.ranked = rank_roots(b, order, roots, threads, cap);
-        p.order = order;
-    }
+        if (w.est.level_cpu > 0 && (pickw->est.level_cpu <= 0 || w.est.level_cpu < pickw->est.level_cpu)) pickw = &w;
+    p.pick = pickw->pick, face_first = pickw->face, ring_check = ring_for(pickw->face), p.predicted = pickw->est.nodes;
+    size_t const wi = pickw - p.ways.data();
+    required = sets[wi]->req;
+    p.roots = sets[wi]->lines;
+    p.order = sets[wi]->order;
+    p.ranked = ranked[wi];
     if (p.ways.size() == 1) p.ways.clear();
     return p;
 }
 
+#include "find.h"
+
 int main(int argc, char** argv) {
-    char const* usage = "usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--gzip] [--progress] [--dump]\n";
+    char const* usage = "usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--gzip] [--progress] [--dump] [--first] [--seconds <s>] [--find] [--no-local-death] [--balance] [--prune-balance]\n";
     if (argc < 2) { std::cerr << usage; return 2; }
     Board b = read_board(argv[1]);
     int threads = std::max(1u, std::thread::hardware_concurrency()), nice = 0;
-    bool dump = false, progress = false, resume = false, gzip = false;
+    bool dump = false, progress = false, resume = false, gzip = false, find_mode = false;
     for (int i = 2; i < argc; i++) {
         std::string a = argv[i];
         if (a == "--k" && i + 2 < argc) b.kmin = std::atoi(argv[++i]), b.kmax = std::atoi(argv[++i]);
@@ -1458,9 +2675,22 @@ int main(int argc, char** argv) {
         else if (a == "--progress") progress = show_stages = true;
         else if (a == "--resume") resume = true;
         else if (a == "--gzip") gzip = true;
+        else if (a == "--first") first_only = true;
+        else if (a == "--seconds" && i + 1 < argc) time_limit = std::atof(argv[++i]);
+        else if (a == "--find") find_mode = true;
+        else if (a == "--balance") { balance::report(b, required_sets(b), std::cout); return 0; }
+        else if (a == "--prune-balance") balance::prune = true;
+        else if (a == "--no-local-death") balance::local = false;   // LP only in the fixpoint (before --balance, which answers at once)
         else { std::cerr << "unknown argument " << a << "\n" << usage; return 2; }
     }
-    if (b.kmin < 1 || b.kmax < b.kmin || b.kmax > 128) { std::cerr << "--k needs 1 <= kmin <= kmax <= 128\n"; return 2; }
+    if (b.kmin < 1 || b.kmax < b.kmin || b.kmax > MAX_K) { std::cerr << "--k needs 1 <= kmin <= kmax <= " << MAX_K << "\n"; return 2; }
+    if (first_only) gzip = false;   // one plain file, read back by --find
+    if (find_mode) {
+        // the steps run this executable: by the path it was started with, else (found on PATH) by name
+        std::string self = argv[0];
+        if (self.find_first_of("/\\") != std::string::npos) self = fs::absolute(self).string();
+        return find::Finder(b, self, threads, nice, time_limit).go(argv[1]);
+    }
     if (nice) setpriority(PRIO_PROCESS, 0, nice);   // before any thread exists, so all of them inherit it
     flat_max = flat_budget(b);
     find_recolorings(b);
@@ -1483,7 +2713,7 @@ int main(int argc, char** argv) {
         std::vector<std::vector<int>> words;
         for (int v : order) words.push_back(b.vertices[v]);
         list("face", b.faces); list("apeirogon", b.apeirogons); list("vertex", words);
-        std::cout << "permutations " << b.permutations << "\ninitial " << n_initial << "\n";
+        std::cout << "permutations " << b.permutations << "\nchiral " << b.chiral << "\ninitial " << n_initial << "\n";
         for (auto const& set : required_sets(b)) {
             std::cout << "require";
             for (int v : set) std::cout << " " << v + 1;
@@ -1493,11 +2723,12 @@ int main(int argc, char** argv) {
     }
 
     // Layout. solver_<name>/ holds the finished output, the board, roots.done (one line per finished
-    // root with its counts) and, only while a root is being merged in, merge.pending. A root's output is
-    // written under .part/ first and appended to the real files when the root completes, so a stop
-    // never leaves half a root in them.
+    // root with its counts), in a run split into units `units` and units.done (one line per unit finished
+    // before its root, `<r> <u> <counts>`), and, only while a root is being merged in, merge.pending. A
+    // root's output is written under .part/ first and appended to the real files when the root completes,
+    // so a stop never leaves half a root in them.
     fs::path const base = fs::absolute("."), dir = base / ("solver_" + b.name), part = base / ".part";
-    fs::path const done_file = dir / "roots.done", pending_file = dir / "merge.pending";
+    fs::path const done_file = dir / "roots.done", pending_file = dir / "merge.pending", units_file = dir / "units.done";
     std::ostringstream board_text;
     for (auto const& l : b.normalized)
         board_text << (l.rfind("k ", 0) == 0 ? "k " + std::to_string(b.kmin) + " " + std::to_string(b.kmax) : l) << "\n";
@@ -1508,22 +2739,33 @@ int main(int argc, char** argv) {
         std::string was((std::istreambuf_iterator<char>(old)), std::istreambuf_iterator<char>());
         if (was != board_text.str()) { std::cerr << "cannot resume: " << dir / "board.txt" << " is a different board\n"; return 2; }
     }
+    fs::remove(dir / "latest.txt");   // a stopped session's, from a root it dropped
     Plan const pl = plan(b, threads, resuming ? &dir : nullptr);
     order = pl.order, n_initial = pl.roots;
-    if (!pl.ways.empty()) {   // what the trials measured: per way, its nodes at their last k and its prediction
-        std::cout << "plan: to k <= " << pl.depth << ", predicted at k <= " << b.kmax << ":";
+    int unit_depth = 0;   // see UNIT_DEPTH
+    // the units' numbering needs the same search: rule, ring_check and sym_break (older runs wrote fewer fields)
+    if (std::ifstream uf{ dir / "units" }; resuming && uf >> unit_depth >> face_first) {
+        int g = 0, sb = 0;
+        if (uf >> g) ring_check = g;
+        uf >> sb, sym_break = sym_break && sb;
+    }
+    if (!pl.ways.empty()) {   // what the probes measured: per way, its estimated nodes and CPU seconds at kmax
+        std::cout << "plan: probed " << std::setprecision(2) << pl.probed << " s, estimated at k <= " << b.kmax << ":" << std::setprecision(3);
         for (auto const& w : pl.ways) {
             std::cout << " [" << (w.face ? "face" : "fewest");
             if (w.pick >= 0) std::cout << " set " << w.pick + 1;
-            if (w.out) std::cout << " dropped]";
-            else std::cout << " " << (w.nodes.empty() ? 0 : w.nodes.back()) << " -> " << (uint64_t)w.predicted << " nodes, " << (uint64_t)(w.per_node() * 1e9) << " ns/node]";
+            if (w.capped) std::cout << " ranking past its cap, dropped]";
+            else std::cout << " " << w.est.nodes << " nodes, " << w.est.level_cpu << " s +- " << w.est.level_cpu_se << (w.out ? ", dropped]" : "]");
         }
-        std::cout << (pl.timed ? " (by time)" : " (by nodes)") << std::endl;
+        std::cout << std::setprecision(6) << std::endl;
     }
     if (pl.pick >= 0) std::cout << "roots: from required set " << pl.pick + 1 << std::endl;
-    std::cout << "branching: " << (face_first ? "on the face nearest to closing" : "on the fewest options") << (pl.ranked || resuming ? "" : " (roots in the board's order)") << std::endl;
+    std::cout << "branching: " << (face_first ? "on the face nearest to closing" : "on the fewest options") << (ring_check ? ", open faces checked" : "")
+              << (pl.ranked || resuming ? "" : " (roots in the board's order)") << std::endl;
     std::set<int> done;
-    std::array<std::atomic<uint64_t>, 129> per_k{};   // tilings per k: finished roots plus the running ones
+    std::map<int, std::set<int>> kept;                    // per root not yet merged: its units in units.done
+    std::map<int, std::map<int, size_t>> kept_counts;     // and their tilings per k
+    std::vector<std::atomic<uint64_t>> per_k(MAX_K + 1);   // tilings per k: finished roots plus the running ones
     if (resuming) {
         gzip = fs::exists(dir / "gzip");
         std::ifstream df(done_file);
@@ -1532,6 +2774,7 @@ int main(int argc, char** argv) {
             int r; ls >> r; done.insert(r);
             for (std::string kv; ls >> kv;) per_k[std::stoi(kv)] += std::stoull(kv.substr(kv.find(':') + 1));
         }
+        df.close();
         // A merge cut short: the files it was appending to go back to their recorded sizes, unless
         // the root reached roots.done, in which case the merge had finished.
         if (std::ifstream pf{ pending_file }) {
@@ -1543,6 +2786,21 @@ int main(int argc, char** argv) {
                 }
             fs::remove(pending_file);
         }
+        // units finished by roots not yet merged: their output and keys stay under .part, their counts count
+        std::ifstream uf(units_file);
+        std::ostringstream live;
+        for (std::string line; std::getline(uf, line);) {
+            std::istringstream ls(line);
+            int r, u;
+            if (!(ls >> r >> u) || done.count(r) || !kept[r].insert(u).second) continue;
+            live << line << "\n";
+            for (std::string kv; ls >> kv;) {
+                size_t const k = std::stoi(kv), n = std::stoull(kv.substr(kv.find(':') + 1));
+                per_k[k] += n, kept_counts[r][k] += n;
+            }
+        }
+        uf.close();
+        if (fs::exists(units_file)) std::ofstream(units_file) << live.str();
     } else {
         fs::create_directories(dir);
         {
@@ -1551,7 +2809,12 @@ int main(int argc, char** argv) {
             f << "\n";
         }
         std::ofstream(dir / "board.txt") << board_text.str();
+        {   // read back by --resume and by tileestimate
+            std::ofstream rf(dir / "rule");
+            rf << (face_first ? "face" : "fewest") << (ring_check ? " ring" : "") << "\n";
+        }
         if (gzip) std::ofstream(dir / "gzip");   // the format of this run's certificates, read back by --resume
+        std::ofstream(dir / "named");   // certificates say the board's own symbols, not X<n>; read back by --resume
         std::ofstream f(dir / "symbols.txt");
         for (auto const& [s, c] : b.codes) {
             std::ostringstream printed;
@@ -1560,66 +2823,134 @@ int main(int argc, char** argv) {
         }
     }
 
-    small_tables.reset();   // a resume skips the ranking
     if (show_stages) std::cout << "stage tables 0 0" << std::endl;
     vertex_classification vc{};
     int const roots = classify(b, order, n_initial, vc);
+    std::unique_ptr<RingTables const> ring_tables;
+    if (ring_check) ring_tables = std::make_unique<RingTables>(vc), run_ring = ring_tables.get();
+    std::unique_ptr<RootSyms const> root_syms;
+    if (sym_break) root_syms = std::make_unique<RootSyms>(vc, roots), run_syms = root_syms.get();
     original_tiling_writer writer{ vc };
+    if (!resuming) {
+        char const* forced = std::getenv("TILESEARCH_UNITS");
+        unit_depth = forced ? std::atoi(forced) : pl.predicted >= UNIT_NODES * roots ? UNIT_DEPTH : 0;
+        if (unit_depth > 0) std::ofstream(dir / "units") << unit_depth << " " << face_first << " " << ring_check << " " << sym_break << "\n";
+    }
+    if (unit_depth > 0) std::cout << "units: each root split where it has " << UNIT_TARGET << " partial tilings, at most " << unit_depth << " edges deep" << std::endl;
 
+    // A free symbol (outside Marek's encoding) prints as X<n>, decimal in certificates and hex in file
+    // names; both are rewritten as the board's own symbol. A run begun before this keeps X<n> when
+    // resumed, so its files stay alike; symbols.txt still maps X<n> for those.
+    std::map<std::string, std::string> in_text, in_name;
+    if (!resuming || fs::exists(dir / "named"))
+        for (auto const& [sym, c] : b.codes) {
+            std::ostringstream dec, hex;
+            dec << corner_decoder{ c };
+            hex << std::hex << corner_decoder{ c };
+            if (dec.str()[0] != 'X' || dec.str() == sym) continue;
+            std::string safe = sym;
+            for (char& ch : safe)
+                if (std::string("/\\:*?\"<>|").find(ch) != std::string::npos) ch = '_';
+            in_text[dec.str()] = sym, in_name[hex.str()] = safe;
+        }
+    auto relabel = [](std::string const& s, std::map<std::string, std::string> const& to, std::string const& digits) {
+        std::string out;
+        for (size_t i = 0; i < s.size();) {
+            size_t j = i + 1;
+            if (s[i] == 'X')
+                while (j < s.size() && digits.find(s[j]) != std::string::npos) j++;
+            auto it = j > i + 1 ? to.find(s.substr(i, j - i)) : to.end();
+            if (it != to.end()) out += it->second, i = j;
+            else out += s[i++];
+        }
+        return out;
+    };
+
+    // Output: the file names solutions_processor::process builds, written per unit under .part/<r>/<u>/ and
+    // appended to the real files, unit by unit, when the root finishes (merge.pending makes that append
+    // undoable). A unit that finishes before its root is checkpointed: its output stays under .part, its keys
+    // are written beside it, and a line in units.done says so, so a resume searches it no more.
+    auto is_number = [](fs::path const& p) { auto n = p.filename().string(); return !n.empty() && std::to_string(std::atoi(n.c_str())) == n; };
+    {
+        std::vector<fs::path> stale;   // everything under .part but the units in units.done
+        if (fs::exists(part))
+            for (auto const& e : fs::directory_iterator(part)) {
+                auto const it = is_number(e.path()) ? kept.find(std::stoi(e.path().filename().string())) : kept.end();
+                if (it == kept.end() || !e.is_directory()) { stale.push_back(e.path()); continue; }
+                for (auto const& f : fs::directory_iterator(e.path()))
+                    if (!is_number(f.path()) || !it->second.count(std::stoi(f.path().filename().string()))) stale.push_back(f.path());
+            }
+        for (auto const& f : stale) fs::remove_all(f);
+    }
+    auto unit_dir = [&](int r, int u) { return part / std::to_string(r) / std::to_string(u); };
+    std::vector<int> todo;
+    std::vector<std::unique_ptr<Root>> state(roots);
+    std::mutex state_mutex;   // the ticker reads state while the merger drops finished roots
+    for (int r = 0; r < roots; r++) {
+        if (done.count(r)) continue;
+        todo.push_back(r), state[r] = std::make_unique<Root>();
+        auto const it = kept.find(r);
+        if (it == kept.end()) continue;
+        Root& st = *state[r];
+        st.skip = it->second, st.counts = kept_counts[r];
+        st.units_done = int(st.skip.size() - st.skip.count(0));   // the head is counted when it runs again
+        for (int u : st.skip) {
+            std::ifstream kf(unit_dir(r, u) / "keys", std::ios::binary);
+            for (Fingerprints::Key k; kf.read((char*)&k, sizeof k);) st.seen.first_time(k);
+        }
+    }
+    // a unit's folder under .part/ is made when it first has output: most have none, and making 77,075 of
+    // them up front took 12 s on a star board
+    auto spill = [&](int r, int u, Unit& p) {   // caller holds the root's mutex, or is the only one left
+        if (!p.out.empty()) fs::create_directories(unit_dir(r, u));
+        for (auto& [name, text] : p.out) {
+            if (!gzip) { std::ofstream(unit_dir(r, u) / name, std::ios::app | std::ios::binary) << text; continue; }
+            // one gzip member per spill; level 1: this text compresses ~10x even so, and level 6 costs more time
+            gzFile z = gzopen((unit_dir(r, u) / (name + ".gz")).c_str(), "ab1");
+            gzwrite(z, text.data(), (unsigned)text.size());
+            gzclose(z);
+        }
+        p.out.clear();
+        p.buffered = 0;
+    };
     auto t0 = std::chrono::steady_clock::now();
     auto report = [&] {
         size_t total = 0;
         std::ostringstream ks;
         for (int k = 1; k <= b.kmax; k++)
             if (uint64_t n = per_k[k]) total += n, ks << " " << k << ":" << n;
-        std::cout << "progress " << std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count()
-                  << " " << total << ks.str() << " nodes " << live_nodes << std::endl;
-    };
-    std::mutex tick_mutex;
-    std::condition_variable tick;
-    bool searching = true;
-    std::thread ticker([&] {
-        std::unique_lock<std::mutex> lock(tick_mutex);
-        while (progress && !tick.wait_for(lock, std::chrono::milliseconds(500), [&] { return !searching; })) report();
-    });
-
-    // Output: the file names solutions_processor::process builds, written per root under .part/<r>/ and
-    // appended to the real files when the root finishes (merge.pending makes that append undoable).
-    fs::remove_all(part);
-    std::vector<int> todo;
-    std::vector<std::unique_ptr<Root>> state(roots);
-    for (int r = 0; r < roots; r++)
-        if (!done.count(r)) todo.push_back(r), state[r] = std::make_unique<Root>();
-    // a root's folder under .part/ is made when it first has output: most have none, and making 77,075 of
-    // them up front took 12 s on a star board
-    auto spill = [&](int r, Root& st) {   // caller holds st.mutex
-        if (!st.out.empty()) fs::create_directories(part / std::to_string(r));
-        for (auto& [name, text] : st.out) {
-            if (!gzip) { std::ofstream(part / std::to_string(r) / name, std::ios::app | std::ios::binary) << text; continue; }
-            // one gzip member per spill; level 1: this text compresses ~10x even so, and level 6 costs more time
-            gzFile z = gzopen((part / std::to_string(r) / (name + ".gz")).c_str(), "ab1");
-            gzwrite(z, text.data(), (unsigned)text.size());
-            gzclose(z);
+        double const now = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        std::cout << "progress " << now << " " << total << ks.str() << " nodes " << live_nodes << std::endl;
+        if (!std::cout) std::_Exit(3);   // whoever reads the progress is gone (a stopped --find, on Windows too)
+        if (time_limit > 0 && now > time_limit) { std::cout << "time limit" << std::endl; std::_Exit(4); }
+        // the roots in hand, each with its units finished and found so far
+        std::ostringstream act;
+        {
+            std::lock_guard<std::mutex> l(state_mutex);
+            for (int r : todo)
+                if (state[r] && state[r]->started) act << " " << r << ":" << state[r]->units_done << "/" << state[r]->next_unit;
         }
-        st.out.clear();
-        st.buffered = 0;
+        std::cout << "active" << act.str() << std::endl;
     };
     if (progress) std::cout << "roots " << done.size() << " " << roots << std::endl;
-    auto hand_over = [&] {   // this thread's batch, into its root's buffer
+    auto hand_over = [&] {   // this thread's batch, into its unit's buffer
         if (batch.root < 0) return;
         Root& st = *state[batch.root];
         std::lock_guard<std::mutex> lock(st.mutex);
-        for (auto const& [k, n] : batch.counts) st.counts[k] += n;
-        for (auto& [file, text] : batch.out) st.out[file] += text;
-        st.buffered += batch.bytes;
-        if (st.buffered > (1 << 20)) spill(batch.root, st);
+        Unit& p = st.units.at(batch.unit);
+        for (auto const& [k, n] : batch.counts) st.counts[k] += n, p.counts[k] += n;
+        for (auto& [file, text] : batch.out) p.out[file] += text;
+        p.keys.insert(p.keys.end(), batch.keys.begin(), batch.keys.end());
+        p.buffered += batch.bytes;
+        if (p.buffered > (1 << 20)) spill(batch.root, batch.unit, p);
         batch = Batch{};
     };
     // k: the vertex orbits that count (`flat_max`); the certificate still lists every orbit
-    auto on_tiling = [&](int r, auto const& conf, int k) {
+    auto on_tiling = [&](int r, int u, auto const& conf, int k) {
         if (k < b.kmin) return;
-        if (!holds_required_faces(b.require_faces, conf)) return;
+        if (!holds_required_faces(b.require_faces, b.require_faces_inf, conf)) return;
         Root& st = *state[r];
+        if (!st.skip.empty() && st.skip.count(u)) return;   // the head, run again only to number the units
         Fingerprints::Key key;
         if (!fingerprint_if_minimal(conf, key) || !st.seen.first_time(key)) return;
         // solutions_processor::process, with its streams and the std::set of corners kept per thread
@@ -1630,78 +2961,143 @@ int main(int argc, char** argv) {
         for (auto ix : conf.indices()) corners.push_back(conf.label(ix));
         std::sort(corners.begin(), corners.end());
         corners.erase(std::unique(corners.begin(), corners.end()), corners.end());
-        name << b.name << "solver_" << (k < 10 ? "0" : "") << k << "_" << std::hex;
-        for (auto c : corners) name << corner_decoder{ c };
-        name << std::dec << (orientable(conf) ? "_o" : "") << "_" << conf.num_edges() << "." << writer.extension();
+        name << b.name << "solver_" << (k < 10 ? "0" : "") << k << "_";
+        {
+            // the corners in hex, as Marek's binaries name files; free symbols by name unless that runs too long
+            thread_local std::ostringstream cs;
+            cs.str("");
+            cs << std::hex;
+            for (auto c : corners) cs << corner_decoder{ c };
+            std::string named = in_name.empty() ? cs.str() : relabel(cs.str(), in_name, "0123456789abcdef");
+            name << (named.size() <= 160 ? named : cs.str());
+        }
+        name << (orientable(conf) ? "_o" : "") << "_" << conf.num_edges() << "." << writer.extension();
         writer.write_content(text, conf);
+        if (!in_text.empty()) {
+            std::string t = relabel(text.str(), in_text, "0123456789");
+            text.str(t);
+        }
+        if (first_only) {
+            static std::mutex m;
+            std::lock_guard<std::mutex> l(m);
+            std::ofstream(dir / name.str(), std::ios::binary) << text.view();
+            std::ofstream(dir / "census.txt") << "k=" << k << " -- 1\nMAX\n";
+            std::cout << "first " << k << " " << name.str() << std::endl;
+            std::_Exit(0);
+        }
+        // latest.txt: one tiling to show while no root has closed, for display only (a stop still drops an open
+        // root's tilings). The first at once, then at most every LATEST_MS; one thread wins each turn.
+        {
+            static std::atomic<int64_t> latest_at{ -1 };
+            int64_t const ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+            int64_t was = latest_at.load(std::memory_order_relaxed);
+            if ((was < 0 || ms - was >= LATEST_MS) && latest_at.compare_exchange_strong(was, ms)) {
+                std::ofstream(dir / "latest.tmp", std::ios::binary) << text.view();
+                std::error_code ec;
+                fs::rename(dir / "latest.tmp", dir / "latest.txt", ec);
+            }
+        }
         per_k[k]++;
-        if (batch.root != r) hand_over();
-        batch.root = r;
+        if (batch.root != r || batch.unit != u) hand_over();
+        batch.root = r, batch.unit = u;
         batch.counts[k]++;
+        if (unit_depth) batch.keys.push_back(key);
         batch.bytes += text.view().size();
         batch.out[name.str()] += text.view();
         if (batch.bytes > (1 << 18)) hand_over();
     };
-    // Finished roots are merged by one thread of their own, in the order they finish: a worker that
-    // finished a root used to do it under a lock, and the others queued behind it (~6% of hybrid_2_9830).
+    // Finished units and roots are written by one thread of their own, in the order they finish: a worker
+    // that finished a root used to merge it under a lock, and the others queued behind it (~6% of hybrid_2_9830).
     std::mutex merge_mutex;
     std::condition_variable merge_cv;
-    std::deque<int> merge_queue;
+    std::deque<std::pair<int, int>> merge_queue;   // (root, unit), unit -1 for the whole root
     bool merging = true;
+    auto checkpoint = [&](int r, int u) {
+        if (done.count(r)) return;   // its root finished meanwhile, and was merged with it
+        Root& st = *state[r];
+        std::lock_guard<std::mutex> l(st.mutex);
+        Unit& p = st.units.at(u);
+        if (!st.skip.count(u)) {
+            spill(r, u, p);
+            if (!p.keys.empty()) {
+                fs::create_directories(unit_dir(r, u));
+                std::ofstream(unit_dir(r, u) / "keys", std::ios::binary).write((char const*)p.keys.data(), std::streamsize(p.keys.size() * sizeof p.keys[0]));
+            }
+            std::ofstream uf(units_file, std::ios::app);
+            uf << r << " " << u;
+            for (auto const& [k, n] : p.counts) uf << " " << k << ":" << n;
+            uf << "\n";
+        }
+        st.units.erase(u);
+    };
     auto merge = [&](int r) {
-            Root& st = *state[r];
-            spill(r, st);
-            std::vector<fs::path> files;
-            if (fs::exists(part / std::to_string(r)))
-                for (auto const& e : fs::directory_iterator(part / std::to_string(r))) files.push_back(e.path());
-            {
-                std::ofstream pf(pending_file);
-                pf << r << "\n";
-                for (auto const& f : files)
-                    pf << (fs::exists(dir / f.filename()) ? (long long)fs::file_size(dir / f.filename()) : -1LL) << " " << f.filename().string() << "\n";
-            }
-            for (auto const& f : files)
-                std::ofstream(dir / f.filename(), std::ios::app | std::ios::binary) << std::ifstream(f, std::ios::binary).rdbuf();
-            {
-                std::ofstream df(done_file, std::ios::app);
-                df << r;
-                for (auto const& [k, n] : st.counts) df << " " << k << ":" << n;
-                df << "\n";
-            }
-            fs::remove(pending_file);
-            fs::remove_all(part / std::to_string(r));
-            done.insert(r);
-            state[r].reset();   // its fingerprints are no longer needed
-            if (progress) std::cout << "roots " << done.size() << " " << roots << std::endl;
+        Root& st = *state[r];
+        for (auto& [u, p] : st.units) spill(r, u, p);
+        std::map<int, fs::path> units;   // by number: a file gets its units' text in their order
+        if (fs::exists(part / std::to_string(r)))
+            for (auto const& e : fs::directory_iterator(part / std::to_string(r))) units[std::stoi(e.path().filename().string())] = e.path();
+        std::vector<fs::path> files;
+        std::set<fs::path> names;
+        for (auto const& [u, d] : units)
+            for (auto const& e : fs::directory_iterator(d))
+                if (e.path().filename() != "keys") files.push_back(e.path()), names.insert(e.path().filename());
+        {
+            std::ofstream pf(pending_file);
+            pf << r << "\n";
+            for (auto const& f : names)
+                pf << (fs::exists(dir / f) ? (long long)fs::file_size(dir / f) : -1LL) << " " << f.string() << "\n";
+        }
+        for (auto const& f : files)
+            std::ofstream(dir / f.filename(), std::ios::app | std::ios::binary) << std::ifstream(f, std::ios::binary).rdbuf();
+        {
+            std::ofstream df(done_file, std::ios::app);
+            df << r;
+            for (auto const& [k, n] : st.counts) df << " " << k << ":" << n;
+            df << "\n";
+        }
+        fs::remove(pending_file);
+        fs::remove_all(part / std::to_string(r));
+        done.insert(r);
+        { std::lock_guard<std::mutex> l(state_mutex); state[r].reset(); }   // its fingerprints are no longer needed
+        if (progress) std::cout << "roots " << done.size() << " " << roots << " " << r << std::endl;
     };
     std::thread merger([&] {
         for (;;) {
-            int r;
+            std::pair<int, int> job;
             {
                 std::unique_lock<std::mutex> l(merge_mutex);
                 merge_cv.wait(l, [&] { return !merge_queue.empty() || !merging; });
                 if (merge_queue.empty()) return;
-                r = merge_queue.front();
+                job = merge_queue.front();
                 merge_queue.pop_front();
             }
-            merge(r);
+            if (job.second < 0) merge(job.first); else checkpoint(job.first, job.second);
         }
     });
-    auto on_root_done = [&](int r) {
-        { std::lock_guard<std::mutex> l(merge_mutex); merge_queue.push_back(r); }
+    auto on_unit_done = [&](int r, int u, bool root_done) {
+        { std::lock_guard<std::mutex> l(merge_mutex); merge_queue.emplace_back(r, root_done ? -1 : u); }
         merge_cv.notify_one();
     };
+    std::mutex tick_mutex;
+    std::condition_variable tick;
+    bool searching = true;
+    std::thread ticker([&] {
+        std::unique_lock<std::mutex> lock(tick_mutex);
+        while (progress && !tick.wait_for(lock, std::chrono::milliseconds(500), [&] { return !searching; })) report();
+    });
     FastFaces const fast(b.faces, b.apeirogons);
     if (std::getenv("TILESEARCH_CROSSCHECK"))
     {
         CrossCheck const cross(b.faces, b.apeirogons);
-        search(todo, b.kmax, vc, cross, fast, Candidates(vc, cross, fast), threads, state, on_tiling, hand_over, on_root_done);
+        search(todo, b.kmax, vc, cross, fast, Candidates(vc, cross, fast), threads, state, on_tiling, hand_over, on_unit_done, unit_depth);
     } else
-        search(todo, b.kmax, vc, fast, fast, Candidates(vc, fast, fast), threads, state, on_tiling, hand_over, on_root_done);
+        search(todo, b.kmax, vc, fast, fast, Candidates(vc, fast, fast), threads, state, on_tiling, hand_over, on_unit_done, unit_depth);
     { std::lock_guard<std::mutex> l(merge_mutex); merging = false; }
     merge_cv.notify_one();
     merger.join();
     fs::remove_all(part);
+    fs::remove(units_file);   // every root is in roots.done
+    fs::remove(dir / "latest.txt");   // every tiling is in the files
     { std::lock_guard<std::mutex> lock(tick_mutex); searching = false; }
     tick.notify_all();
     ticker.join();

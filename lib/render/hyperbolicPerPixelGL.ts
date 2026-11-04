@@ -24,6 +24,8 @@ import {
 // Perspective-stroke law (AL-tuned final): exact conformal exponent (1.0 = constant hyperbolic
 // width) with a 3× overall boost in the shader's halfW — metric-true thinning, thicker base.
 const STROKE_GAMMA = "1.0";
+/** The most sides (slots) a face row may have: a 15-gon whose sides are cut in three by Pi corners has 45. */
+const MAX_SLOTS = 256;
 
 const VERT = `#version 300 es
 in vec2 aPos;
@@ -138,8 +140,8 @@ void main() {
 			vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d;
 			float m = max(1.0, texelFetch(uWalk, ivec2(1, f), 0).w); // unit sides per long side
 			kf = floor(z.x / hd.z);
-			int jl = imod(kf, hd.y / m);
-			j = jl * int(m) + int(horoSub(z, kf, hd.z, m));
+			int jl = imod(kf, float(int(hd.y + 0.5) / int(m + 0.5))); // long sides per period: integer division, never 6.0 / 3.0 = 1.9999999
+			j = jl * int(m + 0.5) + int(horoSub(z, kf, hd.z, m));
 			s = pastHoro(z, kf, hd.z);
 			float t = (kf - float(jl)) * hd.z; // bring side kf into the one period the row holds
 			pa = vec2(1.0, -0.5 * t);
@@ -150,7 +152,7 @@ void main() {
 		} else if (hd.x == 3.0) {
 			// star: the wedge between the rays to vertices i and i+1 holds the face behind side i
 			float a = atan(w.y, w.x);
-			for (int i = 0; i < 40; i++) {
+			for (int i = 0; i < ${MAX_SLOTS}; i++) {
 				if (i >= S) break;
 				float t0 = texelFetch(uWalk, ivec2(3 + 3 * i, f), 0).z;
 				float t1 = texelFetch(uWalk, ivec2(3 + 3 * ((i + 1) % S), f), 0).z;
@@ -159,7 +161,7 @@ void main() {
 			}
 			s = past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w);
 		} else {
-			for (int i = 0; i < 40; i++) {
+			for (int i = 0; i < ${MAX_SLOTS}; i++) {
 				if (i >= S) break;
 				float v = past(texelFetch(uWalk, ivec2(4 + 3 * i, f), 0).xyz, w);
 				if (i == 0 || v > s) { s = v; j = i; }
@@ -199,7 +201,7 @@ void main() {
 			if (S < 3 && hd.x != 1.0 && e != 0) continue;
 			if (hd.x == 3.0 && e != 0) continue; // past a reflex corner a neighbour's geodesic crosses the arm
 			float mm = max(1.0, texelFetch(uWalk, ivec2(1, f), 0).w);
-			int jj = hd.x == 1.0 ? imod(kf + float(e), hd.y / mm) * int(mm) : (j + e + S) % S;
+			int jj = hd.x == 1.0 ? imod(kf + float(e), float(int(hd.y + 0.5) / int(mm + 0.5))) * int(mm + 0.5) : (j + e + S) % S;
 			// a bubble side is drawn as its arc, below, not as the geodesic
 			if (uBumpOn > 0.5 && hd.x != 1.0 && texelFetch(uBump, ivec2(2 * jj + 1, f), 0).y != 0.0) continue;
 			float sv = hd.x == 1.0
@@ -219,7 +221,7 @@ void main() {
 	// real axis, so the distance is Euclidean there times the conformal factor.
 	if (inside && uBumpOn > 0.5 && hd.x != 1.0) {
 		int S = int(hd.y);
-		for (int i = 0; i < 40; i++) {
+		for (int i = 0; i < ${MAX_SLOTS}; i++) {
 			if (i >= S) break;
 			vec4 bi = texelFetch(uBump, ivec2(2 * i + 1, f), 0);
 			if (bi.y == 0.0) continue;
@@ -416,7 +418,8 @@ void main() {
 	// count to ramp on and is white.
 	// A record that names its own hues (the Tegula shelf: one per symmetry class) carries them in the slot.
 	float hue = uFaceHue > 0.5 ? info.x : polygonHue(tileKey);
-	vec3 tileCol = hd.x == 1.0 ? vec3(1.0) : tileFillAt(hue + uHueOffset, uTileSat);
+	// an apeirogon is white, unless the record names its hue (the Searcher's colour by shape)
+	vec3 tileCol = hd.x == 1.0 && uFaceHue < 0.5 ? vec3(1.0) : tileFillAt(hue + uHueOffset, uTileSat);
 	if (uIslamicStyle > 0.5 && cls > 0.5) tileCol = cls > 1.5 && cls < 2.5 ? uColB : uColA; // two fields
 	else if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
 	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;

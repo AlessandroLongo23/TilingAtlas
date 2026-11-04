@@ -1,6 +1,7 @@
 // The window: src/ plus the site's own components and tokens, imported from the repo root and not
 // copied, so the app and the Tiling Atlas cannot drift apart. React, Tailwind and the rest resolve from
 // the root's node_modules, the copies the site builds with.
+/// <reference types="vitest/config" />
 import path from "node:path";
 import tailwind from "@tailwindcss/vite";
 import { defineConfig } from "vite";
@@ -33,4 +34,6 @@ export default defineConfig({
 	// Tailwind's plugin, pinned to the site's version, inlines the stylesheet's @imports as the site's build does
 	plugins: [tailwind()],
 	server: { fs: { allow: [repo] } },
+	// many tests run the engine, which takes several seconds a test on a loaded machine: past vitest's 5 s
+	test: { testTimeout: 60_000 },
 });

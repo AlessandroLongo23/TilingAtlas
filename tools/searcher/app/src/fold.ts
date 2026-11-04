@@ -56,7 +56,7 @@ export async function startFold(run: Run, board: Board) {
 	try {
 		const certs: { text: string; k: number }[] = [];
 		for (const f of run.files) {
-			const text = await window.tilesearch.readFile(f.path, f.bytes + 1);
+			const text = await window.tilesearch.readFile(f.path, 0); // all of it, gzipped or not
 			for (const c of certificatesIn(text)) certs.push({ text: withSymbols(c, run.symbols), k: f.k });
 		}
 		const r = await foldFamilies(board, certs, (done) => put(id, { done, all: certs.length }));

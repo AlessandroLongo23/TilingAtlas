@@ -1,0 +1,31 @@
+# Hyperbolic hybrid: heptagons of unit sides with triangles and 14-gons whose sides are two edges, cut by a Pi
+# point (Marek Čtrnáct's board 1.449074). Pi is a full vertex: A7 A7 Pi puts two heptagon corners on a long side.
+name hyperbolic_hybrid
+k 1 1
+angle A7
+angle B3
+angle B14
+edge Pi
+face A7 x 7
+face B3 Pi x 3
+face B14 Pi x 14
+vertex A7 A7 A7 A7
+vertex A7 A7 B3 B14 B14 B14
+vertex A7 A7 B3 B3 B3 B14 B14
+vertex A7 A7 B3 B3 B3 B3 B3 B14
+vertex A7 A7 B3 B3 B3 B3 B3 B3 B3
+vertex B14 B14 B14 B14 B14 B14 B14
+vertex B3 B3 B14 B14 B14 B14 B14 B14
+vertex B3 B3 B3 B3 B14 B14 B14 B14 B14
+vertex B3 B3 B3 B3 B3 B3 B14 B14 B14 B14
+vertex B3 B3 B3 B3 B3 B3 B3 B3 B14 B14 B14
+vertex B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B14 B14
+vertex B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B14
+vertex B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B3 B3
+vertex A7 A7 Pi
+vertex B3 B14 B14 B14 Pi
+vertex B3 B3 B3 B14 B14 Pi
+vertex B3 B3 B3 B3 B3 B14 Pi
+vertex B3 B3 B3 B3 B3 B3 B3 Pi
+vertex Pi Pi
+permutations yes

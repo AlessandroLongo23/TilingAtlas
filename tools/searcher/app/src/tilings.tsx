@@ -2,7 +2,7 @@
 // large, with its certificate beside it. Every drawing is the site's own: a tiling of the plane through
 // the flat cell renderer of the /theory cards (a colouring through its palette), an edge system through
 // the freedraw canvas, and the hyperbolic plane through the disk, each steered as on the site.
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Shuffle } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ParametricEdgesCanvas } from "@/components/freedraw/parametric-edges-view";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
@@ -16,6 +16,7 @@ import { FloatingToolbar } from "@/components/ui/floating-toolbar";
 import { InfoDot } from "@/components/ui/info-dot";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleButton } from "@/components/ui/toggle-button";
+import { Tooltip } from "@/components/ui/tooltip";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { useFlatCellPreview } from "@/lib/hooks/useFlatCellPreview";
 import { useDiskInput } from "@/lib/render/diskInput";
@@ -30,6 +31,7 @@ import type { OutFile, Run } from "./bridge";
 import { morphTurn, pointsAt, useFold, type Family } from "./fold";
 import {
 	certificatesIn,
+	abstractBoard,
 	decode,
 	flatCellWithOverlays,
 	flatPattern,
@@ -44,6 +46,8 @@ import {
 import { bytes } from "./runs";
 
 const READ_BYTES = 256 * 1024;
+/** Enough of a file for its first tiling, in the one-per-file view. */
+const FIRST_BYTES = 64 * 1024;
 const READ_BUDGET = 8 * 2 ** 20;
 const THUMBS = 60;
 
@@ -62,7 +66,7 @@ type Drawing =
 	| { kind: "edges"; pattern: FreedrawPattern; cells: number }
 	/** The site's disk: `tiling` fills faces by polygon size (the hyp-poly shelf), `edges` draws a board that
 	 *  marks edges with digons, its marked edges bold over the faint rest. */
-	| { kind: "disk"; tiling: HypDiskTiling; mode: HypDiskMode }
+	| { kind: "disk"; tiling: HypDiskTiling; mode: HypDiskMode; plain: boolean }
 	| { kind: "none"; message: string };
 
 /** A colouring whose tiles are plain polygons (not bubbles, whose curved outlines are their shapes). */
@@ -70,25 +74,41 @@ const plainColoring = (board: Board) =>
 	isColoring(board) && ![...edgeTypes(board).values()].some((e) => e.style === "bump" || e.style === "bite");
 
 /** Decode, choose the geometry, develop. Everything that can go wrong comes back as a message. */
-function prepare(board: Board, cert: string, id: string, points?: Map<string, number>): Drawing {
+function prepare(
+	board: Board,
+	cert: string,
+	id: string,
+	points?: Map<string, number>,
+	byShape = false,
+	abstract = false,
+): Drawing {
 	try {
+		// abstract: each apeirogon drawn as the polygon its rings close up into (abstractBoard)
+		if (abstract) board = abstractBoard(board, decode(cert, board)) ?? board;
 		const g = geometry(board, vertexWords(cert));
 		if (g.kind === "none") return g;
 		const d = decode(cert, board);
 		if (g.kind === "plane") {
 			// a family's member drawn with its stars' points moved along the slider
 			const turn = points ? morphTurn(board, g.turn, points) : g.turn;
-			if (!marksEdges(board)) return { kind: "cell", plain: plainColoring(board), ...flatCellWithOverlays(d, board, turn) };
+			if (!marksEdges(board))
+				return { kind: "cell", plain: plainColoring(board), ...flatCellWithOverlays(d, board, turn, byShape) };
 			const pattern = flatPattern(d, board, g.turn, id);
 			const span = Math.max(Math.hypot(...pattern.patch!.T1), Math.hypot(...pattern.patch!.T2));
 			return { kind: "edges", pattern, cells: Math.max(10, span * 1.6) };
 		}
-		const darts = hyperbolicDarts(d, g, board);
-		if (darts.sizes.includes(2)) return { kind: "disk", tiling: { id, edge: g.edge, darts }, mode: "edges" };
+		const darts = hyperbolicDarts(d, g, board, byShape);
+		if (darts.sizes.includes(2))
+			return { kind: "disk", tiling: { id, edge: g.edge, darts }, mode: "edges", plain: false };
 		// faces of one shape told apart by their corners (bubble tiles, a colouring): one colour per board face
 		if (isColoring(board))
-			return { kind: "disk", tiling: { id, edge: g.edge, darts, colors: faceColors(board).count }, mode: "colors" };
-		return { kind: "disk", tiling: { id, edge: g.edge, darts }, mode: "tiling" };
+			return {
+				kind: "disk",
+				tiling: { id, edge: g.edge, darts, colors: faceColors(board).count },
+				mode: "colors",
+				plain: plainColoring(board),
+			};
+		return { kind: "disk", tiling: { id, edge: g.edge, darts, faceHue: byShape }, mode: "tiling", plain: false };
 	} catch (e) {
 		return { kind: "none", message: (e as Error).message };
 	}
@@ -97,17 +117,16 @@ function prepare(board: Board, cert: string, id: string, points?: Map<string, nu
 /** The underlying grid: a plain colouring's tile outlines, or an edge pattern's undrawn edges. */
 function GridToggle({ on, flip, edges }: { on: boolean; flip: () => void; edges?: boolean }) {
 	return (
-		<ToggleButton
-			size="sm"
-			pressed={on}
-			onPressedChange={flip}
-			label="Grid"
-			title={
+		<Tooltip
+			shortcut="G"
+			label={
 				edges
-					? "The edges the pattern does not draw, faint (G)"
-					: "Every tile's outline; without it the colours alone show where tiles meet (G)"
+					? "The edges the pattern does not draw, faint"
+					: "Every tile's outline; without it the colours alone show where tiles meet"
 			}
-		/>
+		>
+			<ToggleButton size="sm" pressed={on} onPressedChange={flip} label="Grid" />
+		</Tooltip>
 	);
 }
 
@@ -143,6 +162,8 @@ function CellView({
 		active: true,
 		keepView: true,
 		lineWidth: plain && !show.grid ? 0 : 1,
+		// zoomed all the way out, about five periods of this tiling across, large cell or small
+		zoomOutPeriods: 5,
 	});
 	return (
 		<div
@@ -156,7 +177,7 @@ function CellView({
 }
 
 /** The hyperbolic disk, with the gestures of the site's embedded disks. */
-function DiskView({ tiling, mode }: { tiling: HypDiskTiling; mode: HypDiskMode }) {
+function DiskView({ tiling, mode, outline }: { tiling: HypDiskTiling; mode: HypDiskMode; outline: boolean }) {
 	const hostRef = useRef<HTMLDivElement>(null);
 	const { inputRef, handlers } = useDiskInput(hostRef, ALWAYS);
 	return (
@@ -167,7 +188,7 @@ function DiskView({ tiling, mode }: { tiling: HypDiskTiling; mode: HypDiskMode }
 			aria-label="Hyperbolic tiling: drag to move, scroll to turn"
 			className="relative h-full w-full cursor-grab touch-none select-none active:cursor-grabbing"
 		>
-			<HyperbolicCanvas tiling={tiling} mode={mode} input={inputRef} diskPadPx={0} />
+			<HyperbolicCanvas tiling={tiling} mode={mode} input={inputRef} diskPadPx={0} outline={outline} />
 		</div>
 	);
 }
@@ -176,7 +197,13 @@ function DiskView({ tiling, mode }: { tiling: HypDiskTiling; mode: HypDiskMode }
 function BigView({ drawing, show, symmetry }: { drawing: Drawing; show: Overlays; symmetry: SymmetryData | null }) {
 	if (drawing.kind === "cell")
 		return (
-			<CellView cell={drawing.cell} plain={drawing.plain} orbitData={drawing.orbits} symmetryData={symmetry} show={show} />
+			<CellView
+				cell={drawing.cell}
+				plain={drawing.plain}
+				orbitData={drawing.orbits}
+				symmetryData={symmetry}
+				show={show}
+			/>
 		);
 	if (drawing.kind === "edges")
 		return (
@@ -184,7 +211,8 @@ function BigView({ drawing, show, symmetry }: { drawing: Drawing; show: Overlays
 				<ParametricEdgesCanvas built={{ pattern: drawing.pattern, reason: null, cells: drawing.cells }} />
 			</div>
 		);
-	if (drawing.kind === "disk") return <DiskView tiling={drawing.tiling} mode={drawing.mode} />;
+	if (drawing.kind === "disk")
+		return <DiskView tiling={drawing.tiling} mode={drawing.mode} outline={!drawing.plain || show.grid} />;
 	return (
 		<div className="flex h-full w-full items-center justify-center bg-surface-sunken p-6 text-center text-sm text-fg-muted">
 			{drawing.message}
@@ -196,7 +224,8 @@ function Thumb({ drawing, grid }: { drawing: Drawing; grid: boolean }) {
 	if (drawing.kind === "cell")
 		return <TilingThumbnail translationalCell={drawing.cell} periodsAcross={2} outline={!drawing.plain || grid} />;
 	if (drawing.kind === "edges") return <FreedrawThumbnail pattern={drawing.pattern} />;
-	if (drawing.kind === "disk") return <HyperbolicThumbnail tiling={drawing.tiling} mode={drawing.mode} />;
+	if (drawing.kind === "disk")
+		return <HyperbolicThumbnail tiling={drawing.tiling} mode={drawing.mode} outline={!drawing.plain || grid} />;
 	return (
 		<div className="flex h-full w-full items-center justify-center p-2 text-center text-[11px] text-fg-muted">
 			Not drawn
@@ -204,24 +233,66 @@ function Thumb({ drawing, grid }: { drawing: Drawing; grid: boolean }) {
 	);
 }
 
-/** The thumbnails draw one per frame, so a grid of them never blocks the window. */
-function useQueued<T>(items: T[], make: (t: T, i: number) => Drawing): (Drawing | undefined)[] {
-	const [done, setDone] = useState<(Drawing | undefined)[]>([]);
+/** A few of a run's tilings, small: the first tiling of each of its first files, then more of the first file. */
+export function RunPreviews({ run, count = 3 }: { run: Run; count?: number }) {
+	const paths = run.files
+		.slice(0, count)
+		.map((f) => f.path)
+		.join("|");
+	const symbolsKey = JSON.stringify(run.symbols);
+	const [certs, setCerts] = useState<string[] | null>(null);
 	useEffect(() => {
-		let i = 0;
+		let live = true;
+		const ps = paths ? paths.split("|") : [];
+		void Promise.all(ps.map((p) => window.tilesearch.readFile(p, FIRST_BYTES))).then((texts) => {
+			const per = texts.map((t) => certificatesIn(t));
+			const picks = per.flatMap((c) => c.slice(0, 1));
+			for (const c of per[0] ?? []) if (picks.length < count && !picks.includes(c)) picks.push(c);
+			const symbols = JSON.parse(symbolsKey) as Record<string, string>;
+			if (live) setCerts(picks.slice(0, count).map((c) => withSymbols(c, symbols)));
+		});
+		return () => {
+			live = false;
+		};
+	}, [paths, symbolsKey, count]);
+	const board = useMemo(() => parse(run.board).board, [run.board]);
+	const make = useMemo(() => (c: string, j: number) => prepare(board, c, `preview:${run.id}#${j}`), [board, run.id]);
+	const drawn = useQueued(certs ?? [], make);
+	if (certs && !certs.length) return <p className="text-xs text-fg-muted">No tilings yet.</p>;
+	return (
+		<div className="grid grid-cols-3 gap-1.5">
+			{Array.from({ length: count }, (_, j) => (
+				<div key={j} className="aspect-square overflow-hidden rounded-control bg-surface-sunken">
+					{drawn[j] ? <Thumb drawing={drawn[j]} grid={false} /> : null}
+				</div>
+			))}
+		</div>
+	);
+}
+
+/** The thumbnails draw one per frame, so a grid of them never blocks the window; with `near`, only those in
+ *  view or close to it. A k = 21 tiling takes 0.1 s to develop, so sixty were six seconds of a stuttering
+ *  window, most of them for thumbnails out of sight. */
+function useQueued<T>(items: T[], make: (t: T, i: number) => Drawing, near?: ReadonlySet<number>): (Drawing | undefined)[] {
+	type Made = { items: T[]; make: typeof make; out: (Drawing | undefined)[] };
+	const [done, setDone] = useState<Made | null>(null);
+	// what is made so far, for these items and this maker: kept while `near` grows
+	const made = useRef<Made | null>(null);
+	useEffect(() => {
+		if (made.current?.items !== items || made.current.make !== make) made.current = { items, make, out: [] };
+		const { out } = made.current;
+		const wanted = (i: number) => out[i] === undefined && (!near || near.has(i));
 		let raf = 0;
-		const out: (Drawing | undefined)[] = [];
-		setDone([]);
 		const step = () => {
 			const t0 = performance.now();
-			for (; i < items.length && performance.now() - t0 < 12; i++) out[i] = make(items[i], i);
-			setDone([...out]);
-			if (i < items.length) raf = requestAnimationFrame(step);
+			for (let i = 0; i < items.length && performance.now() - t0 < 12; i++) if (wanted(i)) out[i] = make(items[i], i);
+			setDone({ items, make, out: [...out] });
+			if (items.some((_, i) => wanted(i))) raf = requestAnimationFrame(step);
 		};
-		raf = requestAnimationFrame(step);
+		if (items.some((_, i) => wanted(i))) raf = requestAnimationFrame(step);
 		return () => cancelAnimationFrame(raf);
-	}, [items, make]);
-	return done;
+	}, [items, make, near]);
+	return done?.items === items && done.make === make ? done.out : [];
 }
 
 /** Which tilings are shown: k (the vertex orbits), then the edge orbits; "all" takes every value. */
@@ -295,27 +366,33 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	const [read, setRead] = useState<{ key: string; texts: string[] }>({ key: "", texts: [] });
 	const g = resolveGroup(run, group);
 	const files = g ? filesOf(run, g) : [];
-	// Up to READ_BYTES of each file, and at most READ_BUDGET over the group: "All" can span hundreds.
+	// one per file: each file's first tiling, which spans the corners, edge orbits and orientability at once
+	const [firsts, setFirsts] = useState(false);
+	const per = firsts ? FIRST_BYTES : READ_BYTES;
+	// Up to `per` bytes of each file, and at most READ_BUDGET over the group: "All" can span hundreds.
 	const reading: OutFile[] = [];
 	for (let i = 0, used = 0; i < files.length && used < READ_BUDGET; i++) {
 		reading.push(files[i]);
-		used += Math.min(files[i].bytes, READ_BYTES);
+		used += Math.min(files[i].bytes, per);
 	}
-	const id = g ? `${g.k}/${g.edges}` : "";
+	const id = g ? `${g.k}/${g.edges}${firsts ? "/firsts" : ""}` : "";
 	// the selected tiling, per group: another group opens at its first
 	const [pick, setPick] = useState({ id: "", i: 0 });
 	const i = pick.id === id ? pick.i : 0;
 	const setI = (n: number) => setPick({ id, i: n });
 	const [names, setNames] = useState("board");
+	const stage = useRef<HTMLDivElement>(null);
+	const [copying, setCopying] = useState<"capturing" | "copied" | null>(null);
 	const [show, setShow] = useState<Overlays>({ orbits: false, symmetry: false, domain: false, grid: false });
 	// an edge pattern's grid is the freedraw renderer's scaffold, a setting of its own store
 	useEffect(() => useConfiguration.getState().set({ freedrawScaffold: show.grid }), [show.grid]);
 	const flip = (key: keyof Overlays) => setShow((s) => ({ ...s, [key]: !s[key] }));
-	const filesKey = reading.map((f) => `${f.path}:${f.bytes}`).join("|");
+	const filesKey = `${per}|` + reading.map((f) => `${f.path}:${f.bytes}`).join("|");
 	useEffect(() => {
 		let live = true;
-		const paths = filesKey ? filesKey.split("|").map((p) => p.slice(0, p.lastIndexOf(":"))) : [];
-		void Promise.all(paths.map((p) => window.tilesearch.readFile(p, READ_BYTES))).then(
+		const [max, ...rest] = filesKey.split("|");
+		const paths = rest.filter(Boolean).map((p) => p.slice(0, p.lastIndexOf(":")));
+		void Promise.all(paths.map((p) => window.tilesearch.readFile(p, Number(max)))).then(
 			(t) => live && setRead({ key: filesKey, texts: t }),
 		);
 		return () => {
@@ -332,16 +409,31 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	const [raw, certs] = useMemo(() => {
 		const symbols = JSON.parse(symbolsKey) as Record<string, string>;
 		const pairs = (fresh ?? [])
-			.flatMap(certificatesIn)
+			.flatMap((text) => (firsts ? certificatesIn(text).slice(0, 1) : certificatesIn(text)))
 			.map((c) => [c, withSymbols(c, symbols)] as const)
 			.filter(([, c]) => !family?.has(c) || family.get(c)!.members[0] === c);
 		return [pairs.map(([c]) => c), pairs.map(([, c]) => c)];
 		// keyed on the symbols' contents: every status update carries a new object, and a new list here
 		// re-develops every drawing (that was an idle window at 54% CPU)
-	}, [fresh, symbolsKey, family]);
+	}, [fresh, symbolsKey, family, firsts]);
 	const thumbs = useMemo(() => certs.slice(0, THUMBS), [certs]);
-	const make = useMemo(() => (c: string, j: number) => prepare(board, c, `${id}#${j}`), [board, id]);
-	const drawn = useQueued(thumbs, make);
+	// one colour per board face, not per side count: offered where faces are plain tiles (not a colouring's
+	// palette or an edge pattern), and where two faces of the board could otherwise share a colour
+	const [shapes, setShapes] = useState(false);
+	const canShape = !isColoring(board) && !marksEdges(board) && board.faces.length > 1;
+	const byShape = shapes && canShape;
+	// apeirogons drawn as finite polygons, offered where the board has one
+	const [abstractOn, setAbstract] = useState(false);
+	const canAbstract = board.faces.some((f) => f.repeat === "inf");
+	const abstract = abstractOn && canAbstract;
+	const make = useMemo(
+		() => (c: string, j: number) => prepare(board, c, `${id}#${j}${abstract ? "a" : ""}`, undefined, byShape, abstract),
+		[board, id, byShape, abstract],
+	);
+	// the thumbnails in view or a row from it (gridObserver below), anew for each list
+	const [near, setNear] = useState<{ of: string[]; at: ReadonlySet<number> }>({ of: thumbs, at: new Set() });
+	if (near.of !== thumbs) setNear({ of: thumbs, at: new Set() });
+	const drawn = useQueued(thumbs, make, near.at);
 	const shown = Math.min(i, Math.max(0, certs.length - 1));
 	// a family's slider: 0 at its first member, members − 1 at its last
 	const member = certs[shown] ? family?.get(certs[shown]) : undefined;
@@ -354,10 +446,25 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	const big = useMemo(
 		() =>
 			certs[shown]
-				? prepare(board, certs[shown], `${id}#${shown}`, fam && drawnT ? pointsAt(fam, drawnT) : undefined)
+				? prepare(
+						board,
+						certs[shown],
+						`${id}#${shown}${abstract ? "a" : ""}`,
+						fam && drawnT ? pointsAt(fam, drawnT) : undefined,
+						byShape,
+						abstract,
+					)
 				: null,
-		[board, certs, shown, id, fam, drawnT],
+		[board, certs, shown, id, fam, drawnT, byShape, abstract],
 	);
+	// before any root closes: the engine's latest find, from a root still open (it rewrites it every 30 s)
+	const latestText = !files.length ? run.latest?.text : undefined;
+	const latest = useMemo(() => {
+		const cert = latestText && certificatesIn(latestText)[0];
+		return cert
+			? prepare(board, withSymbols(cert, JSON.parse(symbolsKey)), `latest#${cert.length}`, undefined, byShape, abstract)
+			: null;
+	}, [latestText, board, symbolsKey, byShape, abstract]);
 	// the wallpaper group, worked out exactly the first time an overlay asks for it
 	const wantSymmetry = show.symmetry || show.domain;
 	const symmetry = useMemo(
@@ -385,17 +492,55 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	useEffect(() => {
 		grid.current?.querySelector("[aria-current=true]")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
 	}, [shown, id]);
+	useEffect(() => {
+		const root = grid.current;
+		if (!root) return;
+		const io = new IntersectionObserver(
+			(es) => {
+				const seen = es.filter((e) => e.isIntersecting).map((e) => Number((e.target as HTMLElement).dataset.thumb));
+				if (seen.length) setNear((n) => (n.of === thumbs ? { of: thumbs, at: new Set([...n.at, ...seen]) } : n));
+			},
+			{ root, rootMargin: "120px 0px" },
+		);
+		root.querySelectorAll("[data-thumb]").forEach((el) => io.observe(el));
+		return () => io.disconnect();
+	}, [thumbs]);
 
+	if (!g && latest)
+		return (
+			<div className="flex h-full flex-col">
+				<div className="relative min-h-0 flex-1">
+					<BigView key={latestText} drawing={latest} show={show} symmetry={null} />
+				</div>
+				<p className="border-t border-line-subtle px-5 py-2.5 text-xs text-fg-muted">
+					The latest tiling found, in a root still open; it changes every 30 seconds or so. A run shows its
+					tilings once their roots finish, and a stop drops the roots still open, this one with them.
+				</p>
+			</div>
+		);
 	if (!g)
 		return (
 			<div className="flex h-full items-center justify-center p-8 text-sm text-fg-muted">
-				No certificate files yet: they appear as roots finish.
+				{run.options?.find
+					? run.find?.done
+						? "No tiling was found, so there is nothing to show."
+						: "The tiling shows here once one is found."
+					: "No certificate files yet: they appear as roots finish."}
 			</div>
 		);
-	const partFiles = files.some((f) => f.bytes > READ_BYTES);
+	const partFiles = !firsts && files.some((f) => f.bytes > READ_BYTES);
 	const truncated = partFiles || reading.length < files.length;
 	const total = `${certs.length.toLocaleString("en")}${truncated ? "+" : ""}`;
 	const body = (names === "board" ? certs : raw)[shown] ?? "";
+	const copy = async () => {
+		setCopying("capturing");
+		// two frames: the controls hide, then the window repaints without them
+		await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+		const r = stage.current!.getBoundingClientRect();
+		await window.tilesearch.copyImage({ x: r.x, y: r.y, width: r.width, height: r.height });
+		setCopying("copied");
+		setTimeout(() => setCopying(null), 1500);
+	};
 	const where =
 		big?.kind === "cell" || big?.kind === "edges"
 			? "Drag to move, scroll to zoom, Shift-scroll to turn, double-click to go back. ← and → step through the tilings."
@@ -404,7 +549,14 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 				: "";
 	return (
 		<div className="grid h-full grid-cols-[auto_minmax(0,1fr)]">
-			<div className="relative aspect-square h-full overflow-hidden border-r border-line-subtle bg-surface">
+			<div
+				ref={stage}
+				className={cn(
+					"relative aspect-square h-full overflow-hidden border-r border-line-subtle bg-surface",
+					// the controls over the drawing stay out of a copied image
+					copying === "capturing" && "[&>*:not(:first-child)]:invisible",
+				)}
+			>
 				{big ? (
 					<BigView key={`${id}#${shown}`} drawing={big} show={show} symmetry={symmetry} />
 				) : (
@@ -439,6 +591,11 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 						</InfoDot>
 					</div>
 				) : null}
+				{big?.kind === "disk" && big.plain ? (
+					<div className="absolute top-3 right-3 flex rounded-control bg-surface-raised/95 p-1 shadow-sm backdrop-blur-sm">
+						<GridToggle on={show.grid} flip={() => flip("grid")} />
+					</div>
+				) : null}
 				{big?.kind === "edges" ? (
 					<div className="absolute top-3 right-3 flex rounded-control bg-surface-raised/95 p-1 shadow-sm backdrop-blur-sm">
 						<GridToggle on={show.grid} flip={() => flip("grid")} edges />
@@ -447,66 +604,94 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 				{big?.kind === "cell" ? (
 					<div className="absolute top-3 right-3 flex gap-1 rounded-control bg-surface-raised/95 p-1 shadow-sm backdrop-blur-sm">
 						{big.plain ? <GridToggle on={show.grid} flip={() => flip("grid")} /> : null}
-						<ToggleButton
-							size="sm"
-							pressed={show.orbits}
-							onPressedChange={() => flip("orbits")}
-							label="Vertex orbits"
-							title="Dot every vertex by its orbit; hover a dot to light its orbit (O)"
-						/>
+						<Tooltip label="Dot every vertex by its orbit; hover a dot to light its orbit" shortcut="O">
+							<ToggleButton
+								size="sm"
+								pressed={show.orbits}
+								onPressedChange={() => flip("orbits")}
+								label="Vertex orbits"
+							/>
+						</Tooltip>
 						{(
 							[
 								[
 									"symmetry",
 									symmetry ? `Symmetry ${symmetry.group}` : "Symmetry",
-									"Mirrors, glides and rotation centres (S)",
+									"Mirrors, glides and rotation centres",
 								],
-								["domain", "Fundamental domain", "One fundamental domain of the wallpaper group, in its cell (D)"],
+								["domain", "Fundamental domain", "One fundamental domain of the wallpaper group, in its cell"],
 							] as const
 						).map(([key, label, title]) => {
 							// on but with no group: a colouring, or angles off the 15° grid the exact analysis needs
 							const none = !big.symmetry || (wantSymmetry && !symmetry);
 							return (
-								<ToggleButton
+								<Tooltip
 									key={key}
-									size="sm"
-									pressed={show[key] && !none}
-									onPressedChange={() => flip(key)}
-									disabled={!big.symmetry}
-									label={label}
-									title={
+									shortcut={big.symmetry && !none ? (key === "symmetry" ? "S" : "D") : undefined}
+									label={
 										big.symmetry
 											? none
 												? "No wallpaper group: an angle of this board is off the 15° grid"
 												: title
 											: "A colouring's symmetry is not worked out here"
 									}
-								/>
+								>
+									<ToggleButton
+										size="sm"
+										pressed={show[key] && !none}
+										onPressedChange={() => flip(key)}
+										disabled={!big.symmetry}
+										label={label}
+									/>
+								</Tooltip>
 							);
 						})}
 					</div>
 				) : null}
-				{certs.length > 1 ? (
+				{certs.length ? (
 					<FloatingToolbar>
-						<Button
-							size="icon"
-							variant="ghost"
-							icon={ChevronLeft}
-							aria-label="Previous tiling"
-							disabled={shown === 0}
-							onClick={() => setI(shown - 1)}
-						/>
-						<span className="min-w-16 px-1 text-center font-mono text-xs text-fg-secondary tabular-nums">
+						<Tooltip label="Previous tiling">
+							<Button
+								size="icon"
+								variant="ghost"
+								icon={ChevronLeft}
+								aria-label="Previous tiling"
+								disabled={shown === 0}
+								onClick={() => setI(shown - 1)}
+							/>
+						</Tooltip>
+						<span className="min-w-16 px-1 text-center font-mono text-xs whitespace-nowrap text-fg-secondary tabular-nums">
 							{(shown + 1).toLocaleString("en")} / {total}
 						</span>
-						<Button
-							size="icon"
-							variant="ghost"
-							icon={ChevronRight}
-							aria-label="Next tiling"
-							disabled={shown >= certs.length - 1}
-							onClick={() => setI(shown + 1)}
-						/>
+						<Tooltip label="Next tiling">
+							<Button
+								size="icon"
+								variant="ghost"
+								icon={ChevronRight}
+								aria-label="Next tiling"
+								disabled={shown >= certs.length - 1}
+								onClick={() => setI(shown + 1)}
+							/>
+						</Tooltip>
+						<Tooltip label="Random tiling">
+							<Button
+								size="icon"
+								variant="ghost"
+								icon={Shuffle}
+								aria-label="Random tiling"
+								disabled={certs.length < 2}
+								onClick={() => setI((shown + 1 + Math.floor(Math.random() * (certs.length - 1))) % certs.length)}
+							/>
+						</Tooltip>
+						<Tooltip label={copying === "copied" ? "Copied" : "Copy the image to the clipboard"}>
+							<Button
+								size="icon"
+								variant="ghost"
+								icon={copying === "copied" ? Check : Copy}
+								aria-label="Copy the image"
+								onClick={() => void copy()}
+							/>
+						</Tooltip>
 					</FloatingToolbar>
 				) : null}
 			</div>
@@ -516,9 +701,11 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 					<span className="ta-label">
 						{!certs.length
 							? "Reading"
-							: thumbs.length < certs.length
-								? `The first ${thumbs.length} of ${total}`
-								: `All ${total}`}
+							: firsts
+								? `The first of each of ${total} files`
+								: thumbs.length < certs.length
+									? `The first ${thumbs.length} of ${total}`
+									: `All ${total}`}
 					</span>
 					{truncated ? (
 						<InfoDot side="bottom" label="Why the count ends in +">
@@ -529,12 +716,35 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 							; the whole files are in the run folder.
 						</InfoDot>
 					) : null}
+					<span className="ml-auto flex gap-1">
+						{canAbstract ? (
+							<Tooltip label="Each apeirogon drawn as a finite polygon: the fewest sides its faces close up into in the tiling's period. A picture of the tiling's combinatorics, not of its geometry">
+								<ToggleButton size="sm" pressed={abstract} onPressedChange={() => setAbstract(!abstractOn)} label="Abstract" />
+							</Tooltip>
+						) : null}
+						{canShape ? (
+							<Tooltip label="A colour for each face of the board, not for each number of sides: an A3 and a B3 differ">
+								<ToggleButton size="sm" pressed={byShape} onPressedChange={() => setShapes(!shapes)} label="By shape" />
+							</Tooltip>
+						) : null}
+						{files.length > 1 ? (
+							<Tooltip label="The first tiling of each certificate file: one for each set of corners, edge orbits and orientability">
+								<ToggleButton
+									size="sm"
+									pressed={firsts}
+									onPressedChange={() => setFirsts(!firsts)}
+									label="One per file"
+								/>
+							</Tooltip>
+						) : null}
+					</span>
 				</div>
 				<div ref={grid} className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-					<div className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-2">
+					<div className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-2 p-0.5">
 						{thumbs.map((_, j) => (
 							<button
 								key={j}
+								data-thumb={j}
 								type="button"
 								onClick={() => setI(j)}
 								aria-current={j === shown}

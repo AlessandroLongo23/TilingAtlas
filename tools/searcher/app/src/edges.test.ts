@@ -7,10 +7,12 @@ import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { cyclicKey, parse, serialize, withRequiredFaces, type Board } from "./board";
-import { colorize, decorate, type EdgePreset } from "./corners";
+import { check, cyclicKey, emptyBoard, parse, readLength, serialize, withRequiredFaces, type Board } from "./board";
+import { arrangements, closingVertices, colorize, decorate, glueLines, sidesMeet, type EdgePreset } from "./corners";
 import { certificatesIn, decode, flatCellWithOverlays, flatPattern, geometry, marksEdges, vertexWords, withSymbols } from "./develop";
-import { fittingVertices } from "./figures";
+import { keepNew, withFamily } from "./family";
+import { fittingVertices, layable } from "./figures";
+import { problemOf, withDrawnFace, withoutUnitType, type Edge } from "./freeface";
 
 const ENGINE = join(__dirname, "../..", process.platform === "win32" ? "tilesearch.exe" : "tilesearch");
 
@@ -22,8 +24,9 @@ function setUp(text: string, preset: EdgePreset | null, loose = true): Board {
 	return { ...board, vertices: [...words, ...glue].map((word) => ({ word })), permutations: false };
 }
 
-/** The engine's census and every certificate up to k = 2 drawn, as the app draws them. */
-function run(b: Board) {
+/** The engine's census and every certificate up to k = `drawTo` drawn, as the app draws them (or those of the
+ *  files `drawTo` picks). */
+function run(b: Board, drawTo: number | ((file: string) => boolean) = 2) {
 	const dir = mkdtempSync(join(tmpdir(), "tilesearch-edges-"));
 	writeFileSync(join(dir, "input.board"), serialize(b));
 	execFileSync(ENGINE, ["input.board", "--threads", "8"], { cwd: dir, stdio: "ignore" });
@@ -38,7 +41,8 @@ function run(b: Board) {
 			.map((l) => l.split(" ")),
 	);
 	let failed = 0;
-	for (const f of readdirSync(out).filter((f) => /_0[12]_.*\.txt$/.test(f)))
+	const draw = typeof drawTo === "number" ? (f: string) => Number(/solver_(\d+)_.*\.txt$/.exec(f)?.[1]) <= drawTo : drawTo;
+	for (const f of readdirSync(out).filter(draw))
 		for (const c of certificatesIn(readFileSync(join(out, f), "utf8"))) {
 			const text = withSymbols(c, symbols);
 			try {
@@ -144,6 +148,98 @@ vertex C90 C90 C90 C90
 		expect(glue).toHaveLength(3);
 		expect(run(b)).toEqual({ census: [16, 161, 1132], failed: 0 });
 	});
+});
+
+/**
+ * A face drawn with lengths as edge types, from an atlas palette tile: its corners in 15° units and the length
+ * of each side, side i running from corner i to corner i+1, walked anticlockwise.
+ */
+function drawn(b: Board, angles: number[], lengths: string[]): Board {
+	let dir = 0;
+	const edges: Edge[] = lengths.map((text, i) => {
+		if (i) dir = (dir + 12 - angles[i] + 24) % 24;
+		return { dir, len: readLength(text)!.value, text };
+	});
+	expect(problemOf(edges)).toBeNull();
+	return withDrawnFace(b, edges);
+}
+
+/** Quick setup on drawn faces: the plane's vertices built face by face where the board lays out, else every set
+ *  that closes in each order whose shared sides glue; then the gluing lines. */
+function quick(b: Board, max = 12): Board {
+	const words = layable(b)
+		? fittingVertices(b, max)!
+		: closingVertices(b, "plane", 0, max).words.flatMap((w) => arrangements(w)!.filter((o) => sidesMeet(b, o)));
+	return { ...b, vertices: [...words, ...glueLines(b)].map((word) => ({ word })), permutations: false };
+}
+
+// The references are the atlas's corrected counts. Its first edge-typed numbers (tri45 3 / 4 / 12 on 2026-08-13,
+// planigon-lite 6 / 27 on 08-18) predate the face-filter and σ-fold fixes and were withdrawn (DEVELOPMENT_NOTES).
+describe("lengths drawn as edge types, held to the atlas's edge-typed palettes", () => {
+	const board = (name: string, kmax: number) => ({ ...emptyBoard(), name, kmax });
+	it("the 45-45-90 triangle alone: the tri45 shelf's 2 / 12 / 41", () => {
+		// public/tri45, cut to the tilings whose every face is a unit-leg triangle, edge to edge: 2 / 12 / 41
+		// (k = 1 is the hand-derived two: one diagonal throughout, and the checkerboard of diagonals)
+		const b = drawn(board("tri45", 3), [6, 3, 3], ["1", "sqrt2", "1"]);
+		expect(serialize(b)).toContain("edge Esqrt2 length sqrt2\n");
+		expect(run(quick(b))).toEqual({ census: [2, 12, 41], failed: 0 });
+	});
+	it("the triangle and the squares at both scales: tri45all's 16 / 161 / 1,132", () => {
+		let b = board("tri45all", 3);
+		for (const [a, l] of [
+			[[6, 3, 3], ["1", "sqrt2", "1"]],
+			[[6, 3, 3], ["sqrt2", "2", "sqrt2"]],
+			[[6, 6, 6, 6], ["1", "1", "1", "1"]],
+			[[6, 6, 6, 6], ["sqrt2", "sqrt2", "sqrt2", "sqrt2"]],
+		] as [number[], string[]][])
+			b = drawn(b, a, l);
+		expect(run(quick(b))).toEqual({ census: [16, 161, 1132], failed: 0 });
+	});
+	it("the Laves kite of 3.4.6.4 to k = 17, every tiling drawn", () => {
+		// an edge midpoint is a vertex type with two mirror axes, so a high-k certificate has dozens of them:
+		// decode listed every combination of axes at once and ran out of memory at k = 13
+		const b = drawn(board("kite", 17), [4, 6, 8, 6], ["sqrt3", "1", "1", "sqrt3"]);
+		expect(run(quick(b), 17)).toEqual({ census: [1, 0, 2, 0, 0, 1, 0, 1, 1, 0, 3, 0, 3, 3, 1, 5, 1], failed: 0 });
+	});
+	it("the planigons at no dodecagon, from the Laves family (planigon-lite, edges whole): the recount's 10 / 31", () => {
+		// every planigon but the four with a corner at a dodecagon's centre, as the atlas's planigon-lite has them
+		const base = board("planigon_lite", 2);
+		const all = withFamily(base, { kind: "laves", all: true }).board;
+		const b = keepNew(base, all, (i) => !all.faces[i].trail!.includes("12")).board;
+		expect(b.faces).toHaveLength(11);
+		// DEVELOPMENT_NOTES 2026-08-18, "Planigons, recounted": 11 planigons whole, k=1 10, k=2 31
+		expect(run(quick(b))).toEqual({ census: [10, 31], failed: 0 });
+	});
+	it("a side of length 1 needs no type: a plain square glues to a drawn house's sides of length 1", () => {
+		// the square from Add family, then a house drawn (a 1 × √2 rectangle with a 45-45-90 roof on its long side):
+		// only its √2 side is typed
+		const plain = { ...board("house", 4), angles: [{ sym: "A4" }], faces: [{ word: ["A4"], repeat: 4 }] };
+		const b = drawn(plain, [9, 6, 9, 6, 6], ["1", "1", "1", "sqrt2", "1"]);
+		expect(serialize(b)).toMatch(/face A4 x 4\nface \S+ \S+ \S+ \S+ Esqrt2 \S+\n/);
+		expect(check(b).filter((p) => /type/.test(p.message))).toEqual([]);
+		// k = 1 is the square grid; the houses alone come at k = 2
+		expect(run(quick(b), 4)).toEqual({ census: [1, 2, 2, 5], failed: 0 });
+		// an older drawing typed the unit sides E1 too, which no plain side meets: the check says so, and Quick
+		// setup takes the type off, for the same tilings
+		const old = parse(
+			"name old\nk 1 4\nangle A4\nangle H_135 135\nangle H_90 90\nedge E1 length 1\nedge Esqrt2 length sqrt2\n" +
+				"face A4 x 4\nface H_135 E1 H_90 E1 H_135 E1 H_90 Esqrt2 H_90 E1\nvertex A4 A4 A4 A4\nvertex E1 E1\nvertex Esqrt2 Esqrt2\n",
+		).board;
+		expect(check(old).filter((p) => /needs no type/.test(p.message)).map((p) => p.where)).toEqual([{ kind: "face", index: 0 }]);
+		const now = withoutUnitType(old);
+		expect(serialize(now)).toContain("face H_135 H_90 H_135 H_90 Esqrt2 H_90\n\nvertex A4 A4 A4 A4\nvertex Esqrt2 Esqrt2\n");
+		expect(run(quick(now), 4)).toEqual({ census: [1, 2, 2, 5], failed: 0 });
+	});
+	it("the square and the house to k = 21, both required: the tilings that would not draw", () => {
+		// 22 vertex types with two mirror axes each: trying whole combinations of axes gave up after 10^5 (9 of
+		// file 21), and some cells need a wider walk to find their period (file 28)
+		const plain = { ...board("house", 21), angles: [{ sym: "A4" }], faces: [{ word: ["A4"], repeat: 4 }] };
+		const b = quick(drawn(plain, [9, 6, 9, 6, 6], ["1", "1", "1", "sqrt2", "1"]));
+		const both = withRequiredFaces(withRequiredFaces(b, [b.faces[0]]), [b.faces[1]]);
+		const { census, failed } = run(both, (f) => /solver_21_.*_(21|28)\.txt$/.test(f));
+		expect(census.slice(16)).toEqual([935, 1410, 2034, 2996, 4382]);
+		expect(failed).toBe(0);
+	}, 180000);
 });
 
 /** Quick setup's colouring path: colour the faces, build the plain vertices that fit, colour them, and with

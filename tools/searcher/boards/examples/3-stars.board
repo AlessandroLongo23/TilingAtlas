@@ -1,0 +1,70 @@
+# Stars: six-pointed stars with 30° and 90° points, with regular polygons.
+name stars_45
+k 1 4
+
+angle A4 90
+angle A8
+angle A4p45 45
+angle A4d45 225
+angle A8p45 45
+angle A8d45 270
+
+face A4 x 4
+face A8 x 8
+face A4p45 A4d45 x 4
+face A8p45 A8d45 x 8
+
+vertex A4 A8d45
+vertex A8 A4d45
+vertex A4 A8 A8
+vertex A4 A4p45 A4d45
+vertex A4 A4d45 A8p45
+vertex A4p45 A4p45 A8d45
+vertex A4p45 A8p45 A8d45
+vertex A8p45 A8p45 A8d45
+vertex A4 A4 A4 A4
+vertex A4 A4 A8 A4p45
+vertex A4 A4 A8 A8p45
+vertex A8 A8 A4p45 A4p45
+vertex A8 A8 A4p45 A8p45
+vertex A8 A8 A8p45 A8p45
+vertex A4p45 A4p45 A4p45 A4d45
+vertex A4p45 A4p45 A4d45 A8p45
+vertex A4p45 A4d45 A8p45 A8p45
+vertex A4d45 A8p45 A8p45 A8p45
+vertex A4 A4 A4 A4p45 A4p45
+vertex A4 A4 A4 A4p45 A8p45
+vertex A4 A4 A4 A8p45 A8p45
+vertex A4 A8 A4p45 A4p45 A4p45
+vertex A4 A8 A4p45 A4p45 A8p45
+vertex A4 A8 A4p45 A8p45 A8p45
+vertex A4 A8 A8p45 A8p45 A8p45
+vertex A4 A4 A4p45 A4p45 A4p45 A4p45
+vertex A4 A4 A4p45 A4p45 A4p45 A8p45
+vertex A4 A4 A4p45 A4p45 A8p45 A8p45
+vertex A4 A4 A4p45 A8p45 A8p45 A8p45
+vertex A4 A4 A8p45 A8p45 A8p45 A8p45
+vertex A8 A4p45 A4p45 A4p45 A4p45 A4p45
+vertex A8 A4p45 A4p45 A4p45 A4p45 A8p45
+vertex A8 A4p45 A4p45 A4p45 A8p45 A8p45
+vertex A8 A4p45 A4p45 A8p45 A8p45 A8p45
+vertex A8 A4p45 A8p45 A8p45 A8p45 A8p45
+vertex A8 A8p45 A8p45 A8p45 A8p45 A8p45
+vertex A4 A4p45 A4p45 A4p45 A4p45 A4p45 A4p45
+vertex A4 A4p45 A4p45 A4p45 A4p45 A4p45 A8p45
+vertex A4 A4p45 A4p45 A4p45 A4p45 A8p45 A8p45
+vertex A4 A4p45 A4p45 A4p45 A8p45 A8p45 A8p45
+vertex A4 A4p45 A4p45 A8p45 A8p45 A8p45 A8p45
+vertex A4 A4p45 A8p45 A8p45 A8p45 A8p45 A8p45
+vertex A4 A8p45 A8p45 A8p45 A8p45 A8p45 A8p45
+vertex A4p45 A4p45 A4p45 A4p45 A4p45 A4p45 A4p45 A4p45
+vertex A4p45 A4p45 A4p45 A4p45 A4p45 A4p45 A4p45 A8p45
+vertex A4p45 A4p45 A4p45 A4p45 A4p45 A4p45 A8p45 A8p45
+vertex A4p45 A4p45 A4p45 A4p45 A4p45 A8p45 A8p45 A8p45
+vertex A4p45 A4p45 A4p45 A4p45 A8p45 A8p45 A8p45 A8p45
+vertex A4p45 A4p45 A4p45 A8p45 A8p45 A8p45 A8p45 A8p45
+vertex A4p45 A4p45 A8p45 A8p45 A8p45 A8p45 A8p45 A8p45
+vertex A4p45 A8p45 A8p45 A8p45 A8p45 A8p45 A8p45 A8p45
+vertex A8p45 A8p45 A8p45 A8p45 A8p45 A8p45 A8p45 A8p45
+
+permutations yes

@@ -95,7 +95,7 @@ export function DiskThumbnail<T>({ alt, prepare, bake, label }: DiskThumbnailPro
 			<ThumbnailSkeleton done={url != null} />
 			{url ? (
 				// eslint-disable-next-line @next/next/no-img-element
-				<img src={url} alt={alt} className="ta-fade-in relative block h-full w-full rounded object-cover" />
+				<img src={url} alt={alt} className="ta-fade-in relative block h-full w-full rounded object-contain" />
 			) : null}
 		</div>
 	);

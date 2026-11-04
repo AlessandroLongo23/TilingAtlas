@@ -49,7 +49,7 @@ export function Dropdown<T extends string | number>({
 			key={o.value}
 			value={o.value}
 			disabled={o.disabled}
-			className="grid cursor-default grid-cols-[14px_1fr] items-center gap-2 rounded-md py-1.5 pr-3 pl-2 text-[13px] text-fg outline-none select-none data-disabled:opacity-50 data-highlighted:bg-surface-overlay"
+			className="grid cursor-default grid-cols-[14px_1fr] items-center gap-2 rounded-md py-1.5 pr-3 pl-2 text-[13px] text-fg-secondary outline-none select-none data-disabled:opacity-50 data-highlighted:bg-surface-overlay data-highlighted:text-fg data-selected:text-fg"
 		>
 			<Select.ItemIndicator>
 				<Check size={12} />

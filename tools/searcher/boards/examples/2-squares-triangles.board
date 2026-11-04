@@ -1,0 +1,15 @@
+# Squares and triangles: the simplest mixed board: three vertex types.
+name squares_triangles
+k 1 6
+
+angle A3 60
+angle A4 90
+
+face A3 x 3
+face A4 x 4
+
+vertex A4 A4 A4 A4
+vertex A3 A3 A3 A4 A4
+vertex A3 A3 A3 A3 A3 A3
+
+permutations yes

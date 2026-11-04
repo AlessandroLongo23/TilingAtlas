@@ -1,7 +1,7 @@
 {
 	"name": "tilesearch",
 	"productName": "The Tiling Searcher",
-	"version": "0.3.1",
+	"version": "0.4.0",
 	"private": true,
 	"description": "Runs Marek Čtrnáct's tiling engine on a board file",
 	"main": "dist/main.cjs",
@@ -44,6 +44,10 @@
 				{
 					"from": "../tileestimate",
 					"to": "tileestimate"
+				},
+				{
+					"from": "../boards/examples",
+					"to": "examples"
 				}
 			],
 			"hardenedRuntime": false
@@ -62,6 +66,10 @@
 				{
 					"from": "../tileestimate.exe",
 					"to": "tileestimate.exe"
+				},
+				{
+					"from": "../boards/examples",
+					"to": "examples"
 				}
 			]
 		},

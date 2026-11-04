@@ -63,6 +63,8 @@ interface Props {
 	/** Gap in CSS px between the disk's rim and the canvas edge. /play's default keeps the rim clear of
 	 *  the floating controls over its corners; an embedded disk passes 0 and fills its cell. */
 	diskPadPx?: number;
+	/** Tile outlines; off draws a colouring by its colours alone. */
+	outline?: boolean;
 }
 
 /** The record being drawn (as shipped: a star family re-solves from its defaults), the edge length and walk
@@ -77,7 +79,7 @@ interface Bound {
 	builtAlpha: number | null;
 }
 
-export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX }: Props) {
+export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX, outline = true }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const overlayRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
@@ -91,11 +93,13 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX 
 	const inputRef = useRef(input);
 	const padRef = useRef(diskPadPx);
 	const modeRef = useRef(mode);
+	const outlineRef = useRef(outline);
 	useLayoutEffect(() => {
 		inputRef.current = input;
 		padRef.current = diskPadPx;
 		modeRef.current = mode;
-	}, [input, diskPadPx, mode]);
+		outlineRef.current = outline;
+	}, [input, diskPadPx, mode, outline]);
 
 	// On /play (no external input) the animation timeline drives this camera (lib/render/cameraPose.ts).
 	useEffect(() => {
@@ -190,7 +194,7 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX 
 				cx: cx * dpr,
 				cy: cy * dpr,
 				canvasH: canvas.height,
-				...diskStyle(m, b.tiling, cfg, dark, dpr),
+				...diskStyle(m, b.tiling, outlineRef.current ? cfg : { ...cfg, lineWidth: 0 }, dark, dpr),
 				...(m === "tiling" ? feedRef.current.frame(gl, cfg, b.tiling.id, b.walk.sizes, b.edge) : {}),
 				material: m === "tiling" && cfg.materials ? cfg.material : null,
 				home: cam.toHome(),

@@ -1,0 +1,26 @@
+# Edge systems: some edges of the square grid marked, as Marek's freedraw patterns.
+name square_edges
+k 1 3
+
+edge Ed drawn
+edge Eu hidden
+angle A4.Ed.Ed 90
+angle A4.Ed.Eu 90
+angle A4.Eu.Eu 90
+
+face A4.Ed.Ed Ed A4.Ed.Ed Ed A4.Ed.Ed Ed A4.Ed.Ed Ed
+face A4.Ed.Eu Eu A4.Ed.Eu Ed A4.Ed.Ed Ed A4.Ed.Ed Ed
+face A4.Ed.Eu Eu A4.Eu.Eu Eu A4.Ed.Eu Ed A4.Ed.Ed Ed
+face A4.Ed.Eu Eu A4.Ed.Eu Ed A4.Ed.Eu Eu A4.Ed.Eu Ed
+face A4.Ed.Eu Eu A4.Eu.Eu Eu A4.Eu.Eu Eu A4.Ed.Eu Ed
+face A4.Eu.Eu Eu A4.Eu.Eu Eu A4.Eu.Eu Eu A4.Eu.Eu Eu
+
+vertex A4.Ed.Ed A4.Ed.Ed A4.Ed.Ed A4.Ed.Ed
+vertex A4.Ed.Eu A4.Ed.Eu A4.Ed.Ed A4.Ed.Ed
+vertex A4.Ed.Eu A4.Eu.Eu A4.Ed.Eu A4.Ed.Ed
+vertex A4.Ed.Eu A4.Ed.Eu A4.Ed.Eu A4.Ed.Eu
+vertex A4.Eu.Eu A4.Eu.Eu A4.Eu.Eu A4.Eu.Eu
+vertex Ed Ed
+vertex Eu Eu
+
+permutations no

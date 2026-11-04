@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
 import { parse } from "./board";
 import { buildWalk } from "@/lib/render/hyperbolicWalk";
 import {
+	abstractBoard,
 	decode,
+	faceEdge,
 	flatCell,
 	flatCellWithOverlays,
 	flatPattern,
@@ -161,6 +163,74 @@ describe.skipIf(!existsSync(ENGINE))("a colouring: squares labelled A and B", ()
 	});
 });
 
+describe("faces of set angles in the hyperbolic plane", () => {
+	it("closes an equal-sided face at the side its angles fix", () => {
+		const a = (2 * Math.PI) / 7;
+		// cosh s = cos α / (1 − cos α) for the triangle; the {5,4} pentagon's side from cosh(s/2) = cos(π/5)/sin(π/4)
+		expect(faceEdge([a, a, a])).toBeCloseTo(Math.acosh(Math.cos(a) / (1 - Math.cos(a))), 9);
+		expect(faceEdge([a, 2 * a, a, 2 * a])).toBeCloseTo(faceEdge([a, a, a])!, 9);
+		expect(faceEdge(Array(5).fill(Math.PI / 2))).toBeCloseTo(2 * Math.acosh(Math.cos(Math.PI / 5) / Math.sin(Math.PI / 4)), 9);
+		expect(faceEdge(Array(4).fill(Math.PI / 2))).toBeNull(); // a square closes only in the plane
+	});
+});
+
+// Marek's {3,7} polyiamonds: every vertex adds up to 360° at any edge, the faces close only in the
+// hyperbolic plane. It drew nothing (2026-10-31), then drew the rhombi as triangles.
+describe.skipIf(!existsSync(ENGINE))("a board of {3,7} triangles and rhombi, angles set", () => {
+	const text = [
+		"name poly37\nk 1 1",
+		...[1, 2, 3].map((i) => `angle A${i} ${360 * i}/7`),
+		"face A1 x 3\nface A1 A2 x 2",
+		"vertex A1 A1 A1 A1 A1 A1 A1\nvertex A1 A1 A1 A2 A2\nvertex A1 A1 A2 A3\nvertex A1 A2 A2 A2\nvertex A2 A2 A3\nvertex A1 A3 A3",
+		"permutations yes\n",
+	].join("\n");
+	const board = parse(text).board;
+	it("draws each tiling hyperbolic, its rhombi with four sides", () => {
+		const certs = run("poly37", 1, text).flatMap(certificates);
+		expect(certs.length).toBeGreaterThan(1);
+		for (const c of certs) {
+			const g = geometry(board, vertexWords(c));
+			if (g.kind !== "hyperbolic") throw new Error(g.kind === "none" ? g.message : g.kind);
+			expect(g.edge).toBeCloseTo(1.0905497, 6);
+			const darts = hyperbolicDarts(decode(c, board), g, board);
+			const words = new Set(vertexWords(c).flat());
+			if (words.has("A2")) expect(darts.sizes).toContain(4);
+			expect(darts.sizes.every((s) => s === 3 || s === 4)).toBe(true);
+			buildWalk(darts, g.edge);
+		}
+	});
+});
+
+// Marek's abstract A³.B board: two apeirogons, no angles; every tiling looked the same (2026-10-31)
+describe.skipIf(!existsSync(ENGINE))("abstract mode: apeirogons drawn as the polygons their rings close into", () => {
+	const text = "name ab\nk 1 2\nangle Aoo\nangle Boo\nface Aoo x inf\nface Boo x inf\nvertex Aoo Aoo Aoo Boo\npermutations yes\n";
+	const board = parse(text).board;
+	it("makes each apeirogon a polygon its rings go round a whole number of times, and draws it", () => {
+		const certs = run("ab", 2, text).flatMap(certificates);
+		expect(certs.length).toBe(64); // 4 at k=1, 60 at k=2
+		const kinds = new Set<string>();
+		for (const c of certs) {
+			const d = decode(c, board);
+			const ab = abstractBoard(board, d)!;
+			expect(ab.faces.every((f) => typeof f.repeat === "number" && f.repeat >= 3)).toBe(true);
+			// every ring of the quotient divides its face's new size
+			const seen = new Set<number>();
+			for (let h0 = 0; h0 < d.rneig.length; h0++) {
+				if (seen.has(h0)) continue;
+				const ring: number[] = [];
+				for (let h = h0; !seen.has(h); h = d.glue[d.rneig[h]]) seen.add(h), ring.push(h);
+				const face = ab.faces.find((f) => f.word[0] === d.corner[ring[0]])!;
+				expect((face.repeat as number) % ring.length).toBe(0);
+			}
+			const g = geometry(ab, vertexWords(c));
+			kinds.add(g.kind);
+			if (g.kind === "hyperbolic") buildWalk(hyperbolicDarts(d, g, ab), g.edge);
+		}
+		// small rings close on the sphere (not drawn yet), larger ones in the plane or the hyperbolic plane
+		expect([...kinds].sort()).toEqual(["hyperbolic", "none", "plane"]);
+	});
+});
+
 // The site's own hyperbolic developer runs from the main checkout: its generated tables are not in git.
 const MAIN_ORACLE = join(
 	execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { encoding: "utf8" }).trim(),
@@ -279,6 +349,14 @@ describe("geometry from the board", () => {
 			board.vertices.map((v) => v.word),
 		);
 		expect(g.kind === "hyperbolic" && g.edge).toBeCloseTo(2.983, 3);
+	});
+	it("solves the edge from a vertex that fixes it, past a flat one listed first", () => {
+		const board = b("name t\nk 1 1\nangle Pi\nangle A3\nface A3 x 3\nvertex Pi Pi\nvertex A3 A3 A3 A3 A3 A3 A3\n");
+		const g = geometry(
+			board,
+			board.vertices.map((v) => v.word),
+		);
+		expect(g.kind).toBe("hyperbolic");
 	});
 	it("refuses vertices that close at different edge lengths", () => {
 		const board = b(

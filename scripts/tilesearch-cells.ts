@@ -45,7 +45,8 @@ const FLAT_SHELVES = [
 
 const read = (f: string) => {
 	try {
-		return fs.readFileSync(f, "utf8");
+		// a run compressed in the app keeps its certificates as .txt.gz
+		return f.endsWith(".gz") ? zlib.gunzipSync(fs.readFileSync(f)).toString("utf8") : fs.readFileSync(f, "utf8");
 	} catch {
 		return "";
 	}
@@ -120,12 +121,12 @@ function main() {
 
 	const t0 = Date.now();
 	const tilings: { id: string; k: number; file: string; index: number; renderCell?: Cell; error?: string }[] = [];
-	const files = fs.existsSync(solver) ? fs.readdirSync(solver).filter((n) => /solver_\d+_.*_\d+\.txt$/.test(n)) : [];
+	const files = fs.existsSync(solver) ? fs.readdirSync(solver).filter((n) => /solver_\d+_.*_\d+\.txt(\.gz)?$/.test(n)) : [];
 	for (const name of files.sort()) {
 		const k = Number(/solver_(\d+)_/.exec(name)![1]);
 		certificatesIn(read(path.join(solver, name))).forEach((raw, index) => {
 			const cert = withSymbols(raw, symbols);
-			const id = `${name.replace(/\.txt$/, "")}#${index}`;
+			const id = `${name.replace(/\.txt(\.gz)?$/, "")}#${index}`;
 			try {
 				const g = geometry(board, vertexWords(cert));
 				if (g.kind !== "plane") throw new Error(g.kind === "none" ? g.message : "not a tiling of the plane");

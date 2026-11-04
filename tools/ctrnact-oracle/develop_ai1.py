@@ -52,6 +52,7 @@ import develop_freedraw as fd
 from develop_freedraw import DevelopError
 from develop_hyperbolic import interior_angle, solve_edge_length
 from develop_hyp_edges import FLAT, build_block, check_patch, develop_patch, quotient_faces, tile_size
+from develop_ih_edges import site_rotation_order
 
 TWO_PI = 2 * math.pi
 
@@ -190,12 +191,17 @@ def hybrid_figure(source, bid):
 
 
 def corpus_figures(source):
-    """Every distinct vertex figure (a tuple of corner tokens) the corpus's certificates list."""
+    """Every distinct vertex figure (a tuple of corner tokens) in the corpus's certificates, whole.
+
+    A certificate lists one period of a symmetric vertex, and its tag says how many periods make the
+    turn (`site_rotation_order`). Expanded, the figure fixes its tokens' angles: `(M5)D12a` is six M5,
+    so 60 degrees, where the bare period also closes as four 90-degree corners and leaves M5's edge
+    multiple ambiguous (it did at k = 1 of `1247_1_0612`)."""
     out = {}
     for path in cert_paths(source):
         for cert in fd.parse_file(path):
             for t in cert["types"]:
-                out[tuple(t["figure"])] = True
+                out[tuple(t["figure"]) * site_rotation_order(t["tag"])] = True
     return list(out)
 
 

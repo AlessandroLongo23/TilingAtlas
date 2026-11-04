@@ -1,0 +1,32 @@
+# Isotoxal polygons: 12-gons whose corners alternate 60° and 120°.
+name isotoxal
+k 1 4
+
+angle A3 60
+angle A4 90
+angle A6 120
+angle A12 150
+angle A6a135 135
+angle A6b105 105
+
+face A3 x 3
+face A4 x 4
+face A6 x 6
+face A12 x 12
+face A6a135 A6b105 x 3
+
+vertex A12 A4 A6
+vertex A12 A12 A3
+vertex A6 A6 A6
+vertex A6 A6a135 A6b105
+vertex A4 A4 A4 A4
+vertex A3 A4 A4 A6
+vertex A12 A3 A3 A4
+vertex A3 A3 A6 A6
+vertex A3 A3 A6a135 A6b105
+vertex A3 A3 A3 A4 A4
+vertex A3 A3 A3 A3 A6
+vertex A3 A3 A3 A3 A3 A3
+
+permutations yes
+require 4 9   # face A6a135 A6b105 x 3

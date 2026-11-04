@@ -99,6 +99,11 @@ export interface FlatCellPreviewOptions {
 	keepView?: boolean;
 	/** The tile outline in CSS px; 0 draws none (a colouring read by its colours alone). Default 1. */
 	lineWidth?: number;
+	/** The farthest zoom out shows about this many periods across, whatever the cell's size, in place of the
+	 *  shared floor (ZOOM_MIN): a large cell (the Searcher's k = 21 tilings) stopped at a period or two, a
+	 *  small one went on to fifty. Periods of the longer lattice vector, as homePeriods counts them, so a
+	 *  tiling of long bands shows that many bands. */
+	zoomOutPeriods?: number;
 }
 
 export interface FlatCellPreview {
@@ -134,8 +139,11 @@ export function useFlatCellPreview({
 	interactive = true,
 	keepView = false,
 	lineWidth = 1,
+	zoomOutPeriods,
 }: FlatCellPreviewOptions): FlatCellPreview {
 	const hostRef = useRef<HTMLDivElement | null>(null);
+	const zoomOutRef = useRef(zoomOutPeriods);
+	zoomOutRef.current = zoomOutPeriods;
 	// In refs, not the GL effect's deps: changing one must not tear down and rebuild the context.
 	const periodsRef = useRef(homePeriods);
 	periodsRef.current = homePeriods;
@@ -221,8 +229,21 @@ export function useFlatCellPreview({
 
 	// The reset zoom: a caller-fixed px-per-edge if one was given, else the whole patch fitted (single
 	// mode), else `homePeriods` of the cell's lattice across the host. All three go through the shared
-	// clamp.
+	// clamp, and no further out than zoomOutPeriods allows.
+	// The wheel's, pinch's and reset's window: the shared one, its floor set by zoomOutPeriods when given
+	const zoomBounds = () => {
+		const n = zoomOutRef.current;
+		const b = basisRef.current;
+		const span = b ? Math.max(Math.hypot(b.v1.x, b.v1.y), Math.hypot(b.v2.x, b.v2.y)) : 0;
+		const w = hostRef.current?.clientWidth ?? 0;
+		return { min: n && span > 0 && w > 0 ? Math.min(ZOOM_MAX, w / (n * span)) : ZOOM_MIN, max: ZOOM_MAX };
+	};
 	const resolveHomeZoom = (
+		basis: { v1: { x: number; y: number }; v2: { x: number; y: number } },
+		w: number,
+		h: number,
+	): number => Math.max(zoomBounds().min, fitHomeZoom(basis, w, h));
+	const fitHomeZoom = (
 		basis: { v1: { x: number; y: number }; v2: { x: number; y: number } },
 		w: number,
 		h: number,
@@ -573,7 +594,7 @@ export function useFlatCellPreview({
 			// Zoom toward the cursor (centred CSS px).
 			const rect = host.getBoundingClientRect();
 			const mouse = { x: e.clientX - rect.left - rect.width / 2, y: e.clientY - rect.top - rect.height / 2 };
-			const { zoom, offset } = zoomAtPoint(mouse, ctrl.targetOffset, ctrl.targetZoom, wheelDeltaPx(e));
+			const { zoom, offset } = zoomAtPoint(mouse, ctrl.targetOffset, ctrl.targetZoom, wheelDeltaPx(e), zoomBounds());
 			ctrl.targetZoom = zoom;
 			ctrl.targetOffset = offset;
 		};
@@ -602,7 +623,7 @@ export function useFlatCellPreview({
 		const w = hostRef.current?.clientWidth ?? 0;
 		const h = hostRef.current?.clientHeight ?? 0;
 		if (basis && w > 0 && h > 0) homeZoomRef.current = resolveHomeZoom(basis, w, h);
-		resetCardControls(ctrl, homeZoomRef.current);
+		resetCardControls(ctrl, homeZoomRef.current, zoomBounds());
 	};
 
 	// Fingers: two pinch, pan and twist on a live card, a double-tap is the right-click reset, and a tap
@@ -613,7 +634,7 @@ export function useFlatCellPreview({
 		},
 		pinch: (step) => {
 			const ctrl = controlsRef.current;
-			if (ctrl && activeRef.current) pinchCardControls(ctrl, step);
+			if (ctrl && activeRef.current) pinchCardControls(ctrl, step, zoomBounds());
 		},
 		tap: (x, y) => {
 			const host = hostRef.current;

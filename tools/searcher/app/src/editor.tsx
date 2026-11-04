@@ -4,6 +4,7 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	CircleAlert,
+	CircleDashed,
 	Crosshair,
 	Eraser,
 	Flag,
@@ -15,6 +16,8 @@ import {
 	TriangleAlert,
 	Wand2,
 	X,
+	ClipboardPaste,
+	Shapes,
 } from "lucide-react";
 import { MotionConfig, Reorder } from "motion/react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -32,12 +35,17 @@ import { ActionMenu, ContextMenu } from "@/components/ui/context-menu";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils/cn";
+import { plainBoard } from "./study";
 import {
+	ANGLE_LETTERS,
 	angleDegrees,
 	coloredCorner,
 	cyclicKey,
+	bare,
+	cornersAt,
 	edgeTypes,
 	faceSize,
+	faceText,
 	flatOf,
 	moveVertex,
 	typedCorner,
@@ -45,7 +53,14 @@ import {
 	deadWeight,
 	removeVertices,
 	renameAngle,
+	repeatOf,
+	over,
+	times,
+	wrap,
+	serialize,
 	requiresFaces,
+	followFace,
+	withoutFaces,
 	withRequiredFaces,
 	type Board,
 	type EdgeStyle,
@@ -56,6 +71,7 @@ import {
 import {
 	arrangements,
 	closingVertices,
+	exactlyClosing,
 	cornerAngle,
 	colorize,
 	cornerShapes,
@@ -63,16 +79,19 @@ import {
 	dentOf,
 	EDGE_PRESETS,
 	freePoints,
+	glueLines,
 	pointsCanPart,
 	pointsTouch,
 	isotoxal,
 	polygonOf,
-	readShorthand,
+	readShorthands,
 	seedWords,
+	sidesMeet,
 	solveEdge,
 	solvePoints,
 	specOf,
 	withFace,
+	withVertices,
 	withPoints,
 	type EdgePreset,
 	type Geometry,
@@ -87,14 +106,19 @@ import {
 	VertexFigure,
 	vertexGeometry,
 } from "./figures";
-import { edgesOf, prefixOf } from "./freeface";
+import { edgesOf, prefixOf, withoutUnitType } from "./freeface";
 import { DrawFaceModal } from "./freeface-modal";
+import { FamilyModal } from "./family-modal";
 import { vertexQuery } from "./query";
 
 export interface EditorProps {
 	b: Board;
 	set: (b: Board) => void;
 	problems: Problem[];
+	/** On a board with parameters: the values it is drawn at (its formulas are worked out there). */
+	vars?: Record<string, number>;
+	/** On a board with parameters: the board at those values, as the engine's checks read it. */
+	checkText?: string;
 }
 
 const at = (problems: Problem[], w: Where) =>
@@ -110,12 +134,29 @@ const ProblemIcon = ({ error }: { error: boolean }) =>
 		<TriangleAlert className="h-3.5 w-3.5 shrink-0 text-fg-muted" />
 	);
 /** How many problems, as a heading says it: "3 errors", "14 warnings", "1 error, 2 warnings". */
-const problemCount = (list: Problem[]) => {
+export const problemCount = (list: Problem[]) => {
 	const errors = list.filter(isError).length;
 	const warnings = list.length - errors;
 	const say = (k: number, w: string) => `${k} ${w}${k === 1 ? "" : "s"}`;
 	return [errors ? say(errors, "error") : "", warnings ? say(warnings, "warning") : ""].filter(Boolean).join(", ");
 };
+
+/** Every problem, one per line, for a modal. */
+export const ProblemList = ({ list }: { list: Problem[] }) => (
+	<ul className="max-h-[60vh] space-y-1.5 overflow-auto p-5">
+		{list.map((p, i) => (
+			<li
+				key={i}
+				className={cn("flex items-start gap-1.5 text-sm leading-snug", isError(p) ? "text-danger" : "text-fg-secondary")}
+			>
+				<span className="mt-0.5">
+					<ProblemIcon error={isError(p)} />
+				</span>
+				{p.message}
+			</li>
+		))}
+	</ul>
+);
 
 /**
  * A place's problems in one line, however many there are, so a long list never pushes the page about:
@@ -153,36 +194,15 @@ export function Problems({ list, className }: { list: Problem[]; className?: str
 			) : null}
 			{many ? (
 				<Modal isOpen={open} onOpenChange={setOpen} title={problemCount(list)} size="md">
-					<ul className="max-h-[60vh] space-y-1.5 overflow-auto p-5">
-						{sorted.map((p, i) => (
-							<li
-								key={i}
-								className={cn(
-									"flex items-start gap-1.5 text-sm leading-snug",
-									isError(p) ? "text-danger" : "text-fg-secondary",
-								)}
-							>
-								<span className="mt-0.5">
-									<ProblemIcon error={isError(p)} />
-								</span>
-								{p.message}
-							</li>
-						))}
-					</ul>
+					<ProblemList list={sorted} />
 				</Modal>
 			) : null}
 		</div>
 	);
 }
 
-/** The vertices (0-based) holding face f: those with one of its corners, Pi aside (it runs along many faces). */
-export const verticesOfFace = (b: Board, f: Face) => {
-	const flat = flatOf(b);
-	const real = new Set(f.word.filter((c) => !flat(c)));
-	return b.vertices.flatMap((v, i) => (v.word.some((c) => real.has(c)) ? [i] : []));
-};
 /** A face as its board line says it, for labels: `face A6p60 A6d60 x 6`. */
-const faceLine = (f: Face) => `face ${f.word.join(" ")}${f.repeat === 1 ? "" : ` x ${f.repeat}`}`;
+const faceLine = (f: Face) => `face ${faceText(f)}`;
 /** Whether face f is required: a `require face` line asks for it alone. */
 const isRequired = (b: Board, f: Face) => requiresFaces(b, [f]);
 /** How a group of faces is required: each on its own ("all"), or one line for any of them ("any"). */
@@ -195,6 +215,22 @@ const groupRequired = (b: Board, faces: number[]) =>
 				)
 			? "any"
 			: null;
+/** A face that a study runs with and without (study.ts), as its card tags it. */
+function OptionalTag() {
+	return (
+		<span className="flex items-center gap-1 rounded-sm border border-accent/60 bg-surface-raised px-1.5 text-[11px] font-medium text-accent">
+			<CircleDashed size={11} />
+			optional
+		</span>
+	);
+}
+/** The board with faces `is` (0-based) optional, or all of them always on again when they all are optional. */
+const toggleOptional = (b: Board, is: number[]): Board => {
+	const on = !is.every((i) => b.faces[i]?.optional);
+	return { ...b, faces: b.faces.map((f, i) => (is.includes(i) ? { ...f, optional: on || undefined } : f)) };
+};
+const OPTIONAL_HINT =
+	"A study runs the board once per combination of its optional faces: each row holds some of them, requires those, and leaves the others out.";
 /** A group's requirement as its card tags it: the target, then all or any. */
 function RequiredTag({ how }: { how: string }) {
 	return (
@@ -281,6 +317,9 @@ const withRequired = (b: Board, picked: number[], why: string) => {
 	if (!set.length || requiresVertices(b, picked)) return b;
 	return { ...b, require: [...b.require, { set, ...(why.trim() ? { trail: why.trim() } : {}) }] };
 };
+
+/** The board with one required set per vertex in `picked`: a tiling must hold every one of them. */
+const withRequiredEach = (b: Board, picked: number[], why: string) => picked.reduce((x, i) => withRequired(x, [i], why), b);
 
 /** A header button that clears what a section's warnings name; absent when there is nothing to clear. */
 function Prune({ n, what, onClick }: { n: number; what: string; onClick: () => void }) {
@@ -489,7 +528,7 @@ function EdgeFields({ b, set, i }: Pick<EditorProps, "b" | "set"> & { i: number 
 	);
 }
 
-function CornerModal({ b, set, problems, sym, close }: EditorProps & { sym: string; close: () => void }) {
+function CornerModal({ b, set, problems, vars, sym, close }: EditorProps & { sym: string; close: () => void }) {
 	const i = b.angles.findIndex((a) => a.sym === sym);
 	const a = b.angles[i];
 	const [name, setName] = useState(sym);
@@ -497,7 +536,11 @@ function CornerModal({ b, set, problems, sym, close }: EditorProps & { sym: stri
 	const [turnP, setTurnP] = useState(() => String(Number(a?.value?.split("/")[0]) / 360 || 1));
 	const [turnQ, setTurnQ] = useState(() => a?.value?.split("/")[1] ?? "4");
 	if (!a) return null;
-	const mode = a.value === undefined ? "none" : a.value === "free" ? "free" : "degrees";
+	// an angle written with the parameters, as written (also while it does not work out)
+	const formula =
+		a.valueExpr && a.valueExpr.at === a.value ? bare(a.valueExpr.text) : a.value?.startsWith("{") ? bare(a.value) : null;
+	const mode = a.value === undefined ? "none" : a.value === "free" ? "free" : formula !== null ? "formula" : "degrees";
+	const shownAt = Object.entries(vars ?? {}).map(([k, v]) => `${k} = ${v}`).join(", ");
 	const faces = b.faces.filter((f) => f.word.includes(sym)).length;
 	const vertices = b.vertices.filter((v) => v.word.includes(sym)).length;
 	const clash = name !== sym && (b.angles.some((x) => x.sym === name) || name === "x" || !name);
@@ -527,6 +570,9 @@ function CornerModal({ b, set, problems, sym, close }: EditorProps & { sym: stri
 									? "Pi is the 180° corner in Marek's labels."
 									: "Certificates print it under this name."}{" "}
 							Renaming changes it in every face and vertex.
+							{vars
+								? ` A parameter in braces makes a corner per value: A{n} is A6 at n = 6 and A7 at n = 7.`
+								: null}
 						</InfoDot>
 					</div>
 					<div className="flex gap-2">
@@ -567,12 +613,13 @@ function CornerModal({ b, set, problems, sym, close }: EditorProps & { sym: stri
 							</InfoDot>
 						</div>
 						<OptionWall
-							columns={4}
+							columns={vars || formula !== null ? 5 : 4}
 							options={[
 								{ value: "none", label: "Not set" },
 								{ value: "degrees", label: "Degrees" },
 								{ value: "turn", label: "Part of a turn" },
 								{ value: "free", label: "Free" },
+								...(vars || formula !== null ? [{ value: "formula", label: "Formula" }] : []),
 							]}
 							selected={mode === "degrees" && a.value?.includes("/") ? "turn" : mode}
 							onChange={(m) =>
@@ -583,10 +630,26 @@ function CornerModal({ b, set, problems, sym, close }: EditorProps & { sym: stri
 											? "free"
 											: m === "turn"
 												? `${360 * Number(turnP)}/${turnQ}`
-												: String(deg ?? 90),
+												: m === "formula"
+													? // a regular polygon's corner when the name says which (A{n}), else the angle it has
+														`{${/\{(.+)\}/.exec(sym) ? `180-360/${wrap(/\{(.+)\}/.exec(sym)![1])}` : (deg ?? 90)}}`
+													: String(deg ?? 90),
 								)
 							}
 						/>
+						{mode === "formula" ? (
+							<div className="flex items-center gap-2 text-sm">
+								<Input
+									value={formula ?? ""}
+									onChange={(e) => setValue(`{${e.target.value.replace(/[\s#{}]/g, "")}}`)}
+									className="w-44 font-mono"
+									aria-label="Angle formula"
+								/>
+								<span className="text-fg-muted">
+									{deg !== null ? `= ${+deg.toFixed(3)}° at ${shownAt}` : "degrees, with + − × / and the parameters"}
+								</span>
+							</div>
+						) : null}
 						{mode === "degrees" && !a.value?.includes("/") ? (
 							<div className="flex items-center gap-2">
 								<Input
@@ -651,6 +714,15 @@ function CornerModal({ b, set, problems, sym, close }: EditorProps & { sym: stri
 // ── faces ──
 
 const FACE_SIDES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12] as const;
+type FaceType = "regular" | "star" | "iso" | "self" | "line" | "draw";
+const FACE_TYPES: { value: FaceType; label: string }[] = [
+{ value: "regular", label: "Regular" },
+{ value: "star", label: "Star" },
+{ value: "iso", label: "Isotoxal" },
+{ value: "self", label: "Self-intersecting" },
+{ value: "line", label: "Line" },
+{ value: "draw", label: "Draw your own…" },
+];
 const divisors = (n: number) => Array.from({ length: n }, (_, i) => i + 1).filter((d) => n % d === 0);
 /** The face's corners all the way round, one repeat for an apeirogon. */
 const cornersOf = (f: Face) => (f.repeat === "inf" ? f.word : Array.from({ length: f.repeat }, () => f.word).flat());
@@ -661,12 +733,16 @@ function FaceModal({
 	b,
 	set,
 	problems,
+	vars,
 	index,
 	close,
 	draw,
-}: EditorProps & { index: number; close: () => void; draw: () => void }) {
+}: EditorProps & { index: number; close: () => void; draw: (selfCrossing: boolean) => void }) {
 	const f = b.faces[index];
 	const [sel, setSel] = useState<number | null>(0);
+	// a number of corners being typed (12, or 2n on a board with parameters), applied on Enter
+	const [typed, setTyped] = useState<string | null>(null);
+	const [typedBad, setTypedBad] = useState(false);
 	if (!f) return null;
 	const n = faceSize(f);
 	const L = Math.max(1, f.word.length);
@@ -677,6 +753,9 @@ function FaceModal({
 	// the corners that are not Pi, all the way round (one period of an apeirogon)
 	const real = cornersOf(f).filter((c) => !flat(c));
 	const corners = n === null ? null : real.length;
+	// its repeat as a formula, while it has one, and its corners counted with it (n, 2n)
+	const formula = n !== null && f.repeatExpr?.at === f.repeat ? bare(f.repeatExpr.text) : null;
+	const sides = formula !== null && typeof f.repeat === "number" ? times(real.length / f.repeat, formula) : null;
 	const star = spec?.point !== undefined && spec.n !== null ? { n: spec.n, seg: spec.seg, point: spec.point } : null;
 	// a star whose point Quick setup solves
 	const loose = spec?.free && spec.n !== null ? { n: spec.n, seg: spec.seg } : null;
@@ -689,8 +768,32 @@ function FaceModal({
 		)!;
 		const word = cs.slice(0, inf ? cs.length : p).flatMap((c) => [c, ...Array.from({ length: s - 1 }, () => "Pi")]);
 		const base = s > 1 && !b.angles.some((a) => a.sym === "Pi") ? { ...b, angles: [...b.angles, { sym: "Pi" }] } : b;
-		put({ word, repeat: inf ? "inf" : cs.length / p }, base);
+		put({ word, repeat: inf ? "inf" : cs.length / p, repeatExpr: undefined }, base);
 		setSel(0);
+	};
+	/** A regular face of `e` corners, e a formula in the parameters: one corner, named as Marek names an
+	 *  e-gon's (A{n}; B{n} for sides of two edges), declared when new, with the regular angle when the
+	 *  board's corners have angles. False when e is no number of corners at the values shown. */
+	const setSidesFormula = (e: string) => {
+		const m = vars ? cornersAt(e, vars) : null;
+		if (m === null) return false;
+		const sym = `${ANGLE_LETTERS[2 + seg] ?? "A"}{${e}}`;
+		const valued = b.angles.some((a) => !a.edge && a.value !== undefined && a.value !== "free");
+		let base = b.angles.some((a) => a.sym === sym)
+			? b
+			: { ...b, angles: [...b.angles, { sym, ...(valued ? { value: `{180-360/${wrap(e)}}` } : {}) }] };
+		if (seg > 1 && !base.angles.some((a) => a.sym === "Pi")) base = { ...base, angles: [...base.angles, { sym: "Pi" }] };
+		put({ word: [sym, ...Array.from({ length: seg - 1 }, () => "Pi")], repeat: m, repeatExpr: { text: `{${e}}`, at: m } }, base);
+		setSel(0);
+		return true;
+	};
+	const applyTyped = () => {
+		if (typed === null) return;
+		const v = typed.trim();
+		const m = /^\d+$/.test(v) ? Number(v) : null;
+		const ok = m !== null ? m >= 2 && m <= 360 && (setSides(m), true) : !v || setSidesFormula(v);
+		setTypedBad(!ok);
+		setTyped(null);
 	};
 	const kind = star
 		? dentOf(star.n, star.point) > 180
@@ -705,19 +808,26 @@ function FaceModal({
 	const startAngle = (k: "star" | "iso", m: number) =>
 		k === "star" ? Math.round((180 - 360 / m) / 2) : Math.round(180 - 180 / m + Math.min(15, 90 / m));
 	const shown = star ?? (loose && kind ? { ...loose, point: startAngle(kind, loose.n) } : null);
-	const setSides = (m: number | "inf" | "star" | "iso" | "draw") => {
-		if (m === "draw") return draw();
+	const type: FaceType = kind ?? (n === null ? "line" : "regular");
+const setSides = (m: number | FaceType): void => {
+if (m === "draw" || m === "self") return draw(m === "self");
+if (m === "regular") return void (type !== "regular" && setSides(Math.max(3, shown ? (kind === "iso" ? 2 : 1) * shown.n : real.length)));
 		if (m === "star" || m === "iso") {
 			const k = Math.max(m === "star" ? 3 : 2, star?.n ?? Math.floor((corners ?? 12) / 2));
 			return set(withFace(b, { n: k, seg, point: startAngle(m, k) }, index));
 		}
-		if (m === "inf") return rebuild(real.length ? real : [fill], seg, true);
+		if (m === "line") return rebuild(real.length ? real : [fill], seg, true);
 		if (star || loose) return set(withFace(b, { n: m, seg: m === 2 ? 1 : seg }, index));
 		rebuild(cycle(real, m, fill), m === 2 ? 1 : seg, false);
 	};
 	const setPeriod = (len: number) => {
 		if (n === null) put({ word: cycle(f.word, len, fill) });
-		else put({ word: cycle(cornersOf(f), len, fill), repeat: n / len });
+		else {
+			// a formula for every corner round it, over the new period: 2n corners every 2 is x {n}
+			const all = formula === null ? null : times(f.word.length, formula);
+			const repeat = n / len;
+			put({ word: cycle(cornersOf(f), len, fill), repeat, repeatExpr: all === null ? undefined : { text: `{${over(all, len)}}`, at: repeat } });
+		}
 		setSel(0);
 	};
 	const pick = (sym: string, base: Board) => {
@@ -725,7 +835,7 @@ function FaceModal({
 		put({ word: f.word.map((s, j) => (j === i ? sym : s)) }, base);
 		setSel((i + 1) % L);
 	};
-	const line = `face ${f.word.join(" ")}${f.repeat === 1 ? "" : ` x ${f.repeat}`}`;
+	const line = `face ${faceText(f)}`;
 	return (
 		<Modal
 			isOpen
@@ -734,7 +844,7 @@ function FaceModal({
 			maxWidth="max-w-3xl"
 			description="Build a face"
 		>
-			<div className="grid grid-cols-[300px_1fr] gap-6 p-5">
+			<div className="grid grid-cols-[300px_minmax(0,1fr)] gap-6 p-5">
 				<div className="flex flex-col items-center gap-2 rounded-surface bg-surface-sunken p-3">
 					<FaceFigure b={b} face={f} size={276} selected={sel} onSlot={setSel} />
 					<div className="self-end">
@@ -745,47 +855,67 @@ function FaceModal({
 				</div>
 				<div className="space-y-5">
 					<div className="space-y-2">
-						<div className="ta-label">Shape</div>
-						<OptionWall
-							columns={6}
-							options={[
-								...FACE_SIDES.map((s) => ({
-									value: s as number | "inf" | "star" | "iso" | "draw",
-									label: s === 2 ? "Digon" : String(s),
-								})),
-								{ value: "star", label: "Star" },
-								{ value: "iso", label: "Isotoxal" },
-								{ value: "inf", label: "∞ line" },
-								{ value: "draw", label: "Draw…" },
-							]}
-							selected={
-								kind ??
-								(corners === null ? "inf" : (FACE_SIDES as readonly number[]).includes(corners) ? corners : null)
-							}
-							onChange={setSides}
-						/>
-						<div className={cn("flex items-center gap-2 text-xs text-fg-muted", (star || loose) && "hidden")}>
-							<span>Other:</span>
-							<Input
-								type="number"
-								max={360}
-								min={2}
-								value={corners ?? ""}
-								onChange={(e) => {
-									const m = Math.round(Number(e.target.value));
-									if (m >= 2 && m <= 360) setSides(m);
-								}}
-								size="sm"
-								className="w-20"
-								aria-label="Number of corners"
-							/>
-							<span>corners</span>
-							<InfoDot>
-								A digon is how marked edges are written; ∞ is an apeirogon, a face along an endless line.
-							</InfoDot>
-						</div>
-					</div>
-					{shown && kind ? (
+<div className="ta-label flex items-center gap-1.5">
+Type
+<InfoDot>
+Regular: a polygon of n corners, each set below. Star and Isotoxal: equal sides whose corners
+alternate two angles. Self-intersecting: a drawn outline that crosses itself. Line: an apeirogon,
+a face along an endless line.
+</InfoDot>
+</div>
+<OptionWall columns={3} options={FACE_TYPES} selected={type} onChange={setSides} />
+</div>
+{type === "regular" ? (
+<div className="space-y-2">
+<div className="ta-label flex items-center gap-1.5">
+Sides
+<InfoDot>A digon is how marked edges are written.</InfoDot>
+</div>
+<OptionWall
+columns={10}
+fill={false}
+options={FACE_SIDES.map((s) => ({ value: s as number, label: s === 2 ? "Digon" : String(s) }))}
+selected={sides === null ? corners : null}
+onChange={setSides}
+/>
+{vars ? (
+	<div className="flex items-center gap-2 text-xs text-fg-muted">
+		<span className="shrink-0">With a parameter:</span>
+		<OptionWall
+			columns={2 * Object.keys(vars).length}
+			fill={false}
+			classes="min-w-0 flex-1"
+			options={Object.keys(vars).flatMap((v) => [v, `2${v}`]).map((e) => ({ value: e, label: e }))}
+			selected={sides}
+			onChange={(e) => void setSidesFormula(e)}
+		/>
+	</div>
+) : null}
+<div className="flex items-center gap-2 text-xs text-fg-muted">
+<span>Other:</span>
+<Input
+value={typed ?? sides ?? String(corners ?? "")}
+onChange={(e) => setTyped(e.target.value.replace(/[\s#{}]/g, ""))}
+onBlur={applyTyped}
+onKeyDown={(e) => e.key === "Enter" && applyTyped()}
+placeholder={vars ? "12 or n+2" : "12"}
+size="sm"
+className="w-24 font-mono"
+aria-label="Number of corners"
+/>
+<span className={typedBad ? "text-danger" : undefined}>
+	{typedBad
+		? vars
+			? `not a number of corners at ${Object.entries(vars).map(([k, v]) => `${k} = ${v}`).join(", ")}`
+			: "not a number of corners from 2 to 360"
+		: vars
+			? "corners, or a formula such as n+2"
+			: "corners"}
+</span>
+</div>
+</div>
+) : null}
+{shown && kind ? (
 						<div className="space-y-2">
 							<div className="ta-label flex items-center gap-1.5">
 								{kind === "star" ? "Points" : "Corner pairs"}
@@ -928,9 +1058,16 @@ function FaceModal({
 							size="sm"
 							icon={Trash2}
 							label="Delete face"
-							onClick={() => (set({ ...b, faces: b.faces.filter((_, j) => j !== index) }), close())}
+							onClick={() => (set(withoutFaces(b, [index])), close())}
 						/>
 						<span className="flex-1" />
+						<Button
+							size="sm"
+							icon={CircleDashed}
+							label={f.optional ? "Always on" : "Make optional"}
+							title={f.optional ? "Every row of a study holds this face again" : OPTIONAL_HINT}
+							onClick={() => set(toggleOptional(b, [index]))}
+						/>
 						<Button
 							size="sm"
 							icon={Crosshair}
@@ -986,7 +1123,7 @@ function VertexModal({ b, set, problems, index, close }: EditorProps & { index: 
 			maxWidth="max-w-3xl"
 			description="Build a vertex"
 		>
-			<div className="grid grid-cols-[300px_1fr] gap-6 p-5">
+			<div className="grid grid-cols-[300px_minmax(0,1fr)] gap-6 p-5">
 				<div className="flex flex-col items-center gap-2 rounded-surface bg-surface-sunken p-3">
 					<VertexFigure b={b} word={v.word} size={276} selected={sel} onSlot={(i) => setSel(sel === i ? null : i)} />
 					<div className="self-end">
@@ -1047,7 +1184,8 @@ function VertexModal({ b, set, problems, index, close }: EditorProps & { index: 
 						label={sel === null ? "Add a corner" : `Set corner ${sel + 1} to`}
 					/>
 					<Checkbox
-						label="Initial vertex: output only tilings that contain one of the initial vertices"
+						label="Initial vertex"
+						hint={<InfoDot>Output only tilings that contain one of the initial vertices.</InfoDot>}
 						checked={initial}
 						disabled={draft}
 						onCheckedChange={(c) =>
@@ -1104,16 +1242,16 @@ const ownSeeds = (b: Board, g: Geometry) => {
 	const shapes = cornerShapes(b);
 	return b.vertices.flatMap((v, i) => {
 		const l = solveEdge(v.word, shapes, g);
-		return l === null ? [] : [{ label: `vertex ${i + 1}: ${v.word.join(" ")}`, l }];
+		return l === null ? [] : [{ label: `vertex ${i + 1}: ${v.word.join(" ")}`, l, word: v.word }];
 	});
 };
 /** What the edge length can be solved from: the board's own vertices, or else every vertex its corners make. */
 const seedsFor = (b: Board, g: Geometry, max: number) => {
 	const own = ownSeeds(b, g);
-	return own.length ? own : seedWords(b, g, max).map(({ word, l }) => ({ label: word.join(" "), l }));
+	return own.length ? own : seedWords(b, g, max).map(({ word, l }) => ({ label: word.join(" "), l, word }));
 };
 
-function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void }) {
+function QuickSetup({ b: board, set, vars, close }: EditorProps & { close: () => void }) {
 	// star points marked Free are solved with the edge, from vertices picked to close
 	const free = useMemo(() => freePoints(board), [board]);
 	const [geometry, setGeometry] = useState<Geometry>(() =>
@@ -1158,19 +1296,24 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 	// or its sides typed, and the vertex lines that glue the types
 	// `b` is the board the vertices are built from, `target` the one they are written to: with an edge preset
 	// the vertices of the plain board, each then typed into every edge pattern round it
-	const { b, target, glue, typeVertices, uses } = useMemo(() => {
-		const x = solution ? withPoints(board, free, solution.points) : board;
+	const { b, target, glue, typeVertices, uses, unitless } = useMemo(() => {
+		const set = solution ? withPoints(board, free, solution.points) : board;
+		// a type of length 1 (an older drawing's E1) goes in every mode: a plain side is length 1, so the faces
+		// that had it glue to plain ones (a square from Add family)
+		const x = withoutUnitType(set);
+		const unitless = x !== set;
 		const none = (ws: string[][]): number[][] => (void ws, []);
 		if (mode === "types") {
 			const r = decorate(x, preset, loose);
-			return { b: r.plain, target: r.board, glue: r.glue, typeVertices: r.vertices, uses: none };
+			return { b: r.plain, target: r.board, glue: r.glue, typeVertices: r.vertices, uses: none, unitless };
 		}
 		if (mode === "colors") {
 			const r = colorize(x, colors, proper);
-			return { b: r.plain, target: r.board, glue: [] as string[][], typeVertices: r.vertices, uses: r.uses };
+			return { b: r.plain, target: r.board, glue: [] as string[][], typeVertices: r.vertices, uses: r.uses, unitless };
 		}
+		// a board with edge types of its own (lengths) keeps its gluing lines whatever it searches for
 		const y = edges && !digonsOf(x).length ? withFace(x, { n: 2, seg: 1 }) : x;
-		return { b: y, target: y, glue: [] as string[][], typeVertices: (ws: string[][]) => ws, uses: none };
+		return { b: y, target: y, glue: glueLines(y), typeVertices: (ws: string[][]) => ws, uses: none, unitless };
 	}, [board, free, solution, edges, mode, preset, loose, colors, proper]);
 	const shapes = useMemo(() => cornerShapes(b), [b]);
 	const digons = useMemo(() => digonsOf(b), [b]);
@@ -1186,20 +1329,15 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 			: typed
 				? Number(typed)
 				: (seeds.find((x) => x.label === from)?.l ?? seeds[0]?.l ?? NaN);
-	const result = useMemo(
-		() =>
-			Number.isFinite(edge) && edge >= 0 && (!free.length || solution)
-				? closingVertices(
-						b,
-						geometry,
-						edge,
-						Math.max(2, Math.min(24, max)),
-						undefined,
-						geometry !== "plane" || !layable(b),
-					)
-				: null,
-		[b, geometry, edge, max, free, solution],
-	);
+	// the vertex the edge was solved from, which the exact check re-solves it from; none for a typed edge
+	const seedWord = free.length || typed || geometry === "plane" ? null : (seeds.find((x) => x.label === from) ?? seeds[0])?.word;
+	const result = useMemo(() => {
+		if (!(Number.isFinite(edge) && edge >= 0 && (!free.length || solution))) return null;
+		const r = closingVertices(b, geometry, edge, Math.max(2, Math.min(24, max)), undefined, geometry !== "plane" || !layable(b));
+		// the float search keeps sums within 1e-6 of 360°: keep those that close exactly
+		const exact = geometry === "plane" ? null : exactlyClosing(b, geometry, edge, seedWord ?? null, r.words);
+		return { ...r, words: exact?.words ?? r.words, dropped: exact?.dropped ?? [], unchecked: exact?.unchecked ?? 0 };
+	}, [b, geometry, edge, max, free, solution, seedWord]);
 	const describe = (sol: { edge: number; points: number[] }) => {
 		const sh = cornerShapes(withPoints(board, free, sol.points));
 		const pts = free.map((f, i) => {
@@ -1217,11 +1355,15 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 	);
 	const sets = useMemo(() => {
 		// off the plane nothing is laid out, but two star points can never sit side by side (corners.ts)
-		if (!plane) return (result?.words ?? []).filter((w) => pointsCanPart(shapes, w));
+		// and where the sides are typed, some order must glue every side two neighbours share
+		if (!plane)
+			return (result?.words ?? []).filter(
+				(w) => pointsCanPart(shapes, w) && (arrangements(w, [], false, 1e5)?.some((o) => sidesMeet(b, o)) ?? true),
+			);
 		const seen = new Map<string, string[]>();
 		for (const w of fitted ?? []) if (!seen.has(cyclicKey(w, true))) seen.set(cyclicKey(w, true), [...w].sort());
 		return [...seen.values()].sort((x, y) => x.length - y.length);
-	}, [plane, result, fitted, shapes]);
+	}, [plane, result, fitted, shapes, b]);
 	// where a set fits in only some of its orders, writing out those orders saves the engine the rest
 	const partial = useMemo(
 		() =>
@@ -1230,7 +1372,10 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 	);
 	// cyclic orders, not sets: an edge system's (its digons placed), or only the orders that fit
 	const [fitOnly, setFitOnly] = useState<boolean | null>(null);
-	const explicit = edges || (mode === "types" && !!preset) || mode === "colors" || (plane && (fitOnly ?? partial));
+	// sides typed by length: only the orders whose shared sides glue are written, as the engine would try the rest
+	const sided = b.angles.some((a) => a.edge);
+	const explicit =
+		edges || (mode === "types" && !!preset) || mode === "colors" || sided || (plane && (fitOnly ?? partial));
 	const listed = useMemo(() => {
 		if (!explicit) return { words: sets, over: false };
 		if (plane && !edges && fitted) return { words: fitted, over: false };
@@ -1238,7 +1383,10 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 		let over = false;
 		for (const w of sets) {
 			const a = arrangements(w, edges ? digons : [], loose);
-			if (a) words.push(...a.filter((o) => (plane ? overlapping(b, o) !== true : !pointsTouch(shapes, o))));
+			if (a)
+				words.push(
+					...a.filter((o) => (plane ? overlapping(b, o) !== true : !pointsTouch(shapes, o)) && sidesMeet(b, o)),
+				);
 			else over = true;
 		}
 		return { words, over };
@@ -1265,6 +1413,9 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 	const typedFaces = mode === "types" ? target.faces.length - board.faces.length : 0;
 	const notes = [
 		...(edges && !digonsOf(board).length ? [`Adds the digon face “${digons[0]} x 2”: it marks the edges.`] : []),
+		...(unitless
+			? ["Takes the type of length 1 off the sides that had it: a plain side is length 1, so they glue to every face's."]
+			: []),
 		...(mode === "types" && preset
 			? [
 					`Writes ${target.faces.length} face${target.faces.length === 1 ? "" : "s"}${typedFaces > 0 ? ` (${typedFaces} more)` : ""}: every way to give each face's sides the types ${EDGE_PRESETS[preset].edges.map((e) => `${e.sym} (${e.style})`).join(" and ")}, up to turning and mirroring the face. A corner is named with its sides' types (A4.Ed.Eu), so each vertex spells out its edge pattern.`,
@@ -1278,6 +1429,20 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 				: [`Left out “${sym}”: it ${why}.`],
 		) ?? []),
 		...(plane ? ["Left out: every order whose faces overlap round the point, as it can never occur."] : []),
+		...(sided ? ["Left out: every order with two neighbouring corners whose shared side does not glue (only like lengths do)."] : []),
+		...(result?.dropped.length
+			? [
+					`Left out ${result.dropped.length} near-miss${result.dropped.length === 1 ? "" : "es"}: within 1e-6 of 360° but not 360° when checked to 60 digits (${result.dropped
+						.slice(0, 3)
+						.map((w) => w.join(" "))
+						.join("; ")}${result.dropped.length > 3 ? "; …" : ""}).`,
+				]
+			: []),
+		...(result?.unchecked
+			? [
+					`${result.unchecked} vertices close to within 1e-6 but are not checked exactly: ${typed ? "a typed edge is a decimal, not the edge a vertex fixes" : "they have a corner with no closed form here"}.`,
+				]
+			: []),
 		...(plane && result && !fitted ? ["Too many vertices to build: lower “at most”."] : []),
 		...(listed.over ? ["Some sets of corners have too many orders to spell out; they are left out."] : []),
 		...opened,
@@ -1311,6 +1476,16 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 			description="Generate the board's vertices from its corners"
 		>
 			<div className="space-y-5 p-5 text-sm">
+				{vars ? (
+					<p className="rounded-control bg-surface-sunken px-3 py-2 text-xs leading-snug text-fg-secondary">
+						The board has parameters, so this finds the vertices that close at{" "}
+						{Object.entries(vars)
+							.map(([k, v]) => `${k} = ${v}`)
+							.join(", ")}
+						, the values it is drawn at. Each is written with its corners as they are named (A{"{n}"}), so it stays on
+						the board for every value, its corners following n.
+					</p>
+				) : null}
 				<div className="space-y-2">
 					<div className="ta-label flex items-center gap-1.5">
 						Search for
@@ -1391,9 +1566,9 @@ function QuickSetup({ b: board, set, close }: EditorProps & { close: () => void 
 								say which types glue.
 								<InfoDot>
 									Drawn and hidden sides glued like to like give edge patterns without digons; bumps glued to bites
-									give bubble tiles. For lengths, give the board one edge line per length and write each face with its
-									sides&apos; types (Corners, then a corner&apos;s Edge type box), and use the board&apos;s own
-									types. Edge corners do not count toward k.
+									give bubble tiles. For lengths, draw the faces with Lengths as edge types (Draw a face): each length
+									is a type that glues only to itself, and the board&apos;s own types keep them. Edge corners do not
+									count toward k.
 								</InfoDot>
 							</div>
 							<OptionWall
@@ -1647,10 +1822,11 @@ type Picking = { on: boolean; active: boolean; toggle: (range: boolean) => void;
 
 /** A face as its card names it: its corners and repeat, and a polygon of one corner as `A8 × 8`. */
 const faceLabel = (f: Face) => {
-	const times = f.repeat === "inf" ? "∞" : f.repeat;
+	const r = repeatOf(f);
+	const shown = f.repeat === "inf" ? "∞" : typeof r === "string" ? bare(r) : r;
 	if (f.word.length && f.word.every((c) => c === f.word[0]) && f.repeat !== "inf")
-		return `${f.word[0]} × ${f.word.length * f.repeat}`;
-	return `${f.word.join(" ")}${f.repeat === 1 ? "" : ` × ${times}`}`;
+		return `${f.word[0]} × ${typeof r === "string" ? times(f.word.length, bare(r)) : f.word.length * r}`;
+	return `${f.word.join(" ")}${r === 1 ? "" : ` × ${shown}`}`;
 };
 /** An edge corner that only decorates a side (a bump or bite, a drawn or hidden side): faces that differ
  *  only in these, and in corners named for the sides beside them (A3.Ed.Eu, typedName), are variants of
@@ -1765,45 +1941,98 @@ function AddCard({ label, onClick, disabled }: { label: string; onClick: () => v
 	);
 }
 
-/** A face typed in Marek's names: C6, Aoo, A6*60. */
+/** Faces typed in Marek's names: C6, Aoo, A6*60, several at once with commas. */
 function FaceShorthand({ b, set }: Pick<EditorProps, "b" | "set">) {
 	const [text, setText] = useState("");
-	const spec = readShorthand(text);
+	const specs = readShorthands(text);
 	return (
 		<form
 			className="flex items-center gap-1.5"
 			onSubmit={(e) => {
 				e.preventDefault();
-				if (!spec) return;
-				set(withFace(b, spec));
+				if (!specs) return;
+				set(specs.reduce((acc, s) => withFace(acc, s), b));
 				setText("");
 			}}
 		>
 			<InfoDot side="bottom" label="Typing a face">
 				A letter for the side, A for one edge, B for two, C for three, then the corners: A3 is a triangle, C6 a hexagon
 				with sides of three edges, Aoo an apeirogon. A6*60 is a star of six 60° points, A3*100 a convex hexagon of 100°
-				and 140° corners. The corners are declared for you, as Marek names them.
+				and 140° corners. The corners are declared for you, as Marek names them. Several faces at once take commas:
+				Aoo, B3, Coo. Whole families (regular polygons, the stars of an angle grid, polyforms) are under Add family.
 			</InfoDot>
 			<Input
 				value={text}
 				onChange={(e) => setText(e.target.value.replace(/\s/g, ""))}
 				placeholder="C6, A6*60"
 				size="sm"
-				className={cn("w-28 font-mono", text && !spec && "border-danger/60")}
+				className={cn("w-36 font-mono", text && !specs && "border-danger/60")}
 				aria-label="Face in Marek's names"
 			/>
-			<Button size="sm" icon={Plus} label="Add" type="submit" disabled={!spec} />
+			<Button size="sm" icon={Plus} label="Add" type="submit" disabled={!specs} />
 		</form>
 	);
 }
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
+/** Vertex lines pasted in bulk, their faces and corners added with them. */
+function PasteVertices({ b, set, close }: Pick<EditorProps, "b" | "set"> & { close: () => void }) {
+	const [text, setText] = useState("");
+	const out = useMemo(() => withVertices(b, text), [b, text]);
+	const say = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en")} ${n === 1 ? one : many}`;
+	return (
+		<Modal
+			isOpen
+			onOpenChange={(o) => !o && close()}
+			title="Paste vertices"
+			maxWidth="max-w-2xl"
+			description="One vertex a line, as `vertex A3 A12 Pi` or the corners alone"
+			footer={
+				<div className="flex items-center justify-end gap-2">
+					<Button label="Cancel" onClick={close} />
+					<Button
+						variant="primary"
+						icon={Plus}
+						label={`Add ${say(out.added, "vertex", "vertices")}`}
+						disabled={!out.added}
+						onClick={() => (set(out.board), close())}
+					/>
+				</div>
+			}
+		>
+			<div className="space-y-3 p-5 text-sm">
+				<textarea
+					value={text}
+					onChange={(e) => setText(e.target.value)}
+					spellCheck={false}
+					autoFocus
+					aria-label="Vertex lines"
+					placeholder={"vertex A3 A3 A12 A12\nvertex A12 C6 Pi"}
+					className="h-64 w-full resize-none rounded-control border border-line bg-surface-sunken p-3 font-mono text-xs text-fg outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+				/>
+				<p className="text-fg-secondary">
+					Corners the board lacks come with their faces when their names say them (A3 a triangle, C6 a hexagon of
+					three-edge sides, Hoo an apeirogon of eight-edge sides), and alone when not. Vertices the board has are
+					left out.
+				</p>
+				{text.trim() ? (
+					<p className="text-fg">
+						{say(out.added, "new vertex", "new vertices")}
+						{out.faces.length ? ` · ${say(out.faces.length, "face")} added: ${out.faces.join(", ")}` : ""}
+						{out.bare.length ? ` · declared without a face: ${out.bare.join(", ")}` : ""}
+					</p>
+				) : null}
+			</div>
+		</Modal>
+	);
+}
+
 type Open =
 	| { kind: "corner"; sym: string }
 	| { kind: "face" | "vertex"; index: number }
-	| { kind: "draw"; index: number | null }
-	| { kind: "quick" }
+	| { kind: "draw"; index: number | null; selfCrossing?: boolean }
+	| { kind: "quick" | "paste" | "family" }
 	| null;
 
 export function VisualEditor(props: EditorProps) {
@@ -1864,7 +2093,12 @@ export function VisualEditor(props: EditorProps) {
 			disabled: !is.length || requiresFaces(b, is.map((i) => b.faces[i])),
 			run: () => (set(withRequiredFaces(b, is.map((i) => b.faces[i]))), then()),
 		},
-		remove: { run: () => (set({ ...b, faces: b.faces.filter((_, i) => !is.includes(i)) }), then()) },
+		remove: { run: () => (set(withoutFaces(b, is)), then()) },
+		// optional in a study, or all of them always on again
+		optional: {
+			all: is.length > 0 && is.every((i) => b.faces[i].optional),
+			run: () => (set(toggleOptional(b, is)), then()),
+		},
 	});
 	const picked = faceActions(fpicks.sel, fpicks.clear);
 	// a face required on its own; in a group, not when its vertices are only the group's "any" set (corners
@@ -1906,6 +2140,27 @@ export function VisualEditor(props: EditorProps) {
 	const dead = deadWeight(b);
 	const fit = fitsOf(b);
 	const neverFit = fit.flatMap((w, i) => (w ? [] : [i]));
+	// on a board with parameters, fitting and the balance check answer for the values it is drawn at: they
+	// mark vertices there, and remove none (a line dead at n = 8 can be needed at n = 6)
+	const drawnAt = props.vars ? Object.entries(props.vars).map(([k, v]) => `${k} = ${v}`).join(", ") : null;
+	// the engine's balance check (tilesearch --balance), run in the background a moment after each edit: the
+	// lines no periodic tiling can use, by counting and by a short search from each of their types. Kept with
+	// the text it answered for, so an answer for an older board is never applied to this one.
+	// the engine reads a study board as the plain board, every optional face present
+	const text = useMemo(() => props.checkText ?? serialize(plainBoard(b)), [b, props.checkText]);
+	const [balance, setBalance] = useState<{ text: string; dead: number[] } | null>(null);
+	useEffect(() => {
+		const t = setTimeout(
+			() =>
+				void window.tilesearch
+					.balance(text)
+					.then((r) => r && "dead" in r && setBalance({ text, dead: r.dead.map((n) => n - 1) })),
+			600,
+		);
+		return () => clearTimeout(t);
+	}, [text]);
+	const cantOccur =
+		balance?.text === text ? balance.dead.filter((i) => !dead.vertices.includes(i) && !neverFit.includes(i)) : [];
 	// the vertex filter: what it keeps, or why it cannot be read (then every vertex shows)
 	const [query, setQuery] = useState("");
 	const filter = useMemo(() => vertexQuery(b, query), [b, query]);
@@ -1974,12 +2229,12 @@ export function VisualEditor(props: EditorProps) {
 						<Prune
 							n={dead.faces.length}
 							what="unplaceable"
-							onClick={() => set({ ...b, faces: b.faces.filter((_, i) => !dead.faces.includes(i)) })}
+							onClick={() => set(withoutFaces(b, dead.faces))}
 						/>
 						<ClearAll
 							n={b.faces.length}
 							what="Remove every face"
-							onClick={() => (set({ ...b, faces: [] }), fpicks.clear())}
+							onClick={() => (set(withoutFaces(b, b.faces.map((_, i) => i))), fpicks.clear())}
 						/>
 						<Button
 							size="sm"
@@ -1987,6 +2242,7 @@ export function VisualEditor(props: EditorProps) {
 							label="Draw a face"
 							onClick={() => setOpen({ kind: "draw", index: null })}
 						/>
+						<Button size="sm" icon={Shapes} label="Add family" onClick={() => setOpen({ kind: "family" })} />
 						<FaceShorthand b={b} set={set} />
 					</>
 				}
@@ -2023,6 +2279,11 @@ export function VisualEditor(props: EditorProps) {
 										disabled: act.requireEach.disabled,
 									},
 									{ icon: Crosshair, label: "Require any", onSelect: act.requireAny.run, disabled: act.requireAny.disabled },
+									{
+										icon: CircleDashed,
+										label: act.optional.all ? "Always on, every variant" : "Optional, every variant",
+										onSelect: act.optional.run,
+									},
 									{ icon: Trash2, label: `Delete all ${all.length}`, onSelect: act.remove.run, danger: true },
 								];
 								return (
@@ -2048,6 +2309,7 @@ export function VisualEditor(props: EditorProps) {
 														{open ? "Hide variants" : `${all.length} variants`}
 													</span>
 													{required ? <RequiredTag how={required} /> : null}
+													{all.every((j) => b.faces[j].optional) ? <OptionalTag /> : null}
 												</span>
 											}
 										>
@@ -2073,15 +2335,20 @@ export function VisualEditor(props: EditorProps) {
 									<Card
 										// a drawn face opens its drawing
 										onClick={() =>
-											setOpen(prefixOf(f) && edgesOf(b, f) ? { kind: "draw", index: i } : { kind: "face", index: i })
+											setOpen(prefixOf(f, flatOf(b)) && edgesOf(b, f) ? { kind: "draw", index: i } : { kind: "face", index: i })
 										}
 										pick={fpicks.card(i, allFaces, `Select face ${i + 1}`, vpicks.clear)}
 										problems={at(problems, { kind: "face", index: i })}
 										label={faceLabel(f)}
 										badge={
-											alone(i) ? (
-												<span className="rounded-sm bg-accent px-1.5 text-[11px] font-medium text-accent-contrast">
-													required
+											alone(i) || f.optional ? (
+												<span className="flex gap-1">
+													{alone(i) ? (
+														<span className="rounded-sm bg-accent px-1.5 text-[11px] font-medium text-accent-contrast">
+															required
+														</span>
+													) : null}
+													{f.optional ? <OptionalTag /> : null}
 												</span>
 											) : undefined
 										}
@@ -2123,6 +2390,14 @@ export function VisualEditor(props: EditorProps) {
 					<Button
 						size="sm"
 						variant="ghost"
+						icon={CircleDashed}
+						label={picked.optional.all ? "Always on" : "Optional"}
+						title={picked.optional.all ? "Every row of a study holds these faces again" : OPTIONAL_HINT}
+						onClick={picked.optional.run}
+					/>
+					<Button
+						size="sm"
+						variant="ghost"
 						icon={Trash2}
 						label="Delete"
 						onClick={picked.remove.run}
@@ -2142,15 +2417,27 @@ export function VisualEditor(props: EditorProps) {
 							onClick={() => (set(removeVertices(b, dead.vertices)), vpicks.clear())}
 						/>
 						<Prune
-							n={neverFit.length}
+							n={drawnAt ? 0 : neverFit.length}
 							what="that never fit"
 							onClick={() => (set(removeVertices(b, neverFit)), vpicks.clear())}
 						/>
+						{cantOccur.length && !drawnAt ? (
+							<Tooltip label="No periodic tiling of this board can use these vertices: the engine's balance check proves it by counting corners, or by a short search from each that always runs into a contradiction. Removing them changes no result, and every later run skips them.">
+								<span>
+									<Prune
+										n={cantOccur.length}
+										what="that can't occur"
+										onClick={() => (set(removeVertices(b, cantOccur)), vpicks.clear())}
+									/>
+								</span>
+							</Tooltip>
+						) : null}
 						<ClearAll
 							n={b.vertices.length}
 							what="Remove every vertex, and the initial ones with them"
 							onClick={() => (set({ ...b, vertices: [], initial: [], require: [] }), vpicks.clear())}
 						/>
+						<Button size="sm" icon={ClipboardPaste} label="Paste" onClick={() => setOpen({ kind: "paste" })} />
 						<Button size="sm" icon={Wand2} label="Quick setup" onClick={() => setOpen({ kind: "quick" })} />
 					</>
 				}
@@ -2204,6 +2491,7 @@ export function VisualEditor(props: EditorProps) {
 									disabled: initial === all.length,
 								},
 								{ icon: FlagOff, label: "Clear initial", onSelect: () => setInitial(false, all), disabled: !initial },
+								{ icon: Crosshair, label: "Require each", onSelect: () => set(withRequiredEach(b, all, "")) },
 								{ icon: Crosshair, label: "Require any", onSelect: () => set(withRequired(b, all, "")) },
 								{
 									icon: Trash2,
@@ -2266,6 +2554,14 @@ export function VisualEditor(props: EditorProps) {
 												set {b.require.flatMap((r, j) => (r.set.includes(i + 1) ? [j + 1] : [])).join(", ")}
 											</span>
 										) : null}
+										{cantOccur.includes(i) ? (
+											<span
+												className="rounded-sm bg-danger/15 px-1.5 text-[11px] font-medium text-danger"
+												title={`No periodic tiling of this board can use this vertex${drawnAt ? ` at ${drawnAt}` : ""} (the engine's balance check)`}
+											>
+												{drawnAt ? `not at ${drawnAt}` : "can't occur"}
+											</span>
+										) : null}
 									</span>
 								}
 							>
@@ -2313,7 +2609,16 @@ export function VisualEditor(props: EditorProps) {
 						size="sm"
 						variant="ghost"
 						icon={Crosshair}
-						label="Require"
+						label="Require each"
+						title="One required set per vertex: only tilings that hold every picked vertex (at most 64 sets)"
+						onClick={() => (set(withRequiredEach(b, sel, query)), vpicks.clear())}
+					/>
+					<Button
+						size="sm"
+						variant="ghost"
+						icon={Crosshair}
+						label="Require any"
+						title="One required set for all the picked vertices: only tilings that hold at least one of them"
 						onClick={() => (set(withRequired(b, sel, query)), vpicks.clear())}
 					/>
 					<Button
@@ -2345,14 +2650,17 @@ export function VisualEditor(props: EditorProps) {
 			{open?.kind === "face" ? (
 				<FaceModal
 					{...props}
+					set={(n) => set(followFace(b, n, open.index))}
 					index={open.index}
 					close={close}
-					draw={() => setOpen({ kind: "draw", index: open.index })}
+					draw={(selfCrossing) => setOpen({ kind: "draw", index: open.index, selfCrossing })}
 				/>
 			) : null}
-			{open?.kind === "draw" ? <DrawFaceModal b={b} set={set} index={open.index} close={close} /> : null}
+			{open?.kind === "draw" ? <DrawFaceModal b={b} set={(n) => set(open.index === null ? n : followFace(b, n, open.index))} index={open.index} close={close} selfCrossing={open.selfCrossing} /> : null}
 			{open?.kind === "vertex" ? <VertexModal {...props} index={open.index} close={close} /> : null}
 			{open?.kind === "quick" ? <QuickSetup {...props} close={close} /> : null}
+			{open?.kind === "paste" ? <PasteVertices b={b} set={set} close={close} /> : null}
+			{open?.kind === "family" ? <FamilyModal b={b} set={set} close={close} /> : null}
 		</div>
 	);
 }

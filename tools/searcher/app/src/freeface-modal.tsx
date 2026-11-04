@@ -10,32 +10,67 @@ import { OptionWall } from "@/components/ui/option-wall";
 import { tileFill } from "@/lib/render/tilePalette";
 import { cn } from "@/lib/utils/cn";
 import { polygonFillHue } from "@/lib/utils/renderTiling";
-import type { Board } from "./board";
+import { flatOf, readLength, type Board } from "./board";
 import {
+	boardTypes,
 	closers,
 	cornerDegrees,
 	crossing,
-	DIRS,
 	edgesOf,
 	faceOf,
+	G12,
+	grid,
 	MAX_LEN,
+	MAX_N,
+	MIN_N,
 	nextPrefix,
 	pointsOf,
 	PRESETS,
 	prefixOf,
 	problemOf,
+	regrid,
 	returns,
+	showDegrees,
 	sideOf,
-	STEP,
 	turnOf,
+	unit,
 	withDrawnFace,
 	type Edge,
+	type Grid,
 	type Pt,
 } from "./freeface";
 
 const CANVAS = 440;
-const unit = (dir: number): Pt => ({ x: Math.cos((dir * Math.PI) / 12), y: Math.sin((dir * Math.PI) / 12) });
-const plus = (p: Pt, d: number, l: number) => ({ x: p.x + l * unit(d).x, y: p.y + l * unit(d).y });
+const plus = (p: Pt, d: number, l: number, g: Grid) => ({ x: p.x + l * unit(d, g).x, y: p.y + l * unit(d, g).y });
+/** A length as shown: √ for sqrt. */
+const shown = (e: { len: number; text?: string }) => (e.text ?? String(e.len)).replace(/sqrt/g, "√");
+/** The lengths offered as buttons with lengths as edge types. */
+const TYPED_STEPS = ["1", "2", "sqrt2", "sqrt3", "3"];
+
+/** A length typed as written ("sqrt2", "3/2", "sqrt3-1"): kept while it does not read, passed on when it does. */
+function LengthInput({ value, onChange, label }: { value: string; onChange: (text: string, len: number) => void; label: string }) {
+	const [draft, setDraft] = useState(value);
+	// a length set from outside (a preset, the other kind of sides) replaces the draft
+	const [was, setWas] = useState(value);
+	if (value !== was) (setWas(value), setDraft(value));
+	const read = readLength(draft);
+	const ok = !!read && read.value <= MAX_LEN;
+	return (
+		<Input
+			value={draft}
+			onChange={(e) => {
+				const t = e.target.value.replace(/\s/g, "");
+				setDraft(t);
+				const l = readLength(t);
+				if (l && l.value <= MAX_LEN) onChange(t, l.value);
+			}}
+			size="sm"
+			className={cn("w-24 font-mono", !ok && "border-danger/60")}
+			aria-label={label}
+			title="A length: 2, 3/2, sqrt2, 2sqrt3, sqrt3-1, (1+sqrt5)/2"
+		/>
+	);
+}
 
 /** Whether a keystroke belongs to a field being typed in (or, for Enter, a button), not to the drawing. */
 const typing = (e: KeyboardEvent) =>
@@ -46,26 +81,47 @@ export function DrawFaceModal({
 	set,
 	index,
 	close,
+	selfCrossing = false,
 }: {
 	b: Board;
 	set: (b: Board) => void;
 	/** The face being redrawn, or null for a new one. */
 	index: number | null;
 	close: () => void;
+	/** Start with a self-intersecting outline allowed. */
+	selfCrossing?: boolean;
 }) {
 	const face = index === null ? null : b.faces[index];
-	const [edges, setEdges] = useState<Edge[]>(() => (face && edgesOf(b, face)) ?? []);
-	const [len, setLen] = useState(1);
+	const [start] = useState(() => (face && edgesOf(b, face)) || null);
+	const [cross, setCross] = useState(() => selfCrossing || !!(start && crossing(start.edges, start.g)));
+	const [edges, setEdges] = useState<Edge[]>(start?.edges ?? []);
+	const [n, setN] = useState(start?.g.n ?? 12);
+	const g = grid(n);
+	// lengths as edge types: every side one edge, its length its type (only like lengths glue); a new face
+	// takes them when the board already has edge lines of its own lengths
+	const [typed, setTyped] = useState(
+		() => (start ? start.edges.some((e) => e.text !== undefined) : b.angles.some((a) => a.edge?.length && !a.edge.style)),
+	);
+	const [step, setStep] = useState<{ len: number; text?: string }>(() => (typed ? { len: 1, text: "1" } : { len: 1 }));
+	const len = step.len;
+	const setLen = (l: number) => setStep(typed ? { len: l, text: String(l) } : { len: l });
+	const whole = edges.every((e) => Number.isInteger(e.len)) && Number.isInteger(len);
+	const changeTyped = (to: boolean) => {
+		if (to === typed || (!to && !whole)) return;
+		setTyped(to);
+		setEdges(edges.map(({ text, ...e }) => (to ? { ...e, text: text ?? String(e.len) } : e)));
+		setStep(to ? { len, text: String(len) } : { len });
+	};
 	const [aim, setAim] = useState<number | null>(null);
 	const [ghost, setGhost] = useState<Edge[] | null>(null);
 	const [row, setRow] = useState<number | null>(null);
 	const canvas = useRef<HTMLDivElement>(null);
 	useEffect(() => void setTimeout(() => canvas.current?.focus(), 0), []);
 
-	const closed = returns(edges);
-	const problem = problemOf(edges);
-	const side = sideOf(edges);
-	const pts = useMemo(() => pointsOf(edges), [edges]);
+	const closed = returns(edges, g);
+	const problem = problemOf(edges, g, cross);
+	const side = sideOf(edges, g);
+	const pts = useMemo(() => pointsOf(edges, g), [edges, g]);
 	const tip = pts[pts.length - 1];
 	const last = edges[edges.length - 1];
 	// every next edge from the tip at the current length: whether it closes, and whether it is allowed
@@ -73,35 +129,51 @@ export function DrawFaceModal({
 		() =>
 			closed
 				? []
-				: Array.from({ length: DIRS }, (_, dir) => dir)
-						.filter((dir) => !last || turnOf(last.dir, dir) !== 12) // straight back is no edge
+				: Array.from({ length: g.dirs }, (_, dir) => dir)
+						.filter((dir) => !last || turnOf(last.dir, dir, g) !== g.n) // straight back is no edge
 						.map((dir) => {
-							const next = [...edges, { dir, len }];
-							return { dir, at: plus(tip, dir, len), ok: !crossing(next), closes: returns(next) };
+							const next = [...edges, { dir, ...step }];
+							return { dir, at: plus(tip, dir, len, g), ok: !crossing(next, g, cross), closes: returns(next, g) };
 						}),
-		[edges, len, closed, tip, last],
+		[edges, step, closed, tip, last, g, cross],
 	);
-	const suggestions = useMemo(() => (closed || edges.length < 2 ? [] : closers(edges)), [edges, closed]);
-	const prefix = (face && prefixOf(face)) ?? nextPrefix(b);
-	const line = !problem ? faceOf(edges, prefix) : null;
+	const suggestions = useMemo(
+		() => (closed || edges.length < 2 ? [] : closers(edges, g, 3, cross)),
+		[edges, closed, g, cross],
+	);
+	const prefix = (face && prefixOf(face, flatOf(b))) ?? nextPrefix(b);
+	// the face line as saving writes it, with the edge lines a new length adds
+	const types = useMemo(() => boardTypes(b), [b]);
+	const line = !problem ? faceOf(edges, prefix, g, types.of) : null;
+	const newTypes = line ? [...types.made].filter(([sym]) => line.face.word.includes(sym)) : [];
 
 	const draw = (dir: number) => {
 		const o = options.find((x) => x.dir === dir);
 		if (!o?.ok) return;
-		setEdges([...edges, { dir, len }]);
+		setEdges([...edges, { dir, ...step }]);
 		setGhost(null);
 		setRow(null);
 	};
 	const undo = () => (setEdges(edges.slice(0, -1)), setRow(null));
 	// a corner's edit turns every edge after it; a length's moves them
 	const setCorner = (i: number, deg: number) => {
-		const d = Math.round((-side * (deg - cornerDegrees(edges[i], edges[i + 1], side))) / STEP);
-		setEdges(edges.map((e, j) => (j > i ? { ...e, dir: (((e.dir + d) % DIRS) + DIRS) % DIRS } : e)));
+		const d = Math.round((-side * (deg - cornerDegrees(edges[i], edges[i + 1], side, g))) / g.step);
+		setEdges(edges.map((e, j) => (j > i ? { ...e, dir: (((e.dir + d) % g.dirs) + g.dirs) % g.dirs } : e)));
 	};
-	const setLength = (i: number, l: number) => setEdges(edges.map((e, j) => (j === i ? { ...e, len: l } : e)));
+	// a new N keeps the drawing when its directions are directions of the new N too, else starts over
+	const changeN = (to: number) => {
+		if (to === n || to < MIN_N || to > MAX_N) return;
+		setEdges(regrid(edges, g, grid(to)) ?? []);
+		setN(to);
+		setAim(null);
+		setGhost(null);
+		setRow(null);
+	};
+	const setLength = (i: number, l: number, text?: string) =>
+		setEdges(edges.map((e, j) => (j === i ? { ...e, len: l, ...(text === undefined ? {} : { text }) } : e)));
 	const save = () => {
 		if (problem) return;
-		set(withDrawnFace(b, edges, index ?? undefined));
+		set(withDrawnFace(b, edges, index ?? undefined, g));
 		close();
 	};
 
@@ -109,13 +181,14 @@ export function DrawFaceModal({
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (typing(e) || e.metaKey || e.ctrlKey) return;
-			const current = aim ?? (last ? (last.dir + 6) % DIRS : 0);
+			const quarter = last ? (last.dir + Math.floor(n / 2)) % g.dirs : 0; // a left turn of about 90°
+			const current = aim ?? quarter;
 			if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-				const step = e.key === "ArrowLeft" ? 1 : DIRS - 1;
-				setAim((a) => ((a ?? (last ? (last.dir + 6) % DIRS : 0)) + step) % DIRS);
+				const step = e.key === "ArrowLeft" ? 1 : g.dirs - 1;
+				setAim((a) => ((a ?? quarter) + step) % g.dirs);
 				setGhost(null);
-			} else if (e.key === "ArrowUp") setLen((l) => Math.min(MAX_LEN, l + 1));
-			else if (e.key === "ArrowDown") setLen((l) => Math.max(1, l - 1));
+			} else if (e.key === "ArrowUp" && Number.isInteger(len)) setLen(Math.min(MAX_LEN, len + 1));
+			else if (e.key === "ArrowDown" && Number.isInteger(len)) setLen(Math.max(1, len - 1));
 			else if (/^[1-9]$/.test(e.key)) setLen(Number(e.key));
 			else if (e.key === "Enter" && !closed) draw(current);
 			else if (e.key === "Enter" && !problem) save();
@@ -129,7 +202,8 @@ export function DrawFaceModal({
 
 	// the view: the outline, the start, and every dot the next edge can reach
 	const view = useMemo(() => {
-		const all = [...pts, ...(closed ? [] : [plus(tip, 0, len), plus(tip, 6, len), plus(tip, 12, len), plus(tip, 18, len)])];
+		const reach = [{ x: len, y: 0 }, { x: 0, y: len }, { x: -len, y: 0 }, { x: 0, y: -len }];
+		const all = [...pts, ...(closed ? [] : reach.map((d) => ({ x: tip.x + d.x, y: tip.y + d.y })))];
 		const xs = all.map((p) => p.x);
 		const ys = all.map((p) => p.y);
 		const [cx, cy] = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
@@ -139,15 +213,17 @@ export function DrawFaceModal({
 	const u = view.size / 100; // one hundredth of the canvas, for strokes and labels
 	const S = (p: Pt) => ({ x: p.x, y: -p.y });
 	const aimed = aim !== null ? options.find((o) => o.dir === aim) : undefined;
-	const preview = ghost ?? (aimed?.ok ? [{ dir: aimed.dir, len }] : null);
-	const ghostPts = preview ? pointsOf([...edges, ...preview]).slice(edges.length) : [];
+	const preview = ghost ?? (aimed?.ok ? [{ dir: aimed.dir, ...step }] : null);
+	const ghostPts = preview ? pointsOf([...edges, ...preview], g).slice(edges.length) : [];
+	// a dot's reach, never wider than half the gap to the next dot (at N = 36 they sit 5° apart)
+	const dot = (r: number) => Math.min(r * u, (Math.PI * len) / g.dirs);
 	const fill = closed && !problem ? tileFill(polygonFillHue(pts.slice(0, -1)), 0.85) : "none";
 
 	// a corner's label sits inside the face, on the bisector of its angle
 	const corner = (i: number) => {
 		const [a, c] = [edges[(i - 1 + edges.length) % edges.length], edges[i]];
-		const deg = cornerDegrees(a, c, side);
-		const bis = (c.dir * STEP + (side * deg) / 2) * (Math.PI / 180);
+		const deg = cornerDegrees(a, c, side, g);
+		const bis = (c.dir * g.step + (side * deg) / 2) * (Math.PI / 180);
 		const p = pts[i];
 		return { deg, at: { x: p.x + 4.2 * u * Math.cos(bis), y: p.y + 4.2 * u * Math.sin(bis) } };
 	};
@@ -155,16 +231,16 @@ export function DrawFaceModal({
 	const corners = edges.flatMap((_, i) => (i === 0 && !closed ? [] : [i]));
 	const pending =
 		!closed && last && aimed?.ok
-			? { deg: cornerDegrees(last, { dir: aimed.dir, len }, side), at: tip }
+			? { deg: cornerDegrees(last, { dir: aimed.dir, ...step }, side, g), at: tip }
 			: null;
 
 	return (
 		<Modal
 			isOpen
 			onOpenChange={(o) => !o && close()}
-			title={face ? `Redraw face ${index! + 1}` : "Draw a face"}
+			title={`${face ? `Redraw face ${index! + 1}` : "Draw a face"}${cross ? ", self-intersecting" : ""}`}
 			maxWidth="max-w-5xl"
-			description="Draw a face edge by edge, with turns of 15° and edges of whole lengths"
+			description={`Draw a face edge by edge, with turns of ${showDegrees(g.step)}° and edges of ${typed ? "any length, each length an edge type" : "whole lengths"}`}
 		>
 			<div className="grid grid-cols-[440px_1fr] gap-6 p-5">
 				<div className="space-y-2">
@@ -216,8 +292,8 @@ export function DrawFaceModal({
 							) : null}
 							{/* unit marks along each edge: where its Pi points fall */}
 							{edges.flatMap((e, i) =>
-								Array.from({ length: e.len - 1 }, (_, k) => {
-									const p = plus(pts[i], e.dir, k + 1);
+								Array.from({ length: e.text === undefined ? e.len - 1 : 0 }, (_, k) => {
+									const p = plus(pts[i], e.dir, k + 1, g);
 									return <circle key={`${i}-${k}`} cx={p.x} cy={-p.y} r={0.7 * u} fill="currentColor" />;
 								}),
 							)}
@@ -232,6 +308,27 @@ export function DrawFaceModal({
 									strokeLinecap="round"
 								/>
 							) : null}
+							{/* with lengths as edge types, each side's length outside it */}
+							{typed
+								? edges.map((e, i) => {
+										const th = (e.dir * Math.PI) / g.n;
+										const mx = (pts[i].x + pts[i + 1].x) / 2 + 3.4 * u * side * Math.sin(th);
+										const my = (pts[i].y + pts[i + 1].y) / 2 - 3.4 * u * side * Math.cos(th);
+										return (
+											<text
+												key={`len-${i}`}
+												x={mx}
+												y={-my}
+												fontSize={2.8 * u}
+												textAnchor="middle"
+												dominantBaseline="central"
+												className="fill-accent font-mono"
+											>
+												{shown(e)}
+											</text>
+										);
+									})
+								: null}
 							{corners.map((i) => {
 								const { deg, at } = corner(i);
 								return (
@@ -239,12 +336,12 @@ export function DrawFaceModal({
 										key={i}
 										x={at.x}
 										y={-at.y}
-										fontSize={3.2 * u}
+										fontSize={(Number.isInteger(deg) ? 3.2 : 2.3) * u}
 										textAnchor="middle"
 										dominantBaseline="central"
 										className={cn("font-mono", deg > 180 ? "fill-accent" : "fill-fg-secondary")}
 									>
-										{deg}°
+										{showDegrees(deg)}°
 									</text>
 								);
 							})}
@@ -267,11 +364,11 @@ export function DrawFaceModal({
 									onClick={() => draw(o.dir)}
 									className={o.ok ? "cursor-pointer" : "cursor-not-allowed"}
 								>
-									<circle cx={o.at.x} cy={-o.at.y} r={2.4 * u} fill="transparent" />
+									<circle cx={o.at.x} cy={-o.at.y} r={dot(2.4)} fill="transparent" />
 									<circle
 										cx={o.at.x}
 										cy={-o.at.y}
-										r={(o.closes && o.ok ? 1.6 : aim === o.dir ? 1.3 : 0.8) * u}
+										r={dot(o.closes && o.ok ? 1.6 : aim === o.dir ? 1.3 : 0.8)}
 										fill={
 											!o.ok
 												? "none"
@@ -297,42 +394,129 @@ export function DrawFaceModal({
 									className="fill-accent font-mono font-semibold"
 									pointerEvents="none"
 								>
-									{pending.deg}°
+									{showDegrees(pending.deg)}°
 								</text>
 							) : null}
 						</svg>
 						<div className="absolute top-2 right-2">
 							<InfoDot side="bottom" label="How to draw">
-								Click a dot to draw the next edge from the tip. The dots sit one edge length away, every 15°; a hollow
-								one would cross the outline. ← and → aim, ↑ and ↓ or 1–9 set the length, Enter draws, Backspace undoes.
+								Click a dot to draw the next edge from the tip. The dots sit one edge length away, every{" "}
+								{showDegrees(g.step)}°; a hollow
+								one would {cross ? "fold back" : "cross the outline"}. ← and → aim, ↑ and ↓ or 1–9 set the length, Enter draws, Backspace undoes.
 								The face closes when an edge ends on the start.
 							</InfoDot>
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						<span className="ta-label">Edge length</span>
+						<span className="ta-label flex items-center gap-1.5">
+							Sides
+							<InfoDot>
+								Unit edges: a side of length 3 is three unit edges with Pi points between them, and it glues to
+								any unit edges. Lengths as edge types: each side is one edge of any length (2, 3/2, sqrt2, 2sqrt3,
+								sqrt3-1, (1+sqrt5)/2), and each length is an edge type that glues only to itself, as in the
+								atlas&rsquo;s 45-45-90 and planigon (Laves) palettes. A side of length 1 needs no type: it is a plain
+								unit edge either way, so it glues to any face&rsquo;s. A longer side glues only to sides drawn the same
+								way.
+							</InfoDot>
+						</span>
 						<OptionWall
-							columns={6}
+							columns={2}
 							fill={false}
-							options={[1, 2, 3, 4, 5, 6].map((d) => ({ value: d, label: String(d) }))}
-							selected={len}
-							onChange={setLen}
-						/>
-						<Input
-							type="number"
-							min={1}
-							max={MAX_LEN}
-							value={len}
-							onChange={(e) => {
-								const l = Math.round(Number(e.target.value));
-								if (l >= 1 && l <= MAX_LEN) setLen(l);
-							}}
-							size="sm"
-							className="w-16"
-							aria-label="Edge length"
+							options={[
+								{ value: false, label: "Unit edges", disabled: !whole },
+								{ value: true, label: "Lengths as edge types" },
+							]}
+							selected={typed}
+							onChange={changeTyped}
 						/>
 					</div>
-				</div>
+					<div className="flex items-center gap-2">
+						<span className="ta-label">Edge length</span>
+						{typed ? (
+							<>
+								<OptionWall
+									columns={TYPED_STEPS.length}
+									fill={false}
+									options={TYPED_STEPS.map((t) => ({ value: t, label: shown({ len: 0, text: t }) }))}
+									selected={step.text ?? ""}
+									onChange={(t) => setStep({ len: readLength(t)!.value, text: t })}
+								/>
+								<LengthInput value={step.text ?? "1"} onChange={(text, l) => setStep({ len: l, text })} label="Edge length" />
+							</>
+						) : (
+							<>
+								<OptionWall
+									columns={6}
+									fill={false}
+									options={[1, 2, 3, 4, 5, 6].map((d) => ({ value: d, label: String(d) }))}
+									selected={len}
+									onChange={setLen}
+								/>
+								<Input
+									type="number"
+									min={1}
+									max={MAX_LEN}
+									value={len}
+									onChange={(e) => {
+										const l = Math.round(Number(e.target.value));
+										if (l >= 1 && l <= MAX_LEN) setLen(l);
+									}}
+									size="sm"
+									className="w-16"
+									aria-label="Edge length"
+								/>
+							</>
+						)}
+					</div>
+						<div className="flex items-center gap-2">
+							<span className="ta-label flex items-center gap-1.5">
+								Angle unit
+								<InfoDot>
+									Every turn is a multiple of 180°/N, N from {MIN_N} to {MAX_N}. N = 12 gives turns of 15°, the
+									corners of the squares, triangles, hexagons and dodecagons; N = 5 or 10 the pentagon&rsquo;s, N = 7
+									the heptagon&rsquo;s. A new N keeps the drawing when every edge still points along one of its
+									directions, and starts over otherwise.
+								</InfoDot>
+							</span>
+							<OptionWall
+								columns={5}
+								fill={false}
+								options={[6, 10, 12, 24, 36].map((d) => ({ value: d, label: String(d) }))}
+								selected={n}
+								onChange={changeN}
+							/>
+							<Input
+								type="number"
+								min={MIN_N}
+								max={MAX_N}
+								value={n}
+								onChange={(e) => changeN(Math.round(Number(e.target.value)))}
+								size="sm"
+								className="w-16"
+								aria-label="N, the angle unit 180°/N"
+							/>
+							<span className="font-mono text-xs text-fg-muted">{showDegrees(g.step)}°</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<span className="ta-label flex items-center gap-1.5">
+								Outline
+								<InfoDot>
+									A self-intersecting face, a star polygon such as the pentagram, may cross its own outline; its
+									corners are only where its edges turn. An edge still may not fold straight back.
+								</InfoDot>
+							</span>
+							<OptionWall
+								columns={2}
+								fill={false}
+								options={[
+									{ value: false, label: "Simple" },
+									{ value: true, label: "Self-intersecting" },
+								]}
+								selected={cross}
+								onChange={setCross}
+							/>
+						</div>
+					</div>
 
 				<div className="flex min-w-0 flex-col gap-5">
 					<Status
@@ -347,9 +531,25 @@ export function DrawFaceModal({
 					<div className="space-y-2">
 						<div className="ta-label">Start from</div>
 						<div className="flex flex-wrap gap-1.5">
-							{PRESETS.map((p) => (
-								<Button key={p.name} size="sm" label={p.name} onClick={() => (setEdges(p.edges), setRow(null))} />
-							))}
+							{PRESETS.map((p) => {
+								const at = regrid(p.edges, G12, g);
+								// a typed preset turns lengths as edge types on; a unit one takes them when they are on
+								const own = p.edges.some((e) => e.text !== undefined);
+								return (
+									<Button
+										key={p.name}
+										size="sm"
+										label={p.name}
+										disabled={!at}
+										onClick={() => {
+											if (!at) return;
+											setEdges(typed || own ? at.map((e) => ({ ...e, text: e.text ?? String(e.len) })) : at);
+											if (own && !typed) (setTyped(true), setStep({ len, text: String(len) }));
+											setRow(null);
+										}}
+									/>
+								);
+							})}
 						</div>
 					</div>
 					{edges.length ? (
@@ -364,7 +564,7 @@ export function DrawFaceModal({
 							<ol className="max-h-64 space-y-1 overflow-auto pr-1">
 								{edges.map((e, i) => {
 									const next = edges[i + 1] ?? (closed ? edges[0] : null);
-									const deg = next ? cornerDegrees(e, next, side) : null;
+									const deg = next ? cornerDegrees(e, next, side, g) : null;
 									return (
 										<li
 											key={i}
@@ -376,30 +576,38 @@ export function DrawFaceModal({
 											)}
 										>
 											<span className="w-5 text-right font-mono text-fg-muted">{i + 1}</span>
-											<Input
-												type="number"
-												min={1}
-												max={MAX_LEN}
-												value={e.len}
-												onChange={(ev) => {
-													const l = Math.round(Number(ev.target.value));
-													if (l >= 1 && l <= MAX_LEN) setLength(i, l);
-												}}
-												size="sm"
-												className="w-16"
-												aria-label={`Length of edge ${i + 1}`}
-											/>
+											{e.text !== undefined ? (
+												<LengthInput
+													value={e.text}
+													onChange={(text, l) => setLength(i, l, text)}
+													label={`Length of edge ${i + 1}`}
+												/>
+											) : (
+												<Input
+													type="number"
+													min={1}
+													max={MAX_LEN}
+													value={e.len}
+													onChange={(ev) => {
+														const l = Math.round(Number(ev.target.value));
+														if (l >= 1 && l <= MAX_LEN) setLength(i, l);
+													}}
+													size="sm"
+													className="w-16"
+													aria-label={`Length of edge ${i + 1}`}
+												/>
+											)}
 											<span className="text-fg-muted">then</span>
 											{deg !== null && i + 1 < edges.length ? (
 												<Input
 													type="number"
-													min={STEP}
-													max={360 - STEP}
-													step={STEP}
-													value={deg}
+													min={g.step}
+													max={360 - g.step}
+													step={g.step}
+													value={showDegrees(deg)}
 													onChange={(ev) => {
-														const a = Math.round(Number(ev.target.value) / STEP) * STEP;
-														if (a >= STEP && a <= 360 - STEP) setCorner(i, a);
+														const a = Math.round(Number(ev.target.value) / g.step) * g.step;
+														if (a >= g.step - 1e-9 && a <= 360 - g.step + 1e-9) setCorner(i, a);
 													}}
 													size="sm"
 													className="w-20"
@@ -407,7 +615,7 @@ export function DrawFaceModal({
 												/>
 											) : (
 												<span className="w-20 font-mono text-fg-secondary">
-													{deg !== null ? `${deg}°` : "…"}
+													{deg !== null ? `${showDegrees(deg)}°` : "…"}
 												</span>
 											)}
 											<span className="flex-1 text-fg-muted">
@@ -431,14 +639,18 @@ export function DrawFaceModal({
 							<div className="ta-label flex items-center gap-1.5">
 								On the board
 								<InfoDot>
-									Each corner is a symbol with its angle set, named for this face; corners of the same angle share one,
-									since with unit edges they are the same corner. A side longer than one edge is cut by Pi points. A
-									face and its mirror image are the same face, so it does not matter which way round you drew it.
+									Each corner is a symbol with its angle set, named for this face; corners of the same angle share one.
+									With unit edges, a side longer than one edge is cut by Pi points. With lengths as edge types, each
+									side has an edge corner at its middle naming its length, declared once on the board with a vertex
+									line gluing it to itself, so only like lengths meet. A face and its mirror image are the same face,
+									so it does not matter which way round you drew it.
 								</InfoDot>
 							</div>
-							<code className="block rounded-control bg-surface-sunken px-2.5 py-1.5 font-mono text-xs break-words text-fg-secondary">
+							<code className="block rounded-control bg-surface-sunken px-2.5 py-1.5 font-mono text-xs break-words whitespace-pre-line text-fg-secondary">
+								{newTypes.map(([sym, l]) => `edge ${sym} length ${l}\n`).join("")}
 								face {line.face.word.join(" ")}
 								{line.face.repeat === 1 ? "" : ` x ${line.face.repeat}`}
+								{newTypes.map(([sym]) => `\nvertex ${sym} ${sym}`).join("")}
 							</code>
 						</div>
 					) : null}
@@ -488,6 +700,7 @@ function Status({
 	onHover: (e: Edge[] | null) => void;
 	onClose: (e: Edge[]) => void;
 }) {
+	const typed = edges.some((e) => e.text !== undefined);
 	const unitEdges = edges.reduce((t, e) => t + e.len, 0);
 	if (!edges.length)
 		return (
@@ -500,7 +713,7 @@ function Status({
 			<div className="flex items-start gap-2 rounded-surface bg-surface-sunken p-3 text-sm">
 				<CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
 				<span>
-					Closed: {edges.length} edges, {unitEdges} unit edges round.
+					Closed: {edges.length} edges{typed ? "" : `, ${unitEdges} unit edges round`}.
 				</span>
 			</div>
 		);
@@ -518,7 +731,7 @@ function Status({
 						<span key={i} onMouseEnter={() => onHover(s)}>
 							<Button
 								size="sm"
-								label={s.length === 1 ? `one edge of ${s[0].len}` : `edges of ${s.map((e) => e.len).join(" and ")}`}
+								label={s.length === 1 ? `one edge of ${shown(s[0])}` : `edges of ${s.map(shown).join(" and ")}`}
 								onClick={() => onClose(s)}
 							/>
 						</span>
@@ -526,7 +739,8 @@ function Status({
 				</div>
 			) : open && edges.length >= 2 ? (
 				<p className="text-xs text-fg-muted">
-					No one or two edges of whole length close it from here: keep drawing, or change an edge below.
+					No one or two edges of {typed ? "a plain length" : "whole length"} close it from here: keep drawing, or change an
+					edge below.
 				</p>
 			) : null}
 		</div>
