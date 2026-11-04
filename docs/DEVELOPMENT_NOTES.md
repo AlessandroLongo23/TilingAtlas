@@ -20994,3 +20994,24 @@ tileestimate.exe. The app went to 0.4.0 (studies, Raise k by itself, the Windows
 macOS and Windows rebuilt from one tree, and the three assets replaced in `the-tiling-searcher-latest`, whose
 title and notes now say 0.4.0 with new checksums. The public setup.exe link was downloaded back and its hash
 matches. The site needed no change (lib/downloads.ts links the fixed tag).
+
+## Counting the Tiling Searcher's downloads (2026-11-04, CC)
+
+AL asked to track downloads, and whether Vercel Analytics could. Not directly: counting a click needs Web
+Analytics custom events (`track()`), which are Pro and Enterprise only, and the team is on Hobby; the buttons
+also linked straight to GitHub, so Vercel saw only visits. GitHub counts every download per release file, but a
+new build replaces the files (`--clobber` deletes and re-uploads), so each publish reset the count and the old
+one vanished. The 0.4.0 upload this morning did exactly that: the downloads of the files before it (29 October
+to 4 November) are lost; GitHub keeps nothing for a deleted asset.
+
+Two counters now. `tools/searcher/release.mjs` reads GitHub's counts for every Searcher release into
+`tools/searcher/downloads.tsv`, one row per file GitHub ever served, kept after the file is replaced, and prints
+them per version and platform; `release.mjs publish [notes.md]` records first, then uploads and retitles, so a
+publish can no longer lose a count (lib/downloads.ts now names it instead of the bare `gh release upload`). At
+the first run: 0.2.0 10, 0.3.0 8, 0.4.0 2 (likely the check downloads), 20 in all. And the buttons open
+`/searcher/download/<os>`, a static page on the 404 shell (`ErrorScreen`, in its own route file so its 93 KB of
+baked specimens stay out of the nav bundle) that starts the download after 600 ms and gives the first-launch
+steps; Web Analytics counts its views, grouped as `/searcher/download/[os]`, noindex. Checked in the dev server
+with GitHub stubbed: the landing button opens the page, the download starts and the page stays, the debug
+analytics logs the view, `/searcher/download/linux` is a 404. Downloads from other links (the release page, a
+link sent on Discord) show only in GitHub's counts.

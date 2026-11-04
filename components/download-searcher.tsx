@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { AppleIcon, WindowsIcon } from "@/components/icons/os";
-import { downloadUrl, OS_NAME, releasePage, type Os } from "@/lib/downloads";
+import { downloadPage, OS_NAME, releasePage, type Os } from "@/lib/downloads";
 
 /** The visitor's desktop OS, or null for anything the Tiling Searcher does not run on (a phone, a tablet, Linux). */
 function detect(): Os | null {
@@ -32,7 +32,8 @@ const FOR: Record<Os, string> = { mac: "macOS (Apple silicon)", windows: "Window
  */
 export function DownloadSearcher({ variant }: { variant: "nav" | "hero" }) {
 	const os = useOs();
-	const url = os ? downloadUrl(os) : null;
+	// the atlas page that starts the download, so Web Analytics counts it (lib/downloads.ts)
+	const url = os ? downloadPage(os) : null;
 
 	if (variant === "nav") {
 		if (!os || !url) return null;

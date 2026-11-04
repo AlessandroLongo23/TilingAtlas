@@ -14,7 +14,8 @@ import {
 import { ERROR_SPECIMENS } from "@/lib/render/errorSpecimens";
 import { shardBody } from "@/lib/services/atlasCodec";
 
-// The shell behind app/error.tsx and app/not-found.tsx: a 3 × 3 wall of specimens with the message in
+// The shell behind app/error.tsx, app/not-found.tsx and the Tiling Searcher's download page
+// (app/searcher/download/[os]): a 3 × 3 wall of specimens with the message in
 // the middle cell, hairlines between cells like the landing's collections grid. The eight cells around
 // it are all the same size and each holds one whole picture, so the wall reads as eight specimens and
 // not as a layout — earlier it split the top-left cell into four and the bottom-right into two, which

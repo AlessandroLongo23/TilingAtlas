@@ -1,0 +1,13 @@
+# The Tiling Searcher's downloads on GitHub, one row per release file (tools/searcher/release.mjs).
+# A row stops changing when a new build replaces its file. The files on the-tiling-searcher-latest before 0.4.0 were
+# replaced before this ledger existed, so their downloads (29 October to 4 November 2026) are not here.
+id	tag	version	file	uploaded	downloads	checked
+680950387	tilesearch-v0.2.0	0.2.0	TileSearch-mac-arm64.zip	2026-10-27	4	2026-11-04
+680950390	tilesearch-v0.2.0	0.2.0	TileSearch-windows-x64-setup.exe	2026-10-27	4	2026-11-04
+680950389	tilesearch-v0.2.0	0.2.0	TileSearch-windows-x64.zip	2026-10-27	2	2026-11-04
+688658814	tilesearch-latest	0.3.0	TileSearch-mac-arm64.zip	2026-10-29	4	2026-11-04
+688658818	tilesearch-latest	0.3.0	TileSearch-windows-x64-setup.exe	2026-10-29	3	2026-11-04
+688658817	tilesearch-latest	0.3.0	TileSearch-windows-x64.zip	2026-10-29	1	2026-11-04
+708845470	the-tiling-searcher-latest	0.4.0	TheTilingSearcher-mac-arm64.zip	2026-11-04	1	2026-11-04
+708845467	the-tiling-searcher-latest	0.4.0	TheTilingSearcher-windows-x64-setup.exe	2026-11-04	1	2026-11-04
+708845471	the-tiling-searcher-latest	0.4.0	TheTilingSearcher-windows-x64.zip	2026-11-04	0	2026-11-04

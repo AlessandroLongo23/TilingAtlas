@@ -3331,3 +3331,8 @@ Detail: DEVELOPMENT_NOTES "Raise k for a whole study; one k field for range or r
 2026-11-04 · CC · The Tiling Searcher 0.4.0 on the atlas's download buttons (GitHub release the-tiling-searcher-latest,
 assets replaced): Windows engines rebuilt with mingw and checked under Wine; macOS and Windows from one tree.
 Uncommitted source. Detail: DEVELOPMENT_NOTES "The Tiling Searcher 0.4.0 released".
+
+2026-11-04 · CC · Searcher downloads counted: tools/searcher/release.mjs keeps GitHub's per-file counts in
+downloads.tsv and records before every publish (a replaced file loses its count); the atlas's buttons open
+/searcher/download/<os>, which starts the download and is counted by Vercel Web Analytics. Uncommitted.
+Detail: DEVELOPMENT_NOTES "Counting the Tiling Searcher's downloads".
