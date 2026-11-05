@@ -25,17 +25,16 @@ import { Mark, NAV_BAR, NAV_LABEL, NavActivePill, NavBrand, NavDivider, navLinkC
 
 export const LINKS = [
 	// `blurb` is the phone menu's one-line description of each section.
-	{ href: "/library", label: "Library", blurb: "Browse and filter every tiling in the atlas" },
-	{ href: "/play", label: "Play", blurb: "Open any tiling live: pan, zoom, decorate, edit" },
+	{ href: "/catalogue", label: "Catalogue", blurb: "Browse every tiling in the atlas and open any one live" },
 	{ href: "/parquet", label: "Parquet", blurb: "One tiling morphing smoothly into another" },
 	{ href: "/freedraw", label: "Freedraw", blurb: "Edge patterns drawn over tiling scaffolds" },
 	{ href: "/colors", label: "Colors", blurb: "Periodic colorings of the square grid" },
 	{ href: "/aperiodic", label: "Aperiodic", blurb: "Penrose, the hat, Sub Rosa and multigrids" }, // Sub Rosa, Penrose, hat, Multigrid — switched in its sidebar
 	{ href: "/isohedral", label: "Isohedral", blurb: "The 93 isohedral types, reshaped live" }, // Grünbaum & Shephard IH1–IH93, parameterized via Tactile
 	{ href: "/pentagons", label: "Pentagons", blurb: "The 15 convex pentagons that tile the plane" }, // Kershner's 15 convex-pentagon families, closed by Rao 2017
-	{ href: "/automata", label: "Automata", blurb: "Game of Life and its relatives on tilings" }, // Life-like CA over the catalogue; the ninth link, so its key is 9
-	{ href: "/heesch", label: "Heesch", blurb: "Shapes that cannot tile, and how far they get" }, // non-tiling polyominoes by size with corona patches (heesch-sat); the tenth link, so its key is 0
-	{ href: "/frames", label: "Frames", blurb: "Regions a shape tiles in exactly two ways" }, // polyform frames on ten grids (tools/frames); no key
+	{ href: "/automata", label: "Automata", blurb: "Game of Life and its relatives on tilings" }, // Life-like CA over the catalogue; the eighth link, so its key is 8
+	{ href: "/heesch", label: "Heesch", blurb: "Shapes that cannot tile, and how far they get" }, // non-tiling polyominoes by size with corona patches (heesch-sat); the ninth link, so its key is 9
+	{ href: "/frames", label: "Frames", blurb: "Regions a shape tiles in exactly two ways" }, // polyform frames on ten grids (tools/frames); the tenth link, so its key is 0
 	// { href: "/history", label: "History" }, // hidden from header (route still exists)
 ];
 
@@ -48,7 +47,7 @@ export function Nav() {
 	const pathname = usePathname();
 	const router = useRouter();
 	// Immersive (fullscreen-canvas) mode collapses the header. Kept in the layout (not unmounted) and
-	// animated so entering/exiting is a smooth 300ms slide, matching the sidebar collapse on /play.
+	// animated so entering/exiting is a smooth 300ms slide, matching the sidebar collapse on /catalogue.
 	const immersive = useImmersive((s) => s.immersive);
 	// The phone menu is open while this holds the path it was opened on, so navigating anywhere closes
 	// it with no effect to run.
@@ -80,7 +79,7 @@ export function Nav() {
 	}, [router]);
 
 	// A controller's L1 / R1 step through the sections, wrapping at the ends. Each section is left at
-	// the address it was on and found there again: a bare /play is the default view, so without this
+	// the address it was on and found there again: a bare /catalogue/view is the default view, so without this
 	// one stray shoulder press would cost the tiling on the canvas.
 	const lastPath = useRef<Record<string, string>>({});
 	useGamepad((delta) => {

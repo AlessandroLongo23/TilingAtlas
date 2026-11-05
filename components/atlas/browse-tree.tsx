@@ -4,12 +4,12 @@ import { memo, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ChevronRight, ChevronsDownUp, Layers, LayoutGrid, Rows3, Search, Shapes, X } from "lucide-react";
 import { HoverPill } from "@/components/ui/hover-pill";
 import { cn } from "@/lib/utils/cn";
-import type { BrowseNode } from "@/lib/atlas/browse";
+import { pathTo, type BrowseNode } from "@/lib/atlas/browse";
 
 // The browse tree, drawn the way the Tiling Searcher draws its run tree (tools/searcher/app/src/runs.tsx):
 // a folder's contents hang off a rail, the path to where you are is drawn over it in the text colour one
 // piece every RAIL_STEP ms (only the part that changed), and one hover pill glides between the rows. It
-// lists NO tilings: its leaves are boards, and a board opens as a page in the grid lens.
+// lists NO tilings: its leaves are boards and a hybrid board's rows, and each opens in the grid lens.
 
 const RAIL_STEP = 70;
 const OPEN_KEY = "atlas:open-nodes";
@@ -28,7 +28,7 @@ const n = (x: number) => x.toLocaleString("en-US");
 const compact = (x: number) =>
 	x >= 1e6 ? `${(x / 1e6).toFixed(x >= 1e7 ? 1 : 2)}M` : x >= 1e4 ? `${Math.round(x / 1e3)}k` : n(x);
 
-const KIND_ICON = { class: Shapes, family: Layers, grid: LayoutGrid, sub: Rows3 } as const;
+const KIND_ICON = { class: Shapes, family: Layers, grid: LayoutGrid, sub: Rows3, row: null } as const;
 
 /** Keep a node when it or anything under it matches; a match keeps its whole subtree. */
 function filterTree(nodes: readonly BrowseNode[], q: string): BrowseNode[] {
@@ -122,8 +122,9 @@ export const BrowseTree = memo(function BrowseTree({
 		while (i < now.length && was[i] === now[i]) i++;
 		setFrom(i);
 		setSeen(activeId);
-		const ancestors = activeId ? ancestorIds(tree, activeId) : [];
-		if (ancestors.some((a) => !opened.has(a))) setOpened(new Set([...opened, ...ancestors]));
+		// The node itself unfolds too when it is a folder, as a click would: a link to a hybrid board lands on its rows.
+		const way = activeId ? pathTo(tree, activeId).flatMap((x) => (x.children.length ? [x.id] : [])) : [];
+		if (way.some((a) => !opened.has(a))) setOpened(new Set([...opened, ...way]));
 	}
 	const path = new Map(pathPieces(activeId).map((piece, i) => [piece, i]));
 	const mark = (id: string) => {
@@ -146,22 +147,38 @@ export const BrowseTree = memo(function BrowseTree({
 			const selected = selectedId === node.id;
 			return (
 				<li key={node.id} className={folder ? undefined : "[--rail-mid:22px]"} {...mark(node.id)}>
-					<div className={cn("group flex items-center rounded-control", selected && "bg-surface-overlay")}>
-						<button
-							type="button"
-							onClick={() => {
-								onPick(node);
-								// Picking a folder opens it too: its page lists the same children, and the tree should agree.
-								if (folder && !opened.has(node.id)) toggle(node.id);
-							}}
-							aria-current={selected || undefined}
-							className={cn(
-								"flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-control py-1.5 pl-2 text-left",
-								folder ? "h-9" : "min-h-11",
-							)}
-						>
+					{/* One hover target per row, as in the Searcher: the name, the count and the chevron. The chevron
+					    only folds; the rest of the row opens the node and unfolds it, since the grid now shows what
+					    it holds and the tree should agree. */}
+					<button
+						type="button"
+						onClick={(e) => {
+							const fold = folder && !!(e.target as Element).closest("[data-fold]");
+							if (!fold) onPick(node);
+							if (fold || (folder && !opened.has(node.id))) toggle(node.id);
+						}}
+						aria-current={selected || undefined}
+						aria-expanded={folder ? open : undefined}
+						className={cn(
+							"group flex w-full cursor-pointer items-center gap-2 rounded-control pl-2 text-left",
+							folder ? "h-9 pr-1" : "min-h-11 py-1.5 pr-2.5",
+							selected && "bg-surface-overlay",
+						)}
+					>
+						{Icon ? (
 							<Icon size={15} className={cn("shrink-0", selected ? "text-fg" : "text-fg-secondary")} aria-hidden />
-							<span className="min-w-0 flex-1">
+						) : null}
+						<span className="min-w-0 flex-1">
+							{node.kind === "row" ? (
+								// A row is the tiles its tilings use, as chips: "3", "4₂", "∞".
+								<span className="flex flex-wrap gap-1" aria-label={node.label}>
+									{node.scope.polySet!.split(",").map((tile) => (
+										<span key={tile} className="rounded-sm bg-surface-sunken px-1.5 font-mono text-[11px] text-fg">
+											{tile}
+										</span>
+									))}
+								</span>
+							) : (
 								<span
 									className={cn(
 										"block truncate text-[13px] text-fg",
@@ -170,48 +187,43 @@ export const BrowseTree = memo(function BrowseTree({
 								>
 									{node.label}
 								</span>
-								{folder ? null : (
-									<span className="block truncate text-[11px] text-fg-muted">
-										{node.kRange
-											? node.kRange[0] === node.kRange[1]
-												? `k = ${node.kRange[0]}`
-												: `k ${node.kRange[0]}–${node.kRange[1]}`
-											: ""}
-										{node.sets ? ` · ${node.sets.length} ${node.sets.length === 1 ? "row" : "rows"}` : ""}
-										{node.pending ? ` · ${compact(node.pending)} not loaded` : ""}
-									</span>
-								)}
-							</span>
-							<span
-								className={cn(
-									"shrink-0 font-mono text-[11px] text-fg-muted tabular-nums",
-									folder && "opacity-60 transition-opacity group-hover:opacity-100",
-								)}
-								title={n(node.count)}
-							>
-								{compact(node.count)}
-							</span>
-						</button>
+							)}
+							{folder ? null : (
+								<span className="block truncate text-[11px] text-fg-muted">
+									{node.kRange
+										? node.kRange[0] === node.kRange[1]
+											? `k = ${node.kRange[0]}`
+											: `k ${node.kRange[0]}–${node.kRange[1]}`
+										: ""}
+									{node.pending ? ` · ${compact(node.pending)} not loaded` : ""}
+								</span>
+							)}
+						</span>
+						<span
+							className={cn(
+								"shrink-0 font-mono text-[11px] text-fg-muted tabular-nums",
+								folder && "opacity-60 transition-opacity group-hover:opacity-100",
+							)}
+							title={n(node.count)}
+						>
+							{compact(node.count)}
+						</span>
 						{folder ? (
-							<button
-								type="button"
-								onClick={() => toggle(node.id)}
-								aria-expanded={open}
-								aria-label={`${open ? "Close" : "Open"} ${node.label}`}
-								className="flex h-9 w-8 shrink-0 cursor-pointer items-center justify-center rounded-control"
+							<span
+								data-fold
+								title={open ? "Fold" : "Unfold"}
+								className="flex h-7 w-6 shrink-0 items-center justify-center text-fg-muted transition-colors hover:text-fg"
 							>
 								<ChevronRight
 									size={14}
 									className={cn(
-										"text-fg-muted transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none",
+										"transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none",
 										open && "rotate-90",
 									)}
 								/>
-							</button>
-						) : (
-							<span className="w-2 shrink-0" />
-						)}
-					</div>
+							</span>
+						) : null}
+					</button>
 					{open ? <ul className="ta-tree-reveal ta-rail mt-0.5">{level(node.children)}</ul> : null}
 				</li>
 			);
@@ -260,7 +272,7 @@ export const BrowseTree = memo(function BrowseTree({
 						onClick={() => onPick(null)}
 						aria-current={selectedId === null || undefined}
 						className={cn(
-							"flex h-9 w-full cursor-pointer items-center gap-2 rounded-control pr-2 pl-2 text-left",
+							"flex h-9 w-full cursor-pointer items-center gap-2 rounded-control pr-2.5 pl-2 text-left",
 							selectedId === null && "bg-surface-overlay",
 						)}
 					>
@@ -279,12 +291,4 @@ export const BrowseTree = memo(function BrowseTree({
 
 function containsId(node: BrowseNode, id: string): boolean {
 	return node.children.some((c) => c.id === id || containsId(c, id));
-}
-
-function ancestorIds(nodes: readonly BrowseNode[], id: string): string[] {
-	for (const node of nodes) {
-		if (node.id === id) return [];
-		if (containsId(node, id)) return [node.id, ...ancestorIds(node.children, id)];
-	}
-	return [];
 }

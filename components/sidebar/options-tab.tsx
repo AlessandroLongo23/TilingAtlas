@@ -394,7 +394,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	return (
 		<div
 			// Checkbox rows read one step lighter than the section's slider labels, so the toggles stop outweighing them.
-			className="ta-scroll-fade h-full overflow-y-auto border-t border-line-subtle bg-surface-chrome pb-6 [&_[role=checkbox]_label]:text-[13px] [&_[role=checkbox]_label]:font-normal [&_[role=checkbox]_label]:text-fg"
+			className="ta-scroll-fade h-full overflow-y-auto bg-surface-chrome pb-6 [&_[role=checkbox]_label]:text-[13px] [&_[role=checkbox]_label]:font-normal [&_[role=checkbox]_label]:text-fg"
 			data-sidebar-scroll
 		>
 			{/* Every render/view toggle lives in this one flat section — the old collapsed "Advanced options"

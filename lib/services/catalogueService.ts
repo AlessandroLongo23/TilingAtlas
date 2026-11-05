@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HypFamily } from "@/lib/render/hypStarFamily";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
@@ -162,27 +161,4 @@ export function dedupeCatalogue(found: FoundTiling[], runs: RunRow[]): Catalogue
 		}
 	}
 	return Array.from(byKey.values());
-}
-
-// Only the render-relevant columns of found_tilings — NOT cell_codec (large; the exact mirror is
-// fetched on demand elsewhere). Mirrors runsService.FOUND_COLS.
-const FOUND_COLS = "run_id,canonical_key,render_cell,k,seed_idx,first_seen_at";
-
-// Thin glue (untested, like the runsService fetchers): pull all found_tilings + all runs and dedupe.
-// Read-only; the web never writes these tables. Filtering by k/family/certification is a Phase-2
-// (library filters) concern applied to the returned CatalogueTiling[].
-export async function fetchCatalogue(sb: SupabaseClient): Promise<CatalogueTiling[]> {
-	const [foundRes, runsRes] = await Promise.all([
-		sb.from("found_tilings").select(FOUND_COLS),
-		sb.from("runs").select("*"),
-	]);
-	if (foundRes.error) {
-		console.error("fetchCatalogue found_tilings:", foundRes.error.message);
-		return [];
-	}
-	if (runsRes.error) {
-		console.error("fetchCatalogue runs:", runsRes.error.message);
-		return [];
-	}
-	return dedupeCatalogue((foundRes.data ?? []) as FoundTiling[], (runsRes.data ?? []) as RunRow[]);
 }

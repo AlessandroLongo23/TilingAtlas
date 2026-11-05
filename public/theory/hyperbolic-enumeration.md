@@ -121,4 +121,4 @@ Which puts the current boundary in an unglamorous place: it is made of compute, 
 
 The catalogue currently ships every tiling from every completed box at $k \le 2$, which comes to **28,453 tilings**: 12,168 with one vertex orbit and 16,285 with two. The $k = 3$ layer has been counted but not yet developed into shippable geometry, and beyond it the table is simply blank. Blank because nobody has run those boxes, which is a much better reason for a gap than the alternative.
 
-You can browse the shipped catalogue in the [library](/library), filter it by palette, valence and edge length, and open any entry in [Play](/play) to move around inside it.
+You can browse what shipped on the [catalogue page](/catalogue), filter it by palette, valence and edge length, and open any entry to move around inside it.

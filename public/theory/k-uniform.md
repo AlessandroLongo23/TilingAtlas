@@ -87,7 +87,7 @@ Kepler drew all eleven uniform tilings in the second book of *Harmonices Mundi*.
 <ku-counts set="regular" caption="Tilings by regular polygons with k vertex orbits, on a logarithmic scale. Click a bar for its count and its source; outlined bars are published terms the catalogue does not hold yet. By vertex types splits each bar, in proportion, by the number m of distinct configurations, lighter for larger m. Up to k = 7 the lightest band is m = k, Krötenheerdt's case; after that it is empty. No tiling with two or more orbits has a single configuration.">
 </ku-counts>
 
-The catalogue on [/play](/play) holds every term up to k = 10, 23,396 tilings, computed with Marek Čtrnáct's engine, and its count agrees with the published one at every k. From k = 4 on the counts are the output of exhaustive computer searches, and what supports them is that independent programs, written years apart, agree. The vertex-type split shows a pattern the totals hide: from k = 8 on no tiling uses all of its orbits on different configurations, and the most configurations any tiling with up to ten orbits combines is eight.
+The [catalogue](/catalogue) holds every term up to k = 10, 23,396 tilings, computed with Marek Čtrnáct's engine, and its count agrees with the published one at every k. From k = 4 on the counts are the output of exhaustive computer searches, and what supports them is that independent programs, written years apart, agree. The vertex-type split shows a pattern the totals hide: from k = 8 on no tiling uses all of its orbits on different configurations, and the most configurations any tiling with up to ten orbits combines is eight.
 
 ## Credits
 

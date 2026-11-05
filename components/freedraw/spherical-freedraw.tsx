@@ -216,7 +216,7 @@ export function SphericalFreedraw({
 	const playHref = useMemo(
 		() =>
 			selected
-				? `/play?tiling=${encodeURIComponent(solid.board ? selected.pattern.id : `sfd-${solidId}-${selected.pattern.id}`)}`
+				? `/catalogue/view?tiling=${encodeURIComponent(solid.board ? selected.pattern.id : `sfd-${solidId}-${selected.pattern.id}`)}`
 				: null,
 		[selected, solidId, solid.board],
 	);

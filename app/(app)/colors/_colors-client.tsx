@@ -175,7 +175,7 @@ export function ColorsClient() {
 			null,
 			selected.id,
 		);
-		return q ? `/play?${q}` : "/play";
+		return q ? `/catalogue/view?${q}` : "/catalogue/view";
 	}, [selected, showEdges, showLattice, showVertices]);
 
 	const setKAndReset = (next: number) => {

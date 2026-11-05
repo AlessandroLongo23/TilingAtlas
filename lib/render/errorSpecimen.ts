@@ -194,7 +194,7 @@ function spiralArms(v1: [number, number], v2: [number, number], feature: number)
 
 /** The /play link for a live pick, carrying the lens in /play's own query grammar. */
 function hrefFor(id: string, presentation: Presentation, arms: number): string {
-	const base = `/play?source=reference&tiling=${encodeURIComponent(id)}`;
+	const base = `/catalogue/view?source=reference&tiling=${encodeURIComponent(id)}`;
 	if (presentation === "plain") return base;
 	if (presentation === "inversion") return `${base}&v=1&vmode=inversion`;
 	return `${base}&v=1&vmode=spiral&varma=${arms}&varmb=${arms}`;

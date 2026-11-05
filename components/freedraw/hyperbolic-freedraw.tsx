@@ -211,7 +211,7 @@ export function HyperbolicFreedraw({
 	useKeyShortcuts({ g: () => setCfg({ freedrawScaffold: !useConfiguration.getState().freedrawScaffold }) });
 
 	// A Schwarz record's id is already globally unique, and it is exactly the key /play resolves it by.
-	const playHref = useMemo(() => (selected ? `/play?tiling=${encodeURIComponent(selected.id)}` : null), [selected]);
+	const playHref = useMemo(() => (selected ? `/catalogue/view?tiling=${encodeURIComponent(selected.id)}` : null), [selected]);
 
 	const switchBoard = (id: string) => {
 		const next = BOARDS.find((b) => b.id === id)!;

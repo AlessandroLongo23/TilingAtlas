@@ -97,21 +97,26 @@ const nextConfig: NextConfig = {
 		return [
 			{ source: "/substitutions", destination: "/aperiodic?view=subrosa", permanent: false },
 			{ source: "/multigrid", destination: "/aperiodic?view=multigrid", permanent: false },
+			// /library and /play merged into /catalogue (2026-11-05): the grid of many tilings and the viewer of
+			// one are two lenses of one page. Temporary (307) while the page settles, like /aperiodic above.
+			{ source: "/library", destination: "/catalogue", permanent: false },
+			{ source: "/play", destination: "/catalogue/view", permanent: false },
+			{ source: "/play/about/:path*", destination: "/catalogue/about/:path*", permanent: false },
 			// /theory is gone: its articles moved beside the shelves they explain, and its galleries and
-			// lookup beside Play's articles (lib/about-pages.ts). Query strings carry over.
-			{ source: "/theory", destination: "/play/about", permanent: true },
-			{ source: "/theory/tiles", destination: "/play/about/prototiles", permanent: true },
-			{ source: "/theory/configs", destination: "/play/about/vertex-configurations", permanent: true },
-			{ source: "/theory/vertex", destination: "/play/about/vertex-lookup", permanent: true },
+			// lookup beside the catalogue's articles (lib/about-pages.ts). Query strings carry over.
+			{ source: "/theory", destination: "/catalogue/about", permanent: true },
+			{ source: "/theory/tiles", destination: "/catalogue/about/prototiles", permanent: true },
+			{ source: "/theory/configs", destination: "/catalogue/about/vertex-configurations", permanent: true },
+			{ source: "/theory/vertex", destination: "/catalogue/about/vertex-lookup", permanent: true },
 			{
 				source: "/theory/perfect-rectangles/pipeline",
-				destination: "/play/about/squared-rectangles/pipeline",
+				destination: "/catalogue/about/squared-rectangles/pipeline",
 				permanent: true,
 			},
-			{ source: "/theory/uniform-tilings", destination: "/play/about/uniform-tilings", permanent: true },
-			{ source: "/theory/hyperbolic", destination: "/play/about/hyperbolic", permanent: true },
-			{ source: "/theory/islamic", destination: "/play/about/islamic", permanent: true },
-			{ source: "/theory/perfect-rectangles", destination: "/play/about/squared-rectangles", permanent: true },
+			{ source: "/theory/uniform-tilings", destination: "/catalogue/about/uniform-tilings", permanent: true },
+			{ source: "/theory/hyperbolic", destination: "/catalogue/about/hyperbolic", permanent: true },
+			{ source: "/theory/islamic", destination: "/catalogue/about/islamic", permanent: true },
+			{ source: "/theory/perfect-rectangles", destination: "/catalogue/about/squared-rectangles", permanent: true },
 			{ source: "/theory/freedraw", destination: "/freedraw/about", permanent: true },
 			{ source: "/theory/automata", destination: "/automata/about", permanent: true },
 		];

@@ -202,7 +202,7 @@ function RelativesNote({ state }: { state: RelativeSearch | "searching" | null }
 				{state.found.slice(0, 6).map((r) => (
 					<li key={r.id}>
 						<a
-							href={`/play?tiling=${encodeURIComponent(r.id)}`}
+							href={`/catalogue/view?tiling=${encodeURIComponent(r.id)}`}
 							className="text-accent underline-offset-2 hover:underline"
 						>
 							{r.label}

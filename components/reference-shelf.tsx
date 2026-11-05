@@ -25,6 +25,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Switch } from "@/components/ui/switch";
 import { ReferenceCard } from "@/components/reference-card";
 import { useMobileSheet } from "@/stores/mobileSheet";
+import { useAfterPaint } from "@/lib/hooks/useAfterPaint";
 import { PHONE_QUERY } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import type { SphStarKind } from "@/lib/tilings/sph-star";
@@ -777,7 +778,16 @@ export interface ShelfCommand {
 
 // The scope fields: what the browse tree and the geometry chips set. They are the page's breadcrumb, so
 // the chips row leaves them out, and "Clear" keeps them.
-const SCOPE_FIELDS = ["geometry", "decoration", "tileClass", "family", "board", "sub", "colorsCount"] as const;
+const SCOPE_FIELDS = [
+	"geometry",
+	"decoration",
+	"tileClass",
+	"family",
+	"board",
+	"sub",
+	"colorsCount",
+	"polySet",
+] as const;
 // Kept across a tree pick: they mean the same thing in every place of the tree.
 const PORTABLE_FIELDS = ["query", "discoverers", "certifications", "vcs", "vcMode"] as const;
 const pick = (f: ReferenceFilter, keys: readonly (keyof ReferenceFilter)[]): ReferenceFilter =>
@@ -800,8 +810,8 @@ interface ReferenceShelfProps {
 	filtersOpen: boolean;
 	/** What the page is showing: the browse node's name. */
 	title: string;
-	/** The scope's rows, above the results. */
-	prelude?: ReactNode;
+	/** Beside the count: what the scope holds that is not in memory, and the way to load it. */
+	countNote?: ReactNode;
 	/** Tilings in the scope that exist but are not in memory, so the count can say what it covers. */
 	notLoaded: number;
 }
@@ -817,7 +827,7 @@ export function ReferenceShelf({
 	onOpen,
 	filtersOpen,
 	title,
-	prelude,
+	countNote,
 	notLoaded,
 }: ReferenceShelfProps) {
 	const searchParams = useSearchParams();
@@ -988,9 +998,6 @@ export function ReferenceShelf({
 		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
 		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
 		if (filters.decoration !== DECORATIONS.EDGES) return;
-		// Wait for the base atlas: its own load does setTilings(d) (a REPLACE), so a merge that landed first
-		// would be clobbered. Gating on `tilings` and depending on it re-runs the merge once the base is in.
-		if (!tilings) return;
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
 			if (!alive || !data.length) return;
@@ -1055,7 +1062,6 @@ export function ReferenceShelf({
 	const [penLoaded, setPenLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
 		if ((filters.geometry ?? GEOMETRIES.EUCLIDEAN) !== GEOMETRIES.EUCLIDEAN) return;
-		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
 		const dec = filters.decoration;
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -1099,7 +1105,6 @@ export function ReferenceShelf({
 	const [ihLoaded, setIhLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
 		if ((filters.geometry ?? GEOMETRIES.EUCLIDEAN) !== GEOMETRIES.EUCLIDEAN) return;
-		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
 		const dec = filters.decoration;
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -1145,7 +1150,6 @@ export function ReferenceShelf({
 		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
 		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
 		if (filters.decoration !== DECORATIONS.EDGES) return;
-		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
 			if (!alive || !data.length) return;
@@ -1185,7 +1189,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const geo = filters.geometry;
 		if (geo !== GEOMETRIES.HYPERBOLIC && geo !== GEOMETRIES.SPHERICAL) return;
-		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
 			if (!alive || !data.length) return;
@@ -1311,7 +1314,6 @@ export function ReferenceShelf({
 	// gates on the chip outside any geometry guard. This mirrors it.
 	const [decorLoaded, setDecorLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
-		if (!tilings) return; // the base atlas setTilings is a REPLACE; merging before it lands loses us
 		// Euclidean shelves, so the plane gates them as well as the chip. Freedraw, bubble and the
 		// colourings are all `geometry: "euclidean"`, and the geometry filter drops every one of them
 		// under a curved view — so fetching them there is 29 requests and ~1 MB for rows that cannot
@@ -1373,7 +1375,6 @@ export function ReferenceShelf({
 		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
 		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
 		if (filters.decoration !== DECORATIONS.COLORINGS) return;
-		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
 			if (!alive || !data.length) return;
@@ -1427,13 +1428,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.CONVEX && cls != null) return; // regular/star only — no convex-irregular shard needed
-		// ⚑ Wait for the base atlas. Its load does setTilings(d), a REPLACE, and a shard is small enough to
-		// win that race every time when its class is already in the URL — the merge lands, the base lands
-		// on top of it, and the shard's k is marked loaded so nothing ever retries. Symptom: "0 tilings"
-		// for /library?class=isotoxal&k=3 and ?class=period&k=3 with the shard visibly fetched in the
-		// network panel. The hyperbolic and decoration effects below already guard this way (see the note
-		// at the edge-systems effect); these three did not.
-		if (!tilings) return;
 		const k = filters.kValue;
 		const want =
 			k != null ? COMPOSABLE_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.CONVEX ? COMPOSABLE_HIGHER_K : [];
@@ -1463,7 +1457,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.ISOTOXAL && cls != null) return;
-		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want =
 			k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.ISOTOXAL ? ISOTOXAL_HIGHER_K : [];
@@ -1482,7 +1475,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.PERIOD && cls != null) return;
-		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want =
 			k != null ? PERIOD_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.PERIOD ? PERIOD_HIGHER_K : [];
@@ -1501,7 +1493,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.MIXED && cls != null) return;
-		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want = k != null ? MIXED_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.MIXED ? MIXED_HIGHER_K : [];
 		fetchShards(want, mixedLoadedShards, mixedInflight.current, loadMixedAtlasShard, setTilings, setMixedLoadedShards);
@@ -1512,7 +1503,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.EDGELEN && cls != null) return;
-		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want =
 			k != null ? TRI45_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.EDGELEN ? TRI45_HIGHER_K : [];
@@ -1527,7 +1517,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.EDGELEN && cls != null) return;
-		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		if (k == null || !EUHALF_HIGHER_K.includes(k)) return;
 		fetchShards(
@@ -1546,7 +1535,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.EDGELEN && cls != null) return;
-		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want =
 			k != null ? PENROSE_HIGHER_K.filter((kk) => kk === k) : filters.edgeBoard === "penrose" ? PENROSE_HIGHER_K : [];
@@ -1565,7 +1553,6 @@ export function ReferenceShelf({
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== TILE_CLASSES.SCALED && cls != null) return;
-		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		// ⚑ Deliberately NOT the mixed/period pattern of "class selected with no k ⇒ fetch every shard".
 		// Those tails are a few MB; this one is ~200 MB (k=7 alone is 29,500 tilings), so picking the
@@ -1820,10 +1807,13 @@ export function ReferenceShelf({
 	}
 
 	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
+	// The facets count off the records one painted frame late (lib/hooks/useAfterPaint.ts): the cards come first.
+	const facetTilings = useAfterPaint(tilings, null);
+
 	const kChips = useMemo(() => {
 		const s = new Set<number>();
-		if (tilings)
-			for (const t of tilings) {
+		if (facetTilings)
+			for (const t of facetTilings) {
 				if (geometryOf(t) !== geometry) continue;
 				if (filters.tileClass && tileClassOf(t) !== filters.tileClass) continue; // facet k by class in any geometry
 				// …and by the board and kind in hand: a board carries a few k of the dozens its geometry has, and
@@ -1849,25 +1839,25 @@ export function ReferenceShelf({
 			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of EUHALF_HIGHER_K) s.add(k);
 		}
 		return [...s].sort((a, b) => a - b);
-	}, [tilings, geometry, isEuclidean, filters.tileClass, filters.decoration, filters.board]);
+	}, [facetTilings, geometry, isEuclidean, filters.tileClass, filters.decoration, filters.board]);
 
 	// M chips are faceted to the current view MINUS M/partition: at k=4 they resolve to {2,3,4}.
 	const mOptions = useMemo(() => {
-		if (!tilings || filters.kValue == null) return [];
+		if (!facetTilings || filters.kValue == null) return [];
 		const s = new Set<number>();
-		for (const t of tilings) {
+		for (const t of facetTilings) {
 			if (t.m == null) continue;
 			if (matchesReferenceFilters(t, { ...filters, mValue: undefined, partitionKey: undefined })) s.add(t.m);
 		}
 		return [...s].sort((a, b) => a - b);
-	}, [tilings, filters]);
+	}, [facetTilings, filters]);
 
 	// Partition chips faceted to the current view MINUS the partition itself — so they narrow with the
 	// chosen k (and M, if one is picked): k=7 → 511/421/331/…; k=7,M=3 → just the M=3 partitions.
 	const partitionOptions = useMemo(() => {
-		if (!tilings || filters.kValue == null) return [];
+		if (!facetTilings || filters.kValue == null) return [];
 		const byKey = new Map<string, number>(); // key → m (for ordering)
-		for (const t of tilings) {
+		for (const t of facetTilings) {
 			if (!matchesReferenceFilters(t, { ...filters, partitionKey: undefined })) continue;
 			const key = partitionKeyOf(t);
 			if (key && t.m != null) byKey.set(key, t.m);
@@ -1875,20 +1865,20 @@ export function ReferenceShelf({
 		return [...byKey.entries()]
 			.map(([key, m]) => ({ key, m }))
 			.sort((a, b) => a.m - b.m || (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
-	}, [tilings, filters]);
+	}, [facetTilings, filters]);
 
 	// Data bounds for the hyperbolic interval sliders (valence / palette / edge length ℓ), derived from
 	// the loaded hyperbolic shelf. The edge span is rounded outward to the slider's 0.01 step so the raw
 	// extremes stay reachable. Null until the atlas is in (the groups just don't render yet).
 	const hypBounds = useMemo(() => {
-		if (!tilings) return null;
+		if (!facetTilings) return null;
 		let vMin = Infinity,
 			vMax = -Infinity;
 		let pMin = Infinity,
 			pMax = -Infinity;
 		let eMin = Infinity,
 			eMax = -Infinity;
-		for (const t of tilings) {
+		for (const t of facetTilings) {
 			const hf = hyperbolicFacetsOf(t);
 			if (hf) {
 				if (hf.valence < vMin) vMin = hf.valence;
@@ -1907,7 +1897,7 @@ export function ReferenceShelf({
 			polygon: [pMin, pMax] as [number, number],
 			edge: [Math.floor(eMin * 100) / 100, Math.ceil(eMax * 100) / 100] as [number, number],
 		};
-	}, [tilings]);
+	}, [facetTilings]);
 
 	// An interval slider back at the full data span IS "no filter" — store undefined so the active
 	// count, the Clear button and the URL stay honest.
@@ -1915,18 +1905,18 @@ export function ReferenceShelf({
 		setFilters({ ...filters, [key]: v[0] <= full[0] && v[1] >= full[1] ? undefined : v });
 
 	const availableFolds = useMemo(() => {
-		if (!tilings) return [];
+		if (!facetTilings) return [];
 		const s = new Set<number>();
-		for (const t of tilings) for (const n of starFoldsOf(t)) s.add(n);
+		for (const t of facetTilings) for (const n of starFoldsOf(t)) s.add(n);
 		return [...s].sort((a, b) => a - b);
-	}, [tilings]);
+	}, [facetTilings]);
 
 	// The polygon facet's own scope: every tiling matching the OTHER filters. Both the picker's
 	// per-token counts and the "how many distinct species" walls read off this, so a token shows the
 	// tilings it would actually add and a count chip is never offered when it can only return nothing.
 	const polygonScope = useMemo(() => {
-		if (!tilings) return [];
-		return tilings.filter((t) =>
+		if (!facetTilings) return [];
+		return facetTilings.filter((t) =>
 			matchesReferenceFilters(t, {
 				...filters,
 				polygonNames: undefined,
@@ -1936,9 +1926,9 @@ export function ReferenceShelf({
 				anglePeriods: undefined,
 			}),
 		);
-	}, [tilings, filters]);
+	}, [facetTilings, filters]);
 
-	// Counts are per SPECIES (fold AND point angle), the granularity /play/about/prototiles shows: "6*30" and
+	// Counts are per SPECIES (fold AND point angle), the granularity /catalogue/about/prototiles shows: "6*30" and
 	// "6*60" are different tiles and get their own card.
 	const polygonTokenCounts = useMemo(() => {
 		const m = new Map<string, number>();
@@ -1981,16 +1971,16 @@ export function ReferenceShelf({
 	}, [polygonScope, filters.polygonNames, filters.polygonMode, filters.polygonExclude]);
 
 	const availableGroups = useMemo(() => {
-		if (!tilings) return [];
-		const present = new Set(tilings.map((t) => t.wallpaperGroup).filter((g): g is WallpaperGroup => !!g));
+		if (!facetTilings) return [];
+		const present = new Set(facetTilings.map((t) => t.wallpaperGroup).filter((g): g is WallpaperGroup => !!g));
 		return WALLPAPER_GROUPS.filter((g) => present.has(g));
-	}, [tilings]);
+	}, [facetTilings]);
 
 	const availableShapes = useMemo(() => {
-		if (!tilings) return [];
-		const present = new Set(tilings.map((t) => t.latticeShape).filter((s): s is LatticeShape => !!s));
+		if (!facetTilings) return [];
+		const present = new Set(facetTilings.map((t) => t.latticeShape).filter((s): s is LatticeShape => !!s));
 		return LATTICE_ORDER.filter((s) => present.has(s));
-	}, [tilings]);
+	}, [facetTilings]);
 
 	// Per-level counts, so the wall can say how many sit on each rung before it is clicked — the
 	// distribution IS the finding here, and five bare labels would hide that hybrids are three records in
@@ -2007,13 +1997,13 @@ export function ReferenceShelf({
 		// BEFORE tilingLevel, because the level is the expensive half (it canonicalises every vertex
 		// configuration of the record) and a tiling the filter rejects never needs its level at all.
 		const scope = { ...filters, levels: undefined };
-		for (const t of tilings ?? []) {
+		for (const t of facetTilings ?? []) {
 			if (!matchesReferenceFilters(t, scope)) continue;
 			const lv = tilingLevel(t);
 			if (lv) c.set(lv, (c.get(lv) ?? 0) + 1);
 		}
 		return c;
-	}, [tilings, filters]);
+	}, [facetTilings, filters]);
 
 	// The one selected lattice (single-select). When set, it disables the wallpaper-group chips whose
 	// group can't be crystallographically realized on it.
@@ -2099,15 +2089,7 @@ export function ReferenceShelf({
 	const off = (...keys: (keyof ReferenceFilter)[]): Partial<ReferenceFilter> =>
 		Object.fromEntries(keys.map((k) => [k, undefined]));
 	const list = (xs: readonly (string | number)[]) => xs.join(", ");
-	// Geometry, kind, class and board are the page's breadcrumb and tree, not chips (SCOPE_FIELDS).
-	if (filters.polySet)
-		chip(
-			"polySet",
-			<>
-				row <b className="font-mono font-medium">{filters.polySet.split(",").join(" ")}</b>
-			</>,
-			off("polySet"),
-		);
+	// Geometry, kind, class, board and row are the page's breadcrumb and tree, not chips (SCOPE_FIELDS).
 	if (filters.query?.trim()) chip("q", <>“{filters.query.trim()}”</>, off("query"));
 	if (filters.vcs?.length)
 		chip(
@@ -2261,20 +2243,20 @@ export function ReferenceShelf({
 
 	// ── facet counts: the tilings matching every OTHER filter, per option of one facet ──
 	const vcCounts = useMemo(
-		() => countFacet(tilings, { ...filters, vcs: undefined, vcMode: undefined }, (t) => vcsOf(t)),
-		[tilings, filters],
+		() => countFacet(facetTilings, { ...filters, vcs: undefined, vcMode: undefined }, (t) => vcsOf(t)),
+		[facetTilings, filters],
 	);
 	const discovererCounts = useMemo(
-		() => countFacet(tilings, { ...filters, discoverers: undefined }, (t) => t.discoverer),
-		[tilings, filters],
+		() => countFacet(facetTilings, { ...filters, discoverers: undefined }, (t) => t.discoverer),
+		[facetTilings, filters],
 	);
 	const certCounts = useMemo(
-		() => countFacet(tilings, { ...filters, certifications: undefined }, (t) => t.certification),
-		[tilings, filters],
+		() => countFacet(facetTilings, { ...filters, certifications: undefined }, (t) => t.certification),
+		[facetTilings, filters],
 	);
 	const groupCounts = useMemo(
-		() => countFacet(tilings, { ...filters, wallpaperGroups: undefined }, (t) => t.wallpaperGroup),
-		[tilings, filters],
+		() => countFacet(facetTilings, { ...filters, wallpaperGroups: undefined }, (t) => t.wallpaperGroup),
+		[facetTilings, filters],
 	);
 	const showVcs = inTilings && vcCounts.size > 0;
 
@@ -2345,11 +2327,10 @@ export function ReferenceShelf({
 			    positioned sr-only <label>; without it the label anchors to <html> and stretches the
 			    document ~1000px below the app shell (a phantom black scroll region). */}
 			<main ref={mainRef} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
-				{prelude}
 				<div className="mb-4 flex flex-col gap-3">
 					<div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-2 max-md:gap-y-3">
 						<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
-							{prelude ? "Results" : title}
+							{title}
 							<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
 								<AnimatedNumber value={filtered.length} /> {notLoaded ? "tilings in memory" : "tilings"}
 								{groupVariants && geometry === GEOMETRIES.HYPERBOLIC && view === "grid"
@@ -2357,6 +2338,7 @@ export function ReferenceShelf({
 									: null}
 							</span>
 						</h1>
+						{countNote}
 						{loadingShards.size > 0 ? (
 							<span className="flex items-center gap-1.5 text-xs text-fg-muted">
 								<Loader2 size={12} className="animate-spin text-fg-muted" />
@@ -2469,7 +2451,7 @@ export function ReferenceShelf({
 								sortKey={sortKey}
 								sortDir={sortDir}
 								onSort={(k) => changeSort(k)}
-								hrefOf={(t) => `/play?tiling=${encodeURIComponent(t.id)}`}
+								hrefOf={(t) => `/catalogue/view?tiling=${encodeURIComponent(t.id)}`}
 								onOpen={onOpen}
 							/>
 						) : null}

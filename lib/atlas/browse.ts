@@ -2,8 +2,8 @@
 // of class → family → (grid) → sub, with every count taken from the loaded records AND the manifest's
 // unloaded tiers, so a node reads the number of tilings that exist and not the number in memory.
 //
-// The tree stops at the sub (a board). Everything below it (k slices, a hybrid board's polygon sets, a
-// base hyperbolic board's configurations) is a ROW in the grid lens, not a level of the sidebar: the old
+// The tree stops at the sub (a board), except that a hybrid board opens onto its rows, the polygon sets
+// its tilings use, the way a Searcher study lists its rows. k slices and tilings are never levels: the old
 // tree nested down to the thumbnails, six levels deep, and pinned five headers over two rows of tiles.
 //
 // Grouping rules are the ones the old catalogue tree used (components/sidebar/catalogue-list-panel.tsx,
@@ -36,7 +36,7 @@ export interface KSlice {
 }
 
 /** A hybrid board's row: the exact set of tiles its tilings use, counted per k. */
-export interface PolySet {
+interface PolySet {
 	key: string;
 	count: number;
 	perK: Map<number, number>;
@@ -45,21 +45,20 @@ export interface PolySet {
 }
 
 /** The part of the library filter a node stands for. Applying a node replaces exactly these fields. */
-export type NodeScope = Pick<ReferenceFilter, "tileClass" | "family" | "board" | "sub" | "colorsCount">;
+export type NodeScope = Pick<ReferenceFilter, "tileClass" | "family" | "board" | "sub" | "colorsCount" | "polySet">;
 
 export interface BrowseNode {
 	id: string;
-	kind: "class" | "family" | "grid" | "sub";
+	kind: "class" | "family" | "grid" | "sub" | "row";
 	label: string;
 	count: number;
 	/** Of `count`, how many are in slices not loaded yet. */
 	pending: number;
 	scope: NodeScope;
 	children: BrowseNode[];
-	/** The k slices of the node's own records: a sub's, or a class's anonymous spine. */
+	/** The k slices of the node's own records: a sub's, a class's anonymous spine, or a row's share of its
+	 *  board's (`count` is the row's; loading one still fetches the board's whole slice). */
 	slices: KSlice[];
-	/** Hybrid boards only: the rows of the board, its polygon sets. */
-	sets?: PolySet[];
 	/** The lowest and highest k anywhere under the node, for the sidebar's subtitle. */
 	kRange: [number, number] | null;
 }
@@ -87,8 +86,12 @@ function polySetsOf(slices: KSlice[], records: CatalogueTiling[]): PolySet[] | u
 	for (const s of slices)
 		if (s.pending) for (const [key, n] of Object.entries(s.pending.facets?.polygons ?? {})) add(key, s.k, n, true);
 	for (const t of records) if (t.hypPoly) add(hypPolyTileCodes(t.hypPoly).join(","), t.k, 1, false);
-	return sets.size ? [...sets.values()].sort((a, b) => polySetCompare(a.key, b.key)) : undefined;
+	// One set is the board itself: a single row would only repeat it.
+	return sets.size > 1 ? [...sets.values()].sort((a, b) => polySetCompare(a.key, b.key)) : undefined;
 }
+
+/** "3,4,20" → "{3, 4, 20}": the row's name in the breadcrumb and the tree's search. */
+export const polySetLabel = (key: string) => `{${key.split(",").join(", ")}}`;
 
 const rangeOf = (ks: Iterable<number>): [number, number] | null => {
 	let lo = Infinity,
@@ -159,17 +162,27 @@ export function buildBrowseTree(items: readonly CatalogueTiling[], unloaded: rea
 				: family
 					? { tileClass: cls, family, board: sub }
 					: { tileClass: cls, family: "_spine", sub };
-			const records = splitsByPolygons(sub) ? [...ks.values()].flat() : [];
+			const sets = splitsByPolygons(sub) ? polySetsOf(slices, [...ks.values()].flat()) : undefined;
+			const id = `s:${cls}:${sub}`;
 			return {
-				id: `s:${cls}:${sub}`,
+				id,
 				kind: "sub",
 				label,
 				count: slices.reduce((s, x) => s + x.count, 0),
 				pending: slices.reduce((s, x) => s + (x.pending ? x.count : 0), 0),
 				scope,
-				children: [],
+				children: (sets ?? []).map((set) => ({
+					id: `${id}:${set.key}`,
+					kind: "row" as const,
+					label: polySetLabel(set.key),
+					count: set.count,
+					pending: set.pending,
+					scope: { ...scope, polySet: set.key },
+					children: [],
+					slices: slices.filter((s) => set.perK.has(s.k)).map((s) => ({ ...s, count: set.perK.get(s.k)! })),
+					kRange: rangeOf(set.perK.keys()),
+				})),
 				slices,
-				sets: splitsByPolygons(sub) ? polySetsOf(slices, records) : undefined,
 				kRange: rangeOf(slices.map((s) => s.k)),
 			};
 		};
@@ -265,7 +278,7 @@ export function buildBrowseTree(items: readonly CatalogueTiling[], unloaded: rea
 	return out;
 }
 
-const SCOPE_KEYS = ["tileClass", "family", "board", "sub", "colorsCount"] as const;
+const SCOPE_KEYS = ["tileClass", "family", "board", "sub", "colorsCount", "polySet"] as const;
 
 /** Does a node's scope match the filter's scope fields? Exactly, except that a link naming a board (or a
  *  sub) may leave its family out: the board implies it, and links shared before the family field existed
@@ -275,30 +288,29 @@ const scopeEquals = (scope: NodeScope, f: ReferenceFilter) =>
 		(key) => scope[key] === f[key] || (key === "family" && f.family === undefined && !!(f.board ?? f.sub)),
 	);
 
-/** The node the filter's scope names, or null for the whole cell. Depth-first, so the deepest wins. */
+/** The node the filter's scope names, or null for the whole cell. A row the board does not list (a link
+ *  to a board whose one set is the whole board) falls back to the board, which the filter still narrows. */
 export function findScopeNode(tree: readonly BrowseNode[], f: ReferenceFilter): BrowseNode | null {
-	for (const n of tree) {
-		if (scopeEquals(n.scope, f)) return n;
-		const hit = findScopeNode(n.children, f);
-		if (hit) return hit;
-	}
-	return null;
+	const hit = findNode(tree, (n) => scopeEquals(n.scope, f));
+	return hit || !f.polySet ? hit : findScopeNode(tree, { ...f, polySet: undefined });
 }
 
-/** The node a record lives in: its sub when the tree lists one, else the class. */
+/** The node a record lives in: its row on a hybrid board, else its sub, else the class. */
 export function nodeOfRecord(tree: readonly BrowseNode[], t: CatalogueTiling): BrowseNode | null {
 	const cls = tileClassOf(t);
 	const sub = subOf(t);
-	const want = sub ? `s:${cls}:${sub}` : `c:${cls}`;
-	const walk = (nodes: readonly BrowseNode[]): BrowseNode | null => {
-		for (const n of nodes) {
-			if (n.id === want) return n;
-			const hit = walk(n.children);
-			if (hit) return hit;
-		}
-		return null;
-	};
-	return walk(tree);
+	const board = sub ? `s:${cls}:${sub}` : `c:${cls}`;
+	const row = t.hypPoly && splitsByPolygons(sub) ? `${board}:${hypPolyTileCodes(t.hypPoly).join(",")}` : null;
+	return (row && findNode(tree, (n) => n.id === row)) || findNode(tree, (n) => n.id === board);
+}
+
+function findNode(nodes: readonly BrowseNode[], hit: (n: BrowseNode) => boolean): BrowseNode | null {
+	for (const n of nodes) {
+		if (hit(n)) return n;
+		const below = findNode(n.children, hit);
+		if (below) return below;
+	}
+	return null;
 }
 
 /** The ids from the root to a node, inclusive. */
@@ -313,15 +325,4 @@ export function pathTo(tree: readonly BrowseNode[], id: string): BrowseNode[] {
 		return null;
 	};
 	return walk(tree, []) ?? [];
-}
-
-/** Every unloaded slice under a node, for a "load all" that stays inside a budget. */
-export function pendingSlicesOf(node: BrowseNode): UnloadedTier[] {
-	const out: UnloadedTier[] = [];
-	const walk = (n: BrowseNode) => {
-		for (const s of n.slices) if (s.pending) out.push(s.pending);
-		n.children.forEach(walk);
-	};
-	walk(node);
-	return out;
 }

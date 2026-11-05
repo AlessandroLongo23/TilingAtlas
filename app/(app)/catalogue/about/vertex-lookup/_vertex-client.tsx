@@ -196,7 +196,7 @@ function BoardCard({ m, word }: { m: BoardMatch; word: string }) {
 						{ks.map((k) => (
 							<Link
 								key={k}
-								href={`/play?tiling=${prefix}${board.id}-${k}-00001`}
+								href={`/catalogue/view?tiling=${prefix}${board.id}-${k}-00001`}
 								className="rounded-control border border-line px-2 py-1 font-mono text-xs text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:inline-flex max-md:min-h-11 max-md:items-center"
 							>
 								k={k} · {board.counts[k].toLocaleString("en-US")}
@@ -211,7 +211,7 @@ function BoardCard({ m, word }: { m: BoardMatch; word: string }) {
 			)}
 			{lowest !== undefined ? <FigureScan m={m} word={word} /> : null}
 			<Link
-				href={`/library?geo=hyperbolic&dec=tilings&board=${sub}`}
+				href={`/catalogue?geo=hyperbolic&dec=tilings&board=${sub}`}
 				className="text-sm text-accent hover:underline"
 				aria-label={`Open the ${board.label} board in the library (figure ${word})`}
 			>
@@ -256,7 +256,7 @@ function FigureScan({ m, word }: { m: BoardMatch; word: string }) {
 		h ? (
 			<>
 				{what}: lowest k = {h.k}, {h.count.toLocaleString("en-US")} tiling{h.count === 1 ? "" : "s"} there (
-				<Link href={`/play?tiling=${h.first}`} className="text-accent hover:underline">
+				<Link href={`/catalogue/view?tiling=${h.first}`} className="text-accent hover:underline">
 					open the first
 				</Link>
 				).

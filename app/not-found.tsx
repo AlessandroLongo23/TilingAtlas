@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Home, Library, Play } from "lucide-react";
+import { Home, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/error-screen";
 
@@ -17,8 +17,7 @@ export default function NotFound() {
 			actions={
 				<>
 					<Button href="/" variant="primary" size="sm" icon={Home} label="Back to the atlas" />
-					<Button href="/library" variant="secondary" size="sm" icon={Library} label="Library" />
-					<Button href="/play" variant="secondary" size="sm" icon={Play} label="Play" />
+					<Button href="/catalogue" variant="secondary" size="sm" icon={Library} label="Catalogue" />
 				</>
 			}
 		/>

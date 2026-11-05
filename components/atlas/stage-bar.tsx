@@ -105,7 +105,7 @@ export const StageBar = memo(function StageBar({
 			{position ? <span className="shrink-0 font-mono text-[11px] text-fg-muted tabular-nums">{position}</span> : null}
 			<div className="ta-seg flex shrink-0" role="group" aria-label="Lens">
 				<SegIndicator />
-				{lensButton("grid", "Catalogue", LayoutGrid, "C")}
+				{lensButton("grid", "Grid", LayoutGrid, "C")}
 				{lensButton("tiling", "Tiling", Square, "V")}
 			</div>
 			<Tooltip label={`${panelOpen ? "Hide" : "Show"} ${panelLabel.toLowerCase()}`} shortcut="]" delay={300}>
@@ -113,10 +113,10 @@ export const StageBar = memo(function StageBar({
 					type="button"
 					onClick={onTogglePanel}
 					aria-pressed={panelOpen}
-					className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-control px-2 text-[13px] text-fg-muted transition-colors hover:text-fg"
+					aria-label={panelLabel}
+					className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:text-fg"
 				>
-					<span className="max-xl:sr-only">{panelLabel}</span>
-					<PanelRight size={16} aria-hidden />
+					<PanelRight size={16} />
 				</button>
 			</Tooltip>
 		</div>

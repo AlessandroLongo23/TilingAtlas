@@ -334,7 +334,7 @@ export function useGamepad(onPage: (delta: number) => void): void {
 			const cfg = useConfiguration.getState();
 			// The sphere's trackball owns its own camera and reads the sticks from the store itself
 			// (lib/render/orbitMomentum.ts); the shared view below is the plane's and the disk's.
-			if (!cfg.spherical && location.pathname.startsWith("/play")) {
+			if (!cfg.spherical && location.pathname.startsWith("/catalogue/view")) {
 				const box = document.querySelector('[role="application"]');
 				drivePlayPan(pan, stick, dt, box ? 0.5 * Math.min(box.clientWidth, box.clientHeight) : 0);
 

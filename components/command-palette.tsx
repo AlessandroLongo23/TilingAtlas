@@ -81,16 +81,16 @@ function Palette({ close }: { close: () => void }) {
 		const q = query.trim().toLowerCase();
 		const hits = q ? all.filter((i) => `${i.label} ${i.hint ?? ""}`.toLowerCase().includes(q)) : all;
 		if (!q) return hits;
-		// The library reads its query once on mount, so from inside the library the search has to be a
-		// full navigation to take effect.
-		const href = `/library?q=${encodeURIComponent(query.trim())}`;
+		// The catalogue reads its query once on mount, so from inside it (either lens) the search has to be
+		// a full navigation to take effect.
+		const href = `/catalogue?q=${encodeURIComponent(query.trim())}`;
 		const search: Item = {
 			id: "search",
-			label: `Search the library for “${query.trim()}”`,
+			label: `Search the catalogue for “${query.trim()}”`,
 			hint: "id or family",
 			group: "Search",
 			icon: /^[\d.]+$/.test(q) ? Hash : Search,
-			run: () => (pathname === "/library" ? window.location.assign(href) : router.push(href)),
+			run: () => (pathname.startsWith("/catalogue") ? window.location.assign(href) : router.push(href)),
 		};
 		return [search, ...hits];
 	}, [query, router, pathname, openUpdates]);

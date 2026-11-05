@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { BrowseSidebar } from "@/components/atlas/browse-sidebar";
 import { StageBar } from "@/components/atlas/stage-bar";
-import { ScopeRows } from "@/components/atlas/scope-rows";
+import { SliceLoader } from "@/components/atlas/slice-loader";
 import { ReferenceShelf, type ShelfCommand } from "@/components/reference-shelf";
 import { PageSidebar } from "@/components/page-sidebar";
 import { NavHeader } from "@/components/sidebar/nav-header";
@@ -222,16 +222,15 @@ const TIER_LOADER: Record<TierShelf, (t: UnloadedTier) => Promise<ReferenceTilin
 	hyppoly: (t) => (t.board ? loadHyperbolicPolyShard(t.board, t.k) : Promise.resolve([])),
 };
 
-interface AtlasClientProps {
-	tilings: CatalogueTiling[];
-}
+const NO_RECORDS: ReferenceTiling[] = [];
+const NO_TILINGS: CatalogueTiling[] = [];
 
-/** Which lens a path opens: /library the grid of many tilings, anything else the viewer of one. */
+/** Which lens a path opens: /catalogue/view the viewer of one tiling, /catalogue the grid of many. */
 type Lens = "grid" | "tiling";
-const lensOf = (path: string | null): Lens => (path?.startsWith("/library") ? "grid" : "tiling");
-const LENS_PATH: Record<Lens, string> = { grid: "/library", tiling: "/play" };
+const lensOf = (path: string | null): Lens => (path?.startsWith("/catalogue/view") ? "tiling" : "grid");
+const LENS_PATH: Record<Lens, string> = { grid: "/catalogue", tiling: "/catalogue/view" };
 
-export function AtlasClient({ tilings }: AtlasClientProps) {
+export function AtlasClient() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
@@ -268,15 +267,20 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 	}, [initialUrl]);
 
 	// The working list is ALWAYS the oracle atlas (lazy-fetched client-side, mapped to the
-	// CatalogueTiling shape) — /play browses every tiling however you arrive (direct nav or a library
-	// click). The Supabase certified catalogue is only a fallback while the atlas loads; it is
-	// currently empty (the certified/reference split was retired, the library is unified).
+	// CatalogueTiling shape) — the page browses every tiling however you arrive. The Supabase certified
+	// catalogue it used to fall back on is gone: both of its tables held 0 rows, and fetching them cost
+	// every catalogue page two round trips (75-175 ms each) before its HTML could start.
 	const [refList, setRefList] = useState<CatalogueTiling[] | null>(null);
 	// The same records as the library filters read them. The viewer's CatalogueTiling is a mapped copy
 	// that drops what the library's facets need (certification, notes, decomposability…), so the page
 	// keeps both, in step: ONE store, which every loader on the page writes to, the viewer's and the
 	// grid's alike. That is what makes the two lenses agree on what exists.
-	const [records, setRecords] = useState<ReferenceTiling[] | null>(null);
+	//
+	// Kept by cell ("geometry|decoration"), and a batch replaces only the lists it adds to. The grid takes
+	// its own cell's list, so its twenty-odd facet memos scan that cell and rerun only when it grows: on
+	// one big list, every shelf that landed anywhere rescanned everything, 145k records on a hyperbolic
+	// link whose board held 15k, and that was most of the 4.9 s before its first card.
+	const [records, setRecords] = useState<ReadonlyMap<string, ReferenceTiling[]> | null>(null);
 	// The base atlas is the first row of the catalogue. Until it lands, a small shard that happened to
 	// arrive first (convex k=3, a few KB) was "the catalogue", and the first selection fell on it: a
 	// bare /play opened on a convex-irregular k=3 tiling instead of the first regular one.
@@ -311,9 +315,20 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 			pendingCat.current = [];
 			pendingRec.current = [];
 			pendingBase.current = false;
+			const byCell = new Map<string, ReferenceTiling[]>();
+			for (const r of rec) {
+				const key = `${geometryOf(r)}|${decorationOf(r)}`;
+				const list = byCell.get(key);
+				if (list) list.push(r);
+				else byCell.set(key, [r]);
+			}
 			startTransition(() => {
 				setRefList((prev) => (prev ? [...prev, ...cat] : cat));
-				setRecords((prev) => (prev ? [...prev, ...rec] : rec));
+				setRecords((prev) => {
+					const next = new Map(prev);
+					for (const [key, add] of byCell) next.set(key, [...(prev?.get(key) ?? []), ...add]);
+					return next;
+				});
 				if (base) setBaseLoaded(true);
 			});
 		}, 40);
@@ -370,7 +385,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 			.catch(() => {
 				if (!alive) return;
 				setRefList((prev) => prev ?? []);
-				setRecords((prev) => prev ?? []);
+				setRecords((prev) => prev ?? new Map());
 				setBaseLoaded(true);
 			});
 		return () => {
@@ -543,7 +558,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		};
 	}, [requestedKey, appendRefs]);
 
-	const working = refList ?? tilings;
+	const working = refList ?? NO_TILINGS;
 
 	// The catalogue's ONE canonical order — the same class → sub → k → key order the sidebar renders (see
 	// compareCatalogueDisplayOrder). Making this THE order means arrow-key / prev-next browsing steps through
@@ -602,13 +617,16 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		() => unloadedTiers(manifest, loadedTiers, { geometry, decoration }),
 		[manifest, loadedTiers, geometry, decoration],
 	);
-	// The two decoration catalogues are deferred (see loadColorsDecorAtlas). Until one arrives its count
-	// is 0, and a 0 disables the chip — which would deadlock, because clicking the chip is what fetches
-	// it. This marks them PENDING so they stay clickable and read "…" instead of a wrong zero.
-	const [decorLoaded, setDecorLoaded] = useState<{ edges: boolean; colorings: boolean }>({
-		edges: false,
-		colorings: false,
-	});
+	// The decoration catalogues are deferred in every geometry (see loadColorsDecorAtlas): each loads when
+	// its chip is chosen. Until one arrives its count is 0, and a 0 disables the chip — which would
+	// deadlock, because clicking the chip is what fetches it. This marks each (geometry, decoration) PENDING
+	// until its shelf lands, so the chip stays clickable and reads "–" instead of a wrong zero.
+	const [decorLoaded, setDecorLoaded] = useState<ReadonlySet<string>>(() => new Set());
+	const markLoaded = useCallback(
+		(geo: Geometry, dec: Decoration) =>
+			setDecorLoaded((s) => (s.has(`${geo}|${dec}`) ? s : new Set(s).add(`${geo}|${dec}`))),
+		[],
+	);
 	// Same story one axis up: the base hyperbolic shelf is deferred, so its geometry chip reads 0 and
 	// `disabled={empty}` would grey out the only control that fetches it.
 	const [hypLoaded, setHypLoaded] = useState(false);
@@ -693,6 +711,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		setCommand({ id: commandSeq.current, patch, reset });
 	}, []);
 	const scopeNode = useMemo(() => findScopeNode(tree, shelfFilters), [tree, shelfFilters]);
+	const scopePending = scopeNode ? scopeNode.pending : tree.reduce((n, x) => n + x.pending, 0);
 	// The results the grid shows, in its order. The viewer's ←/→ and Random walk them whenever the tiling
 	// on the canvas is one of them; a tiling reached some other way (a link, the tree) walks its cell.
 	const [resultIds, setResultIds] = useState<readonly string[]>([]);
@@ -716,12 +735,12 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		},
 		[router],
 	);
-	// A nav link to /play or /library arrives without the query; put the view's back on the new path.
+	// A nav link to /catalogue arrives without the query; put the view's back on the new path.
 	useEffect(() => {
 		flushQuery();
 	}, [pathname]);
 
-	// A pick in the tree or in the rows: the grid shows that place, with the facets that travel kept.
+	// A pick in the tree or the breadcrumb: the grid shows that place, with the facets that travel kept.
 	const pickNode = useCallback(
 		(node: BrowseNode | null) => {
 			issue(node ? node.scope : {}, true);
@@ -814,15 +833,21 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 	}, [geometryList, selected, geometry, decoration, setSelected]);
 
 	// Spherical freedraw (~19.5k patterns, ~10 MB across 30 shards) is deliberately NOT in the base atlas —
-	// loading it up front would tax every /play visit for a shelf many never open. Pull it once the Spherical
-	// geometry is entered, or when a deep-link to an "sfd-…" key arrives, then background-merge it (deduped by
-	// key) so it joins the browse tree under Spherical → Freedraw and the requested key resolves. The loader
-	// is module-cached, so re-running this on every geometry change is free after the first fetch.
+	// loading it up front would tax every /play visit for a shelf many never open. Pull it once Spherical ×
+	// Edge patterns is chosen, or when a deep-link to an "sfd-…" key arrives, then background-merge it (deduped
+	// by key) so it joins the browse tree and the requested key resolves. The loader is module-cached, so
+	// re-running this on every switch is free after the first fetch.
+	//
+	// This and the curved edge and colouring shelves below wait for their own chip, like the Euclidean ones
+	// do. Until 2026-11-05 they loaded on entering the geometry: a link to one hyperbolic board fetched 109
+	// files of edge patterns and colourings for chips nobody had clicked, ahead of the board it named.
 	useEffect(() => {
-		if (geometry !== GEOMETRIES.SPHERICAL && !requestedKey?.startsWith("sfd-")) return;
+		const want = geometry === GEOMETRIES.SPHERICAL && decoration === DECORATIONS.EDGES;
+		if (!want && !requestedKey?.startsWith("sfd-")) return;
 		let alive = true;
 		loadSphericalFreedrawAtlas()
 			.then((data) => {
+				markLoaded(GEOMETRIES.SPHERICAL, DECORATIONS.EDGES);
 				if (!alive || data.length === 0) return;
 				appendRefs(data);
 			})
@@ -830,20 +855,24 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey, appendRefs]);
+	}, [geometry, decoration, requestedKey, appendRefs, markLoaded]);
 
 	// Hyperbolic edge systems: same lazy pattern as spherical freedraw. The eager k ≤ 9 slice (~3.6 MB)
 	// loads once the Hyperbolic geometry is entered (or a deep-link to an "he…" key arrives); the dense
 	// high-k shards (k = 12/13/14) are pulled per-k by loadHyperbolicEdgesShard when their k row is opened.
 	useEffect(() => {
-		if (geometry !== GEOMETRIES.HYPERBOLIC && !requestedKey?.startsWith("he")) return;
+		const want = geometry === GEOMETRIES.HYPERBOLIC && decoration === DECORATIONS.EDGES;
+		if (!want && !requestedKey?.startsWith("he")) return;
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadHyperbolicEdgesAtlas>>) => {
 			if (!alive || data.length === 0) return;
 			appendRefs(data);
 		};
 		loadHyperbolicEdgesAtlas()
-			.then(merge)
+			.then((data) => {
+				markLoaded(GEOMETRIES.HYPERBOLIC, DECORATIONS.EDGES);
+				merge(data);
+			})
 			.catch(() => {});
 		// A deep-link to a lazy-shard he… key (he667-13-…, he46-2-…) also needs its shard fetched so the key
 		// resolves. Attempt only when that (base, k) is actually a lazy shard.
@@ -856,15 +885,17 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey, appendRefs]);
+	}, [geometry, decoration, requestedKey, appendRefs, markLoaded]);
 
 	// Schwarz boards — same lazy pattern again, but this shelf spans BOTH curved geometries, so the effect
 	// runs under either and pulls that geometry's boards. Record ids are "ss<board>-…" (spherical) and
 	// "hs<board>-…" (hyperbolic), which is what a deep-link is matched on; the two dense tails ((2,2,4) k=10,
 	// (2,3,3) k=7) are fetched per-k when their key is requested or their row is opened.
 	useEffect(() => {
-		const wantSph = geometry === GEOMETRIES.SPHERICAL || !!requestedKey?.startsWith("ss");
-		const wantHyp = geometry === GEOMETRIES.HYPERBOLIC || !!requestedKey?.startsWith("hs");
+		// Edge systems (source "freedraw"), so they wait for the Edge patterns chip.
+		const edges = decoration === DECORATIONS.EDGES;
+		const wantSph = (geometry === GEOMETRIES.SPHERICAL && edges) || !!requestedKey?.startsWith("ss");
+		const wantHyp = (geometry === GEOMETRIES.HYPERBOLIC && edges) || !!requestedKey?.startsWith("hs");
 		if (!wantSph && !wantHyp) return;
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadSphericalSchwarzAtlas>>) => {
@@ -892,7 +923,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey, appendRefs]);
+	}, [geometry, decoration, requestedKey, appendRefs]);
 
 	// Uniform-polyhedron edge systems (prisms, antiprisms, truncated tetrahedron, cuboctahedron, J27) and
 	// the 3.4.n.4 hyperbolic tilings — the same lazy pattern once more, one shelf per curved geometry.
@@ -944,7 +975,10 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 			// Entering Spherical fetched both, and the Tilings chip cannot show one of the edge rows.
 			if (decoration === DECORATIONS.EDGES || requestedKey?.startsWith("xe")) {
 				loadSphericalEdgesAtlas()
-					.then(merge)
+					.then((data) => {
+						markLoaded(GEOMETRIES.SPHERICAL, DECORATIONS.EDGES);
+						merge(data);
+					})
 					.catch(() => {});
 			}
 			loadSphericalPolyAtlas()
@@ -973,7 +1007,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 			loadFreedrawDecorAtlas()
 				.then((d) => {
 					mergeAlways(d);
-					setDecorLoaded((s) => (s.edges ? s : { ...s, edges: true }));
+					markLoaded(GEOMETRIES.EUCLIDEAN, DECORATIONS.EDGES);
 				})
 				.catch(() => {});
 		}
@@ -998,7 +1032,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 			loadColorsDecorAtlas()
 				.then((d) => {
 					mergeAlways(d);
-					setDecorLoaded((s) => (s.colorings ? s : { ...s, colorings: true }));
+					markLoaded(GEOMETRIES.EUCLIDEAN, DECORATIONS.COLORINGS);
 				})
 				.catch(() => {});
 		}
@@ -1057,19 +1091,23 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, decoration, requestedKey, appendRefs]);
+	}, [geometry, decoration, requestedKey, appendRefs, markLoaded]);
 
 	// Colored tilings in H² and on S² — the same lazy pattern. The per-base/solid eager slices load once the
 	// matching geometry is entered (or a deep-link "hc…"/"sc…" key arrives); dense shards load per-k below.
 	useEffect(() => {
-		if (geometry !== GEOMETRIES.HYPERBOLIC && !requestedKey?.startsWith("hc")) return;
+		const want = geometry === GEOMETRIES.HYPERBOLIC && decoration === DECORATIONS.COLORINGS;
+		if (!want && !requestedKey?.startsWith("hc")) return;
 		let alive = true;
 		const merge = (data: ReferenceTiling[]) => {
 			if (!alive || data.length === 0) return;
 			appendRefs(data);
 		};
 		loadHyperbolicColorsAtlas()
-			.then(merge)
+			.then((data) => {
+				markLoaded(GEOMETRIES.HYPERBOLIC, DECORATIONS.COLORINGS);
+				merge(data);
+			})
 			.catch(() => {});
 		const m = requestedKey?.match(/^hc(\d+)-(\d+)-/);
 		if (m && hypColorsLazyShardsForK(Number(m[2])).some((s) => s.base === m[1])) {
@@ -1080,17 +1118,21 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey, appendRefs]);
+	}, [geometry, decoration, requestedKey, appendRefs, markLoaded]);
 
 	useEffect(() => {
-		if (geometry !== GEOMETRIES.SPHERICAL && !requestedKey?.startsWith("sc")) return;
+		const want = geometry === GEOMETRIES.SPHERICAL && decoration === DECORATIONS.COLORINGS;
+		if (!want && !requestedKey?.startsWith("sc")) return;
 		let alive = true;
 		const merge = (data: ReferenceTiling[]) => {
 			if (!alive || data.length === 0) return;
 			appendRefs(data);
 		};
 		loadSphericalColorsAtlas()
-			.then(merge)
+			.then((data) => {
+				markLoaded(GEOMETRIES.SPHERICAL, DECORATIONS.COLORINGS);
+				merge(data);
+			})
 			.catch(() => {});
 		const m = requestedKey?.match(/^sc([a-z]+)-(\d+)-/);
 		if (m) {
@@ -1104,7 +1146,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey, appendRefs]);
+	}, [geometry, decoration, requestedKey, appendRefs, markLoaded]);
 
 	// Exact wallpaper-symmetry analysis of the selected tiling (fetched cell_codec → analyzeSymmetry),
 	// memoized per canonicalKey; drives the two canvas overlays. Null while loading / for tilings with
@@ -1489,8 +1531,8 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 			// region pad nudges the angle pair with them). Without this, ArrowRight both nudged the angle AND
 			// stepped the catalogue to the next tiling, which unmounted the pad mid-gesture.
 			if (el?.closest?.('[role="application"]')) return;
-			// The page's own keys, in either lens. C: the Catalogue (the grid), V: the View of one tiling, the
-			// two letters the old sidebar's Catalogue / View options tabs used, now the lenses they grew into.
+			// The page's own keys, in either lens. C: the grid, V: the view of one tiling, the two letters the
+			// old sidebar's Catalogue / View options tabs used, now the lenses they grew into.
 			// [ and ]: the side panels, as in an editor.
 			const grid = lensOf(window.location.pathname) === "grid";
 			if (e.key === "c" || e.key === "C" || e.key === "v" || e.key === "V") {
@@ -1932,23 +1974,25 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		const stray = f.sub ?? f.board ?? f.family ?? f.tileClass;
 		if (lens === "grid" && !activeNode && stray)
 			out.push({ key: "stray", label: `${stray} (not found here: show all)`, onClick: () => pickNode(null) });
-		if (lens === "grid" && shelfFilters.polySet)
-			out.push({ key: "row", label: `row ${shelfFilters.polySet.split(",").join(" ")}` });
 		if (lens === "grid" && shelfFilters.kValue != null) out.push({ key: "k", label: `k = ${shelfFilters.kValue}` });
 		return out;
 	}, [geometry, decoration, activeNode, tree, lens, shelfFilters, pickNode]);
 	// The tiling's own name, without the board's when it repeats it (a hybrid record is named
-	// "edge 1.0612 (3, 4, 5, 10, 20) · 3³.4.3.4", and the crumb before it already says the first half).
+	// "edge 1.0612 (3, 4, 5, 10, 20) · 3³.4.3.4", and a crumb before it already says the first half).
 	const tilingTail = useMemo(() => {
 		if (!selected) return undefined;
 		const name = compactVertexConfig(selected.family);
-		const lead = tilingNode ? `${tilingNode.label} · ` : null;
+		const board = tilingNode && pathTo(tree, tilingNode.id).findLast((x) => x.kind === "sub");
+		const lead = board ? `${board.label} · ` : null;
 		return lead && name.startsWith(lead) ? name.slice(lead.length) : name;
-	}, [selected, tilingNode]);
+	}, [selected, tilingNode, tree]);
 	const geometryPending = useMemo(() => ({ hyperbolic: !hypLoaded }), [hypLoaded]);
 	const decorationPending = useMemo(
-		() => ({ edges: !decorLoaded.edges, colorings: !decorLoaded.colorings }),
-		[decorLoaded.edges, decorLoaded.colorings],
+		() => ({
+			edges: !decorLoaded.has(`${geometry}|${DECORATIONS.EDGES}`),
+			colorings: !decorLoaded.has(`${geometry}|${DECORATIONS.COLORINGS}`),
+		}),
+		[decorLoaded, geometry],
 	);
 	const toggleBrowse = useCallback(() => setBrowseOpen((o) => !o), []);
 	const togglePanel = useCallback(
@@ -1964,8 +2008,6 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 		},
 		[byKey, setSelected, goLens],
 	);
-	const onPickSet = useCallback((key: string | undefined) => issue({ polySet: key }), [issue]);
-	const onPickK = useCallback((k: number | undefined) => issue({ kValue: k }), [issue]);
 	const optionsPanel = useMemo(() => <OptionsTab selected={selected} />, [selected]);
 	// The phone dock's header row: what is on the canvas, and the three ways to step off it.
 	const stepDisabled = stepList.length < 2 || studioActive;
@@ -2053,7 +2095,7 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 					{gridVisited ? (
 						<div className={cn("flex min-h-0 min-w-0 flex-1", lens !== "grid" && "hidden")}>
 							<ReferenceShelf
-								tilings={baseLoaded ? records : null}
+								tilings={baseLoaded ? (records?.get(`${geometry}|${decoration}`) ?? NO_RECORDS) : null}
 								append={appendRefs}
 								geometry={geometry}
 								decoration={decoration}
@@ -2063,21 +2105,9 @@ export function AtlasClient({ tilings }: AtlasClientProps) {
 								onOpen={openTiling}
 								filtersOpen={filtersOpen}
 								title={scopeNode?.label ?? rootLabel}
-								notLoaded={(scopeNode ?? null)?.pending ?? tree.reduce((n, x) => n + x.pending, 0)}
-								prelude={
-									<ScopeRows
-										node={scopeNode}
-										tree={tree}
-										rootLabel={rootLabel}
-										total={decorationCounts[decoration]}
-										activeSet={shelfFilters.polySet}
-										activeK={shelfFilters.kValue}
-										onPick={pickNode}
-										onSet={onPickSet}
-										onK={onPickK}
-										onLoad={loadTier}
-										loading={loadingTiers}
-									/>
+								notLoaded={scopePending}
+								countNote={
+									<SliceLoader node={scopeNode} pending={scopePending} onLoad={loadTier} loading={loadingTiers} />
 								}
 							/>
 						</div>

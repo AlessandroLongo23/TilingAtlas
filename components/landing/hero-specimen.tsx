@@ -39,5 +39,5 @@ export function usePublishHeroSpecimen() {
 
 /** The /play deep link for a specimen id. */
 export function playHref(id: string | null) {
-	return id ? `/play?source=reference&tiling=${encodeURIComponent(id)}` : "/play";
+	return id ? `/catalogue/view?source=reference&tiling=${encodeURIComponent(id)}` : "/catalogue/view";
 }
