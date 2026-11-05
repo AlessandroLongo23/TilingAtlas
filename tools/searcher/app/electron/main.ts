@@ -417,7 +417,14 @@ function replaceFinished() {
 	const due = runs.runs.filter((r) => r.state === "finished" && fs.existsSync(path.join(r.dir, "replaces.txt")));
 	for (const r of due) {
 		const file = path.join(r.dir, "replaces.txt");
-		const old = fs.readFileSync(file, "utf8").trim();
+		// a raise chain can finish within one tick: deleting the run a later one replaces may already have
+		// deleted this one, earlier in this loop
+		let old: string;
+		try {
+			old = fs.readFileSync(file, "utf8").trim();
+		} catch {
+			continue;
+		}
 		const error = old && old !== r.dir && fs.existsSync(old) ? runs.remove(old).error : undefined;
 		if (error) r.note = `Could not delete the run it replaces: ${error}`;
 		else {
