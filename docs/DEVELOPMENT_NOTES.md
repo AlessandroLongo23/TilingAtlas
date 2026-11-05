@@ -21015,3 +21015,59 @@ steps; Web Analytics counts its views, grouped as `/searcher/download/[os]`, noi
 with GitHub stubbed: the landing button opens the page, the download starts and the page stays, the debug
 analytics logs the view, `/searcher/download/linux` is a 404. Downloads from other links (the release page, a
 link sent on Discord) show only in GitHub's counts.
+
+**Study view: sort by a criterion, with a direction button (AL, 4 November).** The eight sorts (most faces, fewest
+faces, first k lowest and highest, ...) are five criteria (Row, Faces, First k, Tilings, Search time) and an A→Z
+button beside them that turns the order round. A criterion opens in its natural direction (more faces, tilings and
+time first; the lowest first k first), and rows with nothing to sort by (no tiling, not yet searched) stay at the
+end both ways. Checked in the dev app on a paused copy of the stars study, each criterion both ways.
+
+**Study view: sort by k reached (AL, 4 November).** A sixth criterion, highest first: the top k of the row's run (a
+raised row's latest), or for a find run the k it found or proved up to; rows with no run go last. As the table showed
+that k nowhere for rows without tilings, a searching or stopped row now says it ("stopped at k = 21"). On the stars
+copy, highest first gives rows 145, 154, 159 (k 21) then 8 (k 20); lowest first the rows that found tilings by k 10.
+
+**Run list: a folder opens in one section only (AL, 4 November).** The open folders were kept by path, so a folder
+holding both finished and stopped runs opened and closed under Unfinished and Finished together. They are kept by
+section and path now; a folder saved the old way opens in every section, so the tree looks as it was left. Picking
+a run opens the folders on its way in its own section, "New folder inside" opens the way in Finished (where the name
+is typed), and Expand all opens every section. Checked in the dev app on a folder with one run of each, across a relaunch.
+
+**Tilings tab: the list holds every tiling it can (AL, 4 November).** A run at k = 10 with 2,446 tilings listed
+1,243, and with no "+". The tab read the first 256 KB of each certificate file, counted against the files' sizes on
+disk; gzipped, those sizes say little of the text (a 30 KB file holds 1.1 MB, 456 tilings, of which 104 fit), so no
+file looked cut. It now reads whole files in order until 8 MB of text, counted as read, and a file that stops short
+of its closing "---" counts as cut, which brings the "+" and its note. That run lists 2,446; a scratch copy padded to
+11 MB in one file lists 3,524+.
+
+## Hybrid edges, exactly (2026-11-04, CC)
+
+AL asked whether Marek's hybrid systems are exact, whether his list is complete, and whether a value can be
+turned into its board; plan agreed, then run in full. Everything is in `experiments/hybrid-exact/`
+(README.md = method and proofs, RESULTS.md = numbers), logs and data in `experiments/results/hybrid-exact/`.
+
+- **Exact.** cosh s is algebraic: with D2 = (1+T_k(C))/2 and A2 = cos²(π/n), e^{iα} = (D2 − 2A2 + 2r)/D2,
+  r² = −A2(D2 − A2). `exact.py` finds the minimal polynomial of cosh s (LLL, or eliminating the radicals),
+  builds K = Q(cosh s, cos 2π/L) in PARI, reduces the square roots to an independent set (Kummer), and checks
+  each vertex coordinate by coordinate. All 5,257 edges and 21,845 vertex lines of Marek's annotated file
+  certified; degree of cosh s 1 to 71, median 16. The four systems the {5,4} note stalled on are degree 4, 3,
+  4, 2. Negative controls: 0 false positives.
+- **Complete.** `sieve.py` enumerates every vertex in a box (float64, 60-digit refinement, exact
+  certificate): eight boxes up to 154M vertices, recall of Marek's edges 100% in each, nothing new. Near misses
+  reach 17 digits at that size, so float agreement proves nothing. `phase3_inverse.py` lists every vertex at
+  each of his edges: 212 he does not list, on 89 edges, all certified (`missed-vertices.tsv`).
+- **Structure.** Proven and checked on 22,418 cases: per square-root class, a vertex's angle sum is a
+  multiple of 2π/2^q. Rational single-length coincidences up to 100-gons: the AI2 family plus nine, five of
+  them his hybrids (`rational.py`); the equation reduces to Conway & Jones (1976). Finiteness per tile set:
+  Bombieri–Masser–Zannier 1999 / Maurin 2008; the hypothesis checked numerically (`nondegenerate.py`).
+- **Searcher.** `board.py` / `triage.py` (validated: 1.7627 gives 8 / 260 / 11,586; his 1.449 and 1.0612
+  boards reproduced): 18 of his 30 written-up systems have mixed tilings by k = 3; 1.0531, 1.0986, 1.3424 none
+  up to k = 3. `make_studies.py` set up 315 paused studies (his single-length and 2:1 lists) under
+  `TheTilingSearcher/results/hyperbolic/tilings/{single-length,2-to-1}`, each checked with the app's planner.
+- ⚑ **Searcher bug fixed:** `replaceFinished` (electron/main.ts) read `replaces.txt` of a run that an earlier
+  step of the same loop had deleted (a raise chain finishing within one tick) → uncaught ENOENT dialog. Now
+  skipped. Tests 200/200, build.sh mac, installed.
+- Lessons: cypari2's direct methods (`P.Pi()`, `P.polrootsreal`) run at 64 bits, use GP strings; LLL must
+  reduce at half precision and verify at full or high dimensions report spurious relations; a subprocess
+  runner must not read pipes only at exit (a chatty batch deadlocks); on macOS multiprocessing workers do not
+  carry the script's name, so `ps | grep script.py` cannot see them.
