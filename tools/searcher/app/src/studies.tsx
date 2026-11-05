@@ -2,6 +2,8 @@
 // does: the name and state on top, one band with what the rows came to, then the rows themselves, each a
 // combination with its outcome; a row with a search opens that run.
 import {
+	ArrowDownAZ,
+	ArrowDownZA,
 	Ban,
 	BookOpen,
 	Check,
@@ -18,7 +20,6 @@ import {
 	Plus,
 	Rows3,
 	Timer,
-	TimerOff,
 	Trash2,
 	TriangleAlert,
 	X,
@@ -27,6 +28,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CheckboxBox } from "@/components/ui/checkbox";
 import { ActionMenu } from "@/components/ui/context-menu";
 import { Dropdown } from "@/components/ui/dropdown";
 import { InfoDot } from "@/components/ui/info-dot";
@@ -37,25 +39,43 @@ import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { RangeInput } from "@/components/ui/range-input";
 import { SearchInput } from "@/components/ui/search-input";
+import { Toggle } from "@/components/ui/toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils/cn";
-import { MAX_K, type Board } from "./board";
+import { MAX_K, minpolys, parse, polyDegree, polyText, type Board } from "./board";
 import {
 	describeRaise,
+	minutesText,
 	raiseCeiling,
 	raiseStop,
 	type RaiseRule,
 	type RowState,
+	type OutFile,
+	type Run,
 	type RunOptions,
 	type Status,
 	type StudyDetail,
+	type StudyOptions,
 	type StudyRow,
 	type StudySummary,
 } from "./bridge";
 import { Problems } from "./editor";
+import { KChart } from "./overview";
 import { DeleteModal, duration, ImproveModal, RaiseConditions, when } from "./runs";
 import { Field } from "./settings";
-import { faceLabels, freeParam, MAX_ROWS, paramText, readParams, substitute, withParam, type Param, type StudyPlan } from "./study";
+import {
+	faceLabels,
+	freeParam,
+	MAX_ROWS,
+	paramText,
+	readParams,
+	substitute,
+	wholeBoards,
+	withParam,
+	type Param,
+	type StudyPlan,
+} from "./study";
+import { GroupPicker, groupOfK, resolveGroup, TilingsView, type Group } from "./tilings";
 
 const api = () => window.tilesearch;
 const n = (x: number) => x.toLocaleString("en");
@@ -97,15 +117,24 @@ function outcome(r: StudyRow): { icon: React.ReactNode; text: string; tone: stri
 		case "ruled-out":
 			return {
 				icon: <Ban className={cn(cls, "text-fg-muted")} />,
-				text: r.by === "balance" ? "ruled out by counting" : r.by === "split" ? "faces cannot meet" : "a corner fits nowhere",
+				text:
+					r.by === "balance"
+						? "ruled out by counting"
+						: r.by === "split"
+							? "faces cannot meet"
+							: "a corner fits nowhere",
 				tone: "text-fg-secondary",
 			};
 		case "same":
-			return { icon: <Link2 className={cn(cls, "text-fg-muted")} />, text: "same board as another row", tone: "text-fg-muted" };
+			return {
+				icon: <Link2 className={cn(cls, "text-fg-muted")} />,
+				text: "same board as another row",
+				tone: "text-fg-muted",
+			};
 		case "running":
 			return {
 				icon: <LoaderCircle className={cn(cls, "animate-spin text-accent")} />,
-				text: r.roots?.all ? `searching · ${n(r.roots.done)} of ${n(r.roots.all)} roots` : "searching",
+				text: `searching${r.reached ? ` to k = ${r.reached}` : ""}${r.roots?.all ? ` · ${n(r.roots.done)} of ${n(r.roots.all)} roots` : ""}`,
 				tone: "text-fg",
 			};
 		case "queued":
@@ -118,9 +147,14 @@ function outcome(r: StudyRow): { icon: React.ReactNode; text: string; tone: stri
 		case "stopped":
 			// part of its roots finished: what they found so far, never a first k (later roots may find lower k)
 			return {
-				icon: r.state === "limit" ? <Timer className={cn(cls, "text-fg-muted")} /> : <Pause className={cn(cls, "text-fg-muted")} />,
+				icon:
+					r.state === "limit" ? (
+						<Timer className={cn(cls, "text-fg-muted")} />
+					) : (
+						<Pause className={cn(cls, "text-fg-muted")} />
+					),
 				// at the study's time limit, or past a ceiling of its raise rule (the reason says which)
-				text: `${r.state === "limit" ? (r.reason ? "stopped by its rule" : "time limit") : "stopped"}${r.total ? ` · ${n(r.total)} so far` : ""}${r.roots?.all ? ` · ${n(r.roots.done)} of ${n(r.roots.all)} roots` : ""}`,
+				text: `${r.state === "limit" ? (r.reason ? "stopped by its rule" : "time limit") : "stopped"}${r.reached ? ` at k = ${r.reached}` : ""}${r.total ? ` · ${n(r.total)} so far` : ""}${r.roots?.all ? ` · ${n(r.roots.done)} of ${n(r.roots.all)} roots` : ""}`,
 				tone: "text-fg-secondary",
 			};
 		case "conflict":
@@ -183,24 +217,117 @@ export function censusText(s: StudyDetail): string {
 	return out.join("\n") + "\n";
 }
 
+// ── the whole board: every row together ──
+
+/** A study's whole board at one combination of parameter values, as a run of it would show: see wholeOf. */
+type Whole = {
+	run: Run;
+	/** The highest k every row has searched to the end (Infinity when every row is ruled out). */
+	complete: number;
+	/** The rows that end there, by why: still searching, their raise rule stopped, stopped, not run yet. */
+	behind: { label: string; count: number }[];
+};
+
+/**
+ * The rows of one combination of parameter values together, as one run of the study's whole board (study.ts
+ * wholeBoards draws them): a row requires exactly its optional faces, so a tiling is in one row and the whole
+ * board's tilings at each k are the rows' summed, no search of its own needed. They are complete to the lowest
+ * k every row has searched to the end: a ruled-out row at every k, a row raising its k at the finished run its
+ * new run replaces, a row not run, stopped or failed at none. Above that k the counts and files are the rows'
+ * so far. A row the same as an earlier one (a parameter it does not read) stands in for it.
+ */
+function wholeOf(
+	study: Pick<StudySummary, "dir" | "kmin">,
+	rows: StudyRow[],
+	board: { values: Record<string, number>; text: string },
+	runs: Run[],
+): Whole {
+	const kmin = study.kmin;
+	const byDir = new Map(runs.map((r) => [r.dir, r]));
+	const counts: Record<number, number> = {};
+	const files: OutFile[] = [];
+	const ends: { top: number; why: string }[] = [];
+	const take = (src: Run, above: number) => {
+		for (const [k, c] of Object.entries(src.counts)) if (+k > above && +k >= kmin) counts[+k] = (counts[+k] ?? 0) + c;
+		for (const f of src.files) if (f.k > above && f.k >= kmin) files.push({ ...f, symbols: src.symbols });
+	};
+	for (const row of rows) {
+		if (Object.entries(board.values).some(([k, v]) => row.values[k] !== v)) continue;
+		const r = row.state === "same" ? rows[Number(/row (\d+)/.exec(row.reason ?? "")?.[1] ?? 0) - 1] : row;
+		if (!r || r.state === "ruled-out") continue;
+		const run = r.run ? byDir.get(r.run) : undefined;
+		const prev = run?.replaces ? byDir.get(run.replaces) : undefined;
+		const done = run?.state === "finished" ? run : prev?.state === "finished" ? prev : undefined;
+		const top = done ? done.kmax : kmin - 1;
+		if (done) take(done, -Infinity);
+		if (run && run !== done) take(run, top);
+		const why = !run
+			? "Not run yet"
+			: run.state === "running" || run.queued
+				? "Searching"
+				: run === done
+					? "Stopped raising"
+					: "Stopped";
+		ends.push({ top, why });
+	}
+	const complete = Math.min(Infinity, ...ends.map((e) => e.top));
+	const tally = new Map<string, number>();
+	for (const e of ends) if (e.top === complete) tally.set(e.why, (tally.get(e.why) ?? 0) + 1);
+	const ks = Object.keys(counts).map(Number);
+	const run: Run = {
+		id: `whole:${JSON.stringify(board.values)}`,
+		// in the study's folder, beside its board, which a drawing reads for the edge's minimal polynomial
+		dir: `${study.dir}${study.dir.includes("\\") ? "\\" : "/"}whole`,
+		name: "Whole board",
+		created: 0,
+		ended: null,
+		board: board.text,
+		state: "finished",
+		note: "",
+		counts,
+		total: Object.values(counts).reduce((t, c) => t + c, 0),
+		elapsed: 0,
+		rate: 0,
+		roots: { done: 0, all: 0 },
+		stage: null,
+		kmin,
+		kmax: Math.max(kmin, ...ks),
+		options: null,
+		files: files.sort((a, b) => a.k - b.k),
+		latest: null,
+		log: [],
+		symbols: {},
+		stats: null,
+		branching: null,
+		estimate: null,
+		work: null,
+		packing: null,
+		find: null,
+		disk: null,
+	};
+	return { run, complete, behind: [...tally].map(([label, count]) => ({ label, count })) };
+}
+
 // ── the page ──
 
 const PAGE = 50;
+// What the rows are ordered by, each read off a row (null when it has none: no tiling, not yet searched), and the
+// direction it starts in when picked (more faces, tilings and time first; the lowest first k first). Rows with
+// nothing to sort by stay at the end either way, and ties keep the study's order.
 const SORTS = {
-	order: { label: "In order", by: (a: StudyRow, b: StudyRow) => a.index - b.index },
-	most: { label: "Most faces together", by: (a: StudyRow, b: StudyRow) => b.faces.length - a.faces.length || a.index - b.index },
-	fewest: { label: "Fewest faces", by: (a: StudyRow, b: StudyRow) => a.faces.length - b.faces.length || a.index - b.index },
-	first: { label: "First k, lowest", by: (a: StudyRow, b: StudyRow) => (a.first ?? 1e9) - (b.first ?? 1e9) || a.index - b.index },
-	last: { label: "First k, highest", by: (a: StudyRow, b: StudyRow) => (b.first ?? -1) - (a.first ?? -1) || a.index - b.index },
-	tilings: { label: "Most tilings", by: (a: StudyRow, b: StudyRow) => b.total - a.total || a.index - b.index },
-	few: {
-		label: "Fewest tilings",
-		// rows with none at the end: "fewest" means the rarest combinations that do tile
-		by: (a: StudyRow, b: StudyRow) => (a.total || 1e15) - (b.total || 1e15) || a.index - b.index,
-	},
-	time: { label: "Longest search", by: (a: StudyRow, b: StudyRow) => b.elapsed - a.elapsed || a.index - b.index },
+	order: { label: "Row", key: (r: StudyRow) => r.index, desc: false },
+	faces: { label: "Faces", key: (r: StudyRow) => r.faces.length, desc: true },
+	first: { label: "First k", key: (r: StudyRow) => r.first ?? null, desc: false },
+	reached: { label: "k reached", key: (r: StudyRow) => r.reached ?? null, desc: true },
+	tilings: { label: "Tilings", key: (r: StudyRow) => r.total || null, desc: true },
+	time: { label: "Search time", key: (r: StudyRow) => r.elapsed || null, desc: true },
 } as const;
 type Sort = keyof typeof SORTS;
+const sorter = (sort: Sort, desc: boolean) => (a: StudyRow, b: StudyRow) => {
+	const [x, y] = [SORTS[sort].key(a), SORTS[sort].key(b)];
+	if (x === null || y === null) return x === y ? a.index - b.index : x === null ? 1 : -1;
+	return (desc ? y - x : x - y) || a.index - b.index;
+};
 /** The row filters: by outcome, how many optional faces a row holds, a face it holds or lacks, a parameter's
  *  value, and the k of its first tiling (the bars over the table set this one). */
 type Filters = {
@@ -252,18 +379,34 @@ export function StudyView({
 	const [filters, setFilters] = useState<Filters>(NO_FILTER);
 	const [query, setQuery] = useState("");
 	const [sort, setSort] = useState<Sort>("order");
+	const [desc, setDesc] = useState(false);
 	const [page, setPage] = useState(1);
 	const filter = (f: Partial<Filters>) => (setFilters((x) => ({ ...x, ...f })), setPage(1));
 	const filtered = JSON.stringify(filters) !== JSON.stringify(NO_FILTER) || !!query;
 	// the row whose run Raise k is open for, and Raise k for every row
 	const [raising, setRaising] = useState<string | null>(null);
 	const [raisingAll, setRaisingAll] = useState(false);
+	const [limiting, setLimiting] = useState(false);
 	const raised = raising ? status.runs.find((r) => r.dir === raising) : undefined;
 	const going = summary.state === "checking" || summary.state === "running";
 	const limited = summary.tally.limit ?? 0;
-	const act = async (action: "pause" | "resume" | "unlimit" | "unraise") =>
+	const act = async (action: "pause" | "resume" | "unraise") =>
 		setError((await api().studyAction(summary.id, action)).error ?? "");
 	const running = status.runs.some((r) => r.state === "running" && r.dir.startsWith(summary.dir));
+	// the rows one by one, or all together as the whole board (an enumeration with optional faces): its tilings
+	// per k on top and its previews below, at one combination of parameter values
+	const canWhole = summary.options.mode === "enumerate" && summary.optional.length > 0;
+	const [view, setView] = useState("Rows");
+	const [at, setAt] = useState(0);
+	const [group, setGroup] = useState<Group | null>(null);
+	const template = detail?.template;
+	const boards = useMemo(() => (template && canWhole ? wholeBoards(template) : []), [template, canWhole]);
+	const board = boards[Math.min(at, boards.length - 1)];
+	const whole = useMemo(
+		() => (view === "Whole board" && detail && board ? wholeOf(summary, detail.rows, board, status.runs) : null),
+		[view, detail, board, summary, status.runs],
+	);
+	const shownK = whole ? resolveGroup(whole.run, group)?.k : undefined;
 
 	const rows = useMemo(() => {
 		if (!detail) return [];
@@ -279,8 +422,44 @@ export function StudyView({
 				Object.entries(filters.values).every(([k, v]) => v === "any" || String(r.values[k]) === v) &&
 				(!q || [r.name, ...r.faces].some((x) => x.toLowerCase().includes(q))),
 		);
-		return keep.sort(SORTS[sort].by);
-	}, [detail, filters, query, sort]);
+		return keep.sort(sorter(sort, desc));
+	}, [detail, filters, query, sort, desc]);
+
+	// the rows: filters over the table, then the table and its pages
+	const table = (
+		<>
+			<RowFilters
+				s={summary}
+				filters={filters}
+				onFilter={filter}
+				query={query}
+				onQuery={(q) => (setQuery(q), setPage(1))}
+				sort={sort}
+				desc={desc}
+				onSort={(s) => (setSort(s), setDesc(SORTS[s].desc))}
+				onFlip={() => setDesc((d) => !d)}
+				shown={rows.length}
+				of={detail?.rows.length ?? summary.rowCount}
+				active={filtered}
+				onClear={() => (setFilters(NO_FILTER), setQuery(""), setPage(1))}
+			/>
+			<RowsTable
+				// a new filter, order or page starts at the top
+				key={JSON.stringify([filters, query, sort, desc, page])}
+				rows={rows.slice((page - 1) * PAGE, page * PAGE)}
+				loading={!detail}
+				onOpen={onSelect}
+				onRaise={(run) => setRaising(run)}
+				busy={(run) => status.runs.some((r) => r.dir === run && r.state === "running")}
+				ks={summary.options.mode === "enumerate" ? [summary.kmin, summary.kmax] : null}
+			/>
+			{rows.length > PAGE ? (
+				<div className="shrink-0 border-t border-line-subtle px-4 py-2.5">
+					<Pagination totalItems={rows.length} pageSize={PAGE} currentPage={page} onPageChange={setPage} />
+				</div>
+			) : null}
+		</>
+	);
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-5">
@@ -289,6 +468,16 @@ export function StudyView({
 					<div className="flex items-center gap-2">
 						<h1 className="truncate text-xl font-semibold text-fg">{summary.name}</h1>
 						<Badge tone={STUDY_TONE[summary.state]}>{studyLabel(summary)}</Badge>
+						{canWhole ? (
+							<div className="ml-3 w-56 shrink-0">
+								<Toggle
+									leftValue="Rows"
+									rightValue="Whole board"
+									value={view}
+									onChange={(v) => (setView(v), setGroup(null))}
+								/>
+							</div>
+						) : null}
 					</div>
 					{summary.note || error ? (
 						<p className={cn("mt-1.5 text-sm", error ? "text-danger" : "text-fg-secondary")}>{error || summary.note}</p>
@@ -301,13 +490,19 @@ export function StudyView({
 						<Button size="sm" variant="primary" icon={Play} label="Resume" onClick={() => void act("resume")} />
 					) : null}
 					{summary.options.mode === "enumerate" ? (
-						<Button size="sm" icon={ChevronsUp} label="Raise k" disabled={!detail} onClick={() => setRaisingAll(true)} />
+						<Button
+							size="sm"
+							icon={ChevronsUp}
+							label="Raise k"
+							disabled={!detail}
+							onClick={() => setRaisingAll(true)}
+						/>
 					) : null}
-					{limited ? (
-						<Tooltip label={`${n(limited)} row${limited === 1 ? "" : "s"} stopped at the time limit go on, with no limit from now on`}>
-							<Button size="sm" icon={TimerOff} label="Lift the time limit" onClick={() => void act("unlimit")} />
-						</Tooltip>
-					) : null}
+					<Tooltip
+						label={`How long each search may run, raised, lowered or lifted${limited ? `: ${n(limited)} row${limited === 1 ? "" : "s"} stopped at it` : ""}`}
+					>
+						<Button size="sm" icon={Timer} label="Time limit" disabled={!detail} onClick={() => setLimiting(true)} />
+					</Tooltip>
 					<Button
 						size="sm"
 						icon={FilePen}
@@ -354,41 +549,46 @@ export function StudyView({
 				onFilter={(outcome) => filter({ outcome })}
 				first={filters.first}
 				onFirst={(first) => filter({ first: first === filters.first ? null : first })}
+				whole={whole}
+				k={typeof shownK === "number" ? shownK : null}
+				onK={(k) => whole && setGroup(groupOfK(whole.run, k, group?.edges))}
 			/>
 
-			{/* the rest of the window, at least 420 px: the table scrolls inside it, under its header */}
+			{/* the rest of the window, at least 420 px: the table scrolls inside it, under its header; or the
+			    whole board's tilings, as a run shows its own */}
 			<section className="flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm">
-				<RowFilters
-					s={summary}
-					filters={filters}
-					onFilter={filter}
-					query={query}
-					onQuery={(q) => (setQuery(q), setPage(1))}
-					sort={sort}
-					onSort={setSort}
-					shown={rows.length}
-					of={detail?.rows.length ?? summary.rowCount}
-					active={filtered}
-					onClear={() => (setFilters(NO_FILTER), setQuery(""), setPage(1))}
-				/>
-				<RowsTable
-					// a new filter, order or page starts at the top
-					key={JSON.stringify([filters, query, sort, page])}
-					rows={rows.slice((page - 1) * PAGE, page * PAGE)}
-					loading={!detail}
-					onOpen={onSelect}
-					onRaise={(run) => setRaising(run)}
-					busy={(run) => status.runs.some((r) => r.dir === run && r.state === "running")}
-					ks={summary.options.mode === "enumerate" ? [summary.kmin, summary.kmax] : null}
-				/>
-				{rows.length > PAGE ? (
-					<div className="shrink-0 border-t border-line-subtle px-4 py-2.5">
-						<Pagination totalItems={rows.length} pageSize={PAGE} currentPage={page} onPageChange={setPage} />
-					</div>
-				) : null}
+				{whole ? (
+					<>
+						<div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-b border-line-subtle px-4 py-3">
+							{boards.length > 1 ? (
+								<Dropdown
+									value={String(at)}
+									options={boards.map((b, i) => ({
+										value: String(i),
+										label: Object.entries(b.values)
+											.map(([k, v]) => `${k} = ${v}`)
+											.join(", "),
+									}))}
+									onChange={(v) => (setAt(Number(v)), setGroup(null))}
+									ariaLabel="Parameter values"
+								/>
+							) : null}
+							<span className="mr-auto text-sm text-fg-secondary">Every row&apos;s tilings together</span>
+							<GroupPicker run={whole.run} group={group} onGroup={setGroup} />
+						</div>
+						<div className="min-h-0 flex-1">
+							<TilingsView key={whole.run.id} run={whole.run} group={group} />
+						</div>
+					</>
+				) : (
+					table
+				)}
 			</section>
 			{raisingAll && detail ? (
 				<StudyRaiseModal summary={summary} detail={detail} onClose={() => setRaisingAll(false)} onError={setError} />
+			) : null}
+			{limiting && detail ? (
+				<StudyLimitModal summary={summary} detail={detail} onClose={() => setLimiting(false)} onError={setError} />
 			) : null}
 			{raised ? (
 				<ImproveModal
@@ -476,6 +676,94 @@ function StudyRaiseModal({
 	);
 }
 
+/** The time limit on each search, in minutes: a raise rule's ceiling, or the study's own limit; null for none. */
+const limitOf = (o: StudyOptions) => o.raise?.minutes ?? (o.limit ? o.limit / 60 : null);
+
+/** The time limit set again, lower, higher or none, with the rows it stops and the rows it sends on counted. */
+function StudyLimitModal({
+	summary,
+	detail,
+	onClose,
+	onError,
+}: {
+	summary: StudySummary;
+	detail: StudyDetail;
+	onClose: () => void;
+	onError: (e: string) => void;
+}) {
+	const now = limitOf(summary.options);
+	// in seconds when it is not whole minutes
+	const inSeconds = now !== null && !Number.isInteger(now);
+	const [limited, setLimited] = useState(now !== null);
+	const [unit, setUnit] = useState<"minutes" | "seconds">(inSeconds ? "seconds" : "minutes");
+	const [value, setValue] = useState(now === null ? 5 : inSeconds ? Math.round(now * 60) : now);
+	const m = limited ? (unit === "minutes" ? value : value / 60) : null;
+	const past = (r: StudyRow) => m !== null && r.elapsed >= m * 60;
+	const stop = detail.rows.filter((r) => r.state === "running" && past(r)).length;
+	// a row a disk ceiling stopped stays stopped: this is the time limit only
+	const go = detail.rows.filter((r) => r.state === "limit" && !past(r) && !r.reason?.includes("wrote over")).length;
+	const apply = async () => {
+		const res = await api().studyLimit(summary.id, m);
+		if (res.error) onError(res.error);
+		onClose();
+	};
+	const rows = (x: number) => `${n(x)} row${x === 1 ? "" : "s"}`;
+	const effect = [
+		stop &&
+			`${rows(stop)} searching now ${stop === 1 ? "is" : "are"} past it and stop${stop === 1 ? "s" : ""} there, keeping what ${stop === 1 ? "it" : "they"} found.`,
+		go && `${rows(go)} a limit stopped go${go === 1 ? "es" : ""} on from where ${go === 1 ? "it" : "they"} stopped.`,
+	].filter(Boolean);
+	return (
+		<Modal
+			isOpen
+			onOpenChange={(o) => !o && onClose()}
+			title="Time limit"
+			size="sm"
+			description="How long each search may run before it stops, keeping what it finished"
+			footer={
+				<div className="flex justify-end gap-2">
+					<Button label="Cancel" onClick={onClose} />
+					<Button
+						variant="primary"
+						icon={Timer}
+						label={go ? `Set it · ${rows(go)} go${go === 1 ? "es" : ""} on` : "Set the limit"}
+						onClick={() => void apply()}
+					/>
+				</div>
+			}
+		>
+			<div className="space-y-4 p-5 text-sm text-fg-secondary">
+				<label className="flex items-center gap-2">
+					<CheckboxBox checked={limited} onCheckedChange={setLimited} />
+					<span className={cn(!limited && "text-fg-muted")}>A search stops after</span>
+					<Input
+						type="number"
+						min={1}
+						value={value}
+						disabled={!limited}
+						onChange={(e) => setValue(Math.max(1, Number(e.target.value) || 1))}
+						className="w-20"
+						aria-label="Time a search"
+					/>
+					<Dropdown<"minutes" | "seconds">
+						value={unit}
+						options={[
+							{ value: "minutes", label: "minutes" },
+							{ value: "seconds", label: "seconds" },
+						]}
+						onChange={setUnit}
+						disabled={!limited}
+						ariaLabel="Minutes or seconds"
+					/>
+				</label>
+				<p className="border-t border-line-subtle pt-4">
+					{effect.join(" ") || "No row changes now: the rows still to search run under it."}
+				</p>
+			</div>
+		</Modal>
+	);
+}
+
 /** Over the rows: what they are filtered by, the search, and their order. */
 function RowFilters({
 	s,
@@ -484,7 +772,9 @@ function RowFilters({
 	query,
 	onQuery,
 	sort,
+	desc,
 	onSort,
+	onFlip,
 	shown,
 	of,
 	active,
@@ -496,7 +786,9 @@ function RowFilters({
 	query: string;
 	onQuery: (q: string) => void;
 	sort: Sort;
+	desc: boolean;
 	onSort: (s: Sort) => void;
+	onFlip: () => void;
 	shown: number;
 	of: number;
 	active: boolean;
@@ -522,7 +814,10 @@ function RowFilters({
 					ariaLabel="Rows by how many optional faces they hold"
 					className={cls}
 					value={filters.size}
-					options={[{ value: "any", label: "Any number" }, ...sizes.map((x) => ({ value: String(x), label: String(x) }))]}
+					options={[
+						{ value: "any", label: "Any number" },
+						...sizes.map((x) => ({ value: String(x), label: String(x) })),
+					]}
 					onChange={(size) => onFilter({ size })}
 				/>
 			) : null}
@@ -584,6 +879,18 @@ function RowFilters({
 					options={(Object.keys(SORTS) as Sort[]).map((k) => ({ value: k, label: SORTS[k].label }))}
 					onChange={onSort}
 				/>
+				<Tooltip
+					label={desc ? "Highest first: click for lowest first" : "Lowest first: click for highest first"}
+					delay={200}
+				>
+					<Button
+						size="icon"
+						icon={desc ? ArrowDownZA : ArrowDownAZ}
+						aria-label={desc ? "Highest first" : "Lowest first"}
+						aria-pressed={desc}
+						onClick={onFlip}
+					/>
+				</Tooltip>
 			</span>
 		</div>
 	);
@@ -611,7 +918,10 @@ function PerK({ r, ks }: { r: StudyRow; ks: [number, number] }) {
 						<span
 							key={k}
 							className={cn("shrink-0 rounded-[1px]", k > reached ? "" : c ? "bg-fg/45" : "bg-fg/10")}
-							style={{ width: w, height: k > reached ? 0 : c ? `${Math.max(3, (Math.log10(1 + c) / top) * 16)}px` : "2px" }}
+							style={{
+								width: w,
+								height: k > reached ? 0 : c ? `${Math.max(3, (Math.log10(1 + c) / top) * 16)}px` : "2px",
+							}}
 						/>
 					);
 				})}
@@ -733,6 +1043,9 @@ function StudyOverview({
 	onFilter,
 	first,
 	onFirst,
+	whole,
+	k,
+	onK,
 }: {
 	s: StudySummary;
 	detail: StudyDetail | null;
@@ -741,24 +1054,48 @@ function StudyOverview({
 	/** The k the rows are filtered to by their first tiling, and a bar clicked. */
 	first: number | null;
 	onFirst: (k: number) => void;
+	/** The whole board, when it is shown: its tilings per k in place of the rows' tally, the k its previews show. */
+	whole: Whole | null;
+	k: number | null;
+	onK: (k: number) => void;
 }) {
 	const parts = OUTCOMES.map((o) => ({ ...o, count: tallyOf(s, o.states) })).filter((o) => o.count > 0);
 	const what = [
 		s.optional.length
 			? `every combination of ${s.optional.length} optional face${s.optional.length === 1 ? "" : "s"}${
-					s.sizes[0] === s.sizes[1] ? `, ${s.sizes[0]} at a time` : s.sizes[0] > 1 || s.sizes[1] < s.optional.length ? `, ${s.sizes[0]} to ${s.sizes[1]} at a time` : ""
+					s.sizes[0] === s.sizes[1]
+						? `, ${s.sizes[0]} at a time`
+						: s.sizes[0] > 1 || s.sizes[1] < s.optional.length
+							? `, ${s.sizes[0]} to ${s.sizes[1]} at a time`
+							: ""
 				}`
 			: "",
 		...s.params.map((p) => `${p.name} = ${rangeText(p.values)}`),
 	].filter(Boolean);
 	const o = s.options;
+	// the edge, or a family's edges, and the minimal polynomial of cosh of each (`# minpoly` header lines)
+	const polys = useMemo(() => (detail ? minpolys(parse(detail.template).board.header) : []), [detail?.template]);
+	const degrees = polys.map((p) => polyDegree(p.poly));
 	const facts: { label: string; value: string; sub?: string; title?: string }[] = [
+		...(polys.length
+			? [
+					{
+						label: polys.length === 1 ? "Edge" : "Edges",
+						value: polys.length === 1 ? String(+polys[0].edge.toFixed(7)) : String(polys.length),
+						sub:
+							polys.length === 1 && polyText(polys[0].poly).length <= 40
+								? `cosh: ${polyText(polys[0].poly)}`
+								: `cosh: degree ${Math.min(...degrees)}${Math.max(...degrees) > Math.min(...degrees) ? `–${Math.max(...degrees)}` : ""}`,
+						title: polys.map((p) => `cosh ${+p.edge.toFixed(7)} is a root of ${polyText(p.poly)}`).join("\n"),
+					},
+				]
+			: []),
 		{ label: "Search", value: o.mode === "find" ? "Existence" : "Enumerate", sub: `k ${s.kmin}–${s.kmax}` },
 		{ label: "Rows at once", value: String(o.parallel), sub: `${o.threads} thread${o.threads === 1 ? "" : "s"} each` },
 		{
 			label: "Time limit",
-			value: o.limit ? duration(o.limit) : "none",
-			sub: o.mode === "find" ? `${o.seconds} s per k` : undefined,
+			value: limitOf(o) === null ? "none" : minutesText(limitOf(o)!),
+			sub: o.mode === "find" ? `${o.seconds} s per k` : limitOf(o) === null ? undefined : "a search",
 		},
 		...(o.raise
 			? [
@@ -770,59 +1107,86 @@ function StudyOverview({
 					},
 				]
 			: []),
-		{ label: "Search time", value: s.elapsed ? duration(s.elapsed) : "none yet", sub: s.elapsed ? "all rows" : undefined },
+		{
+			label: "Search time",
+			value: s.elapsed ? duration(s.elapsed) : "none yet",
+			sub: s.elapsed ? "all rows" : undefined,
+		},
 		{ label: "Started", value: when(s.created) },
 	];
 	if (s.ended) facts.push({ label: "Finished", value: when(s.ended) });
 	return (
 		<section className="grid shrink-0 grid-cols-[minmax(220px,280px)_minmax(0,1fr)_minmax(240px,300px)] overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm max-xl:grid-cols-[minmax(220px,280px)_minmax(0,1fr)]">
-			<div className="flex flex-col justify-between gap-3 border-r border-line-subtle p-4">
-				<div>
-					<div className="ta-label flex items-center gap-1.5">
-						Rows
-						<InfoDot side="bottom" label="What a row is">
-							Each row is the board with some of its optional faces and without the others, at one value of each
-							parameter. A row requires each optional face it holds, so it finds exactly the tilings that use those
-							faces and no other optional one. Before any search, each row is checked: a row is ruled out only when no
-							tiling can exist at any k (a corner of a required face fits no vertex, the engine&rsquo;s balance count, or
-							faces that can never touch).
-						</InfoDot>
+			{whole ? (
+				<WholeTotals s={s} whole={whole} />
+			) : (
+				<div className="flex flex-col justify-between gap-3 border-r border-line-subtle p-4">
+					<div>
+						<div className="ta-label flex items-center gap-1.5">
+							Rows
+							<InfoDot side="bottom" label="What a row is">
+								Each row is the board with some of its optional faces and without the others, at one value of each
+								parameter. A row requires each optional face it holds, so it finds exactly the tilings that use those
+								faces and no other optional one. Before any search, each row is checked: a row is ruled out only when no
+								tiling can exist at any k (a corner of a required face fits no vertex, the engine&rsquo;s balance count,
+								or faces that can never touch).
+							</InfoDot>
+						</div>
+						<AnimatedNumber
+							value={s.rowCount}
+							className="mt-1.5 block text-[32px] leading-none font-semibold tracking-[-0.02em] text-fg"
+						/>
+						<div className="mt-1.5 text-sm leading-snug text-fg-secondary">{what.join("; ") || "one board"}</div>
 					</div>
-					<AnimatedNumber
-						value={s.rowCount}
-						className="mt-1.5 block text-[32px] leading-none font-semibold tracking-[-0.02em] text-fg"
-					/>
-					<div className="mt-1.5 text-sm leading-snug text-fg-secondary">{what.join("; ") || "one board"}</div>
-				</div>
-				<div className="space-y-2">
-					<div className="flex h-2 overflow-hidden rounded-full bg-surface-sunken">
-						{parts.map((p) => (
-							<span
-								key={p.key}
-								className={cn("h-full transition-[width] duration-500 ease-[var(--ease-out)]", p.bar)}
-								style={{ width: `${(p.count / s.rowCount) * 100}%` }}
-							/>
-						))}
+					<div className="space-y-2">
+						<div className="flex h-2 overflow-hidden rounded-full bg-surface-sunken">
+							{parts.map((p) => (
+								<span
+									key={p.key}
+									className={cn("h-full transition-[width] duration-500 ease-[var(--ease-out)]", p.bar)}
+									style={{ width: `${(p.count / s.rowCount) * 100}%` }}
+								/>
+							))}
+						</div>
+						<ul className="grid grid-cols-2 gap-x-3 gap-y-1">
+							{parts.map((p) => (
+								<li key={p.key}>
+									<button
+										type="button"
+										onClick={() => onFilter(p.key)}
+										className="flex w-full cursor-pointer items-center gap-1.5 text-left text-xs text-fg-secondary hover:text-fg"
+									>
+										<span
+											className={cn(
+												"h-2 w-2 shrink-0 rounded-[2px]",
+												p.bar,
+												p.key === "left" && "ring-1 ring-line ring-inset",
+											)}
+										/>
+										<span className="min-w-0 flex-1 truncate">{p.label}</span>
+										<span className="font-mono text-fg tabular-nums">{n(p.count)}</span>
+									</button>
+								</li>
+							))}
+						</ul>
 					</div>
-					<ul className="grid grid-cols-2 gap-x-3 gap-y-1">
-						{parts.map((p) => (
-							<li key={p.key}>
-								<button
-									type="button"
-									onClick={() => onFilter(p.key)}
-									className="flex w-full cursor-pointer items-center gap-1.5 text-left text-xs text-fg-secondary hover:text-fg"
-								>
-									<span className={cn("h-2 w-2 shrink-0 rounded-[2px]", p.bar, p.key === "left" && "ring-1 ring-line ring-inset")} />
-									<span className="min-w-0 flex-1 truncate">{p.label}</span>
-									<span className="font-mono text-fg tabular-nums">{n(p.count)}</span>
-								</button>
-							</li>
-						))}
-					</ul>
 				</div>
-			</div>
-			<FirstK s={s} detail={detail} pick={first} onPick={onFirst} />
-			<dl className="grid content-start grid-cols-2 gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
+			)}
+			{whole ? (
+				<KChart
+					run={whole.run}
+					ks={Array.from(
+						{ length: Math.max(whole.run.kmax, Number.isFinite(whole.complete) ? whole.complete : 0) - s.kmin + 1 },
+						(_, i) => s.kmin + i,
+					)}
+					selected={k}
+					onPick={onK}
+					complete={Number.isFinite(whole.complete) ? whole.complete : undefined}
+				/>
+			) : (
+				<FirstK s={s} detail={detail} pick={first} onPick={onFirst} />
+			)}
+			<dl className="grid grid-cols-2 content-start gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
 				{facts.map((f) => (
 					<div key={f.label} className="min-w-0">
 						<dt className="ta-label">{f.label}</dt>
@@ -837,10 +1201,59 @@ function StudyOverview({
 	);
 }
 
-/** A raise rule's conditions, short: "until 1 tiling, 3 min a search". */
+/** The whole board's count, in the rows' place on the band: final up to the k every row finished, and what ends there. */
+function WholeTotals({ s, whole }: { s: StudySummary; whole: Whole }) {
+	const { run, complete } = whole;
+	const done = Object.entries(run.counts).reduce((t, [k, c]) => (+k <= complete ? t + c : t), 0);
+	const more = run.total - done;
+	const what = !Number.isFinite(complete)
+		? "none at any k: every row is ruled out"
+		: complete < s.kmin
+			? "no k complete yet: so far"
+			: `complete for k = ${s.kmin}${complete > s.kmin ? ` to ${complete}` : ""}${more ? `, and ${n(more)} so far above` : ""}`;
+	return (
+		<div className="flex flex-col justify-between gap-3 border-r border-line-subtle p-4">
+			<div>
+				<div className="ta-label flex items-center gap-1.5">
+					Tilings
+					<InfoDot side="bottom" label="What the whole board is">
+						Every row together: the board with each optional face an ordinary one. A row requires exactly its optional
+						faces, so each tiling is in one row, and the rows&rsquo; tilings at each k add up to the whole
+						board&rsquo;s. The count is final up to the lowest k every row has searched to the end; Raise k takes the
+						rows further.
+					</InfoDot>
+				</div>
+				<AnimatedNumber
+					value={complete < s.kmin ? run.total : done}
+					className="mt-1.5 block text-[32px] leading-none font-semibold tracking-[-0.02em] text-fg"
+				/>
+				<div className="mt-1.5 text-sm leading-snug text-fg-secondary">{what}</div>
+			</div>
+			{whole.behind.length ? (
+				<div className="space-y-1.5">
+					<p className="text-xs text-fg-muted">
+						{complete < s.kmin ? "Rows with no k searched to the end" : `Rows that end at k = ${complete}`}
+					</p>
+					<ul className="grid grid-cols-2 gap-x-3 gap-y-1">
+						{whole.behind.map((b) => (
+							<li key={b.label} className="flex items-center gap-1.5 text-xs text-fg-secondary">
+								<span className="min-w-0 flex-1 truncate">{b.label}</span>
+								<span className="font-mono text-fg tabular-nums">{n(b.count)}</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			) : null}
+		</div>
+	);
+}
+
+/** A raise rule's conditions, short: "until 1 tiling, 5 GB a search" (its time limit is a fact of its own). */
 function briefRaise(r: RaiseRule): string | undefined {
-	const caps = [r.minutes !== undefined && `${r.minutes} min`, r.gigabytes !== undefined && `${r.gigabytes} GB`].filter(Boolean);
-	const parts = [r.found !== undefined && `until ${r.found} tiling${r.found === 1 ? "" : "s"}`, caps.length && `${caps.join(", ")} a search`];
+	const parts = [
+		r.found !== undefined && `until ${r.found} tiling${r.found === 1 ? "" : "s"}`,
+		r.gigabytes !== undefined && `${r.gigabytes} GB a search`,
+	];
 	return parts.filter(Boolean).join(", ") || undefined;
 }
 
@@ -863,7 +1276,8 @@ function FirstK({
 }) {
 	const ks = Array.from({ length: Math.max(1, s.kmax - s.kmin + 1) }, (_, i) => s.kmin + i);
 	const per = new Map<number, number>();
-	for (const r of detail?.rows ?? []) if (r.state === "found" && r.first !== undefined) per.set(r.first, (per.get(r.first) ?? 0) + 1);
+	for (const r of detail?.rows ?? [])
+		if (r.state === "found" && r.first !== undefined) per.set(r.first, (per.get(r.first) ?? 0) + 1);
 	const cols = ks.map((k) => ({ k, count: per.get(k) ?? 0 }));
 	const top = Math.max(1, ...cols.map((c) => c.count));
 	const [grown, setGrown] = useState(false);
@@ -983,9 +1397,9 @@ export function StudyFields({
 						<span className="flex items-center gap-1.5">
 							Optional faces
 							<InfoDot>
-								A row holds some of the optional faces, requires each one it holds and leaves the others out, so
-								it finds the tilings that use exactly those. The faces you leave unpicked are on every row and
-								never required: the regular polygons beside a set of stars, say.
+								A row holds some of the optional faces, requires each one it holds and leaves the others out, so it
+								finds the tilings that use exactly those. The faces you leave unpicked are on every row and never
+								required: the regular polygons beside a set of stars, say.
 							</InfoDot>
 						</span>
 					}
@@ -1075,7 +1489,10 @@ export function StudyFields({
 											/>
 										</>
 									) : (
-										<span className="min-w-0 flex-1 truncate font-mono text-xs" title="Edit a list of values in the text">
+										<span
+											className="min-w-0 flex-1 truncate font-mono text-xs"
+											title="Edit a list of values in the text"
+										>
 											{raw}
 										</span>
 									)}
@@ -1171,8 +1588,8 @@ export function DrawnAt({
 				Drawn at
 				<InfoDot>
 					A board with parameters is one board per value. Faces and corners written with a parameter (n sides, A{"{n}"})
-					are drawn here at the value you pick, the checks read the board there, and the study runs every value.
-					Edits apply to all of them.
+					are drawn here at the value you pick, the checks read the board there, and the study runs every value. Edits
+					apply to all of them.
 				</InfoDot>
 			</span>
 			{params.map((p) => (
@@ -1196,7 +1613,10 @@ export function DrawnAt({
 							value={vars[p.name]}
 							onChange={(e) => {
 								const x = Number(e.target.value);
-								onPick(p.name, p.values.reduce((a, v) => (Math.abs(v - x) < Math.abs(a - x) ? v : a)));
+								onPick(
+									p.name,
+									p.values.reduce((a, v) => (Math.abs(v - x) < Math.abs(a - x) ? v : a)),
+								);
 							}}
 							className="w-24"
 							aria-label={`Draw at ${p.name}`}
@@ -1236,7 +1656,7 @@ export function StudyRunFields({
 			</Field>
 			<Field
 				label="Time limit per row"
-				hint="A row that searches longer stops there, keeping what it finished, and the study moves on. Lift the limit on the study's page to let those rows go on."
+				hint="A row that searches longer stops there, keeping what it finished, and the study moves on. The study's page changes the limit, higher, lower or none, while it runs; rows under the new one go on."
 			>
 				<div className="flex items-center gap-2 text-sm text-fg-secondary">
 					<Input

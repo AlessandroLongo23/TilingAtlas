@@ -16,12 +16,13 @@ import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils/cn";
 import { emptyBoard, MAX_K, parse, serialize, type Board, type Problem } from "./board";
 import { withPermutations } from "./corners";
-import type { Check, Estimate, RaiseRule, Rule, Settings, Status } from "./bridge";
+import type { Check, Estimate, RaiseRule, Rule, Run, Settings, Status, StatusPush, Update } from "./bridge";
 import { problemCount, ProblemList, Problems, VisualEditor } from "./editor";
 import { DiskMap } from "./diskmap";
 import { isStudy, MAX_ROWS, plainBoard, planStudy, readParams, substitute } from "./study";
 import { DrawnAt, StudyFields, StudyRunFields, StudyView, type StudySettings } from "./studies";
 import { Field, PRIORITY_HINT, PriorityInput, SettingsModal } from "./settings";
+import { UpdateModal } from "./update";
 import {
 	approx,
 	bytes,
@@ -222,6 +223,8 @@ export function App() {
 	const [mode, setMode] = useState("visual");
 	const [view, setView] = useState<"board" | "runs">("board");
 	const [settings, setSettings] = useState<Settings | null>(null);
+	const [update, setUpdate] = useState<Update | null>(null);
+	useEffect(() => void api().update().then(setUpdate), []);
 	const [showSettings, setShowSettings] = useState(false);
 	const [status, setStatus] = useState<Status>({
 		root: "",
@@ -350,8 +353,16 @@ export function App() {
 			});
 			setStatus(s);
 		};
+		// a push names the runs unchanged since the last by id: they keep their objects, and the window draws
+		// only what changed; a run it does not hold (a push before the first status) asks for all of it again
+		const merge = (p: StatusPush) => {
+			const held = new Map(last?.runs.map((r) => [r.id, r]));
+			const runs = p.runs.map((r) => (typeof r === "string" ? held.get(r) : r));
+			if (runs.every((r) => r)) take({ ...p, runs: runs as Run[] });
+			else void api().status().then(take);
+		};
 		void api().status().then(take);
-		const off = api().onStatus(take);
+		const off = api().onStatus(merge);
 		const offHook = api().onHook((h) => {
 			if ("load" in h) loadBoard(h.load);
 			if ("run" in h) document.getElementById("run-search")?.click();
@@ -852,7 +863,7 @@ export function App() {
 			) : (
 				<div className="flex min-h-0 flex-1 pr-2 pb-2">
 					<aside className="w-[360px] shrink-0 overflow-y-auto">
-						<RunList status={status} selected={run?.id ?? null} onSelect={setSelected} />
+						<RunList status={status} selected={run?.id ?? studyShown?.id ?? null} onSelect={setSelected} />
 					</aside>
 					<main className="ts-sheet min-w-0 flex-1 overflow-hidden">
 						{studyShown ? (
@@ -920,6 +931,7 @@ export function App() {
 				onClose={() => setAskQuit(false)}
 				runs={status.runs.filter((r) => r.state === "running")}
 			/>
+			{update && settings ? <UpdateModal update={update} current={settings.version} onClose={() => setUpdate(null)} /> : null}
 		</div>
 	);
 }

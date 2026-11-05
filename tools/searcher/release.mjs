@@ -4,6 +4,10 @@
 //   node tools/searcher/release.mjs                     downloads per version and platform
 //   node tools/searcher/release.mjs publish [notes.md]  record them, upload app/release/*, retitle the release
 //
+// publish also uploads version.json, the version and the notes' "What's new" lines, which the app asks for at
+// launch to offer the update (electron/main.ts). Each ask counts as a download of it: the report lists those
+// as update checks, a count of launches, apart from the downloads.
+//
 // GitHub counts downloads per release file, and publishing a build replaces the files (`--clobber` deletes
 // and re-uploads), so the new files start from 0 and the old counts vanish with the old files. downloads.tsv
 // keeps each file's last count, one row per file GitHub ever served, and `publish` records before it uploads.
@@ -52,7 +56,9 @@ function record() {
 	return sorted;
 }
 
-function report(rows) {
+function report(all) {
+	const checks = all.filter((r) => r.file === "version.json").reduce((n, r) => n + r.downloads, 0);
+	const rows = all.filter((r) => r.file !== "version.json");
 	const platforms = ["macOS", "Windows"];
 	const count = (version, platform) =>
 		rows
@@ -62,6 +68,7 @@ function report(rows) {
 	console.log(line("version", [...platforms, "all"]));
 	for (const v of new Set(rows.map((r) => r.version))) console.log(line(v, [...platforms.map((p) => count(v, p)), count(v)]));
 	console.log(line("all", [...platforms.map((p) => count(null, p)), count()]));
+	console.log(`\nupdate checks (app launches since 0.4.1): ${checks}`);
 }
 
 function publish(notes) {
@@ -69,8 +76,15 @@ function publish(notes) {
 	const missing = files.filter((f) => !existsSync(f));
 	if (missing.length) throw new Error(`build first (tools/searcher/app/build.sh mac, then win); missing:\n  ${missing.join("\n  ")}`);
 	const { version } = JSON.parse(readFileSync(join(HERE, "app", "package.json"), "utf8"));
+	const section = notes ? readFileSync(notes, "utf8").split(/^## /m).find((s) => s.startsWith("What's new")) : "";
+	const whatsNew = (section ?? "").split("\n").filter((l) => l.startsWith("- ")).map((l) => l.slice(2));
+	const versionFile = join(HERE, "app", "release", "version.json");
+	writeFileSync(versionFile, JSON.stringify({ version, notes: whatsNew }, null, "\t") + "\n");
 	record(); // before the upload, which deletes the files these counts belong to
-	execFileSync("gh", ["release", "upload", TAG, ...files, "--clobber", "--repo", REPO], { stdio: "inherit" });
+	const upload = (paths) =>
+		execFileSync("gh", ["release", "upload", TAG, ...paths, "--clobber", "--repo", REPO], { stdio: "inherit" });
+	upload(files);
+	upload([versionFile]); // last: an app that sees the new version finds its installer already there
 	const notesArgs = notes ? ["--notes-file", notes] : [];
 	execFileSync("gh", ["release", "edit", TAG, "--repo", REPO, "--title", `The Tiling Searcher ${version}`, ...notesArgs], { stdio: "inherit" });
 }

@@ -15,6 +15,8 @@ export interface OutFile {
 	bytes: number;
 	/** Certificates in the file, null until counted. */
 	tilings: number | null;
+	/** Its run's symbols.txt, where a view reads the files of several runs (a study's whole board). */
+	symbols?: Record<string, string>;
 }
 
 export interface RunOptions {
@@ -75,12 +77,12 @@ export function raiseStop(rule: RaiseRule, x: RaiseFacts): string | null {
 	return null;
 }
 
-/** The rule without its ceilings: what goes on once a limit is lifted. */
-export const withoutCeilings = ({ minutes: _m, gigabytes: _g, ...rest }: RaiseRule): RaiseRule => rest;
+/** A time limit in minutes, as read: "2 min", or seconds when it is not whole minutes ("30 s"). */
+export const minutesText = (m: number) => (Number.isInteger(m) ? `${m} min` : `${Math.round(m * 60)} s`);
 
 /** Which of its rule's ceilings a search still going has passed ("ran over 1 min"), or null. */
 export function raiseCeiling(rule: RaiseRule, x: Pick<RaiseFacts, "seconds" | "bytes">): string | null {
-	if (rule.minutes !== undefined && x.seconds > rule.minutes * 60) return `ran over ${rule.minutes} min`;
+	if (rule.minutes !== undefined && x.seconds > rule.minutes * 60) return `ran over ${minutesText(rule.minutes)}`;
 	if (rule.gigabytes !== undefined && x.bytes > rule.gigabytes * 2 ** 30) return `wrote over ${rule.gigabytes} GB`;
 	return null;
 }
@@ -216,6 +218,8 @@ export interface Settings {
 	resumeOnLaunch: boolean;
 	/** Gzip a run's tiling files as it finishes. */
 	compressFinished: boolean;
+	/** Ask, at launch, whether a newer version is out. */
+	checkUpdates: boolean;
 	/** Open the app when the user logs in (the system's login item). */
 	openAtLogin: boolean;
 	/** Whether this build can register a login item: a packaged app on macOS or Windows. */
@@ -223,6 +227,16 @@ export interface Settings {
 	cores: number;
 	platform: string;
 	version: string;
+}
+
+/** A version newer than this one, from the release's version.json (electron/main.ts). */
+export interface Update {
+	version: string;
+	/** Its "What's new", a line a change, with **label:** and `code` as the release notes write them. */
+	notes: string[];
+	os: "mac" | "windows";
+	/** The atlas's page that downloads it. */
+	url: string;
 }
 
 export interface Status {
@@ -296,9 +310,14 @@ export interface StudyRow {
 	first?: number;
 	/** The highest k searched to the end without a tiling. */
 	through?: number;
+	/** The highest k its run went to: the top of its k range, or for a find run the k it found or proved up to. */
+	reached?: number;
 	elapsed: number;
 	roots?: { done: number; all: number };
 }
+
+/** A status as pushed: a run unchanged since the push before comes as its id. */
+export type StatusPush = Omit<Status, "runs"> & { runs: (Run | string)[] };
 
 export interface StudySummary {
 	id: string;
@@ -341,8 +360,14 @@ export interface Api {
 	saveBoard(text: string, name: string): Promise<string | null>;
 	settings(): Promise<Settings>;
 	setSettings(
-		s: Partial<Pick<Settings, "threads" | "nice" | "maxRunning" | "resumeOnLaunch" | "openAtLogin" | "compressFinished">>,
+		s: Partial<
+			Pick<Settings, "threads" | "nice" | "maxRunning" | "resumeOnLaunch" | "openAtLogin" | "compressFinished" | "checkUpdates">
+		>,
 	): Promise<Settings>;
+	/** A newer version, asked once a launch; null when there is none, the check is off, or GitHub can't be reached. */
+	update(): Promise<Update | null>;
+	/** Don't offer this version again. */
+	skipUpdate(version: string): Promise<void>;
 	chooseRoot(): Promise<Settings>;
 	/** Start a run, in `folder` (the output folder when absent), or queue it past the limit (`queued`: its place).
 	 *  With `replaces`, that run is deleted once this one finishes (replaces.txt in its folder). */
@@ -358,8 +383,10 @@ export interface Api {
 	createStudy(board: string, name: string, options: StudyOptions, folder?: string): Promise<{ id: string; error?: string }>;
 	/** A study with its rows; null when it no longer exists. */
 	study(id: string): Promise<StudyDetail | null>;
-	/** Pause a study (its running rows stop, and go on when it resumes), resume it, or lift its time limit. */
-	studyAction(id: string, action: "pause" | "resume" | "unlimit" | "unraise"): Promise<{ error?: string }>;
+	/** Pause a study (its running rows stop, and go on when it resumes), resume it, or stop raising k. */
+	studyAction(id: string, action: "pause" | "resume" | "unraise"): Promise<{ error?: string }>;
+	/** A new time limit on each search, in minutes, or none (studies.ts setLimit): how many rows go on. */
+	studyLimit(id: string, minutes: number | null): Promise<{ error?: string; on?: number }>;
 	/** A new raise rule for a whole study, and the rows it sends on (studies.ts raise): how many go on. */
 	studyRaise(id: string, rule: RaiseRule): Promise<{ error?: string; on?: number }>;
 	/** A run's raise rule changed, or taken off (null): the k it is on still finishes. */
@@ -390,7 +417,8 @@ export interface Api {
 	quit(): Promise<void>;
 	/** The app was asked to quit while runs are going: the window asks whether to stop them. */
 	onQuitRequest(cb: () => void): () => void;
-	onStatus(cb: (s: Status) => void): () => void;
+	/** Pushed every tick: the runs unchanged since the last push come by id (main.ts push). */
+	onStatus(cb: (s: StatusPush) => void): () => void;
 	/** The test hook (electron/main.ts) drives the window through these. */
 	onHook(cb: (h: Hook) => void): () => void;
 }

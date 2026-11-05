@@ -1,7 +1,7 @@
 // The disk a run output folder takes, as a treemap (squarified, Bruls, Huizing and van Wijk 2000): every run
 // a rectangle of area by its folder's bytes, nested in the folders that group runs. Hover shows the run and
 // a few of its tilings; a click opens it.
-import { useLayoutEffect, useRef, useState } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { tileFill } from "@/lib/render/tilePalette";
 import { cn } from "@/lib/utils/cn";
 import type { Run, Status } from "./bridge";
@@ -12,14 +12,16 @@ import { baseOf, bytes, duration, packable, packItems, packOf, PackMark, packRun
 import { RunPreviews } from "./tilings";
 
 type Rect = { x: number; y: number; w: number; h: number };
-type Node = { kind: "folder"; path: string; size: number; kids: Node[] } | { kind: "run"; run: Run; size: number };
+type Node = { kind: "folder"; path: string; size: number; kids: Node[] } | { kind: "run"; id: string; size: number };
+/** What the layout hangs on: the folders, and each run's folder and size on disk. */
+type Shape = { folders: string[]; runs: [id: string, dir: string, disk: number][] };
 
 const HEADER = 18;
 const GAP = 2;
 const CARD = 300;
 
 /** A run's colour is its folder's, as a disk map colours files by type: sibling folders a golden angle apart. */
-const hueOf = (status: Status, run: Run) => (status.folders.indexOf(parentOf(run.dir)) + 1) * 137.508;
+const hueOf = (folders: string[], run: Run) => (folders.indexOf(parentOf(run.dir)) + 1) * 137.508;
 /** The dot of a run not complete, as the run list wears it. */
 const DOT: Partial<Record<Run["state"], string>> = {
 	running: "animate-pulse bg-accent",
@@ -27,15 +29,15 @@ const DOT: Partial<Record<Run["state"], string>> = {
 	failed: "bg-danger",
 };
 
-function tree(status: Status, folder: string): Node[] {
+function tree(shape: Shape, folder: string): Node[] {
 	const kids: Node[] = [
-		...status.folders
+		...shape.folders
 			.filter((f) => parentOf(f) === folder)
 			.map((f): Node => {
-				const k = tree(status, f);
+				const k = tree(shape, f);
 				return { kind: "folder", path: f, kids: k, size: k.reduce((t, n) => t + n.size, 0) };
 			}),
-		...status.runs.filter((r) => parentOf(r.dir) === folder).map((r): Node => ({ kind: "run", run: r, size: r.disk ?? 0 })),
+		...shape.runs.filter(([, dir]) => parentOf(dir) === folder).map(([id, , disk]): Node => ({ kind: "run", id, size: disk })),
 	];
 	return kids.filter((n) => n.size > 0).sort((a, b) => b.size - a.size);
 }
@@ -78,6 +80,7 @@ function squarify<T extends { size: number }>(items: T[], r: Rect): { item: T; r
 }
 
 type Tile = { node: Node; r: Rect; depth: number };
+type Hover = { run: Run; x: number; y: number } | null;
 function layout(nodes: Node[], r: Rect, depth = 0): Tile[] {
 	return squarify(nodes, r).flatMap(({ item, r: q }) => {
 		const me: Tile = { node: item, r: q, depth };
@@ -91,7 +94,8 @@ function layout(nodes: Node[], r: Rect, depth = 0): Tile[] {
 export function DiskMap({ status, onSelect }: { status: Status; onSelect: (id: string) => void }) {
 	const box = useRef<HTMLDivElement>(null);
 	const [size, setSize] = useState({ w: 0, h: 0 });
-	const [hover, setHover] = useState<{ run: Run; x: number; y: number } | null>(null);
+	// the hover card keeps its own state: a move re-renders the card, never the thousand tiles under it
+	const showRef = useRef<(h: Hover) => void>(() => {});
 	useLayoutEffect(() => {
 		const el = box.current;
 		if (!el) return;
@@ -99,11 +103,21 @@ export function DiskMap({ status, onSelect }: { status: Status; onSelect: (id: s
 		ro.observe(el);
 		return () => ro.disconnect();
 	}, []);
-	const nodes = tree(status, status.root);
+	// The layout hangs on the folders and the runs' sizes only, and each tile is drawn again only when its own run
+	// changed: a running search's progress draws its tile, not the thousand others.
+	const shapeKey = JSON.stringify([status.root, status.folders, status.runs.map((r) => [r.id, r.dir, r.disk ?? 0])]);
+	const nodes = useMemo(() => {
+		const [root, folders, runs] = JSON.parse(shapeKey) as [string, Shape["folders"], Shape["runs"]];
+		return tree({ folders, runs }, root);
+	}, [shapeKey]);
+	const byId = useMemo(() => new Map(status.runs.map((r) => [r.id, r])), [status.runs]);
+	const selectRef = useRef(onSelect);
+	useLayoutEffect(() => {
+		selectRef.current = onSelect;
+	});
 	const total = nodes.reduce((t, n) => t + n.size, 0);
 	const measuring = status.runs.some((r) => r.disk === null);
-	const tiles = layout(nodes, { x: 0, y: 0, w: size.w, h: size.h });
-	const shown = hover && status.runs.find((r) => r.id === hover.run.id);
+	const tiles = useMemo(() => layout(nodes, { x: 0, y: 0, w: size.w, h: size.h }), [nodes, size]);
 	const [error, setError] = useState("");
 	const [squeeze, expand] = [packable(status.runs, false), packable(status.runs, true)];
 	const packingNow = status.runs.some((r) => r.packing);
@@ -155,7 +169,7 @@ export function DiskMap({ status, onSelect }: { status: Status; onSelect: (id: s
 			<div
 				ref={box}
 				className="relative min-h-0 flex-1 overflow-hidden rounded-surface bg-surface-sunken"
-				onMouseLeave={() => setHover(null)}
+				onMouseLeave={() => showRef.current(null)}
 			>
 				{!total ? (
 					<p className="absolute inset-0 flex items-center justify-center text-sm text-fg-muted">
@@ -176,110 +190,175 @@ export function DiskMap({ status, onSelect }: { status: Status; onSelect: (id: s
 							) : null}
 						</div>
 					) : (
-						<ContextMenu
-							key={node.run.id}
-							items={[
-								{ icon: SquareArrowOutUpRight, label: "Open run", onSelect: () => onSelect(node.run.id) },
-								{ icon: FolderOpen, label: "Show folder", onSelect: () => void window.tilesearch.reveal(node.run.dir) },
-								...packItems(node.run, setError),
-							]}
-							onContextMenu={() => setHover(null)}
-							className="absolute"
-							style={{
-								left: r.x + GAP / 2,
-								top: r.y + GAP / 2,
-								width: Math.max(0, r.w - GAP),
-								height: Math.max(0, r.h - GAP),
-								zIndex: depth + 1,
-							}}
-						>
-						<button
-							type="button"
-							onClick={() => onSelect(node.run.id)}
-							onMouseMove={(e) => {
-								const b = box.current!.getBoundingClientRect();
-								setHover({ run: node.run, x: e.clientX - b.left, y: e.clientY - b.top });
-							}}
-							aria-label={`${node.run.name}, ${bytes(node.size)}`}
-							className={cn(
-								"block h-full w-full overflow-hidden rounded-[3px] text-left outline-none focus-visible:ring-2 focus-visible:ring-accent",
-								hover?.run.id === node.run.id && "brightness-105 saturate-150",
-								node.run.state === "running" && "ring-2 ring-accent ring-inset",
-							)}
-							style={{
-								// a cushion: lit from the upper left, as a disk map shades its blocks
-								background: `radial-gradient(ellipse at 30% 25%, color-mix(in oklch, ${tileFill(hueOf(status, node.run))} 55%, white), color-mix(in oklch, ${tileFill(hueOf(status, node.run))} 82%, black))`,
-							}}
-						>
-							{r.w > 70 && r.h > 34 ? (
-								<>
-								<span className="flex items-center gap-1 truncate px-1.5 pt-1 text-xs font-medium text-black/80">
-									{DOT[node.run.state] ? (
-										<span className={cn("h-2 w-2 shrink-0 rounded-full", DOT[node.run.state])} />
-									) : null}
-									<span className="truncate">{node.run.name}</span>
-									<PackMark run={node.run} className="[&_svg]:text-black/55" />
-								</span>
-								<span className="block truncate px-1.5 text-xs text-black/60">{bytes(node.size)}</span>
-								</>
-							) : null}
-						</button>
-						</ContextMenu>
+						<RunTile
+							key={node.id}
+							run={byId.get(node.id)!}
+							r={r}
+							depth={depth}
+							size={node.size}
+							hue={hueOf(status.folders, byId.get(node.id)!)}
+							selectRef={selectRef}
+							showRef={showRef}
+							box={box}
+							setError={setError}
+						/>
 					),
 				)}
-				{shown && hover ? (
-					<div
-						className="pointer-events-none absolute z-50 space-y-2 rounded-surface border border-line-subtle bg-surface-raised p-3 shadow-lg"
-						style={{
-							width: CARD,
-							left: hover.x + 16 + CARD > size.w ? Math.max(4, hover.x - 16 - CARD) : hover.x + 16,
-							top: Math.max(4, Math.min(hover.y + 16, size.h - 250)),
-						}}
-					>
-						<div>
-							<div className="truncate text-sm font-semibold text-fg">{shown.name}</div>
-							<div className="text-xs text-fg-secondary">{stateLabel(shown)}</div>
-						</div>
-						<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
-							<dt className="text-fg-muted">On disk</dt>
-							<dd className="text-fg">
-								{bytes(shown.disk ?? 0)}
-								{total ? ` · ${((100 * (shown.disk ?? 0)) / total).toFixed(1)}%` : ""}
-							</dd>
-							<dt className="text-fg-muted">Tilings</dt>
-							<dd className="text-fg">
-								{shown.total.toLocaleString("en")} for k {shown.kmin}
-								{shown.kmax > shown.kmin ? `–${shown.kmax}` : ""}
-							</dd>
-							<dt className="text-fg-muted">Files</dt>
-							<dd className="text-fg">
-								{shown.files.length.toLocaleString("en")}
-								{(() => {
-									const { plain, gz } = packOf(shown);
-									return shown.packing
-										? `, ${shown.packing.unpack ? "decompressing" : "compressing"} ${shown.packing.done} of ${shown.packing.all}`
-										: gz && !plain
-											? ", gzipped"
-											: gz
-												? `, ${bytes(gz)} gzipped and ${bytes(plain)} plain`
-												: shown.state === "finished" && plain
-													? ", plain text: right-click to compress"
-													: "";
-								})()}
-							</dd>
-							{shown.elapsed ? (
-								<>
-									<dt className="text-fg-muted">Search time</dt>
-									<dd className="text-fg">{duration(shown.elapsed)}</dd>
-								</>
-							) : null}
-							<dt className="text-fg-muted">Started</dt>
-							<dd className="text-fg">{when(shown.created)}</dd>
-						</dl>
-						<RunPreviews key={shown.id} run={shown} />
-					</div>
-				) : null}
+				<HoverCard status={status} size={size} total={total} showRef={showRef} />
 			</div>
 		</div>
 	);
 }
+
+/** One run's block, with its menu; drawn again only when its run, place or colour changes. */
+const RunTile = memo(function RunTile({
+	run,
+	r,
+	depth,
+	size,
+	hue,
+	selectRef,
+	showRef,
+	box,
+	setError,
+}: {
+	run: Run;
+	r: Rect;
+	depth: number;
+	size: number;
+	hue: number;
+	selectRef: RefObject<(id: string) => void>;
+	showRef: RefObject<(h: Hover) => void>;
+	box: RefObject<HTMLDivElement | null>;
+	setError: (e: string) => void;
+}) {
+	const fill = tileFill(hue);
+	return (
+		<ContextMenu
+			items={[
+				{ icon: SquareArrowOutUpRight, label: "Open run", onSelect: () => selectRef.current(run.id) },
+				{ icon: FolderOpen, label: "Show folder", onSelect: () => void window.tilesearch.reveal(run.dir) },
+				...packItems(run, setError),
+			]}
+			onContextMenu={() => showRef.current(null)}
+			className="absolute"
+			style={{
+				left: r.x + GAP / 2,
+				top: r.y + GAP / 2,
+				width: Math.max(0, r.w - GAP),
+				height: Math.max(0, r.h - GAP),
+				zIndex: depth + 1,
+			}}
+		>
+			<button
+				type="button"
+				onClick={() => selectRef.current(run.id)}
+				onMouseMove={(e) => {
+					const b = box.current!.getBoundingClientRect();
+					showRef.current({ run, x: e.clientX - b.left, y: e.clientY - b.top });
+				}}
+				aria-label={`${run.name}, ${bytes(size)}`}
+				className={cn(
+					"block h-full w-full overflow-hidden rounded-[3px] text-left outline-none hover:brightness-105 hover:saturate-150 focus-visible:ring-2 focus-visible:ring-accent",
+					run.state === "running" && "ring-2 ring-accent ring-inset",
+				)}
+				style={{
+					// a cushion: lit from the upper left, as a disk map shades its blocks
+					background: `radial-gradient(ellipse at 30% 25%, color-mix(in oklch, ${fill} 55%, white), color-mix(in oklch, ${fill} 82%, black))`,
+				}}
+			>
+				{r.w > 70 && r.h > 34 ? (
+					<>
+						<span className="flex items-center gap-1 truncate px-1.5 pt-1 text-xs font-medium text-black/80">
+							{DOT[run.state] ? <span className={cn("h-2 w-2 shrink-0 rounded-full", DOT[run.state])} /> : null}
+							<span className="truncate">{run.name}</span>
+							<PackMark run={run} className="[&_svg]:text-black/55" />
+						</span>
+						<span className="block truncate px-1.5 text-xs text-black/60">{bytes(size)}</span>
+					</>
+				) : null}
+			</button>
+		</ContextMenu>
+	);
+});
+
+/** The card over the map for the run under the pointer: its own state, so a move redraws only this. */
+function HoverCard({
+	status,
+	size,
+	total,
+	showRef,
+}: {
+	status: Status;
+	size: { w: number; h: number };
+	total: number;
+	showRef: RefObject<(h: Hover) => void>;
+}) {
+	const [hover, setHover] = useState<Hover>(null);
+	useLayoutEffect(() => {
+		showRef.current = setHover;
+	}, [showRef]);
+	const shown = hover && status.runs.find((r) => r.id === hover.run.id);
+	if (!shown || !hover) return null;
+	return (
+			<div
+				className="pointer-events-none absolute z-50 space-y-2 rounded-surface border border-line-subtle bg-surface-raised p-3 shadow-lg"
+				style={{
+					width: CARD,
+					left: hover.x + 16 + CARD > size.w ? Math.max(4, hover.x - 16 - CARD) : hover.x + 16,
+					top: Math.max(4, Math.min(hover.y + 16, size.h - 250)),
+				}}
+			>
+				<CardBody run={shown} total={total} />
+			</div>
+	);
+}
+
+/** What the card says of a run, and a few of its tilings: the same while the pointer moves over the run. */
+const CardBody = memo(function CardBody({ run: shown, total }: { run: Run; total: number }) {
+	return (
+		<>
+					<div>
+						<div className="truncate text-sm font-semibold text-fg">{shown.name}</div>
+						<div className="text-xs text-fg-secondary">{stateLabel(shown)}</div>
+					</div>
+					<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+						<dt className="text-fg-muted">On disk</dt>
+						<dd className="text-fg">
+							{bytes(shown.disk ?? 0)}
+							{total ? ` · ${((100 * (shown.disk ?? 0)) / total).toFixed(1)}%` : ""}
+						</dd>
+						<dt className="text-fg-muted">Tilings</dt>
+						<dd className="text-fg">
+							{shown.total.toLocaleString("en")} for k {shown.kmin}
+							{shown.kmax > shown.kmin ? `–${shown.kmax}` : ""}
+						</dd>
+						<dt className="text-fg-muted">Files</dt>
+						<dd className="text-fg">
+							{shown.files.length.toLocaleString("en")}
+							{(() => {
+								const { plain, gz } = packOf(shown);
+								return shown.packing
+									? `, ${shown.packing.unpack ? "decompressing" : "compressing"} ${shown.packing.done} of ${shown.packing.all}`
+									: gz && !plain
+										? ", gzipped"
+										: gz
+											? `, ${bytes(gz)} gzipped and ${bytes(plain)} plain`
+											: shown.state === "finished" && plain
+												? ", plain text: right-click to compress"
+												: "";
+							})()}
+						</dd>
+						{shown.elapsed ? (
+							<>
+								<dt className="text-fg-muted">Search time</dt>
+								<dd className="text-fg">{duration(shown.elapsed)}</dd>
+							</>
+						) : null}
+						<dt className="text-fg-muted">Started</dt>
+						<dd className="text-fg">{when(shown.created)}</dd>
+					</dl>
+					<RunPreviews key={shown.id} run={shown} />
+		</>
+	);
+});

@@ -6,8 +6,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
-import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain, nativeTheme, shell } from "electron";
-import { raiseCeiling, raiseStop, type RaiseRule, type Check, type Estimate, type Hook, type Rule, type RunOptions, type Settings, type Status, type StudyOptions } from "../src/bridge";
+import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain, nativeTheme, net, shell } from "electron";
+import { raiseCeiling, raiseStop, type RaiseRule, type Check, type Estimate, type Hook, type Rule, type RunOptions, type Settings, type Status, type StatusPush, type StudyOptions, type Update } from "../src/bridge";
 import { MIN_FREE_BYTES, ruleEnv, runEstimator, Runs, STAMP, type RunFolder } from "./runs";
 import { Studies, Study, type Context } from "./studies";
 
@@ -42,6 +42,10 @@ type Saved = Pick<Settings, "root" | "threads" | "nice"> & {
 	interrupted?: { id: string; options: RunOptions }[];
 	/** Gzip a run's tiling files as it finishes; on unless turned off. */
 	compressFinished?: boolean;
+	/** Ask, at launch, whether a newer version is out; on unless turned off. */
+	checkUpdates?: boolean;
+	/** The version the update window was told to skip. */
+	skipVersion?: string;
 };
 function loadSettings(): Saved {
 	const cores = os.availableParallelism();
@@ -61,6 +65,7 @@ const settings = (): Settings => ({
 	maxRunning: saved.maxRunning ?? 0,
 	resumeOnLaunch: !!saved.resumeOnLaunch,
 	compressFinished: saved.compressFinished !== false,
+	checkUpdates: saved.checkUpdates !== false,
 	// the login item is the system's to keep, not settings.json's; a build run from source has none
 	openAtLogin: app.isPackaged ? app.getLoginItemSettings().openAtLogin : false,
 	canOpenAtLogin: app.isPackaged && process.platform !== "linux",
@@ -68,6 +73,40 @@ const settings = (): Settings => ({
 	platform: process.platform,
 	version: app.getVersion(),
 });
+
+// The release's version.json (tools/searcher/release.mjs publish uploads it beside the installers): the
+// version out now and its notes, asked once a launch by the window. GitHub counts each ask as a download of
+// that file, which is how launches are counted. TILESEARCH_UPDATE=<json> stands in for the answer (its `os`,
+// mac or windows, for the platform), to see the window from source.
+const VERSION_URL =
+	"https://github.com/AlessandroLongo23/TilingAtlas/releases/download/the-tiling-searcher-latest/version.json";
+const SITE = "https://the-tiling-atlas.vercel.app";
+
+async function newerVersion(): Promise<Update | null> {
+	const here = process.platform === "darwin" ? "mac" : process.platform === "win32" ? "windows" : null;
+	let latest: { version: string; notes?: string[]; os?: Update["os"] };
+	try {
+		if (process.env.TILESEARCH_UPDATE) latest = JSON.parse(process.env.TILESEARCH_UPDATE);
+		else if (!app.isPackaged || !here || saved.checkUpdates === false) return null;
+		else {
+			const res = await net.fetch(VERSION_URL, { cache: "no-store" });
+			if (!res.ok) return null;
+			latest = await res.json();
+		}
+	} catch {
+		return null; // offline, or no version.json yet: nothing to say
+	}
+	const os = latest.os ?? here ?? "mac";
+	if (latest.version === saved.skipVersion || !newer(latest.version, app.getVersion())) return null;
+	return { version: latest.version, notes: latest.notes ?? [], os, url: `${SITE}/searcher/download/${os}` };
+}
+
+/** Whether version a (major.minor.patch) comes after b. */
+function newer(a: string, b: string) {
+	const [x, y] = [a, b].map((v) => v.split(".").map(Number));
+	const i = [0, 1, 2].find((i) => (x[i] || 0) !== (y[i] || 0));
+	return i !== undefined && (x[i] || 0) > (y[i] || 0);
+}
 
 let win: BrowserWindow | null = null;
 let runs: Runs;
@@ -87,7 +126,8 @@ function status(): Status {
 			return { ...r.snapshot(), queued: q < 0 ? null : q + 1 };
 		}),
 		studies: studies.list().map((s) => s.summary(dirs, isQueued)),
-		freeBytes: runs.freeBytes(),
+		// to the three figures the window shows: the disk's free space moves on every tick
+		freeBytes: Number(runs.freeBytes().toPrecision(3)),
 		minFreeBytes: MIN_FREE_BYTES,
 	};
 }
@@ -222,8 +262,10 @@ function handlers() {
 		return r.filePath;
 	});
 	ipcMain.handle("settings", () => settings());
+	ipcMain.handle("update", () => newerVersion());
+	ipcMain.handle("skipUpdate", (_, version: string) => void ((saved.skipVersion = version), saveSettings()));
 	ipcMain.handle("setSettings", (_, s: Partial<Settings>) => {
-		const { threads, nice, maxRunning, resumeOnLaunch, openAtLogin, compressFinished } = s;
+		const { threads, nice, maxRunning, resumeOnLaunch, openAtLogin, compressFinished, checkUpdates } = s;
 		saved = {
 			...saved,
 			...(threads !== undefined ? { threads } : {}),
@@ -231,6 +273,7 @@ function handlers() {
 			...(maxRunning !== undefined ? { maxRunning: Math.max(0, Math.round(maxRunning)) } : {}),
 			...(resumeOnLaunch !== undefined ? { resumeOnLaunch } : {}),
 			...(compressFinished !== undefined ? { compressFinished } : {}),
+			...(checkUpdates !== undefined ? { checkUpdates } : {}),
 		};
 		if (openAtLogin !== undefined && app.isPackaged) app.setLoginItemSettings({ openAtLogin });
 		saveSettings();
@@ -274,13 +317,12 @@ function handlers() {
 		return { id: s.dir };
 	});
 	ipcMain.handle("study", (_, id: string) => studies.get(id)?.detail(byDir(), isQueued) ?? null);
-	ipcMain.handle("studyAction", (_, id: string, action: "pause" | "resume" | "unlimit" | "unraise") => {
+	ipcMain.handle("studyAction", (_, id: string, action: "pause" | "resume" | "unraise") => {
 		const s = studies.get(id);
 		if (!s) return { error: "That study no longer exists." };
 		if (action === "pause") s.pause(byDir());
 		else if (action === "resume") s.resume();
-		else if (action === "unraise") s.unraise(byDir());
-		else s.unlimit(byDir());
+		else s.unraise(byDir());
 		s.tick(studyContext(), byDir());
 		push();
 		return {};
@@ -289,6 +331,14 @@ function handlers() {
 		const s = studies.get(id);
 		if (!s) return { error: "That study no longer exists." };
 		const on = s.raise(rule, byDir());
+		s.tick(studyContext(), byDir());
+		push();
+		return { on };
+	});
+	ipcMain.handle("studyLimit", (_, id: string, minutes: number | null) => {
+		const s = studies.get(id);
+		if (!s) return { error: "That study no longer exists." };
+		const on = s.setLimit(minutes, byDir());
 		s.tick(studyContext(), byDir());
 		push();
 		return { on };
@@ -358,8 +408,28 @@ function handlers() {
 	ipcMain.handle("quit", () => quitNow());
 }
 
+/**
+ * The status to the window: each run in full when it changed since the last push, by its id when it did not, so
+ * the window keeps that run's object. All of it each time was some 20 MB for 1,251 runs (their boards, logs and
+ * 49,000 certificate files), cloned into the window and drawn again twice a second.
+ */
+let sent = new Map<string, string>();
+let sentRest = "";
 function push() {
-	win?.webContents.send("status", status());
+	if (!win || win.isDestroyed()) return;
+	const s = status();
+	const next = new Map<string, string>();
+	const runs = s.runs.map((r) => {
+		const json = JSON.stringify(r);
+		next.set(r.id, json);
+		return sent.get(r.id) === json ? r.id : r;
+	});
+	sent = next;
+	// nothing changed (an idle app, most ticks): nothing to send, and nothing to draw again
+	const rest = JSON.stringify({ ...s, runs: s.runs.map((r) => r.id) });
+	if (rest === sentRest && runs.every((r) => typeof r === "string")) return;
+	sentRest = rest;
+	win.webContents.send("status", { ...s, runs } satisfies StatusPush);
 }
 
 /**

@@ -1,0 +1,76 @@
+# hexagonal stars [30, 60, 90] with regular [3, 4, 6, 12]; 49 vertex types (balance-pruned); see experiments/star_balance_lp.py
+name pair_30-60
+k 2 6
+
+angle A6p30 30
+angle A3 60
+angle A6p60 60
+angle A4 90
+angle A6p90 90
+angle A6 120
+angle A12 150
+angle A6d210 210
+angle A6d240 240
+angle A6d270 270
+
+face A3 x 3
+face A4 x 4
+face A6 x 6
+face A12 x 12
+face A6p30 A6d270 x 6
+face A6p60 A6d240 x 6
+face A6p90 A6d210 x 6
+
+vertex A12 A12 A3
+vertex A12 A3 A3 A4
+vertex A12 A3 A3 A6p90
+vertex A12 A3 A4 A3
+vertex A12 A3 A6p90 A3
+vertex A12 A4 A6
+vertex A12 A4 A6p30 A4
+vertex A12 A6d210
+vertex A3 A3 A3 A3 A3 A3
+vertex A3 A3 A3 A3 A3 A6p60
+vertex A3 A3 A3 A3 A6
+vertex A3 A3 A3 A4 A4
+vertex A3 A3 A3 A4 A6p90
+vertex A3 A3 A3 A6 A6p60
+vertex A3 A3 A3 A6p60 A3 A6p60
+vertex A3 A3 A4 A3 A4
+vertex A3 A3 A4 A3 A6p90
+vertex A3 A3 A6 A3 A6p60
+vertex A3 A3 A6 A6
+vertex A3 A3 A6d240
+vertex A3 A3 A6p60 A3 A3 A6p60
+vertex A3 A3 A6p60 A6 A6p60
+vertex A3 A3 A6p90 A3 A6p90
+vertex A3 A4 A4 A3 A6p60
+vertex A3 A4 A4 A6
+vertex A3 A4 A4 A6p30 A4
+vertex A3 A4 A6 A4
+vertex A3 A4 A6d210
+vertex A3 A4 A6p30 A4 A6p90
+vertex A3 A4 A6p90 A3 A6p60
+vertex A3 A6 A3 A6
+vertex A3 A6 A4 A6p90
+vertex A3 A6 A6 A6p60
+vertex A3 A6 A6p60 A3 A6p60
+vertex A3 A6 A6p60 A6
+vertex A3 A6d210 A6p90
+vertex A3 A6d240 A6p60
+vertex A3 A6d270 A6p30
+vertex A3 A6p60 A3 A6p60 A3 A6p60
+vertex A4 A4 A4 A4
+vertex A4 A4 A4 A6p90
+vertex A4 A6d270
+vertex A4 A6p30 A4 A6p30 A4 A6p30
+vertex A4 A6p30 A6d210 A6p30
+vertex A4 A6p90 A4 A6p90
+vertex A6 A6 A6
+vertex A6 A6d240
+vertex A6 A6p60 A6 A6p60
+vertex A6d270 A6p90
+
+permutations no
+require face A6p30 A6d270 x 6
+require face A6p60 A6d240 x 6

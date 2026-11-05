@@ -1,0 +1,36 @@
+# Existence board: only the vertex types of the two k=9 pair tilings (30+60, 60+90).
+# Incomplete by design: a tiling found here is real, an empty k proves nothing.
+name s30-60-90_pairtypes
+k 9 30
+
+angle A6p30 30
+angle A3 60
+angle A6p60 60
+angle A4 90
+angle A6p90 90
+angle A6 120
+angle A12 150
+angle A6d210 210
+angle A6d240 240
+angle A6d270 270
+face A3 x 3
+face A4 x 4
+face A6 x 6
+face A12 x 12
+face A6p30 A6d270 x 6
+face A6p60 A6d240 x 6
+face A6p90 A6d210 x 6
+
+vertex A3 A4 A4 A6p30 A4
+vertex A3 A3 A3 A4 A4
+vertex A4 A6d270
+vertex A3 A3 A3 A3 A3 A6p60
+vertex A3 A4 A4 A3 A6p60
+vertex A3 A3 A6d240
+vertex A3 A3 A3 A4 A6p90
+vertex A3 A4 A6d210
+
+permutations no
+require face A6p30 A6d270 x 6
+require face A6p60 A6d240 x 6
+require face A6p90 A6d210 x 6

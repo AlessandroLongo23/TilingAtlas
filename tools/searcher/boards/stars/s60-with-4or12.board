@@ -1,0 +1,50 @@
+# hexagonal stars [60] with regular [3, 4, 6, 12]; 29 vertex types (balance-pruned); see experiments/star_balance_lp.py
+name s60_with_4or12
+k 1 6
+
+angle A3 60
+angle A6p60 60
+angle A4 90
+angle A6 120
+angle A12 150
+angle A6d240 240
+
+face A3 x 3
+face A4 x 4
+face A6 x 6
+face A12 x 12
+face A6p60 A6d240 x 6
+
+vertex A12 A12 A3
+vertex A12 A3 A3 A4
+vertex A12 A3 A4 A3
+vertex A12 A4 A6
+vertex A3 A3 A3 A3 A3 A3
+vertex A3 A3 A3 A3 A3 A6p60
+vertex A3 A3 A3 A3 A6
+vertex A3 A3 A3 A4 A4
+vertex A3 A3 A3 A6 A6p60
+vertex A3 A3 A3 A6p60 A3 A6p60
+vertex A3 A3 A4 A3 A4
+vertex A3 A3 A6 A3 A6p60
+vertex A3 A3 A6 A6
+vertex A3 A3 A6d240
+vertex A3 A3 A6p60 A3 A3 A6p60
+vertex A3 A3 A6p60 A6 A6p60
+vertex A3 A4 A4 A3 A6p60
+vertex A3 A4 A4 A6
+vertex A3 A4 A6 A4
+vertex A3 A6 A3 A6
+vertex A3 A6 A6 A6p60
+vertex A3 A6 A6p60 A3 A6p60
+vertex A3 A6 A6p60 A6
+vertex A3 A6d240 A6p60
+vertex A3 A6p60 A3 A6p60 A3 A6p60
+vertex A4 A4 A4 A4
+vertex A6 A6 A6
+vertex A6 A6d240
+vertex A6 A6p60 A6 A6p60
+
+permutations no
+require face A6p60 A6d240 x 6
+require face A4 x 4 | face A12 x 12

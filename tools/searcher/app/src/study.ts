@@ -11,6 +11,7 @@
 // one (main, tilesearch --balance); or the faces cannot touch each other on the vertices it leaves (splitReason).
 import {
 	cyclicKey,
+	evaluate,
 	fill,
 	flatOf,
 	PARAM_NAME as NAME,
@@ -83,14 +84,46 @@ export function readParams(text: string): { params: Param[]; problems: Problem[]
 /** The text with every {…} outside a `vary` line and a comment replaced by its value at `values`. */
 export function substitute(text: string, values: Record<string, number>): { text: string; problems: Problem[] } {
 	const problems: Problem[] = [];
+	const bad = (i: number, message: string) => problems.push({ severity: "error", line: i + 1, where: { kind: "board" }, message });
+	// A3^{n-2j} is n-2j corners A3: none at 0, and only a whole number from 0 up
+	const powers = (s: string, i: number) =>
+		s.replace(/(\s+)(\S+)\^(\S+)/g, (all, _: string, sym: string, p: string) => {
+			if (p === "0") return "";
+			if (!/^[1-9]\d*$/.test(p)) bad(i, `The power ${sym}^${p} must be a whole number from 0 up.`);
+			return all;
+		});
+	const more: string[] = [];
 	const lines = text.split("\n").map((raw, i) => {
 		const hash = raw.indexOf("#");
 		const body = hash < 0 ? raw : raw.slice(0, hash);
 		if (/^\s*vary\b/.test(body) || !body.includes("{")) return raw;
+		// `… for j 0..{n/2}`: the line once per whole j in the range, written after the board's last line
+		const each = /^(.*\S)\s+for\s+(\S+)\s+(-?\d+|\{[^{}]*\})\.\.(-?\d+|\{[^{}]*\})\s*$/.exec(body);
+		if (each) {
+			const [, line, j, lo, hi] = each;
+			if (!NAME.test(j) || j in values) return bad(i, `“${j}” cannot count the lines here: use a name that is not a parameter.`), "";
+			try {
+				const at = (s: string) => {
+					const v = /^-?\d+$/.test(s) ? { p: Number(s), q: 1 } : evaluate(s.slice(1, -1), values);
+					return v.p / v.q;
+				};
+				const [a, b] = [Math.ceil(at(lo)), Math.floor(at(hi))];
+				if (b - a > 1000) return bad(i, `The range of ${j} is longer than 1,000 values.`), "";
+				for (let x = a; x <= b; x++) {
+					const { text: out, error } = fill(line, { ...values, [j]: x });
+					if (error) return bad(i, error), "";
+					more.push(powers(out, i));
+				}
+			} catch (e) {
+				bad(i, `The range of ${j}: ${(e as Error).message}.`);
+			}
+			return hash < 0 ? "" : raw.slice(hash);
+		}
 		const { text: out, error } = fill(body, values);
-		if (error) problems.push({ severity: "error", line: i + 1, where: { kind: "board" }, message: error });
-		return hash < 0 ? out : out + raw.slice(hash);
+		if (error) bad(i, error);
+		return (error ? out : powers(out, i)) + (hash < 0 ? "" : raw.slice(hash));
 	});
+	if (more.length) lines.splice(lines.length - (lines.at(-1) === "" ? 1 : 0), 0, ...more);
 	return { text: lines.join("\n"), problems };
 }
 
@@ -219,7 +252,8 @@ export function rowMaker(b: Board) {
 		return {
 			...row,
 			name,
-			header: [],
+			// the edge's minimal polynomial goes with the row, so its runs can show it
+			header: b.header.filter((h) => /^minpoly\s/.test(h)),
 			subsets: undefined,
 			require: [...row.require, ...extra],
 			angles: b.angles.filter((a) => used.has(a.sym)),
@@ -249,6 +283,26 @@ export function plainBoard(b: Board): Board {
 		extra: b.extra.filter((e) => !/^vary\b/.test(e.text)),
 	};
 }
+
+/**
+ * The study's whole board, for each combination of its parameters' values: its board as one, every optional face
+ * an ordinary face. A row requires exactly its optional faces, so this board's tilings at each k are all the rows'
+ * together (measured equal, experiments/results/study-union), and it draws any row's tilings.
+ */
+export function wholeBoards(text: string): { values: Record<string, number>; text: string }[] {
+	return valueGrid(readParams(text).params).map((values) => ({
+		values,
+		text: serialize(plainBoard(parse(substitute(text, values).text).board)),
+	}));
+}
+
+/** A board's text as its search reads it, its k range aside: comments, spacing and blank lines dropped. */
+export const withoutK = (t: string) =>
+	t
+		.split("\n")
+		.map((l) => l.replace(/#.*/, "").trim().replace(/\s+/g, " "))
+		.filter((l) => l && !/^k /.test(l))
+		.join("\n");
 
 // ── a study board's text, edited line by line ──
 
@@ -366,6 +420,30 @@ export function planStudy(text: string, list = true): StudyPlan {
 	}
 	plan.list = out;
 	return plan;
+}
+
+/** Rows past this many vertex orders are not given to the engine: it lists every order before it checks or
+ *  searches, and 1.4·10⁵ already took it up to 12 minutes and 0.9 GB (docs/HYBRID_SEARCH_LIMITS.md). */
+export const MAX_ORDERS = 500_000;
+
+/** How many orders of corners round a vertex a board's lines give: one a line, or with permutations every cyclic
+ *  order of its corners (Burnside over the rotations; mirror images counted apart). A float: 10²¹ happens. */
+export function cyclicOrders(b: Board): number {
+	if (!b.permutations) return b.vertices.length;
+	const gcd = (a: number, c: number): number => (c ? gcd(c, a % c) : a);
+	return b.vertices.reduce((total, v) => {
+		const n = v.word.length;
+		const counts = [...v.word.reduce((m, c) => m.set(c, (m.get(c) ?? 0) + 1), new Map<string, number>()).values()];
+		let fixed = 0;
+		for (let r = 0; r < n; r++) {
+			const len = n / gcd(r, n); // a rotation by r has gcd(r, n) cycles of this length
+			if (counts.some((c) => c % len)) continue;
+			let ways = 1, placed = 0; // (n/len)! / prod (c/len)!
+			for (const c of counts) for (let i = 1; i <= c / len; i++) ways = (ways * ++placed) / i;
+			fixed += ways;
+		}
+		return total + fixed / n;
+	}, 0);
 }
 
 const built = new WeakMap<RowPlan, { text: string; key: string }>();

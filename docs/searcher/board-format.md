@@ -60,6 +60,12 @@ before: `Pi` is the 180° corner, and an optional letter from `SMLABCDEFG` follo
 `X1`, `X2`, ... in certificates, and `symbols.txt` in the output folder maps those back. Two symbols
 that encode to the same label are refused; a bare `oo` and `Pi` are both 0, for instance.
 
+One comment is read: `# minpoly <s> <polynomial>` in the header (the comments above the first statement)
+gives a hyperbolic board's edge length s and the minimal polynomial of cosh s over the rationals, in x, as
+PARI prints it (`# minpoly 2.49946007792802677995 4*x^3 - 24*x^2 - 3*x - 1`). A family's board has one per
+edge. The app shows it with the study and with each tiling whose edge matches s to a millionth, and a study
+passes it on to every row's board. Being a comment, engines and apps that predate it read past it.
+
 ## Statements
 
 | statement | required | meaning |
@@ -294,6 +300,18 @@ face   A{n} x {n}
 face   A{2n} x {2n}
 vertex A3 A4 A{n} A4
 vertex A4 A{n} A{2n}
+```
+
+When the number of corners or of vertex lines grows with a parameter, a power counts corners and `for` writes
+a line per value of a counter. `A3^{n-2j}` is n − 2j corners A3, none when that is 0, and a power that comes out
+below 0 or as a fraction is an error. A line ending in `for j 0..{n/2}` stands for one line per whole j from 0
+to n/2 (a bound that is a fraction is rounded inward); the counter must not be a parameter. The lines it writes
+go after the board's last line, so every line of the text keeps its number. At an edge where n triangles close a
+vertex and an n-gon's corner is worth two of theirs, every vertex is one line:
+
+```
+vary   n 7 9 11..40
+vertex A3^{n-2j} A{n}^{j} for j 0..{n/2}
 ```
 
 Before any search, each row is checked, and a row is ruled out only when no tiling exists at any k:

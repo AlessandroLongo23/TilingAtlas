@@ -83,8 +83,8 @@ export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; on
 								<span className="shrink-0">
 									<InfoDot side="bottom">
 										Estimated from {n(est!.probes)} samples of the search ({Math.round(est!.seconds)} s), duplicates
-										accounted for. The search visits {approx(est!.nodes)} nodes, {duration(est!.cpu[0])} of work on
-										one core.
+										accounted for. The search visits {approx(est!.nodes)} nodes, {duration(est!.cpu[0])} of work on one
+										core.
 									</InfoDot>
 								</span>
 							</>
@@ -100,7 +100,7 @@ export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; on
 			</div>
 			<KChart run={run} ks={ks} selected={k} onPick={onPick} folded={folded?.perK} />
 			{/* equal columns, so a live value growing a digit never shifts the facts after it */}
-			<dl className="grid content-start grid-cols-2 gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
+			<dl className="grid grid-cols-2 content-start gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
 				{facts.map((f) => (
 					<div key={f.label} className="min-w-0">
 						<dt className="ta-label">{f.label}</dt>
@@ -221,11 +221,11 @@ function Stage({ stage }: { stage: NonNullable<Run["stage"]> }) {
 					</span>
 				) : null}
 				<InfoDot side="bottom" label="What happens before the search">
-					Before its first root the engine builds its tables, then chooses where to start and how to branch: it
-					samples the search at your k under each branching rule, from each required set it could start from, and
-					keeps the one that will take the least time. The sampling takes a fiftieth of the search&rsquo;s estimated
-					time, between a tenth of a second and a second and a half per way. Last it orders the root types so the
-					small ones go first, again by sampling (the count is the types sampled). A resumed run keeps its rule.
+					Before its first root the engine builds its tables, then chooses where to start and how to branch: it samples
+					the search at your k under each branching rule, from each required set it could start from, and keeps the one
+					that will take the least time. The sampling takes a fiftieth of the search&rsquo;s estimated time, between a
+					tenth of a second and a second and a half per way. Last it orders the root types so the small ones go first,
+					again by sampling (the count is the types sampled). A resumed run keeps its rule.
 				</InfoDot>
 			</div>
 		</div>
@@ -370,12 +370,13 @@ const HEAD = 18; // px of it kept above the tallest column for its label
  * on its cap. While an estimate stands, a pale column behind each count is its expected total. The k the
  * browser below shows is the accent column, and clicking a column opens that k there.
  */
-function KChart({
+export function KChart({
 	run,
 	ks,
 	selected,
 	onPick,
 	folded,
+	complete,
 }: {
 	run: Run;
 	ks: number[];
@@ -383,12 +384,14 @@ function KChart({
 	onPick: (k: number) => void;
 	/** Per k, the count with each family once, when the run has been folded. */
 	folded?: Map<number, { tilings: number; folded: number }>;
+	/** The highest k whose count is final (a study's whole board): the columns past it are pale, so far. */
+	complete?: number;
 }) {
 	const est = run.estimate && run.state !== "finished" ? run.estimate : null;
 	const rows = ks.map((k) => {
 		const found = folded?.get(k)?.folded ?? run.counts[k];
 		const e = est ? estimatedTotal(est, k) : null;
-		return { k, found, e, files: run.files.some((f) => f.k === k) };
+		return { k, found, e, files: run.files.some((f) => f.k === k), part: complete !== undefined && k > complete };
 	});
 	const top = Math.max(10, ...rows.map((r) => Math.max(r.found ?? 0, r.e?.[0] ?? 0)));
 	const L = Math.log10(1 + top);
@@ -424,9 +427,9 @@ function KChart({
 			<div className="flex items-baseline justify-between gap-3">
 				<span className="ta-label">Tilings per k{folded ? ", each family once" : ""}</span>
 				<span className="font-mono text-[11px] text-fg-muted">
-					{est ? (
+					{est || rows.some((r) => r.part && r.found) ? (
 						<span className="mr-3 inline-flex items-center gap-1.5">
-							<span className="h-2 w-2 rounded-[2px] bg-fg/10" /> expected
+							<span className="h-2 w-2 rounded-[2px] bg-fg/10" /> {est ? "expected" : "incomplete"}
 						</span>
 					) : null}
 					log scale
@@ -455,7 +458,7 @@ function KChart({
 							const text = r.found === undefined ? "" : full ? n(r.found) : compact(r.found);
 							const label = on || text.length * CHAR <= col ? text : "";
 							const all = run.counts[r.k];
-							const tip = `k = ${r.k}: ${r.found === undefined ? "none yet" : `${n(r.found)} tilings`}${folded && all !== r.found ? ` with each family once, of ${n(all)}` : ""}${r.e ? `, ${approx(r.e)} expected` : ""}`;
+							const tip = `k = ${r.k}: ${r.found === undefined ? "none yet" : `${n(r.found)} tiling${r.found === 1 ? "" : "s"}`}${r.part ? " so far, not every row searched to here" : ""}${folded && all !== r.found ? ` with each family once, of ${n(all)}` : ""}${r.e ? `, ${approx(r.e)} expected` : ""}`;
 							return (
 								<Tooltip key={r.k} label={tip} delay={120}>
 									<button
@@ -475,7 +478,11 @@ function KChart({
 										<span
 											className={cn(
 												"absolute bottom-0 left-1/2 w-[min(24px,62%)] -translate-x-1/2 rounded-t-[4px] transition-[height,background-color] duration-700 ease-[var(--ease-out-strong)]",
-												on ? "bg-accent" : "bg-fg/30 group-hover:bg-fg/50 group-focus-visible:bg-fg/50",
+												on
+													? "bg-accent"
+													: r.part
+														? "bg-fg/10 group-hover:bg-fg/25 group-focus-visible:bg-fg/25"
+														: "bg-fg/30 group-hover:bg-fg/50 group-focus-visible:bg-fg/50",
 											)}
 											style={{ height: grown ? y(r.found ?? 0) : 0, transitionDelay: `${i * 25}ms` }}
 										/>

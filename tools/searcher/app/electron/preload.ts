@@ -1,6 +1,6 @@
 // The window's only door to the app: the calls in src/bridge.ts, each one an IPC message to main.ts.
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
-import type { Api, Hook, Status } from "../src/bridge";
+import type { Api, Hook, Status, StatusPush } from "../src/bridge";
 
 const call =
 	(name: string) =>
@@ -21,6 +21,8 @@ const api: Api = {
 	saveBoard: call("saveBoard") as Api["saveBoard"],
 	settings: call("settings") as Api["settings"],
 	setSettings: call("setSettings") as Api["setSettings"],
+	update: call("update") as Api["update"],
+	skipUpdate: call("skipUpdate") as Api["skipUpdate"],
 	chooseRoot: call("chooseRoot") as Api["chooseRoot"],
 	start: call("start") as Api["start"],
 	resume: call("resume") as Api["resume"],
@@ -29,6 +31,7 @@ const api: Api = {
 	studyAction: call("studyAction") as Api["studyAction"],
 	setRaise: call("setRaise") as Api["setRaise"],
 	studyRaise: call("studyRaise") as Api["studyRaise"],
+	studyLimit: call("studyLimit") as Api["studyLimit"],
 	stop: call("stop") as Api["stop"],
 	reveal: call("reveal") as Api["reveal"],
 	rename: call("rename") as Api["rename"],
@@ -42,7 +45,7 @@ const api: Api = {
 	examples: call("examples") as Api["examples"],
 	status: call("status") as Api["status"],
 	estimate: call("estimate") as Api["estimate"],
-	onStatus: listen<Status>("status"),
+	onStatus: listen<StatusPush>("status"),
 	onHook: listen<Hook>("hook"),
 	quit: call("quit") as Api["quit"],
 	onQuitRequest: listen<void>("quit-request"),

@@ -3,6 +3,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { vertexFigure } from "@/components/about/figures/geometry/vertex";
+import { GEOMETRIES } from "@/lib/vocabulary";
 import { cyclicKey, emptyBoard, parse } from "./board";
 import { fittingOrder, fittingVertices, layable, overlapping } from "./figures";
 import {
@@ -374,5 +376,27 @@ describe("Permutations turned off and on", () => {
 		expect(back.vertices.map((v) => v.word)).toEqual(sets.vertices.map((v) => v.word));
 		expect(back.require).toEqual(sets.require);
 		expect(back.initial).toEqual(sets.initial);
+	});
+});
+
+describe("vertex figures with flat corners and long sides", () => {
+	// each corner's angle, read back from the bisectors the figure turns its polygons to
+	const angles = (mids: number[]) => mids.reduce<number[]>((a, m) => [...a, 2 * (m - a.reduce((t, x) => t + x, 0))], []);
+	const sum = (xs: number[]) => xs.reduce((t, x) => t + x, 0);
+	it("closes two Pi corners at exactly 360°", () => {
+		const f = vertexFigure([Infinity, Infinity]);
+		expect(f.geometry).toBe(GEOMETRIES.EUCLIDEAN);
+		for (const a of angles(f.mids)) expect(a).toBeCloseTo(Math.PI, 12);
+	});
+	it("gives a corner of sides two edges long its own angle, and Pi its straight one, in the disk", () => {
+		const f = vertexFigure([6, 6, 3, Infinity], undefined, GEOMETRIES.HYPERBOLIC, [1, 1, 2, 1]);
+		const a = angles(f.mids);
+		expect(sum(a)).toBeCloseTo(2 * Math.PI, 9);
+		expect(a[3]).toBeCloseTo(Math.PI, 12);
+		// a triangle of side 2s: sin(α/2) = cos(π/3) / cosh(s)
+		expect(a[2]).toBeCloseTo(2 * Math.asin(Math.cos(Math.PI / 3) / Math.cosh(f.edge!)), 9);
+	});
+	it("says nothing closes when flat corners already make 360°, instead of searching forever", () => {
+		expect(vertexFigure([3, Infinity, Infinity], undefined, GEOMETRIES.HYPERBOLIC).edge).toBeNull();
 	});
 });

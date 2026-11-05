@@ -477,6 +477,27 @@ export function fill(s: string, values: Record<string, number>): { text: string;
 	return { text, error: error ?? (/[{}]/.test(text) ? "A brace here is not closed." : undefined) };
 }
 
+// ── an edge's minimal polynomial: `# minpoly <s> <polynomial>` header lines (board-format.md) ──
+
+/** A hyperbolic board's edges s and the minimal polynomial of cosh s over the rationals, in x, read from its
+ *  header; a family's board has one line per edge. A comment, so engines and apps that predate it pass it by. */
+export function minpolys(header: string[]): { edge: number; poly: string }[] {
+	return header.flatMap((h) => {
+		const m = /^minpoly\s+(\d+(?:\.\d+)?)\s+(.+)$/.exec(h.trim());
+		return m ? [{ edge: Number(m[1]), poly: m[2].trim() }] : [];
+	});
+}
+/** The polynomial of the edge nearest s, within a millionth, or null. */
+export const minpolyAt = (header: string[], s: number) =>
+	minpolys(header).find((m) => Math.abs(m.edge - s) < 1e-6 * Math.max(1, s))?.poly ?? null;
+export const polyDegree = (p: string) => Math.max(/x/.test(p) ? 1 : 0, ...[...p.matchAll(/x\^(\d+)/g)].map((m) => +m[1]));
+/** As written for reading: 4*x^3 - 24*x^2 - 3*x - 1 is 4x³ − 24x² − 3x − 1. */
+export const polyText = (p: string) =>
+	p
+		.replace(/\*/g, "")
+		.replace(/\^(\d+)/g, (_, d: string) => [...d].map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[+c]).join(""))
+		.replace(/ - /g, " − ");
+
 // formulas the editor writes: counts of corners in n, kept short (2n, n/2, n+2)
 
 export const bare = (t: string) => t.replace(/^\{(.*)\}$/, "$1");

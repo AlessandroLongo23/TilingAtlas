@@ -4,8 +4,9 @@
 import { useRef, useState, type PointerEvent } from "react";
 import { turned, vertexFigure, type Turn } from "@/components/about/figures/geometry/vertex";
 import { GEOMETRIES } from "@/lib/vocabulary";
+import { apeirogonGrey } from "@/lib/render/hyperbolic";
 import { tileFill } from "@/lib/render/tilePalette";
-import { polygonFillHue, polygonHue, starHue } from "@/lib/utils/renderTiling";
+import { flatCornerHue, polygonFillHue, polygonHue, starHue } from "@/lib/utils/renderTiling";
 import { cn } from "@/lib/utils/cn";
 import { paletteFor } from "@/lib/colors/render";
 import { coloredCorner, cyclicKey, edgeTypes, faceSize, flatOf, type Board, type Face } from "./board";
@@ -36,8 +37,12 @@ export const cornerFill = (b: Board, sym: string) => {
 	const h = cornerHue(b, sym);
 	return h === null ? "var(--color-surface-sunken)" : tileFill(h);
 };
-const faceFill = (n: number | null) => tileFill(polygonHue(n === null ? 30 : Math.max(3, n)), 0.85);
-/** A face's fill: a star's from the atlas's star ramp (its points and point angle), any other by its corners. */
+/** An n-gon whose sides take `seg` edges, as the disk fills it: by its size, or with sides of several edges the
+ *  scaled shelf's hue for it (flatCornerHue), so A3, B3 and C3 differ. Null n is a face of unknown size. */
+const faceFill = (n: number | null, seg = 1) =>
+	tileFill(n === null ? polygonHue(30) : seg > 1 && n >= 3 ? flatCornerHue(n, n * seg) : polygonHue(Math.max(3, n)), 0.85);
+/** An apeirogon whose sides take k edges: the disk's grey for it (apeirogonGrey), A∞ white, B∞ and C∞ darker. */
+const apeirogonFill = (k: number) => `rgb(${Array(3).fill(Math.round(255 * apeirogonGrey(k))).join(" ")})`;
 /** A colouring's face colour, as the plane renderer fills it (develop.ts): its colour letter's palette entry,
  *  cream a warm hue and dark near-black. Null for a corner with no colour letter. */
 const colorFill = (sym: string) => {
@@ -47,6 +52,7 @@ const colorFill = (sym: string) => {
 	return typeof c === "number" ? tileFill(c, 0.85) : c === "dark" ? "rgb(40 40 44)" : tileFill(42, 0.85);
 };
 
+/** A face's fill: a star's from the atlas's star ramp (its points and point angle), any other by its corners. */
 export const fillOf = (b: Board, f: Face) => {
 	const colored = f.word.map(colorFill).find(Boolean);
 	if (colored) return colored;
@@ -57,7 +63,7 @@ export const fillOf = (b: Board, f: Face) => {
 	const walked = walkFace(b, f);
 	if (walked) return tileFill(polygonFillHue(walked), 0.85);
 	const cut = polygonOf(f, flatOf(b));
-	return faceFill(cut ? cut.n : faceSize(f));
+	return cut && cut.n === null ? apeirogonFill(cut.seg) : faceFill(cut ? cut.n : faceSize(f), cut?.seg);
 };
 
 type Pt = { x: number; y: number };
@@ -557,7 +563,7 @@ export function FaceFigure({
 					</mask>
 				</defs>
 				<g mask="url(#fade-mask)">
-					<rect x="-1.1" y="-0.05" width="2.2" height="0.5" fill={faceFill(null)} />
+					<rect x="-1.1" y="-0.05" width="2.2" height="0.5" fill={fillOf(b, face)} />
 					<line x1="-1.1" x2="1.1" y1="-0.05" y2="-0.05" stroke={INK} strokeWidth="0.012" />
 				</g>
 				{xs.map((x, i) => (
@@ -657,7 +663,8 @@ export function FaceFigure({
 const APEIROGON_SIDES = 400;
 
 // Each corner as the regular polygon corners.ts says it is: an M3 of `M3 Pi M3 Pi M3 Pi` is a triangle's
-// corner (its sides cut in two), a Pi a straight angle (drawn as an apeirogon's), a digon a marked edge.
+// corner with sides of two edges (segsOf), a Pi a flat corner (vertexFigure's n = Infinity, exactly 180°), a
+// digon a marked edge.
 // A set angle is drawn as the regular polygon with that corner in the plane (60° a triangle, 90° a square).
 const regularOf = (rad: number) => {
 	const n = (2 * Math.PI) / (Math.PI - rad);
@@ -667,8 +674,8 @@ const known = (s: Shape | undefined) =>
 	s?.kind === "polygon" || s?.kind === "pi" || s?.kind === "digon" || (s?.kind === "set" && regularOf(s.rad) !== null);
 /**
  * Where the corners close, from their exact angles, when every one is a regular polygon's (or Pi, or a
- * digon): sidesOf can only stand Pi in as a 400-gon's corner, a hair under 180°, which would put a flat
- * `A3 A3 A3 Pi` on the sphere. Undefined otherwise, and the figure decides from its sides.
+ * digon): an apeirogon stands in as a 400-gon, a hair under its angle, which could tip a flat vertex onto the
+ * sphere. Undefined otherwise, and the figure decides from its sides.
  */
 const exactGeometry = (shapes: Map<string, Shape>, word: string[]): Geometry | undefined => {
 	if (!word.every((c) => known(shapes.get(c)))) return undefined;
@@ -686,12 +693,18 @@ const sidesOf = (shapes: Map<string, Shape>, word: string[]) => {
 	return word.map((sym) => {
 		const s = shapes.get(sym);
 		if (s?.kind === "digon") return 2;
-		if (s?.kind === "pi") return APEIROGON_SIDES;
+		if (s?.kind === "pi") return Infinity;
 		if (s?.kind === "polygon") return s.n === null ? APEIROGON_SIDES : Math.max(3, s.n);
 		if (s?.kind === "set") return regularOf(s.rad) ?? 4;
 		return 4; // an unknown angle, or a set one no regular polygon has: a square corner, drawn dashed
 	});
 };
+/** The edges each corner's polygon takes per side: B3 of `B3 Pi x 3` two, a corner of no cut face one. */
+const segsOf = (shapes: Map<string, Shape>, word: string[]) =>
+	word.map((sym) => {
+		const s = shapes.get(sym);
+		return s?.kind === "polygon" ? s.seg : 1;
+	});
 
 // A spherical vertex is drawn on a ball, tilted at rest so it reads as one, and turned by dragging.
 const about = (axis: 0 | 1, t: number): Turn => {
@@ -759,7 +772,7 @@ export function VertexFigure({
 	const ns = sidesOf(shapes, word);
 	// corners with angles of their own (a star's point or dent) are drawn as their faces, walked out
 	const walked = walkVertex(b, word);
-	const fig = vertexFigure(ns, ball.turn, exactSite(shapes, word));
+	const fig = vertexFigure(ns, ball.turn, exactSite(shapes, word), segsOf(shapes, word));
 	const polys = walked ? walked.map((w) => w.poly) : fig.polygons;
 	const disk = !walked && fig.geometry !== GEOMETRIES.EUCLIDEAN && fig.edge !== null;
 	const sphere = disk && fig.geometry === GEOMETRIES.SPHERICAL;
@@ -780,6 +793,16 @@ export function VertexFigure({
 	const scale = disk ? 0.92 : 0.92 / 1.5; // the plane shows 1.5 edges round the vertex
 	const r = word.length > 8 ? 0.032 : 0.042;
 	const clip = `clip-${word.join("-")}-${size}`;
+	// a corner's face fill, as its face's: an apeirogon's grey and a polygon's hue both by side length
+	const fillAt = (i: number) => {
+		const s = shapes.get(word[i]);
+		if (s?.kind === "polygon") return s.n === null ? apeirogonFill(s.seg) : faceFill(s.n, s.seg);
+		// a corner of no one face (a Pi point): the fill of the faces that hold it when they all share one, else
+		// neutral, as the face it lies on is not known
+		const fills = new Set(b.faces.filter((f) => f.word.includes(word[i])).map((f) => fillOf(b, f)));
+		if (fills.size === 1) return [...fills][0];
+		return ns[i] === Infinity ? "var(--color-surface-sunken)" : faceFill(ns[i] === APEIROGON_SIDES ? null : ns[i]);
+	};
 	return (
 		<svg
 			viewBox="-1 -1 2 2"
@@ -809,7 +832,7 @@ export function VertexFigure({
 						<path
 							key={i}
 							d={pathOf(poly)}
-							fill={ns[i] === 2 ? "none" : faceFill(ns[i] === APEIROGON_SIDES ? null : ns[i])}
+							fill={ns[i] === 2 ? "none" : fillAt(i)}
 							stroke="currentColor"
 							strokeWidth={0.008}
 							strokeDasharray="0.03 0.025"
@@ -825,7 +848,7 @@ export function VertexFigure({
 						d={pathOf(poly)}
 						fill={
 							colorFill(word[i]) ??
-							(walked ? walked[i].fill : ns[i] === 2 ? "none" : faceFill(ns[i] === APEIROGON_SIDES ? null : ns[i]))
+							(walked ? walked[i].fill : ns[i] === 2 ? "none" : fillAt(i))
 						}
 						stroke={!walked && ns[i] === 2 ? cornerFill(b, word[i]) : INK}
 						strokeWidth={!walked && ns[i] === 2 ? 0.05 : 0.01}
@@ -896,6 +919,6 @@ export function vertexGeometry(b: Board, word: string[]) {
 	if (word.length < 3) return null;
 	const shapes = cornerShapes(b);
 	const ns = sidesOf(shapes, word);
-	const g = vertexFigure(ns, undefined, exactSite(shapes, word)).geometry;
+	const g = vertexFigure(ns, undefined, exactSite(shapes, word), segsOf(shapes, word)).geometry;
 	return (Object.keys(SITE) as Geometry[]).find((k) => SITE[k] === g)!;
 }

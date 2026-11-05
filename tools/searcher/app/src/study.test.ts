@@ -7,10 +7,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { cyclicKey, evaluate, over, parse, removeVertices, serialize, times, withPermutations, withRequiredFaces } from "./board";
+import { cyclicKey, evaluate, minpolyAt, over, parse, polyText, removeVertices, serialize, times, withPermutations, withRequiredFaces } from "./board";
 import {
 	aliveKeys,
+	cyclicOrders,
 	faceLabels,
+	MAX_ORDERS,
 	freeParam,
 	paramText,
 	planStudy,
@@ -24,6 +26,8 @@ import {
 	substitute,
 	vertexKeys,
 	rowText,
+	wholeBoards,
+	withoutK,
 	withParam,
 	type RowPlan,
 	type StudyPlan,
@@ -111,6 +115,39 @@ describe("parameters", () => {
 		expect(out).toBe("vary n 5\nface A5 x 10   # {n} stays\nangle A5 108\n");
 		const broken = substitute("name t\nface A{n x 3\nface A{q} x 3\n", { n: 5 }).problems;
 		expect(broken.map((p) => p.line)).toEqual([2, 3]);
+	});
+	it("counts the orders of corners the engine lists", () => {
+		const orders = (lines: string, perms = "yes") =>
+			cyclicOrders(parse(`name t\nangle B3\nangle B4\nangle Pi\nface B3 Pi x 3\nface B4 Pi x 4\n${lines}\npermutations ${perms}\n`).board);
+		// 12 + 12 corners: 112,720 necklaces; 6 + 6 and a Pi: 924; Pi Pi: 1
+		expect(orders("vertex B3^12 B4^12\nvertex B3^6 B4^6 Pi\nvertex Pi Pi")).toBe(112720 + 924 + 1);
+		expect(orders("vertex B3^12 B4^12\nvertex Pi Pi", "no")).toBe(2);
+		// 40 + 40 (the 7.2733788 line): 1.34·10²¹, far past what the Searcher hands the engine
+		expect(orders("vertex B3^40 B4^40") / 1343840109168425292660).toBeCloseTo(1, 9);
+		expect(orders("vertex B3^40 B4^40")).toBeGreaterThan(MAX_ORDERS);
+	});
+	it("writes a line per j of a for range, a power of 0 leaving its corner out", () => {
+		// n triangles at a vertex, an n-gon's corner worth two of them: A3^(n-2j) A{n}^j, j = 0 .. n/2
+		const t =
+			"name t\nk 1 2\nvary n 7 8\nangle A3\nangle A{n}\noptional A3 x 3\noptional A{n} x {n}\n" +
+			"vertex A3^{n-2j} A{n}^{j} for j 0..{n/2}   # every split\npermutations yes\n";
+		const at = (n: number) => substitute(t, { n });
+		expect(at(7).problems).toEqual([]);
+		const lines = at(7).text.split("\n");
+		expect(lines[7]).toBe("# every split"); // the template line keeps its number, so problems point at it
+		expect(lines.filter((l) => l.startsWith("vertex"))).toEqual(["vertex A3^7", "vertex A3^5 A7^1", "vertex A3^3 A7^2", "vertex A3^1 A7^3"]);
+		expect(at(8).text.split("\n").filter((l) => l.startsWith("vertex")).at(-1)).toBe("vertex A8^4");
+		const plan = planOf(t);
+		expect(plan.problems).toEqual([]);
+		expect(plan.instances.map((x) => x.board.vertices.length)).toEqual([4, 5]);
+		expect(plan.list!.map((r) => r.name)).toEqual(["n=7_A3", "n=7_A7", "n=7_A3,A7", "n=8_A3", "n=8_A8", "n=8_A3,A8"]);
+		const lines8 = parse(rowText(plan, plan.list![5]).text).board.vertices.map((v) => v.word.join(" "));
+		expect(lines8).toContain("A3 A3 A3 A3 A8 A8");
+		// a power below 0, a counter that is a parameter, a range that does not read
+		const bad = (line: string) => substitute(`name t\nvary n 4\n${line}\n`, { n: 4 }).problems.map((p) => [p.line, p.message]);
+		expect(bad("vertex A3^{n-2j} for j 0..3")).toEqual([[3, "The power A3^-2 must be a whole number from 0 up."]]);
+		expect(bad("vertex A3^{j} for n 0..{n}")[0][1]).toMatch(/cannot count the lines/);
+		expect(bad("vertex A3^{j} for j 0..{m}")[0][1]).toMatch(/The range of j/);
 	});
 });
 
@@ -208,12 +245,38 @@ describe("rows", () => {
 		const q = planOf("name t\nk 1 2\nvary n 4 6\nangle A{n}\nface A{n} x {n}\nvertex A{n} A{n} A{n}\n");
 		expect(rowText(q, q.list![0]).key).not.toBe(rowText(q, q.list![1]).key);
 	});
+	it("makes the whole board, per parameter value: every optional face ordinary, nothing required", () => {
+		const [one] = wholeBoards(serialize(base()));
+		const b = parse(one.text).board;
+		expect([b.faces.length, b.vertices.length, b.require.length, b.faces.some((f) => f.optional)]).toEqual([3, 5, 0, false]);
+		const many = wholeBoards("name t\nk 1 3\nvary n 3 4\nangle A{n}\noptional A{n} x {n}\nvertex A{n} x 6\n");
+		expect(many.map((w) => [w.values.n, parse(w.text).board.faces[0].word[0]])).toEqual([
+			[3, "A3"],
+			[4, "A4"],
+		]);
+		expect(withoutK("name a  # x\nk 1 3\n\nface A3   x 3\n")).toBe(withoutK("name a\nk 1 9\nface A3 x 3"));
+	});
 	it("keeps text round trips of optional faces, subsets and apeirogon requires", () => {
 		const t =
 			"name t\nk 1 2\nvary n 1..3\n\nangle A3\nangle Boo\nedge Pi\n\nface A3 x 3\noptional Boo Pi x inf\n\nvertex A3 A3 Boo Boo\nvertex Pi Pi\n\npermutations yes\nsubsets 0 1\nrequire face Boo Pi x inf | face A3 A3 A3\n";
 		const b = parse(t);
 		expect(b.problems.filter((p) => p.severity === "error")).toEqual([]);
 		expect(serialize(b.board)).toBe(t);
+	});
+});
+
+describe("an edge's minimal polynomial", () => {
+	it("is read from the header, matched to an edge, and goes with every row's board", () => {
+		const text = ["# minpoly 2.4994600779280268 4*x^3 - 24*x^2 - 3*x - 1", "# minpoly 1.3169578969248167 x - 2", "# a note",
+			"name t", "k 1 3", "angle A3 60", "optional A3 x 3", "vertex A3 A3 A3 A3 A3 A3", ""].join("\n");
+		expect(minpolyAt(parse(text).board.header, 1.31695789692)).toBe("x - 2");
+		expect(minpolyAt(parse(text).board.header, 1.3)).toBeNull();
+		expect(polyText("4*x^13 - 24*x^2 - 1")).toBe("4x¹³ − 24x² − 1");
+		const plan = planStudy(text);
+		const row = rowText(plan, plan.list![0]).text;
+		expect(row).toMatch(/^# minpoly 2\.49946\S* 4\*x\^3/m);
+		expect(row).not.toMatch(/a note/);
+		expect(searchKey(parse(row).board)).toBe(searchKey(parse(row.replace(/^#.*\n/gm, "")).board));
 	});
 });
 

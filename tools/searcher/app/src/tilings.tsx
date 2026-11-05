@@ -26,7 +26,7 @@ import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { cn } from "@/lib/utils/cn";
 import { useConfiguration } from "@/lib/stores/configuration";
-import { edgeTypes, parse, type Board } from "./board";
+import { edgeTypes, minpolyAt, minpolys, parse, polyText, type Board } from "./board";
 import type { OutFile, Run } from "./bridge";
 import { morphTurn, pointsAt, useFold, type Family } from "./fold";
 import {
@@ -45,9 +45,9 @@ import {
 } from "./develop";
 import { bytes } from "./runs";
 
-const READ_BYTES = 256 * 1024;
 /** Enough of a file for its first tiling, in the one-per-file view. */
 const FIRST_BYTES = 64 * 1024;
+/** The most text a group reads: whole files, in order, until it is spent ("All" can span hundreds). */
 const READ_BUDGET = 8 * 2 ** 20;
 const THUMBS = 60;
 
@@ -176,6 +176,20 @@ function CellView({
 	);
 }
 
+/** A hyperbolic tiling's edge, and the minimal polynomial of cosh of it when its board names one. */
+function EdgeLine({ edge, poly }: { edge: number; poly: string | null }) {
+	return (
+		<div className="flex shrink-0 items-center gap-2 border-b border-line-subtle px-4 py-2 text-xs text-fg-secondary">
+			<span className="ta-label">Edge</span>
+			<span className="font-mono text-fg tabular-nums">{+edge.toFixed(7)}</span>
+			<span className="min-w-0 flex-1 truncate font-mono" title={poly ? `cosh of the edge is a root of ${polyText(poly)}` : undefined}>
+				{poly ? `cosh: ${polyText(poly)}` : ""}
+			</span>
+			{poly ? <CopyButton text={poly} /> : null}
+		</div>
+	);
+}
+
 /** The hyperbolic disk, with the gestures of the site's embedded disks. */
 function DiskView({ tiling, mode, outline }: { tiling: HypDiskTiling; mode: HypDiskMode; outline: boolean }) {
 	const hostRef = useRef<HTMLDivElement>(null);
@@ -233,37 +247,55 @@ function Thumb({ drawing, grid }: { drawing: Drawing; grid: boolean }) {
 	);
 }
 
+/** Previews drawn, by run and the files they came from: a run hovered again shows them at once. */
+const previewCache = new Map<string, (Drawing | undefined)[]>();
+
 /** A few of a run's tilings, small: the first tiling of each of its first files, then more of the first file. */
 export function RunPreviews({ run, count = 3 }: { run: Run; count?: number }) {
 	const paths = run.files
 		.slice(0, count)
 		.map((f) => f.path)
 		.join("|");
+	const key = `${run.id}|${paths}`;
+	const cached = previewCache.get(key);
 	const symbolsKey = JSON.stringify(run.symbols);
 	const [certs, setCerts] = useState<string[] | null>(null);
 	useEffect(() => {
+		if (previewCache.has(key)) return;
 		let live = true;
 		const ps = paths ? paths.split("|") : [];
-		void Promise.all(ps.map((p) => window.tilesearch.readFile(p, FIRST_BYTES))).then((texts) => {
-			const per = texts.map((t) => certificatesIn(t));
-			const picks = per.flatMap((c) => c.slice(0, 1));
-			for (const c of per[0] ?? []) if (picks.length < count && !picks.includes(c)) picks.push(c);
-			const symbols = JSON.parse(symbolsKey) as Record<string, string>;
-			if (live) setCerts(picks.slice(0, count).map((c) => withSymbols(c, symbols)));
-		});
+		// a run the pointer only crosses is never read: reading and drawing start once it rests on one
+		const wait = setTimeout(
+			() =>
+				void Promise.all(ps.map((p) => window.tilesearch.readFile(p, FIRST_BYTES))).then((texts) => {
+					const per = texts.map((t) => certificatesIn(t));
+					const picks = per.flatMap((c) => c.slice(0, 1));
+					for (const c of per[0] ?? []) if (picks.length < count && !picks.includes(c)) picks.push(c);
+					const symbols = JSON.parse(symbolsKey) as Record<string, string>;
+					if (live) setCerts(picks.slice(0, count).map((c) => withSymbols(c, symbols)));
+				}, () => {}),
+			80,
+		);
 		return () => {
 			live = false;
+			clearTimeout(wait);
 		};
-	}, [paths, symbolsKey, count]);
+	}, [key, paths, symbolsKey, count]);
 	const board = useMemo(() => parse(run.board).board, [run.board]);
 	const make = useMemo(() => (c: string, j: number) => prepare(board, c, `preview:${run.id}#${j}`), [board, run.id]);
 	const drawn = useQueued(certs ?? [], make);
-	if (certs && !certs.length) return <p className="text-xs text-fg-muted">No tilings yet.</p>;
+	useEffect(() => {
+		if (!certs?.length || drawn.length < certs.length || !drawn.every(Boolean)) return;
+		previewCache.set(key, drawn);
+		if (previewCache.size > 100) previewCache.delete(previewCache.keys().next().value!);
+	}, [certs, drawn, key]);
+	const shown = cached ?? drawn;
+	if (!cached && certs && !certs.length) return <p className="text-xs text-fg-muted">No tilings yet.</p>;
 	return (
 		<div className="grid grid-cols-3 gap-1.5">
 			{Array.from({ length: count }, (_, j) => (
 				<div key={j} className="aspect-square overflow-hidden rounded-control bg-surface-sunken">
-					{drawn[j] ? <Thumb drawing={drawn[j]} grid={false} /> : null}
+					{shown[j] ? <Thumb drawing={shown[j]} grid={false} /> : null}
 				</div>
 			))}
 		</div>
@@ -363,18 +395,11 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	// it shows nothing, never the last group's tilings under the new group's ids (a drawing's id names
 	// its tiling, and the disk keeps its camera for an id it has seen: a stale tiling left it on a face
 	// the real one lacks, a grey disk).
-	const [read, setRead] = useState<{ key: string; texts: string[] }>({ key: "", texts: [] });
+	const [read, setRead] = useState<{ key: string; texts: string[]; cut: boolean }>({ key: "", texts: [], cut: false });
 	const g = resolveGroup(run, group);
 	const files = g ? filesOf(run, g) : [];
 	// one per file: each file's first tiling, which spans the corners, edge orbits and orientability at once
 	const [firsts, setFirsts] = useState(false);
-	const per = firsts ? FIRST_BYTES : READ_BYTES;
-	// Up to `per` bytes of each file, and at most READ_BUDGET over the group: "All" can span hundreds.
-	const reading: OutFile[] = [];
-	for (let i = 0, used = 0; i < files.length && used < READ_BUDGET; i++) {
-		reading.push(files[i]);
-		used += Math.min(files[i].bytes, per);
-	}
 	const id = g ? `${g.k}/${g.edges}${firsts ? "/firsts" : ""}` : "";
 	// the selected tiling, per group: another group opens at its first
 	const [pick, setPick] = useState({ id: "", i: 0 });
@@ -387,35 +412,68 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	// an edge pattern's grid is the freedraw renderer's scaffold, a setting of its own store
 	useEffect(() => useConfiguration.getState().set({ freedrawScaffold: show.grid }), [show.grid]);
 	const flip = (key: keyof Overlays) => setShow((s) => ({ ...s, [key]: !s[key] }));
-	const filesKey = `${per}|` + reading.map((f) => `${f.path}:${f.bytes}`).join("|");
+	const filesKey = `${firsts}|` + files.map((f) => `${f.path}:${f.bytes}`).join("|");
 	useEffect(() => {
 		let live = true;
-		const [max, ...rest] = filesKey.split("|");
+		const [heads, ...rest] = filesKey.split("|");
 		const paths = rest.filter(Boolean).map((p) => p.slice(0, p.lastIndexOf(":")));
-		void Promise.all(paths.map((p) => window.tilesearch.readFile(p, Number(max)))).then(
-			(t) => live && setRead({ key: filesKey, texts: t }),
-		);
+		// The budget counts the text as read: a gzipped file's size on disk says little of it (a 30 KB file
+		// held 1.1 MB). A file that ends short of its closing "---" was cut there.
+		void (async () => {
+			const texts: string[] = [];
+			let [left, cut] = [READ_BUDGET, false];
+			for (const p of paths) {
+				if (left <= 0) {
+					cut = true;
+					break;
+				}
+				const max = heads === "true" ? Math.min(FIRST_BYTES, left) : left;
+				const t = await window.tilesearch.readFile(p, max);
+				texts.push(t);
+				left -= t.length;
+				if (heads !== "true" && (t.length >= max || !/---\n\s*$/.test(t))) cut = true;
+			}
+			if (live) setRead({ key: filesKey, texts, cut });
+		})().catch(() => {}); // the run deleted under it (a raise's run replacing it): the next status moves on
 		return () => {
 			live = false;
 		};
 	}, [filesKey]); // keyed on the paths and sizes: the file objects are new on every status update
 	const fresh = read.key === filesKey ? read.texts : null;
 	const board = useMemo(() => parse(run.board).board, [run.board]);
+	// the edge's minimal polynomial: a study row's board carries it (since 2026-11-05), an older run's study has it
+	const [studyHeader, setStudyHeader] = useState<string[]>([]);
+	useEffect(() => {
+		if (minpolys(board.header).length) return;
+		let live = true;
+		const sep = run.dir.includes("\\") ? "\\" : "/";
+		window.tilesearch
+			.readFile(run.dir.slice(0, run.dir.lastIndexOf(sep)) + sep + "study.board", 0)
+			.then((t) => void (live && setStudyHeader(parse(t).board.header)))
+			.catch(() => {});
+		return () => void (live = false);
+	}, [run.dir, board]);
 	const symbolsKey = JSON.stringify(run.symbols);
+	// a study's whole board reads the files of many runs, each with its own X<n> labels (OutFile.symbols)
+	const fileSymbols = JSON.stringify(files.some((f) => f.symbols) ? files.map((f) => f.symbols ?? {}) : null);
 	// the certificates as the engine printed them, and with its X<n> labels read back as the board's symbols
 	// once the run is folded, a family shows once: its first member stands for it
 	const fold = useFold(run.id);
 	const family = fold && "view" in fold ? fold.view.family : null;
 	const [raw, certs] = useMemo(() => {
 		const symbols = JSON.parse(symbolsKey) as Record<string, string>;
+		const perFile = JSON.parse(fileSymbols) as Record<string, string>[] | null;
 		const pairs = (fresh ?? [])
-			.flatMap((text) => (firsts ? certificatesIn(text).slice(0, 1) : certificatesIn(text)))
-			.map((c) => [c, withSymbols(c, symbols)] as const)
+			.flatMap((text, j) =>
+				(firsts ? certificatesIn(text).slice(0, 1) : certificatesIn(text)).map(
+					(c) => [c, withSymbols(c, perFile?.[j] ?? symbols)] as const,
+				),
+			)
 			.filter(([, c]) => !family?.has(c) || family.get(c)!.members[0] === c);
 		return [pairs.map(([c]) => c), pairs.map(([, c]) => c)];
 		// keyed on the symbols' contents: every status update carries a new object, and a new list here
 		// re-develops every drawing (that was an idle window at 54% CPU)
-	}, [fresh, symbolsKey, family, firsts]);
+	}, [fresh, symbolsKey, fileSymbols, family, firsts]);
 	const thumbs = useMemo(() => certs.slice(0, THUMBS), [certs]);
 	// one colour per board face, not per side count: offered where faces are plain tiles (not a colouring's
 	// palette or an edge pattern), and where two faces of the board could otherwise share a colour
@@ -528,8 +586,7 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 					: "No certificate files yet: they appear as roots finish."}
 			</div>
 		);
-	const partFiles = !firsts && files.some((f) => f.bytes > READ_BYTES);
-	const truncated = partFiles || reading.length < files.length;
+	const truncated = read.key === filesKey && read.cut;
 	const total = `${certs.length.toLocaleString("en")}${truncated ? "+" : ""}`;
 	const body = (names === "board" ? certs : raw)[shown] ?? "";
 	const copy = async () => {
@@ -709,11 +766,8 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 					</span>
 					{truncated ? (
 						<InfoDot side="bottom" label="Why the count ends in +">
-							{partFiles ? `Showing the tilings in the first ${bytes(READ_BYTES)} of each certificate file` : "Showing"}
-							{reading.length < files.length
-								? `${partFiles ? ", from" : " the tilings of"} the first ${reading.length} of these ${files.length} files`
-								: ""}
-							; the whole files are in the run folder.
+							Showing the tilings in the first {bytes(READ_BUDGET)} of these {files.length} files&apos; text; the whole files
+							are in the run folder.
 						</InfoDot>
 					) : null}
 					<span className="ml-auto flex gap-1">
@@ -777,6 +831,9 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 					</div>
 				</div>
 				<div className="flex h-[38%] min-h-36 shrink-0 flex-col border-t border-line-subtle">
+					{big?.kind === "disk" ? (
+						<EdgeLine edge={big.tiling.edge} poly={minpolyAt(board.header, big.tiling.edge) ?? minpolyAt(studyHeader, big.tiling.edge)} />
+					) : null}
 					<div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2">
 						<span className="ta-label flex-1">Certificate {certs.length ? shown + 1 : ""}</span>
 						{Object.keys(run.symbols).length ? (

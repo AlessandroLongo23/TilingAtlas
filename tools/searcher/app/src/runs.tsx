@@ -35,10 +35,10 @@ import { InfoDot } from "@/components/ui/info-dot";
 import { Modal } from "@/components/ui/modal";
 import { OptionWall } from "@/components/ui/option-wall";
 import { RangeInput } from "@/components/ui/range-input";
-import { Reveal } from "@/components/ui/reveal";
 import { Tabs } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip } from "@/components/ui/tooltip";
+import { NavActivePill } from "@/components/nav-bar";
 import { cn } from "@/lib/utils/cn";
 import { MAX_K, parse, serialize } from "./board";
 import { describeRaise, type OutFile, type RaiseRule, type Rule, type Run, type RunOptions, type Status, type StudySummary } from "./bridge";
@@ -106,6 +106,8 @@ const SECTIONS: Section[] = [
 /** The section that also shows the folders holding no run, and a folder being made. */
 const HOME = "finished";
 const sectionOf = (r: Run) => SECTIONS.find((s) => s.keep(r))!;
+/** A folder shown open, by section: one that shows in two sections opens and closes in each on its own. */
+const at = (section: string, folder: string) => `${section} ${folder}`;
 /** A study's section: going (checking or running), paused, or done. */
 const studySection = (s: StudySummary) => (s.state === "paused" ? "unfinished" : s.state === "done" ? "finished" : "running");
 /** Rows settled, of all: what a study's progress bar shows. */
@@ -783,8 +785,11 @@ export function RunList({
 	const entry = studyOf(selected)?.dir ?? selected;
 	const fullRuns = status.runs;
 	status = { ...status, runs: allRuns, folders: allFolders };
-	// the folders shown open: none at first, and kept across pages and launches
-	const [opened, setOpened] = useState<Set<string>>(() => loadSet(OPEN_FOLDERS) ?? new Set());
+	// the folders shown open, by section: none at first, and kept across pages and launches (a folder saved
+	// without its section, as before 4 November, opens in each)
+	const [opened, setOpened] = useState<Set<string>>(
+		() => new Set([...(loadSet(OPEN_FOLDERS) ?? [])].flatMap((x) => (SECTIONS.some((s) => x.startsWith(`${s.key} `)) ? [x] : SECTIONS.map((s) => at(s.key, x))))),
+	);
 	useEffect(() => store(OPEN_FOLDERS, JSON.stringify([...opened])), [opened]);
 	// finished runs opened since they finished: the open one joins once finished, and a run that goes again
 	// leaves, so its next finish shows as new. The first time, every run already finished counts as opened.
@@ -850,11 +855,11 @@ export function RunList({
 		while (i < now.length && was[i] === now[i]) i++;
 		setFrom(i);
 		setSeen(entry);
-		const up = entry ? status.folders.filter((f) => isWithin(entry, f) && !opened.has(f)) : [];
-		if (up.length) setOpened(new Set([...opened, ...up]));
 		const run = status.runs.find((r) => r.id === entry);
 		const st = status.studies.find((x) => x.id === entry);
 		const key = run ? sectionOf(run).key : st ? studySection(st) : null;
+		const up = key ? status.folders.filter((f) => isWithin(entry!, f) && !opened.has(at(key, f))).map((f) => at(key, f)) : [];
+		if (up.length) setOpened(new Set([...opened, ...up]));
 		if (key && closed.has(key)) setClosed(new Set([...closed].filter((x) => x !== key)));
 	}
 	// what is being renamed, and in which section: a folder can show in more than one
@@ -935,8 +940,9 @@ export function RunList({
 			<>
 				{sec.key === HOME ? newFolder(folder) : null}
 				{folders.map((f) => {
-					const open = opened.has(f);
-					const toggle = () => setOpened(open ? new Set([...opened].filter((x) => x !== f)) : new Set([...opened, f]));
+					const k = at(sec.key, f);
+					const open = opened.has(k);
+					const toggle = () => setOpened(open ? new Set([...opened].filter((x) => x !== k)) : new Set([...opened, k]));
 					return (
 						<li key={f} {...drop(f)} {...mark(sec, f)}>
 							<ContextMenu
@@ -945,8 +951,9 @@ export function RunList({
 									{
 										icon: FolderPlus,
 										label: "New folder inside",
+										// the new folder's name is typed in the home section: open the way there
 										onSelect: () => {
-											setOpened(new Set([...opened, f]));
+											setOpened(new Set([...opened, ...status.folders.filter((g) => isWithin(f, g)).map((g) => at(HOME, g))]));
 											setCreating(f);
 										},
 									},
@@ -1056,10 +1063,11 @@ export function RunList({
 									onClick={() => onSelect(r.id)}
 									aria-current={selected === r.id || undefined}
 									className={cn(
-										"flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 pl-3 text-left transition-colors",
-										selected === r.id ? "bg-surface-overlay" : "hover:bg-surface-overlay",
+										"relative isolate flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 pl-3 text-left transition-colors",
+										selected !== r.id && "hover:bg-surface-overlay",
 									)}
 								>
+									{selected === r.id ? <OpenFill /> : null}
 									{/* the run's state in one colour; a find run (existence, not a count) wears a telescope for its dot */}
 									{(() => {
 										// [dot, telescope] for the run's state, written out so Tailwind sees every class
@@ -1132,7 +1140,7 @@ export function RunList({
 							variant="ghost"
 							icon={opened.size ? ChevronsDownUp : ChevronsUpDown}
 							aria-label={opened.size ? "Collapse all" : "Expand all"}
-							onClick={() => setOpened(opened.size ? new Set() : new Set(status.folders))}
+							onClick={() => setOpened(new Set(opened.size ? [] : SECTIONS.flatMap((s) => status.folders.map((f) => at(s.key, f)))))}
 						/>
 					</Tooltip>
 				) : null}
@@ -1208,6 +1216,15 @@ export function RunList({
 }
 
 /** A study in the run list: its state as an icon, its rows, and how far it has come. */
+/** The entry open on the right: the lifted surface of a selected segment (.ta-tab), one element for the whole
+ *  list, so opening another entry glides it there as the header's pill glides between links. */
+const OpenFill = () => (
+	<NavActivePill
+		id="run-list-open"
+		className="-z-10 bg-[var(--color-tab-on)] shadow-[0_0_0_1px_var(--color-tab-ring),0_1px_2px_oklch(0_0_0/0.12)]"
+	/>
+);
+
 function StudyEntry({ study: x, selected, onClick }: { study: StudySummary; selected: boolean; onClick: () => void }) {
 	const going = x.state === "running" || x.state === "checking";
 	const done = studyDone(x);
@@ -1219,10 +1236,11 @@ function StudyEntry({ study: x, selected, onClick }: { study: StudySummary; sele
 			onClick={onClick}
 			aria-current={selected || undefined}
 			className={cn(
-				"flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 pl-3 text-left transition-colors",
-				selected ? "bg-surface-overlay" : "hover:bg-surface-overlay",
+				"relative isolate flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 pl-3 text-left transition-colors",
+				!selected && "hover:bg-surface-overlay",
 			)}
 		>
+			{selected ? <OpenFill /> : null}
 			<Rows3
 				className={cn(
 					"-mx-1 h-4 w-4 shrink-0",

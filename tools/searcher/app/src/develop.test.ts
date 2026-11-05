@@ -282,10 +282,10 @@ describe.skipIf(!existsSync(ENGINE) || !DEVELOPER)("darts as the atlas's develop
 				}),
 			);
 			expect(ref.length).toBeGreaterThan(0);
-			// every vertex closes on both boards. develop_ai1.py ships fewer hybrid tilings than there are (1,010
-			// of 1,094 at k = 1): it reads Marek's label A30 as a 30-gon, where the board's face is a 24-gon
-			// (`face A30 x 24`), so every tiling with that face fails its closure check
+			// every vertex closes on both boards, and develop_ai1.py ships every tiling: it takes face sizes from
+			// the run's board.txt, where hybrid_2_9830's A30 is `face A30 x 24`
 			expect(refused).toBe(0);
+			expect(ref.length).toBe(mine.size);
 			for (const r of ref) expect(mine.has(key(r.darts, r.stats.sizes))).toBe(true);
 		});
 });

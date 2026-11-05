@@ -15,7 +15,6 @@ import { parse } from "../src/board";
 import {
 	raiseCeiling,
 	raiseStop,
-	withoutCeilings,
 	type RaiseRule,
 	type RowState,
 	type StudyDetail,
@@ -23,7 +22,19 @@ import {
 	type StudyRow,
 	type StudySummary,
 } from "../src/bridge";
-import { aliveKeys, planStudy, rowText, sameSearch, searchShape, splitReason, type RowPlan, type StudyPlan } from "../src/study";
+import {
+	aliveKeys,
+	cyclicOrders,
+	MAX_ORDERS,
+	planStudy,
+	rowText,
+	sameSearch,
+	searchShape,
+	splitReason,
+	withoutK,
+	type RowPlan,
+	type StudyPlan,
+} from "../src/study";
 import { STAMP, type RunFolder, type Runs } from "./runs";
 
 /** What study.json keeps of a row. */
@@ -75,6 +86,14 @@ const read = (f: string) => {
 const CHECKS = Math.max(2, Math.min(8, os.availableParallelism() - 2));
 /** Each check's board file is its own, across studies. */
 let checkFiles = 0;
+
+/** What a raise rule judges a row's run by: its tilings, search time, files and k. */
+const factsOf = (run: RunFolder) => ({
+	total: run.total,
+	seconds: run.elapsed,
+	bytes: run.files.reduce((t, f) => t + f.bytes, 0),
+	k: run.kRange[1],
+});
 
 export class Study {
 	dir: string;
@@ -175,12 +194,6 @@ export class Study {
 		const s = this.saved;
 		const next = new Map<string, RunFolder>();
 		for (const run of byDir.values()) if (run.replaces) next.set(run.replaces, run);
-		const bare = (t: string) =>
-			t
-				.split("\n")
-				.map((l) => l.replace(/#.*/, "").trim().replace(/\s+/g, " "))
-				.filter((l) => l && !/^k /.test(l))
-				.join("\n");
 		s.rows.forEach((r, i) => {
 			const dir = this.runDir(r);
 			if (!dir) return;
@@ -192,10 +205,10 @@ export class Study {
 			}
 			if (!byDir.has(dir) && !next.has(dir) && !r.adopted) {
 				const name = path.basename(dir).replace(STAMP, "");
-				const board = bare(rowText(this.plan, this.rows[i]).text);
+				const board = withoutK(rowText(this.plan, this.rows[i]).text);
 				const heir = [...byDir.values()]
 					.filter((x) => path.dirname(x.dir) === this.dir && path.basename(x.dir).replace(STAMP, "") === name)
-					.filter((x) => bare(x.board) === board)
+					.filter((x) => withoutK(x.board) === board)
 					.sort((a, b) => b.dir.localeCompare(a.dir))[0];
 				if (heir) {
 					r.run = this.kept(heir.dir);
@@ -258,6 +271,13 @@ export class Study {
 				}
 				this.save();
 			}
+		// a row whose check failed was never searched: its study is not done, and waits for Resume to check it again
+		if (s.state === "done" && this.failed()) {
+			s.state = "paused";
+			s.note = this.failed();
+			delete s.ended;
+			this.save();
+		}
 		if (s.state === "paused" || s.state === "done") return;
 		this.check(ctx);
 		// the time limit: a row past it stops, and is left alone until the limit is lifted
@@ -299,14 +319,20 @@ export class Study {
 		// done once every row is settled
 		const settled = s.rows.every((r, i) => this.settled(r, i, byDir));
 		if (settled && !this.checking.size) {
-			s.state = "done";
-			s.ended = new Date().toISOString();
-			s.note = "";
+			s.note = this.failed();
+			s.state = s.note ? "paused" : "done";
+			if (!s.note) s.ended = new Date().toISOString();
 			this.save(true);
 		} else if (s.state === "checking" && s.rows.every((r) => r.check)) {
 			s.state = "running";
 			this.save();
 		}
+	}
+
+	/** The note for rows whose check failed, or "" when none did. */
+	private failed() {
+		const n = this.saved.rows.filter((r) => r.check === "error").length;
+		return n ? `${n} row${n === 1 ? "" : "s"} could not be checked, so ${n === 1 ? "it was" : "they were"} not searched: see the reason on each. Resume checks them again.` : "";
 	}
 
 	/** A row that needs nothing more: ruled out, or its run finished, failed, stopped at the limit, or adopted. */
@@ -380,10 +406,17 @@ export class Study {
 		const r = this.saved.rows[i];
 		if (plan.none) return;
 		const text = rowText(this.plan, plan).text;
+		const orders = cyclicOrders(parse(text).board);
+		if (orders > MAX_ORDERS) {
+			r.check = "error";
+			r.reason = `Its vertex lines have ${orders.toPrecision(2).replace("e+", "·10^")} orders of corners; the engine lists every one, and past ${MAX_ORDERS.toLocaleString("en")} it cannot.`;
+			return;
+		}
 		const f = path.join(os.tmpdir(), `tilesearch-study-${process.pid}-${checkFiles++}.board`);
 		fs.writeFileSync(f, text);
+		// an hour: a check of 10⁵ orders took 12 minutes on a busy machine, and one cut short leaves its row unsearched
 		const out = await new Promise<string | null>((resolve) =>
-			execFile(ctx.engine, [f, "--balance"], { timeout: 120_000, maxBuffer: 1 << 26 }, (err, stdout) =>
+			execFile(ctx.engine, [f, "--balance"], { timeout: 3_600_000, maxBuffer: 1 << 26 }, (err, stdout) =>
 				resolve(err && !stdout ? null : stdout),
 			),
 		);
@@ -456,6 +489,7 @@ export class Study {
 	}
 
 	resume() {
+		for (const r of this.saved.rows) if (r.check === "error") delete r.check, delete r.reason;
 		this.saved.state = this.saved.rows.every((r) => r.check) ? "running" : "checking";
 		this.saved.note = "";
 		delete this.saved.ended;
@@ -470,18 +504,39 @@ export class Study {
 		this.save(true);
 	}
 
-	/** Lift the time limit, and the ceilings of the raise rule: the rows they stopped go on, still raising k by
-	 *  the rest of the rule, and none stops at them again. */
-	unlimit(byDir: Map<string, RunFolder>) {
+	/**
+	 * A new time limit on each search, in minutes (null for none), raised or lowered. A study that raises k keeps
+	 * it as its rule's ceiling, which a running search reads as it goes; another as its own limit, checked each
+	 * tick. A row searching past it stops there; a row a limit stopped goes on while it is under it, and its
+	 * search picks up where it stopped. Returns how many rows go on.
+	 */
+	setLimit(minutes: number | null, byDir: Map<string, RunFolder>): number {
 		const o = this.saved.options;
-		this.saved.options = { ...o, limit: 0, ...(o.raise ? { raise: withoutCeilings(o.raise) } : {}) };
+		const { minutes: _, ...rest } = o.raise ?? { upTo: 0 };
+		const rule = o.raise ? { ...rest, ...(minutes === null ? {} : { minutes }) } : undefined;
+		this.saved.options = { ...o, limit: rule || minutes === null ? 0 : minutes * 60, ...(rule ? { raise: rule } : {}) };
+		let on = 0;
 		for (const r of this.saved.rows) {
-			delete r.limited;
 			const run = !r.adopted && this.runDir(r) ? byDir.get(this.runDir(r)!) : undefined;
-			const rule = run?.options?.raise;
-			run?.uncap(rule ? withoutCeilings(rule) : null);
+			if (!run) continue;
+			if (r.limited && (minutes === null || run.elapsed < minutes * 60)) {
+				delete r.limited;
+				on++;
+			}
+			if (!rule) continue;
+			if (!run.capped) run.setRaise(rule);
+			else if (!raiseCeiling(rule, factsOf(run))) {
+				run.uncap(rule);
+				on++;
+			}
 		}
-		this.resume();
+		if (on && this.saved.state === "done") {
+			this.saved.state = "running";
+			this.saved.note = "";
+			delete this.saved.ended;
+		}
+		this.save(true);
+		return on;
 	}
 
 	/**
@@ -498,12 +553,7 @@ export class Study {
 		for (const r of this.saved.rows) {
 			const run = r.check === "open" && this.runDir(r) ? byDir.get(this.runDir(r)!) : undefined;
 			if (!run) continue;
-			const facts = {
-				total: run.total,
-				seconds: run.elapsed,
-				bytes: run.files.reduce((t, f) => t + f.bytes, 0),
-				k: run.kRange[1],
-			};
+			const facts = factsOf(run);
 			const more = run.state === "finished" && !raiseStop(rule, facts);
 			if (r.adopted) {
 				if (more) {
@@ -559,6 +609,7 @@ export class Study {
 			state: "checking",
 			counts,
 			total: Object.values(counts).reduce((t, x) => t + x, 0),
+			reached: run?.options?.find ? run.find?.found || Math.max(0, (run.find?.proven ?? 0) - 1) || undefined : run?.kRange[1],
 			elapsed: run && !r.adopted ? run.elapsed : 0,
 			...(r.reason ? { reason: r.reason } : {}),
 			...(run ? { run: run.dir, ...(r.adopted ? { adopted: true } : {}) } : {}),

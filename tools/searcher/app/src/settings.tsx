@@ -97,6 +97,18 @@ export function SettingsModal({
 				<section className="space-y-3">
 					<h3 className="text-sm font-semibold text-fg">When the app opens</h3>
 					<Checkbox
+						label="Check for a new version"
+						checked={settings.checkUpdates}
+						onCheckedChange={(checkUpdates) => save({ checkUpdates })}
+						hint={
+							<InfoDot>
+								Asks GitHub, where the app is published, for the latest version number, and shows what changed
+								when there is a newer one. Nothing about you or your searches is sent; GitHub sees your IP
+								address, as with any download.
+							</InfoDot>
+						}
+					/>
+					<Checkbox
 						label="Resume the searches that were interrupted"
 						checked={settings.resumeOnLaunch}
 						onCheckedChange={(resumeOnLaunch) => save({ resumeOnLaunch })}
