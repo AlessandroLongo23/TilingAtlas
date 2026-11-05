@@ -30,6 +30,40 @@ else if (fs.existsSync(OLD_DATA)) {
 		fs.copyFileSync(path.join(OLD_DATA, "settings.json"), SETTINGS());
 }
 
+// ── Boards from the atlas ──────────────────────────────────────────────────────────────────────────
+// "Open in the Searcher" on an atlas shelf links to tilingsearcher://board?text=<the board file, base64url>.
+// The board opens on the Board page as a file would, and nothing runs: any web page can make such a link.
+const SCHEME = "tilingsearcher";
+const isLink = (a: string) => a.startsWith(`${SCHEME}:`);
+/** A board that arrived before the window could take it (a link that started the app). The window asks for it
+ *  once it listens (`takeBoard`): sent on load, it came before React had subscribed and was lost. */
+let pendingBoard: string | null = null;
+let windowListens = false;
+function boardFromLink(url: string | undefined) {
+	if (!url || !isLink(url)) return;
+	let text = "";
+	try {
+		text = Buffer.from(new URL(url).searchParams.get("text") ?? "", "base64url").toString("utf8");
+	} catch {
+		return;
+	}
+	if (!text.trim()) return;
+	if (!win || win.isDestroyed() || !windowListens) return void (pendingBoard = text);
+	win.webContents.send("hook", { load: text } satisfies Hook);
+	if (win.isMinimized()) win.restore();
+	win.focus();
+}
+// One window per data folder (the lock is the folder's): on Windows a link starts a second copy, which
+// hands the link to the first and quits. macOS sends a link to the running app itself, so it needs no lock.
+// (Testing from a Claude shell: `env -u ELECTRON_RUN_AS_NODE open <link>`, or the app starts as Node and exits.)
+const sole = process.platform === "darwin" || app.requestSingleInstanceLock();
+if (!sole) app.quit();
+app.on("second-instance", (_, argv) => boardFromLink(argv.find(isLink)));
+app.on("open-url", (e, url) => (e.preventDefault(), boardFromLink(url)));
+// The packaged app claims the scheme (macOS also reads it from Info.plist). A launch from source or a test
+// launch never does: it would take the links away from the installed app.
+if (app.isPackaged && !process.env.TILESEARCH_DATA) app.setAsDefaultProtocolClient(SCHEME);
+
 type Saved = Pick<Settings, "root" | "threads" | "nice"> & {
 	/** The folder boards were last opened from or saved to: both dialogs start there. */
 	boards?: string;
@@ -219,6 +253,12 @@ function balanceBoard(text: string): Promise<{ dead: number[] } | { error: strin
 function handlers() {
 	ipcMain.handle("check", (_, text: string) => checkBoard(text));
 	ipcMain.handle("balance", (_, text: string) => balanceBoard(text));
+	ipcMain.handle("takeBoard", () => {
+		windowListens = true;
+		const t = pendingBoard;
+		pendingBoard = null;
+		return t;
+	});
 	// a board's size before it runs: a few seconds of tileestimate on all but one core
 	ipcMain.handle("estimate", (_, text: string, k?: [number, number], rule?: Rule) => {
 		if (!fs.existsSync(ESTIMATOR)) return { error: "tileestimate is missing from the app." };
@@ -575,6 +615,7 @@ function testHook(w: BrowserWindow) {
 }
 
 app.whenReady().then(() => {
+	if (!sole) return;
 	saved = loadSettings();
 	const root = process.env.TILESEARCH_RUN ?? process.env.TILESEARCH_ROOT;
 	if (root) saved.root = path.resolve(root); // not saved: saveSettings runs only on a change in the window
@@ -598,7 +639,11 @@ app.whenReady().then(() => {
 	win.webContents.setWindowOpenHandler(({ url }) => (void shell.openExternal(url), { action: "deny" }));
 	win.webContents.on("will-navigate", (e) => e.preventDefault());
 	void win.loadFile(path.join(__dirname, "renderer/index.html"));
-	win.webContents.once("did-finish-load", () => testHook(win!));
+	win.webContents.once("did-finish-load", () => {
+		testHook(win!);
+		// the link that started the app: Windows passes it as an argument (macOS sent it before the window)
+		boardFromLink(process.argv.find(isLink));
+	});
 	setInterval(tick, 500);
 });
 
@@ -649,3 +694,6 @@ async function quitNow() {
 app.on("before-quit", askToQuit);
 app.on("browser-window-created", (_, w) => w.on("close", askToQuit));
 app.on("window-all-closed", () => app.quit());
+// A board check is no search, so quitting does not wait for it, but it must not outlive the app either: its
+// 60 s timeout is a timer in this process, and two left by a closed test launch ran on for hours.
+app.on("will-quit", () => balancing?.kill());

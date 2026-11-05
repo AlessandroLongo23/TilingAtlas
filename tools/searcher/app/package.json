@@ -21,6 +21,7 @@
 	"build": {
 		"appId": "atlas.tiling.tilesearch",
 		"productName": "The Tiling Searcher",
+		"protocols": [{ "name": "The Tiling Searcher board", "schemes": ["tilingsearcher"] }],
 		"directories": {
 			"output": "release"
 		},

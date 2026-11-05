@@ -417,6 +417,8 @@ export interface Api {
 	quit(): Promise<void>;
 	/** The app was asked to quit while runs are going: the window asks whether to stop them. */
 	onQuitRequest(cb: () => void): () => void;
+	/** A board an atlas link brought before the window listened; null if none. Asked once, on mount. */
+	takeBoard(): Promise<string | null>;
 	/** Pushed every tick: the runs unchanged since the last push come by id (main.ts push). */
 	onStatus(cb: (s: StatusPush) => void): () => void;
 	/** The test hook (electron/main.ts) drives the window through these. */

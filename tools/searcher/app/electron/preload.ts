@@ -49,5 +49,6 @@ const api: Api = {
 	onHook: listen<Hook>("hook"),
 	quit: call("quit") as Api["quit"],
 	onQuitRequest: listen<void>("quit-request"),
+	takeBoard: call("takeBoard") as Api["takeBoard"],
 };
 contextBridge.exposeInMainWorld("tilesearch", api);
