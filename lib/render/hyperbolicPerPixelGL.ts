@@ -5,10 +5,10 @@
 // sampled, so a stroke is as sharp at the rim as at the centre. The Islamic construction is the one
 // thing sampled: a small layer per polygon size, read in the tile's own frame (hyperbolicIslamic.ts).
 
-import { depthShadeK, EDGE_PATTERN_HUE, EDGE_SCALE, type Su11 } from "@/lib/render/hyperbolic";
+import { depthShadeK, EDGE_PATTERN_HUE, EDGE_SCALE, su11ApplyInverse, su11Mul, type Su11 } from "@/lib/render/hyperbolic";
 import { STRAP_RANGE } from "@/lib/render/hyperbolicIslamic";
 import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
-import { ISLAMIC_MARGIN, type WalkTiling } from "@/lib/render/hyperbolicWalk";
+import { chartFrame, ISLAMIC_MARGIN, toHalf, WALK_APEIROGON, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 import {
 	COMPLEX_GLSL,
 	MATERIAL_CODE,
@@ -64,6 +64,7 @@ uniform highp sampler2D uBump; // bubble sides (hyperbolicWalk.ts bump): two tex
 uniform float uBumpOn;     // 1 = the record has bubble sides
 uniform float uBumpH;      // bulge height over the half chord
 uniform int uFace;         // the camera's anchor face: uView maps its frame to the screen
+uniform vec2 uAnchorChart; // an apeirogon anchor: the chart (x, y) of the frame uView starts from (hyperbolicWalk.ts)
 uniform highp sampler2D uSeeds; // materials: the tile seed table around the anchor (TileSeeds)
 uniform vec4 uGinv;        // materials: the anchor frame → the home frame, a = xy, b = zw
 out vec4 frag;
@@ -89,6 +90,27 @@ float horoSub(vec2 z, float k, float st, float m) {
 	float t0 = 0.5 * log(((k * st - c + R) * (k * st - c + R) + 1.0) / ((c + R - k * st) * (c + R - k * st) + 1.0));
 	float t = 0.5 * log(((z.x - c + R) * (z.x - c + R) + z.y * z.y) / ((c + R - z.x) * (c + R - z.x) + z.y * z.y));
 	return clamp(floor((t - t0) / (-2.0 * t0) * m), 0.0, m - 1.0);
+}
+// An apeirogon side's frame and the face's half-plane (hyperbolicWalk.ts APEIROGON SIDES): the chart
+// z = x + y·i(1 + w)/(1 − w), its inverse, and the disk isometry of z ↦ x + y·z (chartFrame there)
+vec2 toChart(vec2 ch, vec2 w) {
+	vec2 q = cdiv(vec2(1.0 + w.x, w.y), vec2(1.0 - w.x, -w.y));
+	return vec2(ch.x - ch.y * q.y, ch.y * q.x);
+}
+vec2 fromChart(vec2 ch, vec2 z) {
+	vec2 c = vec2(z.x - ch.x, z.y) / ch.y;
+	return cdiv(vec2(c.x, c.y - 1.0), vec2(c.x, c.y + 1.0));
+}
+vec4 chartMap(float x, float y) {
+	float r = sqrt(y);
+	return vec4(0.5 * (r + 1.0 / r), 0.5 * x / r, 0.5 * (r - 1.0 / r), -0.5 * x / r);
+}
+// side j's face across: (face, the apeirogon side it is entered by or −1), decoded from the table's code
+ivec2 nextOf(int j, int f) {
+	int v = int(floor(texelFetch(uWalk, ivec2(3 + 3 * j, f), 0).x + 0.5));
+	int H = textureSize(uWalk, 0).y;
+	if (v < H) return ivec2(v, -1);
+	return ivec2(v - (v / H) * H, v / H - 1);
 }
 // x wrapped into (−π, π]
 float wrapPi(float x) { return x - 6.283185307179586 * ceil((x - 3.141592653589793) / 6.283185307179586); }
@@ -127,25 +149,24 @@ void main() {
 	// tiles between the camera and the pixel; only pixels within a few px of the rim use the cap.
 	int f = uFace;
 	int j = 0;
+	int jl = 0;
 	float kf = 0.0;
 	vec4 hd = vec4(0.0);
 	bool inside = false;
+	// In an apeirogon the point is held in the face's half-plane, hz (corners at i + k·step), and chartIn is
+	// the chart of the frame it came in by: the side it crossed, or the anchor's (hyperbolicWalk.ts)
+	vec2 chartIn = uAnchorChart;
+	vec2 hz = texelFetch(uWalk, ivec2(0, f), 0).x == 1.0 ? toChart(chartIn, w) : vec2(0.0, 1.0);
 	for (int it = 0; it < 96; it++) {
 		hd = texelFetch(uWalk, ivec2(0, f), 0);
 		int S = int(hd.y);
 		float s = -1.0;
-		vec2 pa = vec2(1.0, 0.0), pb = vec2(0.0);
 		if (hd.x == 1.0) {
-			float d = (1.0 - w.x) * (1.0 - w.x) + w.y * w.y;
-			vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d;
 			float m = max(1.0, texelFetch(uWalk, ivec2(1, f), 0).w); // unit sides per long side
-			kf = floor(z.x / hd.z);
-			int jl = imod(kf, float(int(hd.y + 0.5) / int(m + 0.5))); // long sides per period: integer division, never 6.0 / 3.0 = 1.9999999
-			j = jl * int(m + 0.5) + int(horoSub(z, kf, hd.z, m));
-			s = pastHoro(z, kf, hd.z);
-			float t = (kf - float(jl)) * hd.z; // bring side kf into the one period the row holds
-			pa = vec2(1.0, -0.5 * t);
-			pb = vec2(0.0, 0.5 * t);
+			kf = floor(hz.x / hd.z);
+			jl = imod(kf, float(int(hd.y + 0.5) / int(m + 0.5))); // long sides per period: integer division, never 6.0 / 3.0 = 1.9999999
+			j = jl * int(m + 0.5) + int(horoSub(hz, kf, hd.z, m));
+			s = pastHoro(hz, kf, hd.z);
 		} else if (hd.x == 0.0) {
 			j = imod(floor(atan(w.y, w.x) / 6.283185307179586 * hd.y + 0.5), hd.y);
 			s = past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w);
@@ -179,13 +200,35 @@ void main() {
 		}
 		if (s <= 0.0) { inside = true; break; }
 		vec4 M = texelFetch(uWalk, ivec2(2 + 3 * j, f), 0);
-		vec2 ta = cmul(M.xy, pa) + cmul(M.zw, cconj(pb));
-		vec2 tb = cmul(M.xy, pb) + cmul(M.zw, cconj(pa));
-		w = su11(ta, tb, w);
+		vec2 ta = M.xy, tb = M.zw; // the step's isometry, for (ma, mb)
+		if (hd.x == 1.0) {
+			// out of the half-plane into side j's frame: the shift that brings side kf into the row's
+			// period is a subtraction here, and the step from the frame the point came in by is z ↦ λz + β
+			vec2 ch = texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xy;
+			float sh = (kf - float(jl)) * hd.z;
+			w = fromChart(ch, hz - vec2(sh, 0.0));
+			vec4 Q = chartMap((chartIn.x - sh - ch.x) / ch.y, chartIn.y / ch.y);
+			ta = cmul(M.xy, Q.xy) + cmul(M.zw, cconj(Q.zw));
+			tb = cmul(M.xy, Q.zw) + cmul(M.zw, cconj(Q.xy));
+		}
+		w = su11(M.xy, M.zw, w);
 		vec2 na = cmul(ma, cconj(ta)) - cmul(mb, cconj(tb));
 		vec2 nb = cmul(mb, ta) - cmul(ma, tb);
 		ma = na; mb = nb;
-		f = int(texelFetch(uWalk, ivec2(3 + 3 * j, f), 0).x);
+		ivec2 nx = nextOf(j, f);
+		f = nx.x;
+		if (nx.y >= 0) {
+			chartIn = texelFetch(uWalk, ivec2(4 + 3 * nx.y, f), 0).xy;
+			hz = toChart(chartIn, w);
+		}
+	}
+	if (hd.x == 1.0) {
+		// the rest reads an apeirogon in its own frame, as the table's verts do
+		vec4 P = chartMap(chartIn.x, chartIn.y);
+		w = cdiv(hz - vec2(0.0, 1.0), hz + vec2(0.0, 1.0));
+		vec2 na = cmul(ma, cconj(P.xy)) - cmul(mb, cconj(P.zw));
+		vec2 nb = cmul(mb, P.xy) - cmul(ma, P.zw);
+		ma = na; mb = nb;
 	}
 	vec4 info = texelFetch(uWalk, ivec2(1, f), 0); // colour index, Islamic layer, that layer's box
 	tileKey = uEdgeMode > 0.5 ? info.x : hd.w;
@@ -195,8 +238,6 @@ void main() {
 		// The side faced and its two neighbours: near a corner the nearest DRAWN edge can be the
 		// next side round, and on a triangle these three are all there is.
 		int S = int(hd.y);
-		float d0 = (1.0 - w.x) * (1.0 - w.x) + w.y * w.y;
-		vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d0;
 		for (int e = -1; e <= 1; e++) {
 			if (S < 3 && hd.x != 1.0 && e != 0) continue;
 			if (hd.x == 3.0 && e != 0) continue; // past a reflex corner a neighbour's geodesic crosses the arm
@@ -205,7 +246,7 @@ void main() {
 			// a bubble side is drawn as its arc, below, not as the geodesic
 			if (uBumpOn > 0.5 && hd.x != 1.0 && texelFetch(uBump, ivec2(2 * jj + 1, f), 0).y != 0.0) continue;
 			float sv = hd.x == 1.0
-				? pastHoro(z, kf + float(e), hd.z)
+				? pastHoro(hz, kf + float(e), hd.z)
 				: past(texelFetch(uWalk, ivec2(4 + 3 * jj, f), 0).xyz, w);
 			float dist = asinh(max(-sv, 0.0));
 			if (texelFetch(uWalk, ivec2(3 + 3 * jj, f), 0).y > 0.5) {
@@ -238,7 +279,7 @@ void main() {
 			float de = near.y >= 0.0 ? abs(dc - R) : min(length(v - vec2(-a, 0.0)), length(v - vec2(a, 0.0)));
 			hypD = min(hypD, de * 2.0 / max(1.0 - dot(u, u), 1e-6));
 			if (bi.y < 0.0 && v.y > 0.0 && dc < R) {
-				int nf = int(texelFetch(uWalk, ivec2(3 + 3 * i, f), 0).x);
+				int nf = nextOf(i, f).x;
 				tileKey = uEdgeMode > 0.5 ? texelFetch(uWalk, ivec2(1, nf), 0).x : texelFetch(uWalk, ivec2(0, nf), 0).w;
 			}
 		}
@@ -288,8 +329,7 @@ void main() {
 		vec2 uv;
 		bool mirrored;
 		vec2 rot = vec2(1.0, 0.0);
-		float d0 = (1.0 - w.x) * (1.0 - w.x) + w.y * w.y;
-		vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d0;
+		vec2 z = hz;
 		if (horo) {
 			float t = z.x / hd.z - kf; // 0 at vertex kf, 1 at the next
 			mirrored = t > 0.5;
@@ -415,11 +455,13 @@ void main() {
 	// class A (star body) keeps its tile's hue (the hue ring rotates it); B/C take the two shared
 	// background colours, fixed like the euclid plain fill.
 	// A plain tile takes the euclidean/spherical side-count ramp; an apeirogon (kind 1) has no side
-	// count to ramp on and is white.
+	// count to ramp on and is grey, by the edges its sides take (info.w; apeirogonGrey in hyperbolic.ts).
 	// A record that names its own hues (the Tegula shelf: one per symmetry class) carries them in the slot.
 	float hue = uFaceHue > 0.5 ? info.x : polygonHue(tileKey);
-	// an apeirogon is white, unless the record names its hue (the Searcher's colour by shape)
-	vec3 tileCol = hd.x == 1.0 && uFaceHue < 0.5 ? vec3(1.0) : tileFillAt(hue + uHueOffset, uTileSat);
+	// an apeirogon is grey, unless the record names its hue (the Searcher's colour by shape)
+	vec3 tileCol = hd.x == 1.0 && uFaceHue < 0.5
+		? vec3(0.38 + 0.62 * pow(0.76, max(info.w, 1.0) - 1.0))
+		: tileFillAt(hue + uHueOffset, uTileSat);
 	if (uIslamicStyle > 0.5 && cls > 0.5) tileCol = cls > 1.5 && cls < 2.5 ? uColB : uColA; // two fields
 	else if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
 	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
@@ -627,6 +669,7 @@ export class HyperbolicPerPixelRenderer {
 			"uBumpOn",
 			"uBumpH",
 			"uFace",
+			"uAnchorChart",
 			"uMaterial",
 			"uSeeds",
 			"uGinv",
@@ -725,7 +768,18 @@ export class HyperbolicPerPixelRenderer {
 
 		gl.uniform2f(this.u.uCenter, p.cx, p.canvasH - p.cy); // WebGL y is bottom-up
 		gl.uniform1f(this.u.uR, p.R);
-		gl.uniform4f(this.u.uView, p.view.a.x, p.view.a.y, p.view.b.x, p.view.b.y);
+		// An apeirogon anchor's own frame keeps a corner at 0 and the face runs off to the rim, out of float32's
+		// reach: the view starts instead from the frame on the point under the centre, given by its chart.
+		let view = p.view;
+		let toAnchor: Su11 | null = null;
+		let chart = { x: 0, y: 1 };
+		if (this.walk && this.walk.data[p.face * this.walk.width * 4] === WALK_APEIROGON) {
+			chart = toHalf(su11ApplyInverse(p.view, { x: 0, y: 0 }));
+			toAnchor = chartFrame(chart.x, chart.y);
+			view = su11Mul(p.view, toAnchor);
+		}
+		gl.uniform4f(this.u.uView, view.a.x, view.a.y, view.b.x, view.b.y);
+		gl.uniform2f(this.u.uAnchorChart, chart.x, chart.y);
 		gl.uniform1i(this.u.uFace, p.face);
 		const bg = p.dark ? [0x14 / 255, 0x11 / 255, 0x0d / 255] : [0xfa / 255, 0xf8 / 255, 0xf5 / 255];
 		const stroke = p.dark ? [0, 0, 0] : [0x11 / 255, 0x11 / 255, 0x11 / 255];
@@ -772,7 +826,8 @@ export class HyperbolicPerPixelRenderer {
 		gl.uniform1f(this.u.uMaterial, mat);
 		if (mat && p.home && this.walk) {
 			const h = p.home;
-			gl.uniform4f(this.u.uGinv, h.a.x, h.a.y, h.b.x, h.b.y);
+			const g = toAnchor ? su11Mul(h, toAnchor) : h; // the shader's anchor frame → home
+			gl.uniform4f(this.u.uGinv, g.a.x, g.a.y, g.b.x, g.b.y);
 			const { scan, slots } = this.surf.want(p.material ?? null, !!p.scanned);
 			gl.uniform1f(this.u.uScan, scan ? 1 : 0);
 			gl.uniform1f(this.u.uSurfSlots, slots);

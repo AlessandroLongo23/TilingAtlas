@@ -18,7 +18,7 @@ import {
 	wrap360,
 	type CardControls,
 } from "@/lib/render/viewControls";
-import type { HyperbolicViewInput } from "@/components/hyperbolic-canvas";
+import type { HyperbolicViewInput } from "@/lib/render/hypCamera";
 
 // Pointer travel, in px, under which a press-release counts as a click, not a pan. Same threshold /play
 // uses (components/canvas.tsx CLICK_DRAG_THRESHOLD_PX).

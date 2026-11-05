@@ -2,7 +2,7 @@
 
 import { Select } from "@base-ui/react/select";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useCallback, useState, type ReactNode } from "react";
 import { HoverPill } from "@/components/ui/hover-pill";
 import { cn } from "@/lib/utils/cn";
 
@@ -44,6 +44,13 @@ export function Dropdown<T extends string | number>({
 	face?: ReactNode;
 }) {
 	const text = (v: T) => options.find((o) => o.value === v)?.label ?? String(v);
+	// Inside a Modal the list opens in the modal itself: its Radix dialog lets no click through to a layer
+	// outside it, so a list on the body showed and could not be picked from.
+	const [dialog, setDialog] = useState<HTMLElement | null>(null);
+	const trigger = useCallback(
+		(el: HTMLElement | null) => setDialog(el?.closest<HTMLElement>("[data-modal]") ?? null),
+		[],
+	);
 	const item = (o: DropdownOption<T>) => (
 		<Select.Item
 			key={o.value}
@@ -67,6 +74,7 @@ export function Dropdown<T extends string | number>({
 	return (
 		<Select.Root value={value} onValueChange={(v) => onChange(v as T)} disabled={disabled}>
 			<Select.Trigger
+				ref={trigger}
 				aria-label={ariaLabel}
 				title={title}
 				className={cn(
@@ -84,7 +92,7 @@ export function Dropdown<T extends string | number>({
 					</>
 				)}
 			</Select.Trigger>
-			<Select.Portal>
+			<Select.Portal container={dialog ?? undefined}>
 				<Select.Positioner className="z-[var(--z-tooltip)] outline-none" sideOffset={4} alignItemWithTrigger={false}>
 					<Select.Popup className="max-h-[var(--available-height)] max-w-[var(--available-width)] min-w-[var(--anchor-width)] origin-[var(--transform-origin)] overflow-y-auto rounded-lg bg-surface-raised p-1 shadow-lg ring-1 ring-line-subtle transition-[scale,opacity] duration-150 ease-out outline-none data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0">
 						<Select.List className="relative">

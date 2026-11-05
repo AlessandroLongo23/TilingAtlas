@@ -28,13 +28,20 @@ export const navLinkClass = (active: boolean) =>
 	);
 export const NAV_LABEL = "relative text-[13px] font-medium whitespace-nowrap";
 
-/** The active link's fill: one shared element, so changing section slides it to the new link. */
-export function NavActivePill({ id = "nav-active" }: { id?: string }) {
+/** The active link's fill: one shared element, so changing section slides it to the new link. `className`
+ *  restyles it where another list uses the same glide (the Tiling Searcher's run list). */
+export function NavActivePill({
+	id = "nav-active",
+	className = "bg-surface-overlay",
+}: {
+	id?: string;
+	className?: string;
+}) {
 	return (
 		<motion.span
 			layoutId={id}
 			aria-hidden="true"
-			className="absolute inset-0 rounded-control bg-surface-overlay"
+			className={cn("absolute inset-0 rounded-control", className)}
 			transition={{ type: "spring", duration: 0.4, bounce: 0.12 }}
 		/>
 	);

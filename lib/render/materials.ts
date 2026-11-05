@@ -25,7 +25,7 @@
 // tile carries is the same from every anchor that sees it, to float64, out to ~30 units from home.
 
 import { type Su11, su11Inverse, su11Mul, su11Normalize } from "@/lib/render/hyperbolic";
-import { WALK_APEIROGON, type WalkTiling } from "@/lib/render/hyperbolicWalk";
+import { nextOf, WALK_APEIROGON, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 
 export type Material = "marble" | "glass" | "wood" | "cobble";
 /** The shader's uMaterial; 0 is off. */
@@ -228,7 +228,7 @@ function localTiles(t: WalkTiling, f0: number): Local {
 		const row = f[qi] * t.width * 4;
 		const slots = t.data[row + 1];
 		for (let j = 0; j < slots; j++) {
-			const nf = t.data[row + (3 + 3 * j) * 4];
+			const nf = nextOf(t, f[qi], j).f;
 			if (nf < 0 || t.data[nf * t.width * 4] === WALK_APEIROGON) continue;
 			const n = su11Normalize(su11Mul(a[qi], su11Inverse(sideMap(t, f[qi], j))));
 			if (n.a.x ** 2 + n.a.y ** 2 + n.b.x ** 2 + n.b.y ** 2 > coshMax) continue;

@@ -14,8 +14,9 @@
 //   0        kind, slots, step, sides      kind: 0 regular, 1 apeirogon, 2 irregular, 3 star
 //   1        colour index, Islamic layer (−1 none), that layer's box (x, y extent)
 //   2 + 3j   M = (a.x, a.y, b.x, b.y)      this frame → the frame of the face across side j
-//   3 + 3j   next face, drawn, q.x, q.y
-//   4 + 3j   n = (x, y, t), q.t            side j's outward unit normal on the hyperboloid (finite faces)
+//   3 + 3j   next face, drawn, q.x, q.y    next is f + height·(e + 1) when f is an apeirogon entered by its side e
+//   4 + 3j   n = (x, y, t), q.t            side j's outward unit normal on the hyperboloid (finite faces);
+//                                          an apeirogon's side j: its chart (x, y) (below)
 //
 // FLAT corners (multi-length boards: a vertex on the side of a longer tile, turn π). The sides either
 // side of one lie on a single geodesic, so the side test ties between them. q is then the normal of the
@@ -33,6 +34,14 @@
 // barycentre at 0 and its sides in ring order, tested one by one. An apeirogon has no centre: its ideal
 // point is at 1 and one vertex at 0, so that in the upper half-plane z = i(1+w)/(1−w) its vertices are
 // i + k·step and side k is the semicircle over [k·step, (k+1)·step]. Its row holds one period of slots.
+//
+// APEIROGON SIDES have frames of their own. In the face's frame most of an apeirogon lies near the rim, and
+// with long sides (a C∞ at edge 2.5 has sides of 7.5) a map into or out of it has entries past 100, which
+// float32 cannot carry: the disk tore when panned. So unit side j of an apeirogon has a frame with the
+// side's midpoint at 0, and its chart z = x + y·i(1 + w)/(1 − w) into the face's half-plane. M of an
+// apeirogon's side starts from that side's frame, and M into an apeirogon ends in the frame of the side it
+// enters by. The shader then holds a point of an apeirogon in the half-plane, where the walk along the
+// horocycle is a subtraction. The face's own frame, above, is what verts, corner and walkPoint use.
 
 import {
 	type Complex,
@@ -87,12 +96,42 @@ export interface WalkTiling {
 }
 
 const mul = (m: Su11, n: Su11) => su11Normalize(su11Mul(m, n));
-const toHalf = (w: Complex): Complex => {
+export const toHalf = (w: Complex): Complex => {
 	const d = (1 - w.x) * (1 - w.x) + w.y * w.y;
 	return { x: (-2 * w.y) / d, y: (1 - w.x * w.x - w.y * w.y) / d };
 };
 /** The parabolic z ↦ z − t of the half-plane, as a disk isometry. */
 const shift = (t: number): Su11 => ({ a: { x: 1, y: -t / 2 }, b: { x: 0, y: t / 2 } });
+
+/** The frame whose chart is z = x + y·i(1 + w)/(1 − w), as a map into the face's own frame: the half-plane
+ *  map z ↦ x + y·z read in the disk. */
+export const chartFrame = (x: number, y: number): Su11 => {
+	const r = Math.sqrt(y);
+	return { a: { x: (r + 1 / r) / 2, y: x / r / 2 }, b: { x: (r - 1 / r) / 2, y: -x / r / 2 } };
+};
+
+/** The face across side j of face f, and the side of it that is crossed when it is an apeirogon (else −1). */
+export function nextOf(t: WalkTiling, f: number, j: number): { f: number; e: number } {
+	const v = t.data[f * t.width * 4 + (3 + 3 * j) * 4];
+	if (v < t.height) return { f: v, e: -1 };
+	const e1 = Math.floor(v / t.height);
+	return { f: v - e1 * t.height, e: e1 - 1 };
+}
+
+/** Side j of face f as a map between the two faces' own frames (an apeirogon's, not its side's). */
+export function sideMapOf(t: WalkTiling, f: number, j: number): { M: Su11; next: number } {
+	const d = t.data;
+	const o = f * t.width * 4 + (2 + 3 * j) * 4;
+	const side = (g: number, e: number) => {
+		const c = g * t.width * 4 + (4 + 3 * e) * 4;
+		return chartFrame(d[c], d[c + 1]);
+	};
+	let M: Su11 = { a: { x: d[o], y: d[o + 1] }, b: { x: d[o + 2], y: d[o + 3] } };
+	if (d[f * t.width * 4] === WALK_APEIROGON) M = mul(M, su11Inverse(side(f, j)));
+	const n = nextOf(t, f, j);
+	if (n.e >= 0) M = mul(side(n.f, n.e), M);
+	return { M, next: n.f };
+}
 
 /** Which of the m unit sides of an apeirogon's long side k holds the foot of z (half-plane, vertices at
  *  i + k·st). Map the side's geodesic to the imaginary axis; there arc length is log|f|, and the m unit
@@ -263,6 +302,31 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	].sort((a, b) => a - b);
 	const width = 2 + 3 * Math.max(...slots);
 	const data = new Float64Array(F * width * 4);
+	if (F * (Math.max(...slots) + 2) >= 2 ** 24) throw new Error("walk table too large for its float32 face codes");
+	// Apeirogon sides' charts, read off the half-plane (not off the face's frame, where they crowd the rim):
+	// long side l is the semicircle over [l·step, (l+1)·step], centre c = (l + ½)·step, radius R = cosh T with
+	// T half its length, and z = c + R·tanh t + i·R/cosh t at arc length t from its top. Its unit sides split
+	// [−T, T] in proportion to their lengths, from the corner at l·step.
+	const charts: Complex[][] = rings.map((ring, f) => {
+		if (kind[f] !== WALK_APEIROGON) return [];
+		const st = step[f];
+		const m = run[f];
+		const T = Math.asinh(Math.abs(st) / 2);
+		const R = Math.cosh(T);
+		const len = (s: number) => (darts.elen ? darts.elen[rneig[ring[s % ring.length]]] : edge);
+		const out: Complex[] = [];
+		for (let l = 0; l * m < slots[f]; l++) {
+			let whole = 0;
+			for (let u = 0; u < m; u++) whole += len(l * m + u);
+			let at = 0;
+			for (let u = 0; u < m; u++) {
+				const t = Math.sign(st) * (-T + (2 * T * (at + len(l * m + u) / 2)) / whole);
+				at += len(l * m + u);
+				out.push({ x: (l + 0.5) * st + R * Math.tanh(t), y: R / Math.cosh(t) });
+			}
+		}
+		return out;
+	});
 	for (let f = 0; f < F; f++) {
 		const ring = rings[f];
 		const row = f * width * 4;
@@ -299,6 +363,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			let drawn = !marked || (darts.drawn ? darts.drawn[e] === 1 : false);
 			let M = su11Identity();
 			let next = -1;
+			let entry = -1; // the side of the face across that this one is glued to
 			for (let guard = 0; guard < 8; guard++) {
 				const Gg = mul(E, med(e)); // the glued dart, at the far end heading back
 				const hp = rinv[glue[e]];
@@ -306,6 +371,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 				next = faceOf[hp];
 				if (next >= 0) {
 					M = mul(mul(K[next][posOf[hp]], su11Inverse(Gp)), Cinv);
+					entry = posOf[hp];
 					break;
 				}
 				// A digon's two corners are hp and e itself, so its other side is the next dart at e's vertex.
@@ -313,9 +379,18 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 				E = mul(E, su11Rotation(alpha(e)));
 				e = rneig[e];
 			}
+			// apeirogon sides map from and to their own frames (APEIROGON SIDES above)
+			if (kind[f] === WALK_APEIROGON) M = mul(M, chartFrame(charts[f][s].x, charts[f][s].y));
+			let code = next;
+			if (next >= 0 && kind[next] === WALK_APEIROGON) {
+				const c = charts[next][entry];
+				M = mul(su11Inverse(chartFrame(c.x, c.y)), M);
+				code = next + F * (entry + 1);
+			}
 			const o = row + (2 + 3 * s) * 4;
-			data.set([M.a.x, M.a.y, M.b.x, M.b.y, next, drawn ? 1 : 0, 0, 0], o);
-			if (kind[f] !== WALK_APEIROGON) {
+			data.set([M.a.x, M.a.y, M.b.x, M.b.y, code, drawn ? 1 : 0, 0, 0], o);
+			if (kind[f] === WALK_APEIROGON) data.set([charts[f][s].x, charts[f][s].y], o + 8);
+			else {
 				const nrm = sideNormal(verts[f][s], verts[f][s + 1]);
 				data.set(nrm, o + 8);
 				if (kind[f] === WALK_STAR) data[o + 6] = Math.atan2(verts[f][s].y, verts[f][s].x);
@@ -480,14 +555,13 @@ export function walkPoint(
 	for (let it = 0; it < maxSteps; it++) {
 		const { j, s, pre } = locate(t, f, w);
 		if (s <= 0) return pre ? { f, w: su11Apply(pre, w), W: mul(pre, W), Wref, ok: true } : { f, w, W, Wref, ok: true };
-		const o = f * t.width * 4 + (2 + 3 * j) * 4;
-		let M: Su11 = { a: { x: t.data[o], y: t.data[o + 1] }, b: { x: t.data[o + 2], y: t.data[o + 3] } };
+		const side = sideMapOf(t, f, j);
+		let M = side.M;
 		if (pre) M = su11Mul(M, pre);
-		if (ref)
-			Wref = mul({ a: { x: ref.data[o], y: ref.data[o + 1] }, b: { x: ref.data[o + 2], y: ref.data[o + 3] } }, Wref);
+		if (ref) Wref = mul(sideMapOf(ref, f, j).M, Wref);
 		w = su11Apply(M, w);
 		W = mul(M, W);
-		f = t.data[o + 4];
+		f = side.next;
 	}
 	return { f, w, W, Wref, ok: false };
 }

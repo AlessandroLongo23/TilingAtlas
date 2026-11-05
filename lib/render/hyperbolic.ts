@@ -183,11 +183,12 @@ export function hypMidpoint(u: Complex, v: Complex): Complex {
 }
 
 /** Hue (degrees) for an n-gon: the euclidean and spherical ramp (polygonHue), so a heptagon in the
- *  disk is the colour a heptagon is everywhere else. Apeirogons have no hue; see APEIROGON_RGB01. */
+ *  disk is the colour a heptagon is everywhere else. Apeirogons have no hue; see apeirogonGrey. */
 export const tileHue = polygonHue;
 
-/** An apeirogon's fill: white, in every hyperbolic renderer (and GLSL's vec3(1.0)). */
-export const APEIROGON_RGB01: [number, number, number] = [1, 1, 1];
+/** An apeirogon's fill, a grey: white for sides of one edge (A∞), darker as its sides take k edges (B∞,
+ *  C∞, …), so apeirogons of different side lengths stay apart. GLSL's copy is in hyperbolicPerPixelGL.ts. */
+export const apeirogonGrey = (k: number): number => 0.38 + 0.62 * 0.76 ** (Math.max(k, 1) - 1);
 
 /** The one hue an EDGE pattern's disk is filled with: a backdrop, not a polygon, so no side count. */
 export const EDGE_PATTERN_HUE = 94;

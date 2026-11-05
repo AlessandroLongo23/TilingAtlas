@@ -67,6 +67,8 @@ export function Modal({
 				<Dialog.Overlay className="ta-overlay fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px]" />
 				<Dialog.Content
 					ref={contentRef}
+					// a Dropdown inside opens its list here (dropdown.tsx): outside, this dialog lets no click through
+					data-modal=""
 					onCloseAutoFocus={(e) => {
 						const el = opener.current;
 						if (el?.isConnected && el !== document.body) {

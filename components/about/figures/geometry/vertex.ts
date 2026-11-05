@@ -1,5 +1,6 @@
 // One rule for the vertex figure in all three geometries: regular polygons with one common edge length,
-// that length solved in the geometry so the angles around the vertex add up to exactly 360°.
+// that length solved in the geometry so the angles around the vertex add up to exactly 360°. A polygon's sides
+// may take several edges (`segs`), and a corner of n = Infinity is flat: a point along a side, exactly 180°.
 //
 // A regular n-gon splits into 2n right triangles (centre, vertex, edge midpoint) with angle π/n at the
 // centre and α/2 at the vertex. In curvature +1, 0 and −1 the right-triangle identities give
@@ -29,24 +30,30 @@ export const turned = (m: Turn, [x, y, z]: P3): P3 => [
 const SAMPLES = 24;
 const flatAngle = (n: number) => Math.PI - (2 * Math.PI) / n;
 
+/** The corner of a regular n-gon of side s; a flat corner (n = Infinity) is a straight angle in every geometry. */
 function angleAt(n: number, s: number, g: Geometry) {
-	if (g === GEOMETRIES.EUCLIDEAN) return flatAngle(n);
+	if (g === GEOMETRIES.EUCLIDEAN || !Number.isFinite(n)) return flatAngle(n);
 	const c = g === GEOMETRIES.SPHERICAL ? Math.cos(s / 2) : Math.cosh(s / 2);
 	return 2 * Math.asin(Math.min(1, Math.cos(Math.PI / n) / c));
 }
 
-/** The common edge length that closes the vertex, or null if none does (the sphere can run out). */
-function solveEdge(ns: number[], g: Geometry): number | null {
+/** The common edge length that closes the vertex, or null if none does (the sphere can run out; flat corners
+ *  that alone make 360° leave the others nothing). Corner i's polygon has sides of segs[i] edges. */
+function solveEdge(ns: number[], g: Geometry, segs: number[]): number | null {
 	if (g === GEOMETRIES.EUCLIDEAN) return 1;
-	const gap = (s: number) => ns.reduce((t, n) => t + angleAt(n, s, g), 0) - 2 * Math.PI;
+	const gap = (s: number) => ns.reduce((t, n, i) => t + angleAt(n, segs[i] * s, g), 0) - 2 * Math.PI;
+	const sides = ns.flatMap((n, i) => (Number.isFinite(n) ? [n * segs[i]] : []));
+	// flat corners that already make 360° leave the rest nothing (their shrinking angles would vanish in rounding)
+	if (!sides.length || (ns.length - sides.length) * Math.PI >= 2 * Math.PI - 1e-9) return null;
 	let lo = 0,
 		hi: number;
 	if (g === GEOMETRIES.SPHERICAL) {
-		hi = (2 * Math.PI) / Math.max(...ns) - 1e-9; // past this the largest polygon would be flat
+		hi = (2 * Math.PI) / Math.max(...sides) - 1e-9; // past this the largest polygon would be flat
 		if (gap(hi) < 0) return null;
 	} else {
 		hi = 1;
-		while (gap(hi) > 0) hi *= 2;
+		while (gap(hi) > 0 && hi < 1e6) hi *= 2;
+		if (gap(hi) > 0) return null;
 	}
 	for (let i = 0; i < 80; i++) {
 		const mid = (lo + hi) / 2;
@@ -129,10 +136,16 @@ export interface VertexFigure {
 	mids: number[];
 }
 
-/** On the sphere the vertex faces the viewer at (0, 0, 1) unless `turn` turns it away. */
-export function vertexFigure(ns: number[], turn?: Turn, exact?: Geometry): VertexFigure {
-	// `exact`: where the corners close, from a caller that knows their angles better than `ns` can say (a
-	// 180° corner can only be stood in for here by a many-sided polygon's, a hair short of flat)
+/** On the sphere the vertex faces the viewer at (0, 0, 1) unless `turn` turns it away. Corner i's polygon has
+ *  sides of `segs[i]` edges (1 when absent), and a corner of n = Infinity is flat, drawn as the half-plane its
+ *  straight side bounds. */
+export function vertexFigure(
+	ns: number[],
+	turn?: Turn,
+	exact?: Geometry,
+	segs: number[] = ns.map(() => 1),
+): VertexFigure {
+	// `exact`: where the corners close, from a caller that knows their angles better than `ns` can say
 	const flatSum = ns.reduce((t, n) => t + flatAngle(n), 0);
 	const geometry: Geometry =
 		exact ??
@@ -141,7 +154,7 @@ export function vertexFigure(ns: number[], turn?: Turn, exact?: Geometry): Verte
 			: flatSum < 2 * Math.PI
 				? GEOMETRIES.SPHERICAL
 				: GEOMETRIES.HYPERBOLIC);
-	const s = ns.length >= 3 ? solveEdge(ns, geometry) : geometry === GEOMETRIES.EUCLIDEAN ? 1 : null;
+	const s = ns.length >= 3 ? solveEdge(ns, geometry, segs) : geometry === GEOMETRIES.EUCLIDEAN ? 1 : null;
 	const edge = ns.length >= 3 ? s : null;
 	const len = s ?? 1;
 	const g: Geometry = s == null ? GEOMETRIES.EUCLIDEAN : geometry; // nothing closes: show the flat fan
@@ -149,15 +162,38 @@ export function vertexFigure(ns: number[], turn?: Turn, exact?: Geometry): Verte
 	const back: P2[][] = [];
 	const mids: number[] = [];
 	let from = 0;
-	for (const n of ns) {
-		const a = angleAt(n, len, g);
+	for (const [i, n] of ns.entries()) {
+		const side = segs[i] * len;
+		const a = angleAt(n, side, g);
 		const mid = from + a / 2;
 		mids.push(mid);
+		const start = from;
 		from += a;
+		if (!Number.isFinite(n)) {
+			// a flat corner: its side is a geodesic through the vertex, a straight line through the centre of the
+			// plane's and the disk's charts, and a great circle through the pole of the ball's
+			const arc = Array.from({ length: SAMPLES * 4 + 1 }, (_, k) => start + (Math.PI * k) / (SAMPLES * 4));
+			if (g !== GEOMETRIES.SPHERICAL) {
+				const r = g === GEOMETRIES.EUCLIDEAN ? 2 * side : 1; // past the plane's view; the disk's rim
+				polygons.push([{ x: 0, y: 0 }, ...arc.map((t) => ({ x: r * Math.cos(t), y: r * Math.sin(t) }))]);
+			} else {
+				// the hemisphere, as the lune between two great half-circles a hair short of opposite
+				const half = (t: number, up: boolean) =>
+					Array.from({ length: SAMPLES * 2 + 1 }, (_, k) => {
+						const u = (Math.PI * (up ? k : SAMPLES * 2 - k)) / (SAMPLES * 2);
+						const p: P3 = [Math.sin(u) * Math.cos(t), Math.sin(u) * Math.sin(t), Math.cos(u)];
+						return turn ? turned(turn, p) : p;
+					});
+				const pts = [...half(start, true), ...half(start + Math.PI - 1e-3, false)];
+				polygons.push(clipFront(pts));
+				back.push(clipFront(pts.map(([x, y, z]) => [x, y, -z])));
+			}
+			continue;
+		}
 		const cotA = 1 / Math.tan(Math.PI / n),
 			cotH = 1 / Math.tan(a / 2);
 		if (g === GEOMETRIES.EUCLIDEAN) {
-			const R = len / (2 * Math.sin(Math.PI / n));
+			const R = side / (2 * Math.sin(Math.PI / n));
 			polygons.push(ring(n, R).map((p) => rot({ x: p.x + R, y: p.y }, mid)));
 		} else if (g === GEOMETRIES.HYPERBOLIC) {
 			const R = Math.acosh(Math.max(1, cotA * cotH));
