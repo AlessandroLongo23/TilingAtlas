@@ -47,7 +47,7 @@ export type ShelfId =
  * Which renderer paints the main canvas — and therefore which block of controls the Options tab shows.
  *
  * The two questions have one answer, which is exactly what the old code got wrong. Each predicate in
- * `_play-client` and `options-tab` was recomputed from its own list of shelf fields, so `hypPoly` could
+ * `_atlas-client` and `options-tab` was recomputed from its own list of shelf fields, so `hypPoly` could
  * route to the Poincaré disk in one file and count as flat in the other, and the Options tab would offer
  * the p5 overlays (symmetry elements, fundamental domain, vertex orbits, polygon points) over a canvas
  * that had already been blanked.
@@ -89,7 +89,7 @@ export interface ShelfDef {
  * Dispatch order, and it is load-bearing rather than cosmetic.
  *
  * The payloads are meant to be mutually exclusive, but nothing in the type system says so, and the canvas
- * chain in `_play-client` has always had an order. This is that order, written down once: `shelfOf` walks
+ * chain in `_atlas-client` has always had an order. This is that order, written down once: `shelfOf` walks
  * it and takes the first field present, so every consumer resolves the same shelf for the same record
  * even if a future corpus ever sets two fields at once.
  */

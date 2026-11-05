@@ -1,59 +1,57 @@
 "use client";
 
+import { memo, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import {
-	GEOMETRY_ORDER,
-	GEOMETRY_LABEL,
-	DECORATION_ORDER,
-	DECORATION_LABEL,
-	type Geometry,
-	type Decoration,
-} from "@/lib/services/referenceAtlas";
-import type { CatalogueTiling } from "@/lib/services/catalogueService";
-import { CatalogueListPanel } from "./catalogue-list-panel";
-import type { UnloadedTier } from "@/lib/services/atlasManifest";
+import { PageSidebar } from "@/components/page-sidebar";
 import { SegIndicator } from "@/components/ui/seg-indicator";
 import { Dropdown } from "@/components/ui/dropdown";
+import { Tabs } from "@/components/ui/tabs";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
+import { cn } from "@/lib/utils/cn";
+import {
+	DECORATION_LABEL,
+	DECORATION_ORDER,
+	GEOMETRY_LABEL,
+	GEOMETRY_ORDER,
+	type Decoration,
+	type Geometry,
+} from "@/lib/services/referenceAtlas";
+import type { BrowseNode } from "@/lib/atlas/browse";
+import { BrowseTree } from "./browse-tree";
 
-interface CatalogueTabProps {
-	/** Already filtered to the active geometry AND decoration — both splits live in the parent. */
-	items: CatalogueTiling[];
-	selectedKey: string | null;
-	onSelect?: (t: CatalogueTiling) => void;
-	/** Tiers that ship but are not loaded — passed straight through to the tree. */
-	unloaded?: UnloadedTier[];
-	onLoadTier?: (t: UnloadedTier) => void;
-	loadingTiers?: ReadonlySet<string>;
-	geometry: Geometry;
-	/** Tiling count per geometry — labels the segments and disables the empty ones (unloaded shards). */
-	geometryCounts: Record<Geometry, number>;
-	/** Geometries whose catalogue is deferred — same reason as decorationPending. */
-	geometryPending?: Partial<Record<Geometry, boolean>>;
-	onGeometryChange: (g: Geometry) => void;
-	decoration: Decoration;
-	/** Count per decoration WITHIN the active geometry — same labelling/disabling rule as geometry. */
-	decorationCounts: Record<Decoration, number>;
-	/** Decorations whose catalogue is deferred and not fetched yet. Their count reads 0 but they are
-	 *  NOT empty — disabling them would deadlock, since the click is what triggers the fetch. */
-	decorationPending?: Partial<Record<Decoration, boolean>>;
-	onDecorationChange: (d: Decoration) => void;
-}
+// The left panel of the atlas page, in both lenses: the cell (geometry, then decoration, the same two
+// segmented rows the /play sidebar had) over the browse tree. On a phone it is the bottom dock it always
+// was, with the view options as a second tab, since a phone has no right-hand column to put them in.
 
 // 123727 → "123,727", 2227510 → "2.23M": a segment is ~90px wide and a seven-digit count does not fit.
 const compactCount = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n.toLocaleString("en-US"));
 
-// The Catalogue tab: two segmented toggles (geometry, then decoration — the picker's top two layers)
-// pinned above the class→k thumbnail list. This component takes plain props and never touches the
-// configuration store, so dragging a sidebar slider (which re-renders the Options tab) leaves the
-// catalogue untouched.
-export function CatalogueTab({
-	items,
-	selectedKey,
-	onSelect,
-	unloaded,
-	onLoadTier,
-	loadingTiers,
+interface BrowseSidebarProps {
+	tree: BrowseNode[];
+	activeId: string | null;
+	selectedId: string | null;
+	onPick: (node: BrowseNode | null) => void;
+	geometry: Geometry;
+	geometryCounts: Record<Geometry, number>;
+	geometryPending?: Partial<Record<Geometry, boolean>>;
+	onGeometryChange: (g: Geometry) => void;
+	decoration: Decoration;
+	decorationCounts: Record<Decoration, number>;
+	decorationPending?: Partial<Record<Decoration, boolean>>;
+	onDecorationChange: (d: Decoration) => void;
+	/** Desktop: slid shut ([). */
+	collapsed: boolean;
+	/** Phone: the dock's peek row (the tiling's name and the three stepping buttons). */
+	peek: ReactNode;
+	/** Phone: the view options, a second tab of the dock. */
+	options: ReactNode;
+}
+
+export const BrowseSidebar = memo(function BrowseSidebar({
+	tree,
+	activeId,
+	selectedId,
+	onPick,
 	geometry,
 	geometryCounts,
 	geometryPending,
@@ -62,9 +60,14 @@ export function CatalogueTab({
 	decorationCounts,
 	decorationPending,
 	onDecorationChange,
-}: CatalogueTabProps) {
-	// Both rows are the same control at different altitudes, so they share one renderer — a second
-	// hand-rolled copy is how the two would drift apart.
+	collapsed,
+	peek,
+	options,
+}: BrowseSidebarProps) {
+	const isPhone = useIsPhone();
+	const [tab, setTab] = useState("Browse");
+
+	// Both rows are the same control at different altitudes, so they share one renderer.
 	const segments = <T extends string>(
 		order: readonly T[],
 		label: Record<T, string>,
@@ -103,9 +106,7 @@ export function CatalogueTab({
 			})}
 		</div>
 	);
-	// The same two choices on a phone: one row of two dropdowns at the top of the list, which scrolls
-	// away with it, so the half-open sheet is left to the tree and its thumbnails. Each shows a two-line
-	// face (name over value).
+	// The same two choices on a phone: one row of two dropdowns, so the half-open sheet is left to the tree.
 	const picker = <T extends string>(
 		name: string,
 		order: readonly T[],
@@ -130,7 +131,9 @@ export function CatalogueTab({
 					<span className="text-xs leading-tight text-fg-muted">{name}</span>
 					<span className="truncate text-[15px] leading-tight font-medium text-fg">
 						{label[value]}{" "}
-						<span className="font-mono text-xs text-fg-muted">{pending?.[value] ? "" : compactCount(counts[value])}</span>
+						<span className="font-mono text-xs text-fg-muted">
+							{pending?.[value] ? "" : compactCount(counts[value])}
+						</span>
 					</span>
 					<ChevronDown
 						size={16}
@@ -141,16 +144,13 @@ export function CatalogueTab({
 			}
 		/>
 	);
-	return (
+
+	const total = decorationCounts[decoration];
+	const browse = (
 		<div className="flex h-full flex-col">
-			<div className="flex flex-col gap-1.5 border-y border-line-subtle px-3.5 py-3 max-md:hidden">
-				{/* The SAME segmented control as the Catalogue/Options tabs above (.ta-seg / .ta-tab):
-			    geometry is a second row of tabs, so it shouldn't speak a second language. */}
+			<div className="flex flex-col gap-1.5 border-b border-line-subtle px-3.5 pt-3.5 pb-3 max-md:hidden">
 				<span className="ta-label">Geometry</span>
 				{segments(GEOMETRY_ORDER, GEOMETRY_LABEL, geometry, geometryCounts, onGeometryChange, geometryPending)}
-				{/* Decoration: the same control one level down, scoped to the active geometry. Its counts are
-			    per-geometry, so entering Hyperbolic before its edge/colour shards land shows those segments
-			    disabled and fills them in as the fetches resolve. */}
 				<span className="ta-label mt-1.5">Decoration</span>
 				{segments(
 					DECORATION_ORDER,
@@ -161,14 +161,8 @@ export function CatalogueTab({
 					decorationPending,
 				)}
 			</div>
-			{/* `isolate` pins the sticky headers' z-index
-			    contest (catalogue-list-panel.tsx) inside this scroller, so raising them above the tile
-			    ring can never reach the canvas overlay buttons next door. */}
-			<div
-				className="ta-scroll-fade isolate flex-1 overflow-x-hidden overflow-y-auto bg-surface-chrome px-1.5 pb-6 max-md:border-t max-md:border-line-subtle"
-				data-sidebar-scroll
-			>
-				<div className="hidden grid-cols-2 gap-2 px-2 pt-2 pb-1 max-md:grid">
+			<div className="ta-scroll-fade min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-3" data-sidebar-scroll>
+				<div className="hidden grid-cols-2 gap-2 px-3 pb-3 max-md:grid">
 					{picker(
 						"Geometry",
 						GEOMETRY_ORDER,
@@ -188,15 +182,40 @@ export function CatalogueTab({
 						decorationPending,
 					)}
 				</div>
-				<CatalogueListPanel
-					items={items}
-					selectedKey={selectedKey}
-					onSelect={onSelect}
-					unloaded={unloaded}
-					onLoadTier={onLoadTier}
-					loadingTiers={loadingTiers}
+				<BrowseTree
+					tree={tree}
+					total={total}
+					rootLabel={`All ${DECORATION_LABEL[decoration].toLowerCase()}`}
+					activeId={activeId}
+					selectedId={selectedId}
+					onPick={onPick}
 				/>
 			</div>
 		</div>
 	);
-}
+
+	return (
+		<PageSidebar
+			scrollable={false}
+			mobile="dock"
+			title="Browse"
+			peek={peek}
+			halfHeight="60dvh"
+			collapsed={collapsed && !isPhone}
+		>
+			{isPhone ? (
+				<Tabs
+					value={tab}
+					onValueChange={setTab}
+					tabs={["Browse", "View options"]}
+					keepMounted
+					listClassName="mx-3.5 mb-2"
+				>
+					{(t) => (t === "Browse" ? browse : options)}
+				</Tabs>
+			) : (
+				browse
+			)}
+		</PageSidebar>
+	);
+});

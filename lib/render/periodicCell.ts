@@ -2,7 +2,7 @@
 // emits and the inversive shader consumes. Before this existed the conformal lens knew exactly one data
 // shape — a partition into ≤128 convex tiles coloured by polygon size — so colorings, edge patterns,
 // hollow tilings and the Islamic construction had no representation and were force-cleared off the view
-// (app/(app)/play/_play-client.tsx), not ported. A decoration now becomes lens-capable by writing
+// (app/(app)/(atlas)/_atlas-client.tsx), not ported. A decoration now becomes lens-capable by writing
 // an adapter to this type; nothing in the renderer changes.
 //
 // A cell is a lattice (v1, v2) plus a z-ordered list of primitives. A primitive is one ring or polyline

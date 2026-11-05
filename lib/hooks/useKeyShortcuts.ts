@@ -23,7 +23,7 @@ export const isTypingTarget = (e: KeyboardEvent): boolean => {
  *
  * Exists so the catalogue pages (/colors, /freedraw) can carry the SAME keys as /play — G, P, O mean
  * the same three overlays in every view that has them. Keep any overlay key added here in step with
- * the FREEDRAW_TOGGLES / COLORS_TOGGLES tables in app/(app)/play/_play-client.tsx, and with the Kbd
+ * the FREEDRAW_TOGGLES / COLORS_TOGGLES tables in app/(app)/(atlas)/_atlas-client.tsx, and with the Kbd
  * badge on the control it drives.
  *
  * The map is read through a ref, so callbacks that close over changing state never re-bind the

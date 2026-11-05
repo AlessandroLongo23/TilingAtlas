@@ -36,7 +36,7 @@ import type { TranslationalCellData as AlgoCellData } from "@/classes/algorithm/
 interface IslamicCanvasProps {
 	translationalCell: FlatCellData | null;
 	translationalCellId: string | null;
-	// Parametric family: `translationalCell` is the ALPHA-INDEPENDENT base cell (see _play-client's
+	// Parametric family: `translationalCell` is the ALPHA-INDEPENDENT base cell (see _atlas-client's
 	// renderCell), so this canvas must derive the live cell from the slider tuple itself, exactly as
 	// EuclideanCanvas does. Without it the decoration pins to the family's base angle while the tiling
 	// underneath moves.

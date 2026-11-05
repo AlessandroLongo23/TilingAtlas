@@ -425,7 +425,7 @@ export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | num
  *  A LENGTH parameter snaps to its OWN grid. ALPHA_STEP_DEG is half a degree, which is the right grain
  *  for a corner and absurd for a length: the T-junction families run over (0.07, 1.93), so a half-unit
  *  grid offers three positions and setting 1.8 came back as 1.93. It fires on every selection change
- *  (_play-client) and again for the orbit-dot mesh (euclidean-canvas), which is how the dots came to be
+ *  (_atlas-client) and again for the orbit-dot mesh (euclidean-canvas), which is how the dots came to be
  *  built at a different parameter value than the tiles they sit on. */
 export function clampAlphaAt(pc: ParametricCellData, paramIndex: number, alphaDeg: number): number {
 	const p = pc.params[paramIndex];

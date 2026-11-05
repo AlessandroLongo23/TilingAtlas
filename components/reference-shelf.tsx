@@ -11,9 +11,10 @@ import {
 	type ReactNode,
 	type SetStateAction,
 } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Check, ChevronRight, Library, Link2, Loader2, Search, Shapes, X } from "lucide-react";
 import { InfoDot } from "@/components/ui/info-dot";
+import { mirroredQuery, mirrorQuery } from "@/lib/services/urlMirror";
 import { Fold } from "@/components/ui/sidebar-section";
 import { PageSidebar } from "@/components/page-sidebar";
 import { SheetTrigger } from "@/components/ui/bottom-sheet";
@@ -46,7 +47,6 @@ import {
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
 import {
-	loadReferenceAtlas,
 	loadReferenceAtlasShard,
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
@@ -90,10 +90,7 @@ import {
 	tileClassOf,
 	geometryOf,
 	decorationOf,
-	GEOMETRY_ORDER,
-	GEOMETRY_LABEL,
 	DECORATION_ORDER,
-	DECORATION_LABEL,
 	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
 	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
 	PERIOD_SHARD_KS as PERIOD_HIGHER_K,
@@ -117,7 +114,6 @@ import {
 } from "@/lib/services/referenceAtlas";
 import { PolygonFilterModal } from "@/components/polygon-filter-modal";
 import { AnimatedNumber } from "@/components/ui/animated-number";
-import { BoardPicker } from "@/components/library/board-picker";
 import { ResultsTable } from "@/components/library/results-table";
 import {
 	ActiveFilters,
@@ -147,8 +143,6 @@ import {
 import {
 	withAll,
 	valuesOf,
-	boardFamiliesFor,
-	boardSummary,
 	BOARD_VALUES,
 	SHAPE_CLASS_ORDER,
 	SHAPE_CLASS_LABEL,
@@ -193,17 +187,6 @@ import { DECORATIONS, GEOMETRIES, SOURCES, TILE_CLASSES } from "@/lib/vocabulary
 // is left is the shape axis proper — the eight shelves that differ by tile set, which is what "tile class"
 // was always trying to say.
 const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = withAll(SHAPE_CLASS_ORDER, SHAPE_CLASS_LABEL);
-const GEOMETRY_OPTIONS: { value: Geometry; label: string }[] = GEOMETRY_ORDER.map((g) => ({
-	value: g,
-	label: GEOMETRY_LABEL[g],
-}));
-// The decoration axis, present in every geometry (unlike the class wall, which is Euclidean shape talk).
-// "All" is offered here but not in /play's segmented control: the shelf is one flat paginated grid that
-// can hold all three at once, where /play always renders a single cell.
-const DECORATION_OPTIONS: { value: "all" | Decoration; label: string }[] = [
-	{ value: "all", label: "All" },
-	...DECORATION_ORDER.map((d) => ({ value: d, label: DECORATION_LABEL[d] })),
-];
 // Convex-irregular-shelf facet: the whole demo, only decomposable-family tilings, or only the ones that
 // reach for a non-decomposable composite. Shown only while the convex-irregular tile class is selected.
 const DECOMP_OPTIONS: { value: "all" | "decomposable" | "non-decomposable"; label: string }[] = [
@@ -330,7 +313,6 @@ const ALL_STR = ""; // sentinel: the "All" chip for the partition group
 
 // Enum whitelists for URL parsing — a hand-edited or stale link can carry any string, so only accept
 // values the filter actually understands (an unknown one is dropped, never injected into state).
-const CLASS_OPTIONS_NO_BUBBLE = CLASS_OPTIONS.filter((o) => o.value !== "bubble");
 const TILE_CLASS_VALUES = CLASS_OPTIONS.map((o) => o.value).filter((v): v is TileClass => v !== "all");
 const CERT_VALUES = CERT_OPTIONS.map((o) => o.value);
 
@@ -458,6 +440,13 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	// "sch236"). Reading them into `board` keeps shared links working without a second filter to apply.
 	const board = sp.get("board") ?? sp.get("fdgrid") ?? sp.get("cogrid");
 	if (board && BOARD_VALUES.includes(board)) f.board = board;
+	// The browse tree's scope below the class: a family row, a sub with no family, a hybrid board's row.
+	const fam = sp.get("fam");
+	if (fam) f.family = fam;
+	const sub = sp.get("sub");
+	if (sub) f.sub = sub;
+	const pset = sp.get("pset");
+	if (pset) f.polySet = pset;
 	const colorsCount = Number(sp.get("cocount"));
 	if (COLORS_COUNT_VALUES.includes(colorsCount)) f.colorsCount = colorsCount;
 	const freedrawRegular = sp.get("fdreg");
@@ -552,6 +541,9 @@ function serializeView(v: ViewState): string {
 	// reload both dropped the selection — on all 271 hyperbolic-poly boards, the 32 edge bases and every
 	// spherical and freedraw board. Found 2026-09-01 walking the shelf by click instead of by URL.
 	if (f.board) p.set("board", f.board);
+	if (f.family) p.set("fam", f.family);
+	if (f.sub) p.set("sub", f.sub);
+	if (f.polySet) p.set("pset", f.polySet);
 	if (f.edgeBoard) p.set("edgeboard", f.edgeBoard);
 	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
 	if (f.freedrawGrid) p.set("fdgrid", f.freedrawGrid);
@@ -629,40 +621,6 @@ function SubLabel({ children }: { children: ReactNode }) {
 // An explanatory line under a group's controls: helper text, 4px under what it explains.
 function GroupNote({ children }: { children: ReactNode }) {
 	return <p className={cn(META, "-mt-1")}>{children}</p>;
-}
-
-// A long pick-one list (Tile class): 28px left-aligned rows with no track, the selected row lifted
-// like a segmented tab. A 13-cell track read as a grey slab. A label too long for half the panel
-// spans both columns (dense flow backfills the gap) so no class name is ever truncated.
-function RowList<T extends string>({
-	options,
-	selected,
-	onChange,
-}: {
-	options: { value: T; label: string }[];
-	selected: T;
-	onChange: (v: T) => void;
-}) {
-	return (
-		<div className="grid grid-flow-row-dense grid-cols-2 gap-0.5">
-			{options.map((o) => (
-				<button
-					key={o.value}
-					type="button"
-					aria-pressed={selected === o.value}
-					onClick={() => onChange(o.value)}
-					title={o.label}
-					className={cn(
-						o.label.length > 18 && "col-span-2",
-						"ta-tab h-7 cursor-pointer truncate px-2 text-left text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:h-11 max-md:text-sm",
-						selected === o.value ? "font-medium text-fg" : "text-fg-secondary hover:text-fg",
-					)}
-				>
-					{o.label}
-				</button>
-			))}
-		</div>
-	);
 }
 
 // A filter cell holding one IntervalSlider plus its live readout — the hyperbolic Valence / Palette /
@@ -805,15 +763,83 @@ function fetchShards(
 	}
 }
 
-export function ReferenceShelf() {
-	const router = useRouter();
+/** A board's slices load by themselves when the board is picked, up to this many tilings each. */
+const BOARD_SLICE_AUTOLOAD_MAX = 20_000;
+
+/** A request from the page to change the filters: a tree pick (`reset`, a new scope) or a row or k pick. */
+export interface ShelfCommand {
+	/** Changes whenever a new command is issued, so the same patch can be asked for twice. */
+	id: number;
+	patch: Partial<ReferenceFilter>;
+	/** Start from the scope-free filters (a new place in the tree) instead of the current ones. */
+	reset?: boolean;
+}
+
+// The scope fields: what the browse tree and the geometry chips set. They are the page's breadcrumb, so
+// the chips row leaves them out, and "Clear" keeps them.
+const SCOPE_FIELDS = ["geometry", "decoration", "tileClass", "family", "board", "sub", "colorsCount"] as const;
+// Kept across a tree pick: they mean the same thing in every place of the tree.
+const PORTABLE_FIELDS = ["query", "discoverers", "certifications", "vcs", "vcMode"] as const;
+const pick = (f: ReferenceFilter, keys: readonly (keyof ReferenceFilter)[]): ReferenceFilter =>
+	Object.fromEntries(keys.filter((k) => f[k] !== undefined).map((k) => [k, f[k]])) as ReferenceFilter;
+
+interface ReferenceShelfProps {
+	/** The page's one store of records (null until the base atlas lands) and the way to add to it. Every
+	 *  loader below writes there, so the viewer and the grid hold the same tilings. */
+	tilings: ReferenceTiling[] | null;
+	append: (rows: readonly ReferenceTiling[]) => void;
+	/** The cell, owned by the page (the browse sidebar's chips); the filters follow it. */
+	geometry: Geometry;
+	decoration: Decoration;
+	command: ShelfCommand | null;
+	onFiltersChange: (f: ReferenceFilter) => void;
+	/** The results in their displayed order: the viewer's ←/→ and Random walk these. */
+	onResults: (ids: readonly string[]) => void;
+	onOpen: (t: ReferenceTiling) => void;
+	/** The right-hand filter panel (desktop): open or slid shut. */
+	filtersOpen: boolean;
+	/** What the page is showing: the browse node's name. */
+	title: string;
+	/** The scope's rows, above the results. */
+	prelude?: ReactNode;
+	/** Tilings in the scope that exist but are not in memory, so the count can say what it covers. */
+	notLoaded: number;
+}
+
+export function ReferenceShelf({
+	tilings,
+	append,
+	geometry: cellGeometry,
+	decoration: cellDecoration,
+	command,
+	onFiltersChange,
+	onResults,
+	onOpen,
+	filtersOpen,
+	title,
+	prelude,
+	notLoaded,
+}: ReferenceShelfProps) {
 	const searchParams = useSearchParams();
 	// Parse the URL exactly once, on mount. After this we only WRITE the URL (one-way, via replaceState
 	// below) — we never re-read it, so browser back/forward inside the page isn't a filter-state source.
 	const [initialView] = useState(() => parseViewState(searchParams));
-	const [tilings, setTilings] = useState<ReferenceTiling[] | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [filters, setFilters] = useState<ReferenceFilter>(initialView.filters);
+	// Every loader below was written against a local `setTilings` with merge-style updaters. They now feed
+	// the page's store: an updater run against an empty list returns exactly what it would have added, and
+	// the store dedupes by id, so each loader keeps its own rules and no records are held twice.
+	const setTilings: Dispatch<SetStateAction<ReferenceTiling[] | null>> = useCallback(
+		(u) => {
+			const add = typeof u === "function" ? u(null) : u;
+			if (add?.length) append(add);
+		},
+		[append],
+	);
+	const [error] = useState<string | null>(null);
+	const [filters, setFilters] = useState<ReferenceFilter>(() => ({
+		...initialView.filters,
+		geometry: cellGeometry,
+		decoration: cellDecoration,
+	}));
 	const [polygonModalOpen, setPolygonModalOpen] = useState(false);
 	const [gridColumns, setGridColumns] = useState(initialView.gridColumns);
 	const [pageSize, setPageSize] = useState(initialView.pageSize);
@@ -863,16 +889,6 @@ export function ReferenceShelf() {
 	// k values whose Euclidean decoration shards have been requested (hexagonal edges/colorings tails).
 	const decorRequested = useRef<Set<number>>(new Set());
 
-	useEffect(() => {
-		let alive = true;
-		loadReferenceAtlas()
-			.then((d) => alive && setTilings(d))
-			.catch((e) => alive && setError(e instanceof Error ? e.message : String(e)));
-		return () => {
-			alive = false;
-		};
-	}, []);
-
 	// Reset to page 1 whenever filters or page size change — but skip the initial mount, so a shared or
 	// reloaded ?page=N link lands on page N instead of being clobbered back to 1.
 	// Adjusted during render: the initial state already matches, so the first render keeps its page.
@@ -903,12 +919,15 @@ export function ReferenceShelf() {
 			sortDir,
 			view,
 		});
-		window.history.replaceState(null, "", q ? `${window.location.pathname}?${q}` : window.location.pathname);
+		mirrorQuery("lib", q);
 	}, [filters, currentPage, pageSize, gridColumns, groupVariants, sortKey, sortDir, view]);
+	useEffect(() => onFiltersChange(filters), [filters, onFiltersChange]);
 
 	const copyLink = useCallback(() => {
+		// The parts, not location.href: the address bar is written on a debounce and may lag the view.
+		const q = mirroredQuery();
 		navigator.clipboard
-			.writeText(window.location.href)
+			.writeText(`${window.location.origin}${window.location.pathname}${q ? `?${q}` : ""}`)
 			.then(() => {
 				setCopied(true);
 				if (copyResetRef.current) clearTimeout(copyResetRef.current);
@@ -955,7 +974,7 @@ export function ReferenceShelf() {
 					return n;
 				}),
 			);
-	}, [filters.geometry, filters.kValue, loadedShards, loadingShards, shardErrors]);
+	}, [filters.geometry, filters.kValue, loadedShards, loadingShards, shardErrors, setTilings]);
 
 	// Hyperbolic edge systems (freedraw class, hyperbolic geometry): lazy like the k≥8 shards, but off the
 	// plane. The eager k ≤ 9 slice loads once the Hyperbolic geometry is entered; the dense k = 12/13/14
@@ -1028,7 +1047,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, filters.board, heLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, filters.board, heLoaded, tilings, setTilings]);
 
 	// Parametric-pentagon edge systems — EUCLIDEAN, so this effect runs under the plane, unlike every
 	// other Čtrnáct edge shelf. Eager slices (k = 2, 4, 6) arrive with the geometry; k = 8 and 10 are
@@ -1072,7 +1091,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, penLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, penLoaded, tilings, setTilings]);
 
 	// Parametric-isohedral edge systems — EUCLIDEAN too, and the same lazy shape as the pentagon board
 	// above. Eager slices (k = 2…10) arrive with the geometry; k = 12 and 14 are 14.1 and 35.0 MB and
@@ -1111,7 +1130,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, ihLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, ihLoaded, tilings, setTilings]);
 
 	// Schwarz-triangle edge systems — the freedraw class on a (p,q,r) mirror board. Same lazy shape as the
 	// {p,q} edge systems, but it spans BOTH curved geometries, so the effect runs under either and pulls
@@ -1158,7 +1177,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, schLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, schLoaded, tilings, setTilings]);
 
 	// Uniform-polyhedron edge systems (spherical) and the 3.4.n.4 tilings (hyperbolic) — one shelf per
 	// curved geometry, same lazy shape: eager slices with the geometry, dense tails on their k chip.
@@ -1264,6 +1283,10 @@ export function ReferenceShelf() {
 		if (polyBoard) {
 			for (const bk of polyBoard.lazyKs) {
 				if (k != null && bk !== k) continue;
+				// Up to a budget per slice. The hybrid boards reach 2.67M tilings in ONE slice (70 MB gzipped
+				// in 11 parts), and pulling that on a click crashed the tab; a slice past the budget waits for
+				// its own Load button in the rows above the results, which says what it costs.
+				if ((polyBoard.counts[bk] ?? 0) > BOARD_SLICE_AUTOLOAD_MAX) continue;
 				const token = `hpo-${polyBoard.id}-${bk}`;
 				if (!xLoaded.has(token))
 					loadHyperbolicPolyShard(polyBoard.id, bk)
@@ -1274,7 +1297,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, filters.board, xLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, filters.board, xLoaded, tilings, setTilings]);
 
 	// The DECORATION catalogues, on their own effect and their own trigger.
 	//
@@ -1284,7 +1307,7 @@ export function ReferenceShelf() {
 	// "No tilings match" over 226,946 rows that exist, 342,693 across both chips, presented as a
 	// complete shelf. `filters.decoration` was also missing from that effect's dep array, so even
 	// under a curved geometry the chip alone could not re-run it (setDecoration preserves kValue, so
-	// no other dep changed either). /play had this right all along — see _play-client.tsx, which
+	// no other dep changed either). /play had this right all along — see _atlas-client.tsx, which
 	// gates on the chip outside any geometry guard. This mirrors it.
 	const [decorLoaded, setDecorLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
@@ -1336,7 +1359,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.tileClass, tilings, decorLoaded]);
+	}, [filters.geometry, filters.decoration, filters.tileClass, tilings, decorLoaded, setTilings]);
 
 	// Colored tilings in H² and on S² — the same lazy shape as the edge systems. The eager per-base/solid
 	// slices load once their geometry is entered (making the "Colorings" class chip appear); dense shards load
@@ -1393,7 +1416,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, colLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, colLoaded, tilings, setTilings]);
 
 	// Lazy convex-irregular k≥3 shards. The demo keeps k≤2 in the main atlas and splits each higher k into
 	// public/reference-atlas-composable-k{k}.json (COMPOSABLE_HIGHER_K). Fetch a shard when it's in view:
@@ -1432,7 +1455,7 @@ export function ReferenceShelf() {
 					}),
 				);
 		}
-	}, [filters.tileClass, filters.kValue, loadedShards, loadingShards, shardErrors, tilings]);
+	}, [filters.tileClass, filters.kValue, loadedShards, loadingShards, shardErrors, tilings, setTilings]);
 
 	// Lazy isotoxal k≥3 shards — same shape as the convex-irregular effect, but with dedicated shard state
 	// (its k=3 collides with convex-irregular's in the shared number-keyed sets). Fetch when the isotoxal
@@ -1452,7 +1475,7 @@ export function ReferenceShelf() {
 			setTilings,
 			setIsotoxalLoadedShards,
 		);
-	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, tilings]);
+	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, tilings, setTilings]);
 
 	// Lazy period-p k≥3 shards — same shape as the isotoxal effect. These families come from the QUOTIENT
 	// search, so the tier exists at all only because the alphabet was quotiented by tile shape.
@@ -1471,7 +1494,7 @@ export function ReferenceShelf() {
 			setTilings,
 			setPeriodLoadedShards,
 		);
-	}, [filters.tileClass, filters.kValue, periodLoadedShards, tilings]);
+	}, [filters.tileClass, filters.kValue, periodLoadedShards, tilings, setTilings]);
 
 	// Lazy MIXED k≥3 shards. Same shape again; these tiers arrived 2026-08-09 when the palette was finally
 	// run past k=2, and they are 15× the entries the shelf had, so they cannot ride the eager bundle.
@@ -1482,7 +1505,7 @@ export function ReferenceShelf() {
 		const k = filters.kValue;
 		const want = k != null ? MIXED_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.MIXED ? MIXED_HIGHER_K : [];
 		fetchShards(want, mixedLoadedShards, mixedInflight.current, loadMixedAtlasShard, setTilings, setMixedLoadedShards);
-	}, [filters.tileClass, filters.kValue, mixedLoadedShards, tilings]);
+	}, [filters.tileClass, filters.kValue, mixedLoadedShards, tilings, setTilings]);
 
 	// Lazy 45-45-90 k≥3 shards. Same shape as mixed, and the whole tail is 7.4 MB, so picking the class
 	// with no k fetches both tiers rather than making the user click each chip to see the shelf at all.
@@ -1494,7 +1517,7 @@ export function ReferenceShelf() {
 		const want =
 			k != null ? TRI45_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.EDGELEN ? TRI45_HIGHER_K : [];
 		fetchShards(want, tri45LoadedShards, tri45Inflight.current, loadTri45AtlasShard, setTilings, setTri45LoadedShards);
-	}, [filters.tileClass, filters.kValue, tri45LoadedShards, tilings]);
+	}, [filters.tileClass, filters.kValue, tri45LoadedShards, tilings, setTilings]);
 
 	// Lazy EUCLIDEAN HALF-POLYGON k>=5 shards. Stricter than BOTH rules above: this tail is ten slices
 	// and 110 MB of JSON (the two deep ones are 46 and 37 MB, gzipping to about 1 each), so it is fetched
@@ -1515,7 +1538,7 @@ export function ReferenceShelf() {
 			setTilings,
 			setEuHalfLoadedShards,
 		);
-	}, [filters.tileClass, filters.kValue, euHalfLoadedShards, tilings]);
+	}, [filters.tileClass, filters.kValue, euHalfLoadedShards, tilings, setTilings]);
 
 	// Lazy PENROSE k>=4 shards. Deliberately NOT the tri45 rule above: k=6 alone is 14.1 MB, so picking
 	// the class with no k must not pull the tail down. A shard is fetched when its own k chip is chosen,
@@ -1535,7 +1558,7 @@ export function ReferenceShelf() {
 			setTilings,
 			setPenroseLoadedShards,
 		);
-	}, [filters.tileClass, filters.kValue, filters.edgeBoard, penroseLoadedShards, tilings]);
+	}, [filters.tileClass, filters.kValue, filters.edgeBoard, penroseLoadedShards, tilings, setTilings]);
 
 	// Lazy SCALED k≥3 shards. Same shape once more. The sides-1-2 palette went k=4 → k=7 on 2026-08-12,
 	// which is where the bulk of this shelf now lives, so k≥3 cannot ride the eager bundle either.
@@ -1557,7 +1580,7 @@ export function ReferenceShelf() {
 			setTilings,
 			setScaledLoadedShards,
 		);
-	}, [filters.tileClass, filters.kValue, scaledLoadedShards, tilings]);
+	}, [filters.tileClass, filters.kValue, scaledLoadedShards, tilings, setTilings]);
 
 	// Lazy Euclidean DECORATION shards — the hexagonal grid's deep k slices (edges k>=7, colorings k>=6),
 	// the only freedraw/colors slices too big to ship eagerly. Fetch when that k chip is picked, under any
@@ -1573,7 +1596,7 @@ export function ReferenceShelf() {
 				if (data.length) setTilings((prev) => (prev ? [...prev, ...data] : data));
 			})
 			.catch(() => {});
-	}, [filters.kValue]);
+	}, [filters.kValue, setTilings]);
 
 	// ── single-select setters (each clears the now-stale downstream selections) ──
 	const setKValue = (k: number | undefined) =>
@@ -1603,57 +1626,6 @@ export function ReferenceShelf() {
 		const keptx = next.polygonExclude?.filter((tok) => scope.has(tok));
 		next.polygonExclude = keptx?.length ? keptx : undefined;
 	};
-	const setTileClass = (v: "all" | TileClass) => {
-		const cls = v === "all" ? undefined : v;
-		const next: ReferenceFilter = { ...filters, tileClass: cls };
-		// k chips are faceted per class — if the current k isn't covered by the new class (e.g. k=10
-		// under Star), drop it (and its now-stale M/partition) so we don't silently filter to 0.
-		if (next.kValue != null && !kValuesForClass(cls).has(next.kValue)) {
-			next.kValue = undefined;
-			next.mValue = undefined;
-			next.partitionKey = undefined;
-		}
-		// The decomposable facet only means something inside the convex-irregular class — drop it otherwise.
-		if (v !== "convex") next.convexDecomp = undefined;
-		// The isotoxal Shape facet only means something inside the isotoxal class — drop it otherwise.
-		if (v !== "isotoxal") next.isotoxalShape = undefined;
-		// The scale-set (sides 1-2 / 1-3) facet only means something inside the scaled class — drop it otherwise.
-		if (v !== "scaled") next.scaledScaleSet = undefined;
-		// The polyform FORM facet only means something inside the polyform class — drop it otherwise.
-		if (v !== "polyomino") next.polyformFamily = undefined;
-		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
-		if (v !== "islamic") next.islamicSystem = undefined;
-		if (v !== "edgelen") next.edgeBoard = undefined;
-		// The freedraw and colors facets belong to the OTHER decoration segments (setDecoration owns them);
-		// the class chips only ever run inside Tilings, so reaching one means those are stale.
-		next.freedrawKind = undefined;
-		next.freedrawGrid = undefined;
-		next.freedrawRegular = undefined;
-		next.colorsGrid = undefined;
-		next.colorsCount = undefined;
-		if (v === "islamic") {
-			// The Islamic tessellations carry no m/partition/wallpaper/star-fold classification yet.
-			next.starFolds = undefined;
-			next.parametric = undefined;
-			next.wallpaperGroups = undefined;
-			next.latticeShapes = undefined;
-		}
-		if (v === "regular") {
-			next.starFolds = undefined;
-			next.parametric = undefined;
-		} else if (v === "star") {
-			next.wallpaperGroups = undefined;
-			next.latticeShapes = undefined;
-		} else if (v === "convex" || v === "isotoxal") {
-			// No star folds, α-family, wallpaper group, or lattice on the composite-tile / isotoxal demos.
-			next.starFolds = undefined;
-			next.parametric = undefined;
-			next.wallpaperGroups = undefined;
-			next.latticeShapes = undefined;
-		}
-		prunePolygonsToScope(next);
-		setFilters(next);
-	};
 	const setConvexDecomp = (v: "all" | "decomposable" | "non-decomposable") =>
 		setFilters({ ...filters, convexDecomp: v === "all" ? undefined : v });
 	const setScaledScaleSet = (v: "all" | "s12" | "s123") =>
@@ -1665,20 +1637,6 @@ export function ReferenceShelf() {
 	const setEdgeBoard = (v: "all" | EdgeBoard) => setFilters({ ...filters, edgeBoard: v === "all" ? undefined : v });
 	const setFreedrawKind = (v: "all" | FreedrawKind) =>
 		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
-	// Selecting a board clears the two legacy grid filters: they name the same axis, so leaving one set
-	// would silently intersect it with the board and show nothing.
-	const setBoard = (v: "all" | string) =>
-		setFilters({
-			...filters,
-			board: v === "all" ? undefined : v,
-			freedrawGrid: undefined,
-			colorsGrid: undefined,
-			// Both of these are sub-facets OF a board, and each renders only while its own board is
-			// selected. Leaving one set while moving to another board would filter the new board down to
-			// nothing behind a control that is no longer on screen.
-			starKind: v === "sst" ? filters.starKind : undefined,
-			ncxCrossing: v === "spn-solid" ? filters.ncxCrossing : undefined,
-		});
 	const setStarKind = (v: "all" | SphStarKind) => setFilters({ ...filters, starKind: v === "all" ? undefined : v });
 	const setNcxCrossing = (v: "all" | "self-intersecting" | "embedded") =>
 		setFilters({ ...filters, ncxCrossing: v === "all" ? undefined : v });
@@ -1738,9 +1696,9 @@ export function ReferenceShelf() {
 	// belong to the segment being left. k survives — it means grid-point orbits under Edge patterns and
 	// colored vertices under Colorings, not vertex orbits, but the axis is shared and a k present in
 	// one segment is usually present in the next, so clearing it would be a nuisance, not a fix.
-	const setDecoration = (v: "all" | Decoration) => {
+	const decorationFilters = (base: ReferenceFilter, v: "all" | Decoration): ReferenceFilter => {
 		const dec = v === "all" ? undefined : v;
-		const next: ReferenceFilter = { ...filters, decoration: dec };
+		const next: ReferenceFilter = { ...base, decoration: dec };
 		// The shape-class chips and everything hanging off them only exist inside Tilings.
 		if (dec && dec !== DECORATIONS.TILINGS) {
 			next.tileClass = undefined;
@@ -1788,73 +1746,80 @@ export function ReferenceShelf() {
 			next.anglePeriods = undefined;
 		}
 		prunePolygonsToScope(next);
-		setFilters(next);
+		return next;
 	};
 
 	// Switch geometry: clear every Euclidean-only filter (they mean nothing off the plane) and reset k —
 	// a k valid in one geometry (e.g. a Euclidean k=2) may filter the new one to zero. Decoration is
 	// deliberately NOT cleared: it is orthogonal to geometry (every geometry has all three), so a reader
 	// comparing Euclidean and hyperbolic colorings stays on colorings across the switch.
-	const setGeometry = (g: Geometry) => {
-		if (g === geometry) return;
-		setFilters(
-			g === GEOMETRIES.EUCLIDEAN
-				? {
-						...filters,
-						geometry: g,
-						kValue: undefined,
-						mValue: undefined,
-						partitionKey: undefined,
-						maximalOnly: undefined,
-						// the hyperbolic interval facets mean nothing on the plane
-						hypValence: undefined,
-						hypPolygon: undefined,
-						hypEdge: undefined,
-						// Nor does Čtrnáct's ladder: in E² the edge function is unconstrained, so its top rung
-						// costs nothing and stops meaning anything.
-						levels: undefined,
-						// Both board sub-facets are spherical-only, and their controls render only while their
-						// board is chosen — so left set here they would be invisible active filters.
-						starKind: undefined,
-						ncxCrossing: undefined,
-					}
-				: {
-						geometry: g,
-						// keep the cross-geometry axes (decoration + provenance + search); drop everything
-						// Euclidean-only
-						decoration: filters.decoration,
-						discoverers: filters.discoverers,
-						certifications: filters.certifications,
-						query: filters.query,
-					},
-		);
-	};
+	const geometryFilters = (base: ReferenceFilter, g: Geometry): ReferenceFilter =>
+		g === GEOMETRIES.EUCLIDEAN
+			? {
+					...base,
+					geometry: g,
+					kValue: undefined,
+					mValue: undefined,
+					partitionKey: undefined,
+					maximalOnly: undefined,
+					// the hyperbolic interval facets mean nothing on the plane
+					hypValence: undefined,
+					hypPolygon: undefined,
+					hypEdge: undefined,
+					// Nor does Čtrnáct's ladder: in E² the edge function is unconstrained, so its top rung
+					// costs nothing and stops meaning anything.
+					levels: undefined,
+					// Both board sub-facets are spherical-only, and their controls render only while their
+					// board is chosen — so left set here they would be invisible active filters.
+					starKind: undefined,
+					ncxCrossing: undefined,
+				}
+			: {
+					geometry: g,
+					// keep the cross-geometry axes (decoration + provenance + search); drop everything
+					// Euclidean-only
+					decoration: base.decoration,
+					discoverers: base.discoverers,
+					certifications: base.certifications,
+					query: base.query,
+				};
+
+	// The page owns the cell (the browse sidebar's chips) and the scope (the tree and the rows). Both reach
+	// the filters here, during render, so the results never commit one frame out of step with them: a cell
+	// change goes through the two functions above, which drop what means nothing in the new cell, and a
+	// command lands on top. Adjusted during render, not in an effect, for the same reason the viewer syncs
+	// its chips to a new selection that way.
+	const [appliedCommand, setAppliedCommand] = useState<number | null>(null);
+	const cellMoved = geometry !== cellGeometry || filters.decoration !== cellDecoration;
+	const commandDue = !!command && command.id !== appliedCommand;
+	if (cellMoved || commandDue) {
+		let next = filters;
+		if (cellMoved) {
+			if (geometry !== cellGeometry) next = geometryFilters(next, cellGeometry);
+			if (next.decoration !== cellDecoration) next = decorationFilters(next, cellDecoration);
+			// A new cell is a new place: the scope the tree had picked belongs to the old one.
+			next = {
+				...next,
+				tileClass: undefined,
+				family: undefined,
+				board: undefined,
+				sub: undefined,
+				colorsCount: undefined,
+				polySet: undefined,
+			};
+		}
+		if (command && commandDue) {
+			setAppliedCommand(command.id);
+			const base: ReferenceFilter = command.reset
+				? { ...pick(next, PORTABLE_FIELDS), geometry: next.geometry, decoration: next.decoration }
+				: next;
+			next = { ...base, ...command.patch };
+			if ("kValue" in command.patch) next = { ...next, mValue: undefined, partitionKey: undefined };
+		}
+		setFilters(next);
+	}
 
 	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
-	// The k's a given tile class actually covers. Faceted, so Star/Convex-irregular (k=1..3 today) never show
-	// a dead k=10 button. The lazy higher-k tiers (8/9/10) are all regular Čtrnáct, so they're offered
-	// only when regular tilings are in scope (All or Regular) — before their shard is even fetched.
-	const kValuesForClass = useCallback(
-		(cls: TileClass | undefined): Set<number> => {
-			const s = new Set<number>();
-			if (tilings) for (const t of tilings) if (!cls || tileClassOf(t) === cls) s.add(t.k);
-			if (!cls || cls === TILE_CLASSES.REGULAR) for (const k of HIGHER_K) s.add(k);
-			// Convex-irregular k≥3 lives in lazy shards not yet in `tilings`; show their chips up front (like the
-			// regular HIGHER_K) so selecting one can trigger the fetch.
-			if (!cls || cls === TILE_CLASSES.CONVEX) for (const k of COMPOSABLE_HIGHER_K) s.add(k);
-			if (!cls || cls === TILE_CLASSES.ISOTOXAL) for (const k of ISOTOXAL_HIGHER_K) s.add(k);
-			// Period-p grew a k=3..6 tail with the concave tiles; without this its chips vanish and a
-			// deep link like ?class=period&k=4 resolves to an empty shelf.
-			if (!cls || cls === TILE_CLASSES.PERIOD) for (const k of PERIOD_HIGHER_K) s.add(k);
-			if (!cls || cls === TILE_CLASSES.MIXED) for (const k of MIXED_HIGHER_K) s.add(k);
-			if (!cls || cls === TILE_CLASSES.SCALED) for (const k of SCALED_HIGHER_K) s.add(k);
-			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of TRI45_HIGHER_K) s.add(k);
-			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of PENROSE_HIGHER_K) s.add(k);
-			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of EUHALF_HIGHER_K) s.add(k);
-			return s;
-		},
-		[tilings],
-	);
 	const kChips = useMemo(() => {
 		const s = new Set<number>();
 		if (tilings)
@@ -1876,10 +1841,8 @@ export function ReferenceShelf() {
 			if (!cls || cls === TILE_CLASSES.ISOTOXAL) for (const k of ISOTOXAL_HIGHER_K) s.add(k);
 			if (!cls || cls === TILE_CLASSES.PERIOD) for (const k of PERIOD_HIGHER_K) s.add(k);
 			if (!cls || cls === TILE_CLASSES.MIXED) for (const k of MIXED_HIGHER_K) s.add(k);
-			// ⚑ This list and `kValuesForClass` are two separate memos over the same question — this one
-			// draws the chips, that one decides whether a deep link's k survives. Adding a shard tier to
-			// only one leaves the tier reachable by URL but with no chip to click, which is exactly what
-			// the scaled tail did until 2026-08-13. Add to BOTH.
+			// ⚑ Every lazy shard tier needs a line here, or it is reachable by URL with no chip to click, which
+			// is what the scaled tail was until 2026-08-13.
 			if (!cls || cls === TILE_CLASSES.SCALED) for (const k of SCALED_HIGHER_K) s.add(k);
 			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of TRI45_HIGHER_K) s.add(k);
 			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of PENROSE_HIGHER_K) s.add(k);
@@ -2061,15 +2024,6 @@ export function ReferenceShelf() {
 	// Tilings covers both the explicit segment and "All", where the shape chips are still the useful way in
 	// (each of the eight lives only in that segment, so picking one implies it).
 	const inTilings = decoration === "all" || decoration === "tilings";
-	// The shape-class wall is Euclidean talk: off the plane the Tilings segment holds exactly ONE class
-	// (the developed patches, the Platonic solids), so a wall with one live chip would say nothing the
-	// geometry segment hasn't. This is what the old non-Euclidean class relabeling was standing in for.
-	const showTileClass = isEuclidean && inTilings;
-	// Bubble is the one shape class that is also a DECORATION (decorationOf → "edges"), so the explicit
-	// Tilings segment excludes every one of its rows. Offering the chip there is a promise the segment
-	// cannot keep — it can only ever read 0 — so the wall drops it and keeps it under "All", which is
-	// the segment that does show a bubble tiling.
-	const classOptions = decoration === "tilings" ? CLASS_OPTIONS_NO_BUBBLE : CLASS_OPTIONS;
 	// Classes carrying NO vertex-configuration classification — no M/partition, no star folds, no wallpaper
 	// group or lattice. The convex-irregular + isotoxal demo shelves, whose builds don't compute it.
 	const isUnclassified = tileClass === "convex" || tileClass === "isotoxal";
@@ -2113,14 +2067,6 @@ export function ReferenceShelf() {
 	// lattice), and boardFamiliesFor names them off the same SUB_ORDER run /play's tree walks.
 	// "all" spans the three segments at once, and a board wall then means nothing — the same sub can be a
 	// grid under Edge patterns and a palette stem under Colorings. Shown once a segment is chosen.
-	// Picking a FORM narrows the board wall to that form's boards, so level 2 only ever offers the
-	// children of the level-1 node in hand. Without it the wall keeps offering the other six polyform
-	// boards, each of which lands on an empty page.
-	const boardFamilies = useMemo(() => {
-		if (decoration === "all") return [];
-		const fams = boardFamiliesFor(geometry, decoration);
-		return filters.polyformFamily ? fams.filter((f) => f.family === `pf-${filters.polyformFamily}`) : fams;
-	}, [geometry, decoration, filters.polyformFamily]);
 	// k is shared across the three segments but does NOT mean the same thing in each: vertex orbits of a
 	// tiling, GRID-POINT orbits of a PLANAR edge pattern (including points with no drawn edge), colored
 	// vertex classes of a coloring. Sharing the axis is what makes them browsable together; naming the
@@ -2153,27 +2099,14 @@ export function ReferenceShelf() {
 	const off = (...keys: (keyof ReferenceFilter)[]): Partial<ReferenceFilter> =>
 		Object.fromEntries(keys.map((k) => [k, undefined]));
 	const list = (xs: readonly (string | number)[]) => xs.join(", ");
-	if (filters.geometry && filters.geometry !== GEOMETRIES.EUCLIDEAN)
-		chip("geo", GEOMETRY_LABEL[filters.geometry], { geometry: GEOMETRIES.EUCLIDEAN }, () =>
-			setGeometry(GEOMETRIES.EUCLIDEAN),
-		);
-	if (filters.decoration)
-		chip("dec", DECORATION_LABEL[filters.decoration], off("decoration"), () => setDecoration("all"));
-	if (filters.tileClass)
+	// Geometry, kind, class and board are the page's breadcrumb and tree, not chips (SCOPE_FIELDS).
+	if (filters.polySet)
 		chip(
-			"class",
-			CLASS_OPTIONS.find((o) => o.value === filters.tileClass)?.label ?? filters.tileClass,
-			off("tileClass"),
-			() => setTileClass("all"),
-		);
-	if (filters.board)
-		chip(
-			"board",
+			"polySet",
 			<>
-				board <b className="font-mono font-medium">{boardSummary(filters.board)}</b>
+				row <b className="font-mono font-medium">{filters.polySet.split(",").join(" ")}</b>
 			</>,
-			off("board"),
-			() => setBoard("all"),
+			off("polySet"),
 		);
 	if (filters.query?.trim()) chip("q", <>“{filters.query.trim()}”</>, off("query"));
 	if (filters.vcs?.length)
@@ -2236,7 +2169,6 @@ export function ReferenceShelf() {
 		["islamicSystem", filters.islamicSystem],
 		["edgeBoard", filters.edgeBoard && EDGE_BOARD_LABEL[filters.edgeBoard]],
 		["freedrawKind", filters.freedrawKind],
-		["colorsCount", filters.colorsCount && `${filters.colorsCount} colors`],
 		["freedrawRegular", filters.freedrawRegular],
 	] as [keyof ReferenceFilter, string | undefined][])
 		if (value) chip(key, value, off(key));
@@ -2265,6 +2197,8 @@ export function ReferenceShelf() {
 	// genuinely different tilings). Members ride in variant order (the exporter's ℓ-ascending index),
 	// not id order — base-25 suffixes ("-ba" < "-c") would shuffle them.
 	const sorted = useMemo(() => sortTilings(filtered, sortKey, sortDir), [filtered, sortKey, sortDir]);
+	// The viewer steps through exactly this list, in this order: what you filtered is what ←/→ walk.
+	useEffect(() => onResults(sorted.map((t) => t.id)), [sorted, onResults]);
 	const sortKeys = useMemo(() => availableSortKeys(filtered), [filtered]);
 	// An empty result is an answer, not a dead end: for each filter, how many tilings there would be
 	// without it, nearest (fewest) first. Only computed when the view is empty.
@@ -2390,7 +2324,8 @@ export function ReferenceShelf() {
 	// The column count rides in a variable so a phone can overrule it from CSS: two columns there
 	// whatever `cols` says, while the URL keeps the desktop choice untouched.
 	const gridStyle = { "--cols": gridColumns } as CSSProperties;
-	const clearFilters = () => setFilters({ geometry: GEOMETRIES.EUCLIDEAN });
+	// Clearing keeps where you are (the cell and the tree's scope) and drops every facet on top of it.
+	const clearFilters = () => setFilters(pick(filters, SCOPE_FIELDS));
 	const resultCount = filtered.length;
 	// "Show N results" closes the phone sheet onto page 1 of the new result set, from its top.
 	const showResults = () => {
@@ -2406,7 +2341,173 @@ export function ReferenceShelf() {
 
 	return (
 		<div className="flex min-h-0 flex-1 overflow-hidden">
+			{/* `relative` makes this scroll pane the containing block for the Pagination's absolutely-
+			    positioned sr-only <label>; without it the label anchors to <html> and stretches the
+			    document ~1000px below the app shell (a phantom black scroll region). */}
+			<main ref={mainRef} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
+				{prelude}
+				<div className="mb-4 flex flex-col gap-3">
+					<div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-2 max-md:gap-y-3">
+						<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
+							{prelude ? "Results" : title}
+							<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
+								<AnimatedNumber value={filtered.length} /> {notLoaded ? "tilings in memory" : "tilings"}
+								{groupVariants && geometry === GEOMETRIES.HYPERBOLIC && view === "grid"
+									? ` · ${displayGroups.length.toLocaleString("en-US")} families`
+									: null}
+							</span>
+						</h1>
+						{loadingShards.size > 0 ? (
+							<span className="flex items-center gap-1.5 text-xs text-fg-muted">
+								<Loader2 size={12} className="animate-spin text-fg-muted" />
+								loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
+							</span>
+						) : null}
+						{shardErrors.size > 0 ? (
+							<span className="text-xs text-danger">
+								failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
+							</span>
+						) : null}
+
+						<div className="ml-auto flex items-center gap-2 max-md:ml-0 max-md:w-full max-md:flex-wrap">
+							{/* The phone's way into the filter sheet. While it is on screen the floating pill stays
+							    away; once it scrolls off, the pill takes over. */}
+							<SheetTrigger
+								ref={headerTriggerRef}
+								label="Filters"
+								count={activeFilterCount}
+								onClick={() => useMobileSheet.getState().setOpen(true)}
+							/>
+							<SortControl keys={sortKeys} sortKey={sortKey} sortDir={sortDir} onChange={changeSort} />
+							<ViewToggle view={view} onChange={setView} />
+							{/* A phone always shows two columns, so the column count has nothing to set there. */}
+							{view === "grid" ? (
+								<div role="group" aria-label="Grid columns" className="max-md:hidden">
+									<OptionWall
+										columns={COLUMN_PRESETS.length}
+										options={COLUMN_PRESETS.map((n) => ({ value: n, label: n, title: `${n} columns` }))}
+										selected={gridColumns}
+										onChange={setGridColumns}
+										classes="w-28 tabular-nums"
+									/>
+								</div>
+							) : null}
+							{/* Group-variants toggle — hyperbolic grid only, where one vertex configuration carries up to
+							    hundreds of tilings; the card then pages through them in place. The table lists each. */}
+							{geometry === GEOMETRIES.HYPERBOLIC && view === "grid" ? (
+								<label className="flex items-center gap-2 text-xs text-fg-muted">
+									Group variants
+									<Switch
+										size="sm"
+										checked={groupVariants}
+										onCheckedChange={setGroupVariants}
+										aria-label="Group tilings sharing a vertex configuration"
+									/>
+								</label>
+							) : null}
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={copyLink}
+								title="Copy a link to this exact view"
+								icon={copied ? Check : Link2}
+								aria-label={copied ? "Copied" : "Copy link"}
+								classes="max-md:min-w-11"
+								label={<span className="max-xl:sr-only">{copied ? "Copied" : "Copy link"}</span>}
+							/>
+							<ExportButton onExport={exportCsv} disabled={!sorted.length} />
+						</div>
+					</div>
+					<ActiveFilters chips={activeChips} onClearAll={clearFilters} />
+				</div>
+
+				{error ? (
+					<div className="flex flex-col items-center justify-center py-24 text-center">
+						<p className="font-medium text-danger">Could not load the tiling library</p>
+						<p className="mt-1 font-mono text-sm text-fg-disabled">{error}</p>
+					</div>
+				) : tilings === null ? (
+					<div className="flex flex-col items-center justify-center py-24 text-center text-fg-muted">
+						<Loader2 size={28} className="mb-3 animate-spin text-fg-muted" />
+						<p className="text-sm">Loading tiling library…</p>
+					</div>
+				) : filtered.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-24 text-center">
+						<Library size={40} className="mb-4 text-fg-disabled" />
+						<p className="font-medium text-fg-muted">No tilings match the current filters.</p>
+						{relaxations.length ? (
+							<div className="mt-4 flex flex-col items-center gap-1.5">
+								<p className="text-xs text-fg-muted">Nearest results:</p>
+								{relaxations.map(({ chip, count }) => (
+									<button
+										key={chip.key}
+										type="button"
+										onClick={chip.clear}
+										className="flex cursor-pointer items-center gap-2 rounded-full bg-surface-sunken px-3 py-1.5 text-[13px] text-fg ring-1 ring-line-subtle transition-colors hover:bg-surface-overlay max-md:min-h-11"
+									>
+										{chip.key === "vc-contains" ? null : <span className="text-fg-muted">without</span>}
+										{chip.label}
+										<span className="font-mono text-xs text-fg-muted tabular-nums">
+											→ {count.toLocaleString("en-US")} {count === 1 ? "tiling" : "tilings"}
+										</span>
+									</button>
+								))}
+							</div>
+						) : null}
+						{activeFilterCount > 0 ? (
+							<button onClick={clearFilters} className="mt-3 text-sm text-accent hover:underline max-md:min-h-11">
+								Clear all filters
+							</button>
+						) : null}
+					</div>
+				) : (
+					<>
+						{/* One pager, under the results: the header count already gives the total. */}
+						{view === "table" ? (
+							<ResultsTable
+								tilings={tableRows}
+								sortKey={sortKey}
+								sortDir={sortDir}
+								onSort={(k) => changeSort(k)}
+								hrefOf={(t) => `/play?tiling=${encodeURIComponent(t.id)}`}
+								onOpen={onOpen}
+							/>
+						) : null}
+						<div
+							hidden={view === "table"}
+							className="ta-lanes ta-stagger grid [grid-template-columns:repeat(var(--cols),1fr)] !gap-3 max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
+							style={gridStyle}
+						>
+							{paginated.map((g) => (
+								<ReferenceCard key={g.key} tiling={g.members[0]} group={g.members} onClick={onOpen} />
+							))}
+						</div>
+						<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+							<div role="group" aria-label="Items per page" className="flex items-center gap-2 text-xs text-fg-muted">
+								Per page
+								<OptionWall
+									columns={PAGE_SIZE_OPTIONS.length}
+									options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
+									selected={pageSize}
+									onChange={setPageSize}
+									classes="w-36 tabular-nums"
+								/>
+							</div>
+							<div className="min-w-0 flex-1">
+								<Pagination
+									totalItems={resultTotal}
+									pageSize={pageSize}
+									currentPage={currentPage}
+									onPageChange={changePage}
+								/>
+							</div>
+						</div>
+					</>
+				)}
+			</main>
 			<PageSidebar
+				side="right"
+				collapsed={!filtersOpen}
 				mobile="modal"
 				mobileLabel="Filters"
 				mobileBadge={activeFilterCount}
@@ -2435,7 +2536,7 @@ export function ReferenceShelf() {
 						<span className="text-[13px] font-semibold text-fg">Filters</span>
 						{activeFilterCount > 0 ? (
 							<button
-								onClick={() => setFilters({ geometry: GEOMETRIES.EUCLIDEAN })}
+								onClick={clearFilters}
 								className="flex cursor-pointer items-center gap-1 text-xs text-fg-muted transition-colors hover:text-danger"
 							>
 								<X size={11} /> Clear ({activeFilterCount})
@@ -2467,21 +2568,7 @@ export function ReferenceShelf() {
 						) : null}
 					</div>
 
-					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
-						<OptionWall columns={3} options={GEOMETRY_OPTIONS} selected={geometry} onChange={setGeometry} />
-					</FilterGroup>
-					{/* Decoration — WHAT is catalogued, below geometry and above tile class. Every geometry has all
-					    three segments, so this wall never changes shape with the one above it. */}
-					<FilterGroup title="Kind" summary={filters.decoration ? DECORATION_LABEL[filters.decoration] : null}>
-						<OptionWall columns={2} options={DECORATION_OPTIONS} selected={decoration} onChange={setDecoration} />
-					</FilterGroup>
-					{/* Tile class — the SHAPE axis, which is the eight Euclidean shelves that differ by tile set.
-					    Hidden off the plane and outside Tilings, where it has at most one live chip. */}
-					{showTileClass ? (
-						<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
-							<RowList options={classOptions} selected={tileClass} onChange={setTileClass} />
-						</FilterGroup>
-					) : null}
+					{/* Geometry, kind and tile class are the browse sidebar now: its chips and its tree. */}
 					{showConvex ? (
 						<FilterGroup
 							title="Composite palette"
@@ -2597,22 +2684,7 @@ export function ReferenceShelf() {
 						</FilterGroup>
 					) : null}
 
-					{boardFamilies.length ? (
-						<FilterGroup
-							title="Board"
-							summary={filters.board ? boardSummary(filters.board) : null}
-							note={tileClass === "polyomino" ? "cells per piece" : "the board the shelf is drawn on"}
-						>
-							<BoardPicker
-								families={boardFamilies}
-								selected={filters.board}
-								onChange={(sub) => setBoard(sub ?? "all")}
-							/>
-							{decoration === "colorings" ? (
-								<GroupNote>Each (grid, palette size) pair is its own catalogue.</GroupNote>
-							) : null}
-						</FilterGroup>
-					) : null}
+					{/* The board is the browse tree's leaf, so it is picked there. */}
 
 					{/* Two facets that live INSIDE a board, so each renders only while its own board is chosen.
 					    They are the axis that board is actually browsed along: the star shelf mixes four shapes
@@ -3132,174 +3204,6 @@ export function ReferenceShelf() {
 					</FilterGroup>
 				</div>
 			</PageSidebar>
-
-			{/* `relative` makes this scroll pane the containing block for the Pagination's absolutely-
-			    positioned sr-only <label>; without it the label anchors to <html> and stretches the
-			    document ~1000px below the app shell (a phantom black scroll region). */}
-			<main ref={mainRef} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
-				<div className="mb-4 flex flex-col gap-3">
-					<div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-2 max-md:gap-y-3">
-						<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
-							Tiling Library
-							<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
-								<AnimatedNumber value={filtered.length} /> tilings
-								{groupVariants && geometry === GEOMETRIES.HYPERBOLIC && view === "grid"
-									? ` · ${displayGroups.length.toLocaleString("en-US")} families`
-									: null}
-							</span>
-						</h1>
-						{loadingShards.size > 0 ? (
-							<span className="flex items-center gap-1.5 text-xs text-fg-muted">
-								<Loader2 size={12} className="animate-spin text-fg-muted" />
-								loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
-							</span>
-						) : null}
-						{shardErrors.size > 0 ? (
-							<span className="text-xs text-danger">
-								failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
-							</span>
-						) : null}
-
-						<div className="ml-auto flex items-center gap-2 max-md:ml-0 max-md:w-full max-md:flex-wrap">
-							{/* The phone's way into the filter sheet. While it is on screen the floating pill stays
-							    away; once it scrolls off, the pill takes over. */}
-							<SheetTrigger
-								ref={headerTriggerRef}
-								label="Filters"
-								count={activeFilterCount}
-								onClick={() => useMobileSheet.getState().setOpen(true)}
-							/>
-							<SortControl keys={sortKeys} sortKey={sortKey} sortDir={sortDir} onChange={changeSort} />
-							<ViewToggle view={view} onChange={setView} />
-							{/* A phone always shows two columns, so the column count has nothing to set there. */}
-							{view === "grid" ? (
-								<div role="group" aria-label="Grid columns" className="max-md:hidden">
-									<OptionWall
-										columns={COLUMN_PRESETS.length}
-										options={COLUMN_PRESETS.map((n) => ({ value: n, label: n, title: `${n} columns` }))}
-										selected={gridColumns}
-										onChange={setGridColumns}
-										classes="w-28 tabular-nums"
-									/>
-								</div>
-							) : null}
-							{/* Group-variants toggle — hyperbolic grid only, where one vertex configuration carries up to
-							    hundreds of tilings; the card then pages through them in place. The table lists each. */}
-							{geometry === GEOMETRIES.HYPERBOLIC && view === "grid" ? (
-								<label className="flex items-center gap-2 text-xs text-fg-muted">
-									Group variants
-									<Switch
-										size="sm"
-										checked={groupVariants}
-										onCheckedChange={setGroupVariants}
-										aria-label="Group tilings sharing a vertex configuration"
-									/>
-								</label>
-							) : null}
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={copyLink}
-								title="Copy a link to this exact view"
-								icon={copied ? Check : Link2}
-								aria-label={copied ? "Copied" : "Copy link"}
-								classes="max-md:min-w-11"
-								label={<span className="max-xl:sr-only">{copied ? "Copied" : "Copy link"}</span>}
-							/>
-							<ExportButton onExport={exportCsv} disabled={!sorted.length} />
-						</div>
-					</div>
-					<ActiveFilters chips={activeChips} onClearAll={clearFilters} />
-				</div>
-
-				{error ? (
-					<div className="flex flex-col items-center justify-center py-24 text-center">
-						<p className="font-medium text-danger">Could not load the tiling library</p>
-						<p className="mt-1 font-mono text-sm text-fg-disabled">{error}</p>
-					</div>
-				) : tilings === null ? (
-					<div className="flex flex-col items-center justify-center py-24 text-center text-fg-muted">
-						<Loader2 size={28} className="mb-3 animate-spin text-fg-muted" />
-						<p className="text-sm">Loading tiling library…</p>
-					</div>
-				) : filtered.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-24 text-center">
-						<Library size={40} className="mb-4 text-fg-disabled" />
-						<p className="font-medium text-fg-muted">No tilings match the current filters.</p>
-						{relaxations.length ? (
-							<div className="mt-4 flex flex-col items-center gap-1.5">
-								<p className="text-xs text-fg-muted">Nearest results:</p>
-								{relaxations.map(({ chip, count }) => (
-									<button
-										key={chip.key}
-										type="button"
-										onClick={chip.clear}
-										className="flex cursor-pointer items-center gap-2 rounded-full bg-surface-sunken px-3 py-1.5 text-[13px] text-fg ring-1 ring-line-subtle transition-colors hover:bg-surface-overlay max-md:min-h-11"
-									>
-										{chip.key === "vc-contains" ? null : <span className="text-fg-muted">without</span>}
-										{chip.label}
-										<span className="font-mono text-xs text-fg-muted tabular-nums">
-											→ {count.toLocaleString("en-US")} {count === 1 ? "tiling" : "tilings"}
-										</span>
-									</button>
-								))}
-							</div>
-						) : null}
-						{activeFilterCount > 0 ? (
-							<button onClick={clearFilters} className="mt-3 text-sm text-accent hover:underline max-md:min-h-11">
-								Clear all filters
-							</button>
-						) : null}
-					</div>
-				) : (
-					<>
-						{/* One pager, under the results: the header count already gives the total. */}
-						{view === "table" ? (
-							<ResultsTable
-								tilings={tableRows}
-								sortKey={sortKey}
-								sortDir={sortDir}
-								onSort={(k) => changeSort(k)}
-								hrefOf={(t) => `/play?source=reference&tiling=${encodeURIComponent(t.id)}`}
-							/>
-						) : null}
-						<div
-							hidden={view === "table"}
-							className="ta-lanes ta-stagger grid [grid-template-columns:repeat(var(--cols),1fr)] !gap-3 max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
-							style={gridStyle}
-						>
-							{paginated.map((g) => (
-								<ReferenceCard
-									key={g.key}
-									tiling={g.members[0]}
-									group={g.members}
-									onClick={(t) => router.push(`/play?source=reference&tiling=${encodeURIComponent(t.id)}`)}
-								/>
-							))}
-						</div>
-						<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
-							<div role="group" aria-label="Items per page" className="flex items-center gap-2 text-xs text-fg-muted">
-								Per page
-								<OptionWall
-									columns={PAGE_SIZE_OPTIONS.length}
-									options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
-									selected={pageSize}
-									onChange={setPageSize}
-									classes="w-36 tabular-nums"
-								/>
-							</div>
-							<div className="min-w-0 flex-1">
-								<Pagination
-									totalItems={resultTotal}
-									pageSize={pageSize}
-									currentPage={currentPage}
-									onPageChange={changePage}
-								/>
-							</div>
-						</div>
-					</>
-				)}
-			</main>
 			<PolygonFilterModal
 				isOpen={polygonModalOpen}
 				onOpenChange={setPolygonModalOpen}

@@ -791,6 +791,84 @@ html[data-pad] aside :focus {
   }
 }
 
+/* The browse tree's rail (components/atlas/browse-tree.tsx), the Tiling Searcher's run-tree rail
+   (tools/searcher/app/src/app.css, which keeps its own copy until the app is next rebuilt from here).
+   An open node's children hang off a line under its icon, each branching off with a curve; the line
+   stops at the last child's curve. --rail-mid is where a child row is centred.
+
+   The path to the active node is an overlay (::after) in the text colour on the entries the tree marks:
+   [data-rail-pass] the entries it runs past, a straight piece; [data-rail-on] the one it enters, a curve.
+   A piece draws top-down after its --rail-delay when it appears or changes role (each role has its own
+   keyframes, so the change restarts it); pieces the old and new path share stay as they are. */
+.ta-rail {
+  --rail: color-mix(in oklab, var(--color-fg) 22%, var(--color-surface-chrome));
+  margin-left: 15px;
+}
+.ta-rail > li {
+  position: relative;
+  padding-left: 14px;
+  padding-bottom: 2px;
+}
+.ta-rail > li:not(:last-child) {
+  background: linear-gradient(var(--rail), var(--rail)) no-repeat 0 0 / 1px 100%;
+}
+.ta-rail > li::before,
+.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  pointer-events: none;
+  border-left: 1px solid var(--rail);
+}
+.ta-rail > li::before,
+.ta-rail > li[data-rail-on]::after {
+  width: 10px;
+  height: calc(var(--rail-mid, 18px) + 2px);
+  border-bottom: 1px solid var(--rail);
+  border-bottom-left-radius: 8px;
+}
+.ta-rail > li[data-rail-pass]::after {
+  bottom: 0;
+}
+.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
+  border-color: var(--color-fg);
+  animation: 70ms linear var(--rail-delay) both;
+}
+.ta-rail > li[data-rail-on]::after {
+  animation-name: ta-rail-draw-on;
+}
+.ta-rail > li[data-rail-pass]::after {
+  animation-name: ta-rail-draw-pass;
+}
+@keyframes ta-rail-draw-on {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+@keyframes ta-rail-draw-pass {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-rail > li::after {
+    animation: none !important;
+  }
+}
+
+/* The merged page's side panels (components/atlas): a column that slides shut by animating its width
+   while the content inside keeps its own, so labels never reflow on the way out (the same move
+   PageSidebar's `collapsed` makes for immersive mode). */
+.ta-side-panel {
+  transition: width var(--duration-base) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-side-panel {
+    transition: none;
+  }
+}
+
 /* A spread slide (2026-08-02): the prose holds together and the figure floats with EQUAL air above
    and below it. `margin-block: auto` is flex's own free-space distribution, not a chosen number: two
    auto margins on the same item split whatever the slide has left over into two equal halves, so the

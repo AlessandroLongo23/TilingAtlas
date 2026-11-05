@@ -29,6 +29,8 @@ interface PageSidebarProps {
 	 * Nothing unmounts either, so the type grid's scroll position and every slider come back untouched.
 	 */
 	collapsed?: boolean;
+	/** Which edge of the page the column sits on (desktop): the rule goes on the side facing the content. */
+	side?: "left" | "right";
 	/**
 	 * What the sidebar becomes on a phone (under 768px; desktop ignores this and every prop below).
 	 * - `dock`: a bottom sheet over a full-bleed canvas, resting at peek / half / full. For tool pages.
@@ -67,6 +69,7 @@ export function PageSidebar({
 	children,
 	scrollable = true,
 	collapsed = false,
+	side = "left",
 	mobile = "modal",
 	title,
 	peek,
@@ -141,8 +144,9 @@ export function PageSidebar({
 				{...(dock && isPhone ? { role: "region", "aria-label": label } : sheet.dialogProps)}
 				style={dock ? ({ "--sheet-h": snapCss(target, halfHeight) } as CSSProperties) : undefined}
 				className={cn(
-					"flex h-full w-80 shrink-0 flex-col overflow-hidden border-r border-line-subtle bg-surface-chrome",
-					"max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:w-full max-md:overscroll-contain max-md:rounded-t-2xl max-md:border-r-0 max-md:focus:outline-none",
+					"flex h-full w-80 shrink-0 flex-col overflow-hidden border-line-subtle bg-surface-chrome",
+					side === "right" ? "border-l" : "border-r",
+					"max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:w-full max-md:overscroll-contain max-md:rounded-t-2xl max-md:border-x-0 max-md:focus:outline-none",
 					dock
 						? cn(
 								"max-md:z-40 max-md:h-[var(--sheet-h)] max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-6px_24px_oklch(0_0_0/0.14)]",

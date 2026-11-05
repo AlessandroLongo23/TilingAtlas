@@ -125,11 +125,11 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
 	const isIslamicClass = !!selected && tileClassOf(selected) === TILE_CLASSES.ISLAMIC;
 	// WHICH RENDERER OWNS THE CANVAS decides every control below, and it is answered in exactly one place
-	// — lib/services/shelfRegistry.ts — for this file and for _play-client both. It used to be answered
+	// — lib/services/shelfRegistry.ts — for this file and for _atlas-client both. It used to be answered
 	// twice, once per file, from two hand-maintained lists of shelf fields; they had diverged in two
 	// places by 2026-08-04, and the effect was that `hypPoly` and `sphPoly` records rendered the flat p5
 	// control block (symmetry elements, fundamental domain, vertex orbits, polygon points) over a canvas
-	// _play-client had already blanked.
+	// _atlas-client had already blanked.
 	// A Tegula type whose symmetry the reader has changed may have left its geometry (orbifoldMorph.ts).
 	const morphOrders = useOrbifoldMorph((st) => (selected ? st.byId[selected.canonicalKey] : undefined));
 	const surface = (morphOrders ? morphSurface(recordSymbol(selected), morphOrders) : null) ?? surfaceOf(selected);
@@ -283,7 +283,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// patterns, hollow — as well as the plain tilings. It needs only a period lattice, which rules out
 	// exactly the hyperbolic and spherical shelves.
 	const lensApplies = lensAppliesTo(selected);
-	// The squared torus REPLACES what the canvas draws (see _play-client), so every control that makes a
+	// The squared torus REPLACES what the canvas draws (see _atlas-client), so every control that makes a
 	// claim about the SELECTED tiling — its symmetry, its vertex orbits, its Truchet reading, its mirror,
 	// the family sliders — is describing something that is no longer on screen. Those go away while it is
 	// up. The ones that describe the DRAWING stay, and the conformal lens is one of them: it warps

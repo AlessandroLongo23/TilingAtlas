@@ -97,7 +97,7 @@ export interface ConfigurationState {
 	showConstructionPoints: boolean;
 	// Is the tiling EDITOR up. It lives here and not in lib/stores/studio.ts because it decides which
 	// renderer owns the canvas, and that question is answered by the gates in components/canvas.tsx and
-	// _play-client, which already read this store. Everything the editor does with the tiling — the doc,
+	// _atlas-client, which already read this store. Everything the editor does with the tiling — the doc,
 	// the history, the active tool — is in its own slice, so a pointer move does not re-render this one.
 	studioActive: boolean;
 	showWallpaperGroup: boolean;
@@ -307,7 +307,7 @@ export interface ConfigurationState {
 	truchetSeed: number;
 	/**
 	 * The Truchet overlay is actually up over a plain tiling. A transient signal, not a setting: it is
-	 * derived in _play-client (which knows whether a pattern could be built at all) and read by
+	 * derived in _atlas-client (which knows whether a pattern could be built at all) and read by
 	 * canvas.tsx, which blanks the flat layer while it is true. The figures ARE the picture — a tiling
 	 * drawn under them is a second picture, and one that trails a frame behind on a drag, since the two
 	 * layers ease on separate loops. Out of the URL, like every other derived signal.
