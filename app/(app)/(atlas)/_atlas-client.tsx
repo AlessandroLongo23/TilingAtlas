@@ -21,6 +21,7 @@ import {
 import { BrowseSidebar } from "@/components/atlas/browse-sidebar";
 import { StageBar } from "@/components/atlas/stage-bar";
 import { SliceLoader } from "@/components/atlas/slice-loader";
+import { OpenInSearcher, useSearcherBoard } from "@/components/atlas/open-in-searcher";
 import { ReferenceShelf, type ShelfCommand } from "@/components/reference-shelf";
 import { PageSidebar } from "@/components/page-sidebar";
 import { NavHeader } from "@/components/sidebar/nav-header";
@@ -1961,6 +1962,13 @@ export function AtlasClient() {
 	const tilingNode = useMemo(() => (selected ? nodeOfRecord(tree, selected) : null), [tree, selected]);
 	const activeNode = lens === "grid" ? scopeNode : tilingNode;
 	const rootLabel = `All ${DECORATION_LABEL[decoration].toLowerCase()}`;
+	// The active node's Tiling Searcher board, where a checked one exists; a row's comes from its board's.
+	const activeParent = useMemo(
+		() => (activeNode?.kind === "row" ? (pathTo(tree, activeNode.id).at(-2) ?? null) : null),
+		[tree, activeNode],
+	);
+	const searcherBoard = useSearcherBoard(activeNode, activeParent, `${geometry}|${decoration}`);
+	const searcherButton = useMemo(() => <OpenInSearcher board={searcherBoard} />, [searcherBoard]);
 	const crumbs = useMemo<Crumb[]>(() => {
 		const out: Crumb[] = [
 			{ key: "geo", label: GEOMETRY_LABEL[geometry], onClick: () => pickNode(null) },
@@ -2087,6 +2095,7 @@ export function AtlasClient() {
 						panelOpen={lens === "grid" ? filtersOpen : optionsOpen}
 						panelLabel={lens === "grid" ? "Filters" : "View options"}
 						onTogglePanel={togglePanel}
+						searcher={searcherButton}
 					/>
 				)}
 				<div className="flex min-h-0 flex-1">

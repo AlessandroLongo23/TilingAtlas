@@ -30,6 +30,8 @@ interface StageBarProps {
 	panelOpen: boolean;
 	panelLabel: string;
 	onTogglePanel: () => void;
+	/** Beside the lens switch: the active node's way into the Tiling Searcher (open-in-searcher.tsx). */
+	searcher?: ReactNode;
 }
 
 export const StageBar = memo(function StageBar({
@@ -43,6 +45,7 @@ export const StageBar = memo(function StageBar({
 	panelOpen,
 	panelLabel,
 	onTogglePanel,
+	searcher,
 }: StageBarProps) {
 	const lensButton = (value: "grid" | "tiling", label: string, Icon: typeof Square, key: string) => (
 		<Tooltip label={label} shortcut={key} delay={300}>
@@ -103,6 +106,7 @@ export const StageBar = memo(function StageBar({
 				) : null}
 			</nav>
 			{position ? <span className="shrink-0 font-mono text-[11px] text-fg-muted tabular-nums">{position}</span> : null}
+			{searcher}
 			<div className="ta-seg flex shrink-0" role="group" aria-label="Lens">
 				<SegIndicator />
 				{lensButton("grid", "Grid", LayoutGrid, "C")}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { OS_NAME, platforms, type Os } from "@/lib/downloads";
+import searcher from "@/tools/searcher/app/package.json";
 import { DownloadScreen } from "./_screen";
 
 // Where the atlas's download buttons go (components/download-searcher.tsx). The page starts the download
@@ -17,5 +18,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DownloadPage({ params }: Props) {
-	return <DownloadScreen os={(await params).os as Os} />;
+	return <DownloadScreen os={(await params).os as Os} version={searcher.version} />;
 }
