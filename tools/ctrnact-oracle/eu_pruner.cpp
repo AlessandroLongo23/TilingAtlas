@@ -29,6 +29,7 @@ static double prof_decode = 0, prof_simpl = 0, prof_fpcmp = 0;
 #endif
 
 namespace fs = std::filesystem;
+#include "congruence.hpp"     // simplify's covering test, shared with eu_solver
 #include "ctrnact_decode.hpp" // shared decode + pruner_tables.inc + countsignature (also used by eu_develop)
 
 // ---------- global solution store (mirrors the Python globals) ----------
@@ -137,56 +138,24 @@ static const Sol& solAt(int idx) {
 // countsignature + the decode machinery (edgelabel/decipher/makeglue/buildvertextypes, Graph, decode)
 // live in ctrnact_decode.hpp, shared with eu_develop (was duplicated here; single source now).
 
-// ---------- simplify: bitset WL refinement; true = "simplest" (no non-trivial equivalence) ----------
-// Faithful reimplementation of the Python std::set version, using per-node bitsets (word-parallel
-// membership/clear, zero heap churn). The refinement fixpoint is order-independent, so this yields
-// identical results; reusable static workspace avoids per-call allocation over the ~150k blocks.
+// ---------- simplify: true = "simplest" (no nontrivial congruence), via congruence.hpp ----------
+// Same verdict as the bitset alias refinement it replaces (2026-11-06): both decide whether some dart is
+// bisimilar to another under the seed (cls, fam, etype). The union-find test assumes a connected block,
+// which every solver here emits; a block that is not is refused loudly, not misjudged.
 static bool simplify(const Graph& g) {
-	int le = (int)g.rneig.size();
-	int nw = (le + 63) >> 6;
-	static std::vector<uint64_t> A, snap;
-	A.assign((size_t)le * nw, 0);
-	snap.resize(nw);
-	auto row = [&](int i) -> uint64_t* { return &A[(size_t)i * nw]; };
-	auto test = [&](int i, int j) -> bool { return (row(i)[j >> 6] >> (j & 63)) & 1ULL; };
-	uint64_t lastmask = (le & 63) ? ((1ULL << (le & 63)) - 1) : ~0ULL;
-	for (int i = 0; i < le; i++) {
-		uint64_t* r = row(i);
-		for (int w = 0; w < nw; w++) r[w] = ~0ULL;
-		r[nw - 1] = lastmask;
+	const int le = (int)g.rneig.size();
+	static std::vector<int> seen, stack;
+	seen.assign(le, 0); stack.assign(1, 0);
+	int reached = le ? 1 : 0;
+	if (le) seen[0] = 1;
+	while (!stack.empty()) {
+		const int d = stack.back(); stack.pop_back();
+		for (int x : { g.rneig[d], g.lneig[d], g.mirro[d], g.glue[d] })
+			if (!seen[x]) { seen[x] = 1; reached++; stack.push_back(x); }
 	}
-	bool change = true;
-	while (change) {
-		change = false;
-		for (int i = 0; i < le; i++) {
-			uint64_t* ri = row(i);
-			for (int w = 0; w < nw; w++) snap[w] = ri[w];          // snapshot alias[i] (Python: ali = copy)
-			for (int w = 0; w < nw; w++) {
-				uint64_t bits = snap[w];
-				while (bits) {
-					int j = (w << 6) + __builtin_ctzll(bits);
-					bits &= bits - 1;
-					if (g.cls[i] != g.cls[j]
-					    || g.fam[i] != g.fam[j]
-					    || g.etype[i] != g.etype[j]
-					    || !test(j, i)
-					    || !test(g.mirro[i], g.mirro[j])
-					    || !test(g.glue[i], g.glue[j])
-					    || !test(g.rneig[i], g.rneig[j])
-					    || !test(g.lneig[i], g.lneig[j])) {
-						ri[j >> 6] &= ~(1ULL << (j & 63));
-						change = true;
-					}
-				}
-			}
-		}
-	}
-	for (int i = 0; i < le; i++) {                                 // nun = some node not a singleton
-		uint64_t* r = row(i); int c = 0;
-		for (int w = 0; w < nw; w++) c += __builtin_popcountll(r[w]);
-		if (c != 1) return false;
-	}
-	return true;
+	if (reached != le) { std::cerr << "eu_pruner: disconnected block (" << reached << " of " << le << " darts)\n"; std::exit(3); }
+	return !has_congruence(le, g.rneig.data(), g.lneig.data(), g.mirro.data(), g.glue.data(), 16,
+		[&g](int x, int y) { return g.cls[x] == g.cls[y] && g.fam[x] == g.fam[y] && g.etype[x] == g.etype[y]; });
 }
 
 // ---------- comparesolutions: is graph x isomorphic to stored solution `sol`? (bitset WL) ----------

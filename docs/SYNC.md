@@ -3336,3 +3336,9 @@ Uncommitted source. Detail: DEVELOPMENT_NOTES "The Tiling Searcher 0.4.0 release
 downloads.tsv and records before every publish (a replaced file loses its count); the atlas's buttons open
 /searcher/download/<os>, which starts the download and is counted by Vercel Web Analytics. Uncommitted.
 Detail: DEVELOPMENT_NOTES "Counting the Tiling Searcher's downloads".
+
+2026-11-06 · CC · Čtrnáct engine after Martin Olivier's solver (epsln/k-uniform-enumeration): forced closure of
+zero-slack faces, a congruence-closure covering test shared with the pruner (`congruence.hpp`), canonical refinement
+with leaf dedup. Regular k≤14 on one core: 212 s → 57 s (his: 125 s); check-regular byte-identical. Opt-in, since
+both move id serials: transposition table (`EU_TT_MB`) and the dynamic fork split (`EU_FORK` + `EU_SPLIT`).
+Detail: DEVELOPMENT_NOTES "Martin Olivier's solver, studied and ported"; experiments/results/epsln-solver-study-2026-11-06.md.

@@ -21071,3 +21071,57 @@ turned into its board; plan agreed, then run in full. Everything is in `experime
   reduce at half precision and verify at full or high dimensions report spurious relations; a subprocess
   runner must not read pipes only at exit (a chatty batch deadlocks); on macOS multiprocessing workers do not
   carry the script's name, so `ps | grep script.py` cannot see them.
+
+## Martin Olivier's solver, studied and ported: forced closure, leaf dedup, a 10x covering test (2026-11-06, CC)
+
+A Discord member, Martin Olivier, shared his rewrite of the Čtrnáct search (github.com/epsln/k-uniform-enumeration,
+cloned at `c208fc9`, plus a 77-slide deck): regular palette only, 44 types hard-coded, counts equal to ours through
+k = 16 (he checked them against the atlas), and a complete run to k = 25 in 21 h on 22 threads. AL's report was
+that he reaches k + 2 in the time we reach k. Full study, every number and the method:
+`experiments/results/epsln-solver-study-2026-11-06.md`; raw logs `epsln-bench-2026-11-06.log`, `epsln-palettes-2026-11-06.log`.
+
+**Why his was faster.** Not per core: single-threaded at regular k ≤ 12 he took 24.0 s and we took 30.5 s. His
+tree is 5-6x smaller (1.26M against 7.68M nodes) and our nodes are cheaper. The tree difference is FORCED CLOSURE:
+an open face that has reached its full length must close now, and he glues its ends inside the parent instead of
+spending a node on it (his own engine, k ≤ 8: 147k nodes with it, 783k without; without it his tree is 1.6x
+LARGER than ours, which is what our pair and dynamic face filters buy). Then a transposition table over
+isomorphism classes (1.4x at k = 8, growing with k), unique-partner forcing at the k limit (1.27x), and on the wall
+clock 22 threads with work donation against our static shards, plus a parallel pruner.
+
+**Ported, on by default, catalogue byte-identical** (`check-regular`, `check-deltahedra`, `check-star` engine steps):
+- Forced closure (`propagate_forced`), over corner classes, so every palette has it. Same closures in the same
+  order. Regular k ≤ 12: 7.68M -> 2.24M nodes.
+- Leaves. With forcing, closures dominate, and 83% of them (k ≤ 12) are coverings. New exact covering test
+  (`congruence.hpp`): a congruence of a connected map is a block system, so the closure is a covering iff the
+  union-find closure of (anchor, b) stays seed-consistent for some b. 2x cheaper than refining on the same calls,
+  0 verdict mismatches over 82,625 closures. The minimal ones then get his dirty-cell refinement, which numbers
+  darts canonically, and the hash keys a LEAF DEDUP: a class already written is not written again, but its serial
+  is still counted, so the pruned catalogue keeps every byte, ids included. Regular k ≤ 8: 5,569 written of
+  14,849 minimal closures, exactly the final count.
+- The pruner's minimality test calls the same header: 9.51 -> 3.70 s on 200,730 blocks, output identical, -31 lines.
+
+**Ported, OFF by default, because they move ctrnact-* ids:** the transposition table (`EU_TT_MB`; 1.2x at k = 12)
+and a dynamic split for forked workers (`EU_FORK=P EU_SPLIT=3`: tickets for the depth-3 branches from a shared
+counter, and one TT and one leaf set in shared memory). The TT keeps the same blocks in the same order, but the
+serial n in `eu raw <sig> <n>.tes` counts raw duplicates, and skipped subtrees no longer emit them. The split
+restarts serials per worker: 60,447 colliding ids among 413,361 tilings at k ≤ 14. ⚑ `EU_SHARD_D2 > 1` has the same
+latent collision. Scanned all of `public/`: 65,642 distinct ctrnact ids, none in two files, so nothing shipped is
+hit. The solver now warns when `EU_SPLIT` is set.
+
+**Where it stands** (6 workers each, shared machine, back to back): regular k ≤ 14, his 59.2 s against our 42.9 s;
+k ≤ 15, 81.2 s against 58.7 s. Solve 1.6-1.7x faster than his, end to end 1.4x. Single core at k ≤ 12: 13.1 s
+against his 24.0 s. Ten palettes old against new, byte-identical; stars and rings gain 2.5x in nodes, period-p
+composites 15%, polyforms almost nothing (long faces rarely reach slack 0, and their depth is in dent-fill
+vertices the k-based TT margin does not see).
+
+**Measured and dropped:** unique-partner forcing (1-2% on ours, reorders leaves); an edge-balance bound of my own
+(free darts of key K against its partner key must balance): vacuous here, since every vertex type carries as many
+K darts as partner darts, each dart's mirror holding the partner key; insertion sort in the refinement.
+
+⚑ **Decision for AL: ids.** Both off-by-default features need ids that do not depend on how many raw duplicates
+the search met. Either number each signature's tilings by canonical order after pruning (search-independent, one
+remap table for shipped ids), or keep today's serials and reproduce them in parallel by per-ticket counts with the
+TT off. ⚑ Also found: the generated tables for star24full, composite-convex, ring18, fdsq and girih predate
+`CLASS_SIGMA`/`PTAB_ETYPE`, so no engine version compiles against them until they are regenerated; and
+`check-star`'s last step fails only because `golden/star-shelf.sha256` names the `.json` files that the gzip
+migration renamed (all 100 match unzipped).

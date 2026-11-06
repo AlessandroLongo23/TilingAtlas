@@ -58,7 +58,7 @@ $(if $(filter eu_solver_rt,$(MAKECMDGOALS)),$(shell [ -f .maxnumrt-$(MAXNUM) ] |
 	rm -f .maxnum-$(PALETTE)-*
 	touch $@
 
-eu_solver$(SFX): eu_solver.cpp hyp_feas.h $(TB)/.generated .maxnum-$(PALETTE)-$(MAXNUM)
+eu_solver$(SFX): eu_solver.cpp hyp_feas.h congruence.hpp $(TB)/.generated .maxnum-$(PALETTE)-$(MAXNUM)
 	$(CXX) $(CXXFLAGS) -DMAXNUM=$(MAXNUM) -I$(TB) -o $@ $<
 
 # Runtime-alphabet solver. Same search; the tables come from tables.bin at startup (EU_TABLES=<path>)
@@ -72,10 +72,10 @@ eu_solver$(SFX): eu_solver.cpp hyp_feas.h $(TB)/.generated .maxnum-$(PALETTE)-$(
 # And it has NO palette dependency, so ONE binary serves every palette; only MAXNUM is baked in.
 #   make eu_solver_rt MAXNUM=6 && EU_TABLES=path/to/tables.bin ./eu_solver_rt
 # The compiled path stays the default so check-regular keeps gating it byte-for-byte.
-eu_solver_rt: eu_solver.cpp hyp_feas.h .maxnumrt-$(MAXNUM)
+eu_solver_rt: eu_solver.cpp hyp_feas.h congruence.hpp .maxnumrt-$(MAXNUM)
 	$(CXX) $(CXXFLAGS) -DMAXNUM=$(MAXNUM) -DEU_RUNTIME_TABLES -o $@ $<
 
-eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp $(TB)/.generated
+eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp congruence.hpp $(TB)/.generated
 	$(CXX) $(CXXFLAGS) -I$(TB) -o $@ $<
 
 # Runtime-alphabet pruner, the companion to eu_solver_rt. Same dedup; the tables come from tables.bin
@@ -83,7 +83,7 @@ eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp $(TB)/.generated
 # and it is the only way to prune a palette whose pruner_tables.inc the compiler cannot take — the
 # 11-outline isotoxal alphabet is 5.65M vertex types and a 1.54 GB .inc. No palette dependency, so
 # no -I and no $(TB) prerequisite.
-eu_pruner_rt: eu_pruner.cpp ctrnact_decode.hpp ctrnact_runtime_tables.hpp
+eu_pruner_rt: eu_pruner.cpp ctrnact_decode.hpp congruence.hpp ctrnact_runtime_tables.hpp
 	$(CXX) $(CXXFLAGS) -DEU_RUNTIME_TABLES -o $@ $<
 
 eu_classify: eu_classify.cpp

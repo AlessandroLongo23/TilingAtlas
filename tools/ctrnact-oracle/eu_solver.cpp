@@ -19,6 +19,7 @@
 #include <cerrno>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 std::string solvercode = "eu";
@@ -176,11 +177,28 @@ static void shard_set(int w) {
 }
 static long long branch_ctr = 0;   // root-level branch number; see shard_take_branch()
 
-// True iff this shard owns the next root-level branch. Called ONLY at dfs_depth==1 and only after
-// checkpart_inc has accepted the branch, so the numbering counts real work and skips nothing that
-// another shard would also skip.
+// DYNAMIC SPLITTING (EU_FORK=<P> EU_SPLIT=<D>, 2026-11-06). The static slices above leave one heavy slice
+// setting the wall time. Here every forked worker walks the top D levels identically, numbers the accepted
+// branches of the depth-D nodes in walk order, and explores a branch only while it holds that branch's
+// ticket from a counter in shared memory, claiming the next ticket when the branch is done. Tickets only
+// grow and every worker walks every number, so each branch is explored exactly once and idle workers take
+// the next one (Martin Olivier's solver gets this balance from work donation between threads). Nothing a
+// worker finds below depth D may change its walk above it: the transposition table probes only below D,
+// and closures met above D are written by worker 0 alone.
+static int split_depth = 0;            // D; 0 = off
+static long long* TICKET = nullptr;    // MAP_SHARED counter
+static long long my_ticket = -1;
+static int fork_index = 0;
+
+// True iff this shard owns the next root-level branch (or, under EU_SPLIT, holds its ticket). Called
+// only after checkpart_inc has accepted the branch, so the numbering counts real work and skips nothing
+// that another shard would also skip.
 static inline bool shard_take_branch() {
+    if (split_depth > 0) return branch_ctr++ == my_ticket;
     return (branch_ctr++ % shard_d2) == shard_w2;
+}
+static inline void shard_done_branch() {
+    if (split_depth > 0) my_ticket = __atomic_fetch_add(TICKET, 1, __ATOMIC_RELAXED);
 }
 
 // EU_PROGRESS=<seconds>: throttled progress heartbeat to STDERR from initex() — the current first
@@ -363,6 +381,7 @@ static void load_tables_bin(const char* path) {
 #include "solver_tables.inc"
 #endif
 #include "hyp_feas.h"   // EU_HYPFEAS: angle feasibility of a block's vertex types (negative-defect palettes)
+#include "congruence.hpp"   // simplify_inner's covering test, shared with eu_pruner
 
 // Defined where BOTH table paths have `mainlist` in scope. Which is the point: it used to live inside
 // the runtime loader alone, so the compiled binary — the one run-oracle-parallel.sh uses — left
@@ -715,6 +734,60 @@ static bool checkpart_inc(configuration const& conf, const int* changed, int nch
         }
     }
     return true;
+}
+
+// FORCED CLOSURE (from Martin Olivier's solver, 2026-11-06). An open face whose walk has reached its full
+// length L (slack 0) can neither grow nor close elsewhere, so its two free ends must be glued now. Without
+// this every such move cost a node: writecycle picks the zero-slack face, and every candidate but one
+// fails checkpart. After each branch glue the faces through the changed darts are closed to a fixpoint.
+// Only nodes with a single surviving child disappear, so the same configurations close in the same order
+// and the catalogue is byte-identical. Regular k<=12: 7.68M -> 2.24M nodes. EU_NOFORCE=1 turns it off.
+static const bool no_force = std::getenv("EU_NOFORCE") != nullptr;
+static std::vector<int> FTRAIL, FWORK;   // darts glued by propagation (undone LIFO), worklist
+static long long forced_glues = 0;
+
+// Is the face through corner `start` open with slack 0? Then s and r are its left and right free ends.
+static inline bool zero_slack(configuration const& c, int start, int& s, int& r) {
+    int x = start;
+    for (int g; (g = c.glue[x]) != -1; ) { x = c.lneig[g]; if (x == start) return false; }   // closed
+    s = x;
+    int rr = c.rneig[s], count = 1;
+    const int L = CLASS_L[c.lvert[rr]];
+    for (int g; (g = c.glue[rr]) != -1; ) { rr = c.rneig[g]; if (++count > L) return false; }
+    r = rr;
+    return count == L;
+}
+static inline void fglue(configuration& c, int a, int b) {
+    c.glue[a] = b; FTRAIL.push_back(a);
+    if (a != b) { c.glue[b] = a; FTRAIL.push_back(b); }
+}
+// False = the branch is dead.
+static bool propagate_forced(configuration& c, const int* chg, int nchg) {
+    if (no_force) return true;
+    FWORK.clear();
+    for (int t = 0; t < nchg; t++) if (chg[t] >= 0) FWORK.push_back(chg[t]);
+    while (!FWORK.empty()) {
+        const int x = FWORK.back(); FWORK.pop_back();
+        int s, r;
+        if (!zero_slack(c, c.lneig[x], s, r)) continue;
+        const bool ms = c.mirro[s] == s;
+        if (ms != (c.mirro[r] == r)) return false;
+        if (EDGE_TYPED && (!edge_ok(c, s, r) || (!ms && !edge_ok(c, c.mirro[s], c.mirro[r])))) return false;
+        fglue(c, s, r);
+        if (!ms) {
+            const int a = c.mirro[s], b = c.mirro[r];
+            if (c.glue[a] != -1 || c.glue[b] != -1) { if (c.glue[a] != b) return false; }
+            else fglue(c, a, b);
+        }
+        forced_glues++;
+        const int ch[4] = { s, r, ms ? -1 : c.mirro[s], ms ? -1 : c.mirro[r] };
+        if (!checkpart_inc(c, ch, 4)) return false;
+        for (int t = 0; t < 4; t++) if (ch[t] >= 0) FWORK.push_back(ch[t]);
+    }
+    return true;
+}
+static inline void undo_forced(configuration& c, size_t mark) {
+    while (FTRAIL.size() > mark) { c.glue[FTRAIL.back()] = -1; FTRAIL.pop_back(); }
 }
 
 int writecycle(configuration const& conf, std::ostream& filen) {
@@ -1132,7 +1205,65 @@ static void family_streams_close() {
     FSTREAMS.clear(); FSTREAM_LRU.clear();
 }
 
+// A lossy set of 128-bit hashes: 4-way buckets, round-robin eviction, all-zero = empty. Mapped MAP_SHARED
+// before EU_FORK forks, it is one table for every worker. Words are read and written atomically; a racing
+// reader can see one new and one old word, which matches a probe only by a 2^-64-scale coincidence, so a
+// race can let a duplicate through but cannot invent a hit.
+struct HashSet128 {
+    unsigned long long* slot = nullptr;   // 8 words per bucket: (h1, h2) x 4
+    unsigned char* victim = nullptr;
+    size_t mask = 0;
+    void init(long mb, bool shared) {
+        size_t buckets = 1;
+        while (buckets * 128 <= (size_t)mb << 20) buckets *= 2;
+        if (shared) {
+            void* p = mmap(nullptr, buckets * 64, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
+            void* v = mmap(nullptr, buckets, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
+            if (p == MAP_FAILED || v == MAP_FAILED) { std::cerr << "HashSet128: mmap failed\n"; std::exit(2); }
+            slot = (unsigned long long*)p; victim = (unsigned char*)v;   // anonymous maps start zeroed
+        } else {
+            slot = (unsigned long long*)calloc(buckets * 64, 1); victim = (unsigned char*)calloc(buckets, 1);
+        }
+        mask = buckets - 1;
+    }
+    bool seen_or_insert(unsigned long long h1, unsigned long long h2) {
+        if (h1 == 0 && h2 == 0) h2 = 1;
+        unsigned long long* e = slot + (((size_t)(h1 ^ (h2 >> 11)) & mask) << 3);
+        auto ld = [](unsigned long long* p) { return __atomic_load_n(p, __ATOMIC_RELAXED); };
+        for (int w = 0; w < 4; w++) if (ld(e + 2 * w) == h1 && ld(e + 2 * w + 1) == h2) return true;
+        int w = 0;
+        while (w < 4 && (ld(e + 2 * w) | ld(e + 2 * w + 1))) w++;
+        if (w == 4) {
+            unsigned char* v = victim + ((e - slot) >> 3);
+            w = __atomic_load_n(v, __ATOMIC_RELAXED) & 3;
+            __atomic_store_n(v, (unsigned char)((w + 1) & 3), __ATOMIC_RELAXED);
+        }
+        __atomic_store_n(e + 2 * w, h1, __ATOMIC_RELAXED); __atomic_store_n(e + 2 * w + 1, h2, __ATOMIC_RELAXED);
+        return false;
+    }
+};
+static bool tables_shared = false;   // EU_FORK: the TT and the leaf set live in shared memory
+
+// LEAF DEDUP (2026-11-06). simplify() leaves the canonical hash of a minimal closure in LEAF_H1/H2, under
+// isomorphisms that also preserve vertex type, so an equal hash is a duplicate the pruner would drop. It
+// is not written, but its serial (the n of "eu raw <sig> <n>.tes", carried by ctrnact-* ids) is still
+// counted, so every kept block stays byte-identical. Regular k<=8: 14,849 minimal closures, 5,569 written,
+// exactly the final count. Lossy: an evicted hash only lets a duplicate through. EU_LEAF_MB (default 256)
+// sizes it; 0 turns it off.
+static const long leaf_mb = std::getenv("EU_LEAF_MB") ? atol(std::getenv("EU_LEAF_MB")) : 256;
+static long long leaf_dups = 0;
+static HashSet128 LEAF_SET;
+extern unsigned long long LEAF_H1, LEAF_H2;
+
 int writesolution(configuration const& conf) {
+    if (leaf_mb > 0) {
+        if (!LEAF_SET.slot) LEAF_SET.init(leaf_mb, tables_shared);
+        if (LEAF_SET.seen_or_insert(LEAF_H1, LEAF_H2)) {
+            vertypesolvedadd(conf.vertype);   // keeps the serial of every later block
+            leaf_dups++;
+            return 0;
+        }
+    }
     solfound++;
     std::string fine = finename(conf);
     std::string vv = verbalvertices(conf.vertype);
@@ -1253,79 +1384,168 @@ static void build_type_families() {
     std::cerr << "vertex figures: " << NFAM << " over " << mainlist.size() << " types\n";
 }
 
-// FIX 17 — the refinement allocated four vectors per call and re-sorted 28-byte records per round.
+// FIX 17, REDONE (2026-11-06, after Martin Olivier's canonical.cpp). simplify runs at every closure and is
+// most of the leaf cost. 83% of closures (regular k<=12) are coverings, which congruence.hpp now rejects
+// without refining; refine() runs on the minimal rest, for the canonical hash the leaf dedup keys on.
 //
-// It runs at every CLOSURE, which on a star search is millions of times, and `sample` put it at 18%
-// of star-wide b00002 with std::__introsort alone at 8.7%. Three changes, none to the mathematics:
-//
-//   * the buffers are static and keep their capacity, instead of four fresh allocations per call and
-//     one more per refinement round;
-//   * the seed colour is loop-INVARIANT (it reads lvert, etype and fam, none of which the loop
-//     touches), so it is computed once instead of once per round;
-//   * the grouping is a hash of the 6-tuple, not a sort of it. Moore refinement's fixed point is a
-//     PARTITION, and the sequence of partitions does not depend on how the classes are NUMBERED —
-//     the operator reads eq_class only through equality. The old code numbered by sorted key order
-//     and this one numbers by first appearance; the partition at every round, the round count and
-//     therefore the answer `num_eq_class == le` are identical. Verified against check-regular,
-//     check-deltahedra and all four star goldens, which is the point of having them: this is the
-//     function whose seed colour once deleted every 2-orbit deltahedron.
+// refine() is exact colour refinement with a canonical numbering. Cells are ranges of `perm`, a dart's
+// colour is its cell's start, and a dirty cell splits by the SORTED tuple (colour of R, L, M, G), a free G
+// reading as a sentinel. Every decision reads colours only, so the final numbering is an isomorphism
+// invariant. The fixpoint is the coarsest partition refining `seed` that R, L, M, G respect, the one Moore
+// refinement reaches, so discreteness is the verdict simplify always gave. When discrete, h1/h2 hash the
+// relation table in canonical order with `tag` per dart: equal hashes mean an isomorphism preserving
+// R, L, M, G, seed and tag, up to a 2^-128-scale collision.
+static inline unsigned long long mix64(unsigned long long x) {
+    x ^= x >> 30; x *= 0xbf58476d1ce4e5b9ULL; x ^= x >> 27; x *= 0x94d049bb133111ebULL; x ^= x >> 31;
+    return x;
+}
+static bool refine(configuration const& c, const long long* seed, const long long* tag,
+                   unsigned long long& h1, unsigned long long& h2) {
+    const int n = (int)c.glue.size();
+    if (n >= 65535) return false;
+    static std::vector<int> col, perm, cend;
+    static std::vector<unsigned char> dirty;
+    static std::vector<std::pair<unsigned long long, int> > keyed;
+    static std::vector<std::pair<long long, int> > sd;
+    col.resize(n); perm.resize(n); cend.resize(n); keyed.resize(n); sd.resize(n);
+    dirty.assign(n, 0);
+    for (int i = 0; i < n; i++) sd[i] = { seed[i], i };
+    std::sort(sd.begin(), sd.begin() + n);
+    for (int p = 0; p < n; ) {
+        int q = p;
+        while (q < n && sd[q].first == sd[p].first) q++;
+        cend[p] = q; dirty[p] = (q - p) > 1;
+        for (int j = p; j < q; j++) { perm[j] = sd[j].second; col[sd[j].second] = p; }
+        p = q;
+    }
+    const int* R = c.rneig.data(); const int* L = c.lneig.data();
+    const int* M = c.mirro.data(); const int* G = c.glue.data();
+    auto key = [&](int d) -> unsigned long long {
+        return ((unsigned long long)col[R[d]] << 48) | ((unsigned long long)col[L[d]] << 32) |
+               ((unsigned long long)col[M[d]] << 16) | (G[d] < 0 ? 65535ULL : (unsigned long long)col[G[d]]);
+    };
+    for (bool again = true; again; ) {
+        again = false;
+        for (int s = 0; s < n; ) {
+            const int e = cend[s];
+            if (e - s == 1 || !dirty[s]) { s = e; continue; }
+            dirty[s] = 0;
+            for (int j = s; j < e; j++) keyed[j] = { key(perm[j]), perm[j] };
+            std::sort(keyed.begin() + s, keyed.begin() + e);
+            if (keyed[s].first == keyed[e - 1].first) { s = e; continue; }
+            again = true;
+            for (int a = s; a < e; ) {
+                int b = a;
+                while (b < e && keyed[b].first == keyed[a].first) b++;
+                cend[a] = b;
+                for (int j = a; j < b; j++) {
+                    const int d = keyed[j].second;
+                    perm[j] = d;
+                    if (col[d] != a) {
+                        col[d] = a;
+                        dirty[col[L[d]]] = 1; dirty[col[R[d]]] = 1; dirty[col[M[d]]] = 1;
+                        if (G[d] >= 0) dirty[col[G[d]]] = 1;
+                    }
+                }
+                a = b;
+            }
+            for (int a = s; a < e; a = cend[a]) dirty[a] = (cend[a] - a) > 1;
+            s = e;
+        }
+    }
+    for (int s = 0; s < n; s = cend[s]) if (cend[s] - s > 1) return false;
+    h1 = 0x9e3779b97f4a7c15ULL ^ (unsigned long long)n; h2 = 0xc2b2ae3d27d4eb4fULL + (unsigned long long)n;
+    for (int k = 0; k < n; k++) {
+        const int d = perm[k];
+        const unsigned long long w = key(d), t = mix64((unsigned long long)seed[d] ^ mix64((unsigned long long)tag[d]));
+        h1 = mix64(h1 ^ w ^ t) + 0x632be59bd9b4e019ULL;
+        h2 = mix64(h2 + w * 0x9e3779b97f4a7c15ULL + t) ^ (h1 >> 17);
+    }
+    return true;
+}
+
+unsigned long long LEAF_H1 = 0, LEAF_H2 = 0;   // canonical hash of the last minimal closure (leaf dedup)
+static std::vector<long long> SIMP_SEED, SIMP_TAG;
 bool simplify_inner(configuration const& conf) {
     const int le = (int)conf.rneig.size();
-    static std::vector<int> eq_class, seed, key, next_class, htab;
-    eq_class.assign(le, 0);
-    seed.resize(le);
-    key.resize((size_t)le * 5);
-    next_class.resize(le);
+    SIMP_SEED.resize(le); SIMP_TAG.resize(le);
     for (size_t v = 0, d = 0; v < conf.vertype.size(); v++) {
         const int f = TYPE_FAM[conf.vertype[v]];
-        for (size_t q = 0; q < mainlist[conf.vertype[v]].rneig.size() && d < (size_t)le; q++, d++)
-            seed[d] = (EDGE_TYPED ? conf.lvert[d] * ETSPAN + conf.etype[d] : conf.lvert[d])
-                      * NFAM + (wl_only ? 0 : f);
-    }
-    // Power-of-two table, at least 4x the dart count so probe chains stay short.
-    int cap = 16; while (cap < le * 4) cap <<= 1;
-    const size_t mask = (size_t)cap - 1;
-    htab.assign(cap, -1);
-
-    int num_eq_class = 1, last_num_eq_class = 0;
-    while (num_eq_class > last_num_eq_class) {
-        last_num_eq_class = num_eq_class;
-        for (int i = 0; i < le; i++) {
-            int* k = &key[(size_t)i * 5];
-            k[0] = eq_class[i];
-            k[1] = eq_class[conf.mirro[i]];
-            k[2] = eq_class[conf.glue[i]];
-            k[3] = eq_class[conf.lneig[i]];
-            k[4] = eq_class[conf.rneig[i]];
+        for (size_t q = 0; q < mainlist[conf.vertype[v]].rneig.size() && d < (size_t)le; q++, d++) {
+            SIMP_SEED[d] = (long long)(EDGE_TYPED ? conf.lvert[d] * ETSPAN + conf.etype[d] : conf.lvert[d])
+                           * NFAM + (wl_only ? 0 : f);
+            SIMP_TAG[d] = conf.vertype[v];
         }
-        std::fill(htab.begin(), htab.end(), -1);
-        num_eq_class = 0;
-        for (int i = 0; i < le; i++) {
-            const int* ki = &key[(size_t)i * 5];
-            size_t h = (size_t)(unsigned)seed[i] * 1000003u;
-            for (int q = 0; q < 5; q++) h = h * 1000003u + (size_t)(unsigned)ki[q];
-            size_t sl = h & mask;
-            for (;;) {
-                const int j = htab[sl];
-                if (j < 0) { htab[sl] = i; next_class[i] = num_eq_class++; break; }
-                const int* kj = &key[(size_t)j * 5];
-                if (seed[j] == seed[i] && kj[0] == ki[0] && kj[1] == ki[1] && kj[2] == ki[2]
-                    && kj[3] == ki[3] && kj[4] == ki[4]) { next_class[i] = next_class[j]; break; }
-                sl = (sl + 1) & mask;
-            }
-        }
-        eq_class.swap(next_class);
-        next_class.resize(le);
     }
+    const long long* sd = SIMP_SEED.data();   // covering test first: congruence.hpp
+    if (has_congruence(le, conf.rneig.data(), conf.lneig.data(), conf.mirro.data(), conf.glue.data(),
+                       (int)mainlist[conf.vertype[0]].rneig.size(), [sd](int x, int y) { return sd[x] == sd[y]; }))
+        return false;
+    if (!refine(conf, SIMP_SEED.data(), SIMP_TAG.data(), LEAF_H1, LEAF_H2)) {
+        std::cerr << "simplify: refinement and congruence test disagree\n"; std::abort();
+    }
+    return true;
+}
 
-    return num_eq_class == le;
+// TRANSPOSITION TABLE (from Martin Olivier's solver, 2026-11-06; EU_TT_MB=<MB>, default 0 = off). The
+// tilings below a node depend only on its configuration up to isomorphisms preserving R, L, M, G (free
+// stays free) and each dart's vertex type, corner class and edge type: extend() reads nothing else, and
+// the root type is the minimum type present. So a node isomorphic to one already entered is skipped. Our
+// 2026-08 "zero repeats" test hashed LABELLED states, which never repeat; isomorphic states do. Probed
+// while kcnt <= maxnum - EU_TT_MARGIN (default 3) and only when refine() ends discrete.
+//
+// ⚑ Same tilings, same representatives, same order: the earlier node is never an ancestor (descendants
+// carry more glues), so its subtree finished first. But skipped subtrees no longer count their raw
+// duplicates, so the serial n in "eu raw <sig> <n>.tes", and with it ctrnact-* ids, can change. Off by
+// default until ids stop depending on raw counts. Regular k<=12: 2.24M -> 1.39M nodes, 1.2x.
+static const long tt_mb = std::getenv("EU_TT_MB") ? atol(std::getenv("EU_TT_MB")) : 0;
+static const int tt_margin = std::getenv("EU_TT_MARGIN") ? atoi(std::getenv("EU_TT_MARGIN")) : 3;
+static HashSet128 TT;
+static long long tt_probes = 0, tt_hits = 0, tt_nondiscrete = 0;
+static std::vector<long long> TT_SEED;
+static bool tt_seen(configuration const& c) {
+    if (tt_mb <= 0 || c.kcnt > maxnum - tt_margin || c.dfs_depth < split_depth) return false;
+    if (!TT.slot) TT.init(tt_mb, false);
+    const int n = (int)c.glue.size();
+    TT_SEED.resize(n);
+    for (size_t v = 0, d = 0; v < c.vertype.size(); v++) {
+        const long long T = c.vertype[v];
+        for (size_t q = 0; q < mainlist[T].rneig.size(); q++, d++)
+            TT_SEED[d] = (T * NCLS + c.lvert[d]) * ETSPAN + (EDGE_TYPED ? c.etype[d] : 0);
+    }
+    unsigned long long h1, h2;
+    tt_probes++;
+    if (!refine(c, TT_SEED.data(), TT_SEED.data(), h1, h2)) { tt_nondiscrete++; return false; }
+    if (!TT.seen_or_insert(h1, h2)) return false;
+    tt_hits++;
+    return true;
+}
+
+// A branch glue has passed checkpart_inc: close the forced faces, then emit the configuration if it is
+// closed or recurse into it unless the TT has seen it. True when it recursed (the old `success`).
+static bool visit_child(configuration& c, const int* chg) {
+    const size_t fmark = FTRAIL.size();
+    bool recursed = false;
+    if (propagate_forced(c, chg, 4)) {
+        if (std::find(c.glue.begin(), c.glue.end(), -1) == c.glue.end()) {
+            if (split_depth > 0 && c.dfs_depth < split_depth && fork_index != 0) {}   // worker 0 writes these
+            else if (c.kcnt > seen) { if (simplify(c)) writesolution(c); }
+            else nckzero++;   // closed but zero counting vertices: not a tiling record
+        } else if (!tt_seen(c)) {
+            extend(c);
+            recursed = true;
+        }
+    }
+    undo_forced(c, fmark);
+    return recursed;
 }
 
 int extend(configuration& slist) {
     slist.dfs_depth++;
     // Root level (the one-vertex seed from initex) is where the depth-2 cut is made. Deeper calls
     // never consult the shard, so the subtree below a taken branch is explored whole.
-    const bool shard_here = (shard_d2 > 1 && slist.dfs_depth == 1);
+    const bool shard_here = split_depth > 0 ? slist.dfs_depth == split_depth
+                                            : (shard_d2 > 1 && slist.dfs_depth == 1);
     std::vector<std::string> potential = {};
     int success = 0;
     if (eu_trace) {
@@ -1385,19 +1605,11 @@ int extend(configuration& slist) {
                                       mirrored ? -1 : newconf.mirro[firstfree],
                                       mirrored ? -1 : newconf.mirro[i] };
                 if (checkpart_inc(newconf, chg1, 4) && (!shard_here || shard_take_branch())) {
-                    if (std::find(newconf.glue.begin(), newconf.glue.end(), -1) == newconf.glue.end()) {
-                        if (newconf.kcnt > seen) {
-                            if (simplify(newconf)) {
-                                writesolution(newconf);
-                            }
-                        }
-                        else nckzero++;   // closed but zero counting vertices: not a tiling record
-                    }
-                    else {
+                    if (visit_child(newconf, chg1)) {
                         success++;
-                        extend(newconf);
                         if (eu_trace) potential.push_back(conwaysymbol(label_str(newconf.label[firstfree]), label_str(newconf.label[i])));
                     }
+                    if (shard_here) shard_done_branch();
                 }
                 slist.glue[firstfree] = -1;
                 slist.glue[i] = -1;
@@ -1542,19 +1754,11 @@ int extend(configuration& slist) {
                     // nothing is lost; see hyp_feas.h. Cached per type set, so the other reps are free.
                     if (checkpart_inc(newconf2, chg2, 4) && (!shard_here || shard_take_branch()) &&
                         (!hf::mode || hf::feasible_with(newconf2.vertype, gr))) {
-                        if (std::find(newconf2.glue.begin(), newconf2.glue.end(), -1) == newconf2.glue.end()) {
-                            if (newconf2.kcnt > seen) {
-                                if (simplify(newconf2)) {
-                                    writesolution(newconf2);
-                                }
-                            }
-                            else nckzero++;
-                        }
-                        else {
+                        if (visit_child(newconf2, chg2)) {
                             success++;
-                            extend(newconf2);
                             if (eu_trace) potential.push_back(conwaysymbol(label_str(newconf2.label[firstfree]), label_str(newconf2.label[i])) + " " + mainlist[gr].symbol);
                         }
+                        if (shard_here) shard_done_branch();
                     }
                     newconf2.glue[firstfree] = -1;
                     newconf2.glue[i] = -1;
@@ -2098,11 +2302,23 @@ int main() {
             std::cerr << "EU_FORK and EU_STREAM are incompatible: the workers share one stdout\n";
             return 2;
         }
-        if (shard_n % nfork != 0) {
+        split_depth = std::getenv("EU_SPLIT") ? atoi(std::getenv("EU_SPLIT")) : 0;
+        if (split_depth > 0) {
+            if (shard_n > 1) { std::cerr << "EU_SPLIT replaces EU_SHARD_N; set one or the other\n"; return 2; }
+            TICKET = (long long*)mmap(nullptr, 4096, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
+            if (TICKET == MAP_FAILED) { std::cerr << "mmap failed\n"; return 2; }
+            std::cerr << "EU_SPLIT: counts are exact, but every worker numbers its own serials, so ctrnact-* "
+                         "ids collide across workers (60,447 of 413,361 at regular k<=14). Not for shipping.\n";
+        }
+        else if (shard_n % nfork != 0) {
             std::cerr << "EU_FORK=" << nfork << " must divide EU_SHARD_N=" << shard_n
                       << " — refusing to run an incomplete partition\n";
             return 2;
         }
+        // One TT and one leaf set for all workers: a TT hit skips a subtree another worker has entered
+        // and will finish, a leaf hit drops a closure another worker has written. EU_SHARED_TABLES=0: off.
+        tables_shared = !std::getenv("EU_SHARED_TABLES") || atoi(std::getenv("EU_SHARED_TABLES")) != 0;
+        if (tables_shared) { if (tt_mb > 0) TT.init(tt_mb, true); if (leaf_mb > 0) LEAF_SET.init(leaf_mb, true); }
         std::cerr << "fork: " << nfork << " workers over " << shard_n
                   << " shards, sharing one alphabet\n";
         std::vector<pid_t> kids;
@@ -2115,7 +2331,12 @@ int main() {
                 if (mkdir(dir, 0755) && errno != EEXIST) _exit(3);
                 if (chdir(dir)) _exit(3);
                 if (mkdir("out", 0755) && errno != EEXIST) _exit(3);
-                for (int i = c; i < shard_n; i += nfork) {
+                fork_index = c;
+                if (split_depth > 0) {   // walk everything, explore the tickets this worker wins
+                    my_ticket = __atomic_fetch_add(TICKET, 1, __ATOMIC_RELAXED);
+                    initex();
+                }
+                else for (int i = c; i < shard_n; i += nfork) {
                     shard_set(i);
                     // ⚑ MUST reset. shard_take_branch() slices the root-level branch NUMBER, and the
                     // numbering is only a partition because every shard sharing a w1 counts the same
@@ -2152,6 +2373,8 @@ int main() {
     std::cerr << "nodes: " << solcount
               << "  simplify_calls: " << simplify_calls
               << "  simplify_true: " << simplify_true
+              << "  forced: " << forced_glues << "  leaf_dups: " << leaf_dups
+              << "  tt: " << tt_hits << " hits / " << tt_probes << " probes (" << tt_nondiscrete << " not discrete)"
               << "\n";
     if (max_nc > 0)
         std::cerr << "note: up to " << max_nc << " dent-fill (noncounting) vertices per configuration; "

@@ -673,3 +673,32 @@ Gates: `check-regular` PASS byte-identical; star24full k≤4 identical (2,959,61
 filter deleting 141 of 288 in the first place.
 
 Full write-up: `experiments/results/4bucket-union-2026-08-08.md`.
+
+---
+
+## Fixes 15-20: Martin Olivier's solver (2026-11-06)
+
+Studied his rewrite of the same search (epsln/k-uniform-enumeration) and ported what paid. Narrative in
+`DEVELOPMENT_NOTES.md` 2026-11-06, every measurement in `experiments/results/epsln-solver-study-2026-11-06.md`.
+
+| fix | what | default | regular, single core |
+|---|---|---|---|
+| 15 | forced closure of zero-slack faces | on | k<=12: 7.68M -> 2.24M nodes |
+| 16 | covering test by congruence closure (`congruence.hpp`) | on | leaf test 2x cheaper |
+| 17 | canonical refinement in simplify, leaf dedup by its hash | on | k<=8: 14,849 -> 5,569 blocks written |
+| 18 | pruner minimality via `congruence.hpp` | on | pruner 9.51 -> 3.70 s at k<=13 |
+| 19 | transposition table over isomorphism classes (`EU_TT_MB`) | off | k<=12: 2.24M -> 1.39M nodes |
+| 20 | dynamic split + shared tables (`EU_FORK` + `EU_SPLIT`) | off | k<=15 on 6 workers: 58.7 s vs his 81.2 s |
+
+Together, k<=12 single core: 30.5 s -> 13.1 s (his: 24.0 s). Fixes 19 and 20 are off because they move
+ctrnact-* id serials (see the notes).
+
+**Correction to "Measured and rejected" above.** The zero-repeats memoisation test hashed LABELLED states
+(vertype, glue), which indeed never repeat. Isomorphism classes of partial states do: fix 19 skips 5.5% of
+probed nodes at k<=12 and removes 38% of the tree. Not a contradiction, a different key.
+
+**Measured and rejected (do not retry):** unique-partner forcing at the k limit (1-2%, reorders leaves; its
+kill half can never fire here, since a free dart's mirror always holds the partner key); an edge-balance
+bound per key pair (vacuous for the same reason: every vertex type carries as many K darts as f(K) darts);
+insertion sort for small cells in the refinement (no measurable gain); TT probe margins 1 and 2 (16.8 s and
+14.2 s against 13.1 s at margin 3; 4 and 5 are flat).
