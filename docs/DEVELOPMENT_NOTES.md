@@ -21125,3 +21125,31 @@ TT off. ⚑ Also found: the generated tables for star24full, composite-convex, r
 `CLASS_SIGMA`/`PTAB_ETYPE`, so no engine version compiles against them until they are regenerated; and
 `check-star`'s last step fails only because `golden/star-shelf.sha256` names the `.json` files that the gzip
 migration renamed (all 100 match unzipped).
+
+## Binary tilings on /aperiodic (2026-11-05, CC)
+
+Chakot (Discord) asked for the binary tiling, its ternary and higher versions and their duals; Marek pointed him at
+AL because they are not periodic. They are weakly aperiodic (Böröczky 1974; Dolbilin and Frettlöh 2010): no finite
+quotient, so no walk table can hold one and the disk renderer could not draw them. New view `binary` on
+/aperiodic, group "Hyperbolic", the shelf's first: n = 2 to 8 children a tile, tiles, dual or both, standard or
+random ancestry.
+
+- The camera anchors on a tile named by its ancestry (lib/tilings/binary.ts): digit i is the child index of the
+  anchor's i-th ancestor, moves are n-adic arithmetic on that string, and a tail is constant (the standard tiling,
+  every digit 0) or seeded random. `HypCamera` now takes a `DiskChart<F>` (seed, home, reanchor, snap), with
+  `walkChart` wrapping a walk table as before; the binary charts are the second kind. `HyperbolicViewInput` and
+  the local stepping moved to hypCamera.ts (`stepLocal`).
+- Horocyclic geometry (any n): a pixel's tile is read off its half-plane coordinates, row ⌊logₙ y⌋, column from
+  the ancestry's offsets F(m) = c(m)/nᵐ. The dual's edges are geodesics between tile centres; in a tile's frame
+  they are rays from 0 and no other dual edge enters the tile, so the dual face is the wedge the pixel is in.
+- Geodesic geometry (n = 2): the binary tiling's dual has every vertex 3.4.3.4.4, which closes with regular
+  triangles and squares at edge 0.7389979438517287, exactly the edge of the catalogue's three periodic k = 2
+  records of that type (hyp-k2-3-4-3-4-4__3-4-3-4-4, -b, -c). Its tiles are the dual vertices' Voronoi cells,
+  congruent pentagons with corners 90, 120, 90, 120, 90. The shader walks cell to cell with integer tile
+  coordinates; side maps in REG_MAPS, face closure tested in lib/tilings/binary.test.ts. For n ≥ 3 the dual has two
+  vertex types (n triangles + 3 squares, n + 1 triangles + 2 squares), which close at one edge only if a
+  triangle's angle equals a square's: never, so the regular version exists for n = 2 alone.
+- ⚑ GPU atan: the first shader found the wedge by `atan(y, x)` and broke every leftmost child's left half at odd
+  n. The middle child's direction is exactly (−1, −0), and this machine's GPU returns 0 for atan(−0, −1), not π;
+  JavaScript's Math.atan2 is right, so a CPU replica of the shader was correct and hid it. The wedge is now found
+  by two cross products (every wedge is under π). Do not compare GLSL angles from atan near the negative x-axis.

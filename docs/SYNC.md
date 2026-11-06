@@ -3342,3 +3342,8 @@ zero-slack faces, a congruence-closure covering test shared with the pruner (`co
 with leaf dedup. Regular k≤14 on one core: 212 s → 57 s (his: 125 s); check-regular byte-identical. Opt-in, since
 both move id serials: transposition table (`EU_TT_MB`) and the dynamic fork split (`EU_FORK` + `EU_SPLIT`).
 Detail: DEVELOPMENT_NOTES "Martin Olivier's solver, studied and ported"; experiments/results/epsln-solver-study-2026-11-06.md.
+
+2026-11-06 · CC · Binary tilings on /aperiodic, the shelf's first hyperbolic view: Böröczky's tiles for n = 2 to 8
+children, their duals, standard or random ancestry, panned without bound (HypCamera takes a DiskChart; the anchor is
+a tile's ancestry, lib/tilings/binary.ts). For n = 2 a geodesic version whose dual is regular 3.4.3.4.4, at the edge
+of the catalogue's three periodic k = 2 records. Detail: DEVELOPMENT_NOTES "Binary tilings on /aperiodic".

@@ -10,10 +10,11 @@ export type AperiodicViewId =
 	| "half-hex"
 	| "pinwheel"
 	| "half-hex-3"
-	| "multigrid";
+	| "multigrid"
+	| "binary";
 
 /** How the tiling is built; shown in the title block and each switcher cell's tooltip. */
-export type ConstructionGroup = "Substitution" | "Projection";
+export type ConstructionGroup = "Substitution" | "Projection" | "Hyperbolic";
 
 export interface AperiodicViewDef {
 	id: AperiodicViewId;
@@ -80,6 +81,13 @@ export const APERIODIC_VIEWS: AperiodicViewDef[] = [
 		label: "Multigrid",
 		blurb: "de Bruijn's dual grids",
 		group: "Projection",
+	},
+	// No translations at all: a tiling of the hyperbolic plane with no finite quotient (lib/tilings/binary.ts).
+	{
+		id: "binary",
+		label: "Binary",
+		blurb: "Böröczky's, n children a tile",
+		group: "Hyperbolic",
 	},
 ];
 

@@ -11,6 +11,7 @@ import { AperiodicPeek, Section, Segmented } from "./_controls";
 import { SubRosaView } from "./_subrosa-view";
 import { MultigridView } from "./_multigrid-view";
 import { PatchView } from "./_patch-view";
+import { BinaryView } from "./_binary-view";
 import { APERIODIC_VIEWS, DEFAULT_VIEW, isViewId, type AperiodicViewId } from "./_views";
 import { Dropdown } from "@/components/ui/dropdown";
 
@@ -24,7 +25,8 @@ import { Dropdown } from "@/components/ui/dropdown";
 // Switching therefore resets that view's controls; the URL carries the view, not its parameters.
 //
 // The switcher is a title block (the active view and one line about it) over one segmented control
-// listing every construction, three to a row so the nine fill three full rows. Each cell's tooltip names its construction group.
+// listing every construction, three to a row: the nine Euclidean ones fill three rows and the hyperbolic
+// one takes the fourth to itself. Each cell's tooltip names its construction group.
 
 export function AperiodicClient() {
 	const searchParams = useSearchParams();
@@ -54,7 +56,7 @@ export function AperiodicClient() {
 
 	// The phone's peek row: the view's name and line as plain text, which is where a thumb grabs the
 	// sheet, and a compact Construction button at the right. The button is a Dropdown with a pill face:
-	// a tap opens a list of all nine at once, which a 64px row could never lay out as
+	// a tap opens a list of all ten at once, which a 64px row could never lay out as
 	// buttons. It stays live at every snap, so on a phone it replaces the sheet's title block and
 	// Construction grid, which would say the same things again just below it.
 	const peek = (
@@ -111,6 +113,8 @@ export function AperiodicClient() {
 					<MultigridView header={header} />
 				) : view === "subrosa" ? (
 					<SubRosaView header={header} />
+				) : view === "binary" ? (
+					<BinaryView header={header} />
 				) : (
 					<PatchView id={view} header={header} />
 				)}
