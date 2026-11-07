@@ -28,11 +28,13 @@
 #include <sys/resource.h>
 #include <zlib.h>
 #include <atomic>
+#include <climits>
 #include <memory>
 #include <condition_variable>
 #include <functional>
 #include <deque>
 #include <algorithm>
+#include <charconv>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -341,7 +343,7 @@ struct Fingerprints {
 // duplicates included, and allocation was the largest cost on output-heavy boards.
 // The canonical form itself, with every label read through `lab` (a recolouring; null reads them as they
 // are). False when the tiling covers a smaller quotient, which no relabelling changes.
-static bool canonical_form(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form) {
+static bool canonical_form_global(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form) {
     using Row = std::pair<std::array<uint32_t, 5>, uint32_t>;
     thread_local std::vector<uint32_t> eq, ranks;
     auto label = [&](index_t ix) -> uint32_t {
@@ -409,6 +411,121 @@ static bool canonical_form(tiling_t const& t, std::unordered_map<int, int> const
     return true;
 }
 
+static bool canonical_form_classes(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form) {
+    using Row = std::pair<std::array<uint32_t, 5>, uint32_t>;
+    thread_local std::vector<uint32_t> eq, ranks;
+    auto label = [&](index_t ix) -> uint32_t {
+        int c = t.left_label(ix);
+        if (lab) if (auto it = lab->find(c); it != lab->end()) c = it->second;
+        return (uint32_t)c;
+    };
+    thread_local std::vector<Row> data;
+    thread_local std::vector<std::pair<uint64_t, uint32_t>> packed;
+    int const n = t.num_halfedges();
+    // Labels are replaced by their ranks: the sort below sees the same order, so it makes the same classes.
+    ranks.clear();
+    for (int i = 0; i < n; i++) ranks.push_back(label(index_t{ i }));
+    std::sort(ranks.begin(), ranks.end());
+    ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+    eq.resize(n);
+    for (int i = 0; i < n; i++) eq[i] = uint32_t(std::lower_bound(ranks.begin(), ranks.end(), label(index_t{ i })) - ranks.begin());
+    // Every entry is now below n, so while n^5 fits in 64 bits a row packs into one number that sorts
+    // exactly as the 5-tuple does (n <= 7131); larger tilings sort the tuples.
+    //
+    // Each round sorts only inside the classes of the round before (2026-11-06). The global sort ordered rows by
+    // their first entry, the half-edge's own class, so it only ever reordered half-edges within one class, ties by
+    // index; sorting each class of two or more on its own, singletons left in place, gives the same order and the
+    // same dense numbering, so forms and fingerprints are unchanged. TILESEARCH_CHECK_CANON=1 runs the global sort
+    // beside it on every call and aborts on any difference.
+    bool const pack = n <= 7131;
+    int classes = 1, last = 0;
+    if (pack) {
+        thread_local std::vector<uint32_t> ord, cnt;
+        thread_local std::vector<int> cell_end;   // cell_end[p]: one past the class starting at position p
+        ord.resize(n), cell_end.assign(n, 0), packed.resize(n);
+        cnt.assign(n + 1, 0);   // the half-edges by label rank, ties by index (ranks are below n: a counting sort)
+        for (int i = 0; i < n; i++) cnt[eq[i] + 1]++;
+        for (int r = 0; r < n; r++) cnt[r + 1] += cnt[r];
+        for (int i = 0; i < n; i++) ord[cnt[eq[i]]++] = (uint32_t)i;
+        for (int p = 0; p < n; ) {
+            int q = p + 1;
+            while (q < n && eq[ord[q]] == eq[ord[p]]) q++;
+            cell_end[p] = q, p = q;
+        }
+        classes = 0;   // dense class numbers in this order, as the global sort's ranks
+        for (int p = 0; p < n; p = cell_end[p]) { for (int j = p; j < cell_end[p]; j++) eq[ord[j]] = (uint32_t)classes; classes++; }
+        while (classes > last) {
+            last = classes;
+            for (int p = 0; p < n; p = cell_end[p]) {   // every key from this round's numbers, then sort each class
+                int const e = cell_end[p];
+                if (e - p == 1) continue;
+                for (int j = p; j < e; j++) {
+                    index_t ix{ (int)ord[j] };
+                    uint64_t k = eq[ord[j]];
+                    k = k * n + eq[t.opposite(ix).value];
+                    k = k * n + eq[t.left_neighbour(ix).value];
+                    k = k * n + eq[t.right_neighbour(ix).value];
+                    k = k * n + eq[t.mirror(ix).value];
+                    packed[j] = { k, ord[j] };
+                }
+                std::sort(packed.begin() + p, packed.begin() + e);
+            }
+            classes = 0;   // split where the key changes, renumber densely in order
+            for (int p = 0; p < n; ) {
+                int const e = cell_end[p];
+                if (e - p == 1) { eq[ord[p]] = (uint32_t)classes++; p = e; continue; }
+                int a = p;
+                for (int j = p; j < e; j++) {
+                    ord[j] = packed[j].second;
+                    if (j > p && packed[j].first != packed[j - 1].first) { cell_end[a] = j; a = j; classes++; }
+                    eq[ord[j]] = (uint32_t)classes;
+                }
+                cell_end[a] = e;
+                classes++;
+                p = e;
+            }
+        }
+    } else {
+        while (classes > last) {
+            last = classes;
+            data.resize(n);
+            for (int i = 0; i < n; i++) {
+                index_t ix{ i };
+                data[i] = { { eq[i], eq[t.opposite(ix).value], eq[t.left_neighbour(ix).value], eq[t.right_neighbour(ix).value],
+                              eq[t.mirror(ix).value] }, (uint32_t)i };
+            }
+            std::sort(data.begin(), data.end());
+            eq[data[0].second] = 0;
+            classes = 1;
+            for (int i = 1; i < n; i++) {
+                if (data[i].first != data[i - 1].first) classes++;
+                eq[data[i].second] = classes - 1;
+            }
+        }
+    }
+    if (classes != n) return false;
+    form.resize(4 * n);
+    for (int i = 0; i < n; i++) {
+        index_t ix{ i };
+        uint32_t* f = &form[4 * eq[i]];
+        f[0] = eq[t.opposite(ix).value], f[1] = eq[t.mirror(ix).value], f[2] = eq[t.left_neighbour(ix).value], f[3] = label(ix);
+    }
+    return true;
+}
+
+static bool const check_canon = std::getenv("TILESEARCH_CHECK_CANON") != nullptr;
+static bool canonical_form(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form) {
+    bool const r = canonical_form_classes(t, lab, form);
+    if (check_canon) {
+        thread_local std::vector<uint32_t> g;
+        if (canonical_form_global(t, lab, g) != r || (r && g != form)) {
+            std::cerr << "TILESEARCH_CHECK_CANON: the class-wise sort and the global sort disagree (" << t.num_halfedges() << " half-edges)\n";
+            std::abort();
+        }
+    }
+    return r;
+}
+
 // ── colourings up to permuting the colours (`colors unlabeled`, the default on a coloured board) ──
 //
 // A coloured corner is `<base>@<letter>` (A4@B). Each permutation of the board's colour letters that maps
@@ -418,6 +535,27 @@ static bool canonical_form(tiling_t const& t, std::unordered_map<int, int> const
 // roots, which matters: the recolourings of a tiling can have different least vertex types, so they are
 // found from different roots and the per-root dedup never sees them together.
 static std::vector<std::unordered_map<int, int>> recolorings;
+// COLOUR CLASSES BY KEY (2026-11-06). A colour class's representative is the member with the least key: (1) its least
+// vertex type, (2) its signature vector, (3) its canonical form. A colour letter's signature counts the half-edges of
+// each base corner that carry it. The recolourings form a group, so exactly one member of each class passes.
+//   - Leaf test: per recolouring, the recoloured least type and signature vector are compared first (cheap); only the
+//     recolourings tying on both get a canonical form.
+//   - Colour cut: the least type is the search's root and types only get added, so a vertex whose recoloured type is
+//     below the root type kills the node (its type is skipped), and a root some recolouring maps below itself is not
+//     searched.
+// recolor_letters: per recolouring, its letter map. sig_slot: per corner code, letter * nbase + base, or -1 when it has
+// no colour. recolor_type[r][t]: type t recoloured by r, matched on templates (see the table's build after classify).
+// TILESEARCH_COLOR_SIG=0 turns all of it off, TILESEARCH_COLOR_CUT=0 the cut only; TILESEARCH_CLASSKEY=1 makes TILESEARCH_KEYS
+// write each tiling's old class key (its least canonical form over all recolourings), to compare builds.
+static std::vector<std::array<int, 8>> recolor_letters;
+static std::vector<int> sig_slot;
+static int sig_nbase = 0;
+static std::vector<std::vector<int>> recolor_type;
+static std::vector<int> recolor_min_type;          // least recoloured type, per type
+static void const* cut_vc = nullptr;               // the classification the tables index (the run's, not a probe's)
+static thread_local std::vector<int> const* cur_types = nullptr;   // the leaf's vertex types, set before on_tiling
+static bool color_sig = !std::getenv("TILESEARCH_COLOR_SIG") || std::string(std::getenv("TILESEARCH_COLOR_SIG")) != "0";
+static bool const class_key_dump = std::getenv("TILESEARCH_CLASSKEY") != nullptr;
 
 /** A word's key: the least of its rotations and mirror images, or its sorted letters when `multiset`. */
 static std::vector<int> word_key(std::vector<int> w, bool multiset) {
@@ -433,6 +571,9 @@ static std::vector<int> word_key(std::vector<int> w, bool multiset) {
 
 static void find_recolorings(Board const& b) {
     recolorings.clear();
+    recolor_letters.clear();
+    sig_slot.clear();
+    sig_nbase = 0;
     if (b.colors_labeled) return;
     static const std::regex colored_re("(.+)@([A-H])");
     std::map<int, std::pair<std::string, int>> colored;   // code -> (base, letter)
@@ -447,6 +588,14 @@ static void find_recolorings(Board const& b) {
         used.insert(L);
     }
     if (used.size() < 2 || used.size() > 6) return;   // 6! = 720 recolourings at most
+    {
+        std::map<std::string, int> base_ix;
+        int maxc = 0;
+        for (auto const& [c, bl] : colored) { base_ix.emplace(bl.first, (int)base_ix.size()); maxc = std::max(maxc, c); }
+        sig_nbase = (int)base_ix.size();
+        sig_slot.assign(maxc + 1, -1);
+        for (auto const& [c, bl] : colored) if (c >= 0) sig_slot[c] = bl.second * sig_nbase + base_ix[bl.first];
+    }
     std::vector<int> letters(used.begin(), used.end()), perm = letters;
     auto keys = [&](std::vector<std::vector<int>> const& ws, bool multiset, std::unordered_map<int, int> const* lab) {
         std::set<std::vector<int>> out;
@@ -481,12 +630,133 @@ static void find_recolorings(Board const& b) {
             if (it == code_of.end()) { ok = false; break; }
             lab[c] = it->second;
         }
-        if (ok && image(&lab) == same) recolorings.push_back(lab);
+        if (ok && image(&lab) == same) {
+            recolorings.push_back(lab);
+            std::array<int, 8> lm;
+            for (int L = 0; L < 8; L++) lm[L] = L;
+            for (size_t i = 0; i < letters.size(); i++) lm[letters[i]] = perm[i];
+            recolor_letters.push_back(lm);
+        }
     } while (std::next_permutation(perm.begin(), perm.end()));
+}
+
+// ── coverings, rejected by congruence closure (eu_solver's congruence.hpp, 2026-11-06) ──
+// A complete tiling is connected and opposite, left, right and mirror permute its half-edges, so the classes
+// canonical_form refines to are a block system with blocks of one size: it covers a smaller quotient iff the
+// anchor half-edge a shares its class with some b of the same label, iff the union-find closure of (a, b) under
+// the four links never merges two labels (that closure lies inside any congruence holding the pair). A wrong b
+// fails within a few steps, where the refinement runs to its end. Exact, so it only decides the coverings early;
+// a half-edge without a mirror (which canonical_form reads as index -1) leaves the verdict to canonical_form.
+// TILESEARCH_CONGRUENCE=0 turns it off.
+static bool const congruence_test = !std::getenv("TILESEARCH_CONGRUENCE") || std::string(std::getenv("TILESEARCH_CONGRUENCE")) != "0";
+static bool covers_quotient(tiling_t const& t) {
+    int const n = t.num_halfedges();
+    thread_local std::vector<int> par, touched;
+    thread_local std::vector<std::pair<int, int>> work;
+    for (int i = (int)par.size(); i < n; i++) par.push_back(i);
+    auto lab = [&](int x) { return t.left_label(index_t{ x }); };
+    auto find = [&](int x) { while (par[x] != x) par[x] = par[par[x]], x = par[x]; return x; };
+    for (int i = 0; i < n; i++)
+        if (!t.mirror(index_t{ i }).has_value()) return false;   // canonical_form decides these
+    int const a = 0, la = lab(0);   // any anchor gives the same verdict
+    for (int b = 1; b < n; b++) {
+        if (lab(b) != la) continue;
+        bool ok = true;
+        work.assign(1, { a, b });
+        while (ok && !work.empty()) {
+            auto const [u, v] = work.back();
+            work.pop_back();
+            int const x = find(u), y = find(v);
+            if (x == y) continue;
+            if (lab(x) != lab(y)) { ok = false; break; }
+            par[y] = x, touched.push_back(y);
+            index_t const iu{ u }, iv{ v };
+            index_t const mu = t.mirror(iu), mv = t.mirror(iv);
+            work.push_back({ t.opposite(iu).value, t.opposite(iv).value });
+            work.push_back({ t.left_neighbour(iu).value, t.left_neighbour(iv).value });
+            work.push_back({ t.right_neighbour(iu).value, t.right_neighbour(iv).value });
+            work.push_back({ mu.value, mv.value });
+        }
+        for (int x : touched) par[x] = x;
+        touched.clear();
+        if (ok) return true;
+    }
+    return false;
+}
+
+// The run's own test: as fingerprint_if_minimal, but a key already seen is dropped before the recolourings are
+// tried (they decide the same way for every copy of a tiling, so the first copy settled it). Colour boards ran up to
+// 720 refinements per duplicate. TILESEARCH_EARLY_SEEN=0 turns it off.
+static bool const early_seen = !std::getenv("TILESEARCH_EARLY_SEEN") || std::string(std::getenv("TILESEARCH_EARLY_SEEN")) != "0";
+static bool const check_force = std::getenv("TILESEARCH_CHECK_FORCE") != nullptr;
+template<class Seen> static bool new_minimal(tiling_t const& t, Fingerprints::Key& key, Seen& seen) {
+    thread_local std::vector<uint32_t> form, other;
+    // Which test first: the union-find decides a covering in a few steps but is wasted on a minimal tiling, whose
+    // refinement runs anyway for its key. Per thread, the observed covering rate picks the order (both give the
+    // same verdict): union-find first while coverings are at least 30% of leaves (regular boards: 55-85%), the
+    // refinement first below that (bubble, colours: 1-5%).
+    thread_local uint32_t n_leaves = 0, n_covers = 0;
+    thread_local bool uf_first = true;
+    auto covered = [&] { n_covers++; return false; };
+    if (++n_leaves == 1024) uf_first = n_covers * 10 >= n_leaves * 3, n_leaves /= 2, n_covers /= 2;
+    if (congruence_test && uf_first && covers_quotient(t)) return covered();
+    if (!canonical_form(t, nullptr, form)) return covered();
+    key = Fingerprints::of(form);
+    if (early_seen && !seen.first_time(key)) return false;
+    if (color_sig && !recolorings.empty()) {
+        thread_local std::vector<int> sig, ties;
+        int const nb = sig_nbase, n = t.num_halfedges();
+        sig.assign(8 * nb, 0);
+        for (int i = 0; i < n; i++) {
+            int const c = t.left_label(index_t{ i });
+            if (c >= 0 && c < (int)sig_slot.size() && sig_slot[c] >= 0) sig[sig_slot[c]]++;
+        }
+        ties.clear();
+        bool const cut = cut_vc != nullptr && cur_types != nullptr && !cur_types->empty();
+        int const t0 = cut ? (*cur_types)[0] : 0;
+        for (size_t r = 0; r < recolorings.size(); r++) {
+            if (cut) {   // first key: the recoloured tiling's least type, never below t0 once the cut ran
+                int m = INT_MAX;
+                for (int ty : *cur_types) m = std::min(m, recolor_type[r][ty]);
+                if (m < t0) return false;
+                if (m > t0) continue;
+            }
+            // second key: recolouring by letter map p moves letter L's signature to p(L)
+            auto const& lm = recolor_letters[r];
+            int inv[8];
+            for (int L = 0; L < 8; L++) inv[lm[L]] = L;
+            int cmp = 0;
+            for (int j = 0; j < 8 && cmp == 0; j++)
+                for (int q = 0; q < nb; q++) {
+                    int const x = sig[inv[j] * nb + q], y = sig[j * nb + q];
+                    if (x != y) { cmp = x < y ? -1 : 1; break; }
+                }
+            if (cmp < 0) return false;
+            if (cmp == 0) ties.push_back((int)r);
+        }
+        for (int r : ties) {   // third key: the canonical form, only for the recolourings tying on both
+            canonical_form(t, &recolorings[r], other);
+            if (other < form) return false;
+        }
+        bool const fresh = early_seen || seen.first_time(key);   // by the tiling's own key, before any debug swap
+        if (fresh && class_key_dump) {
+            thread_local std::vector<uint32_t> best;
+            best = form;
+            for (auto const& lab : recolorings) { canonical_form(t, &lab, other); if (other < best) best = other; }
+            key = Fingerprints::of(best);
+        }
+        return fresh;
+    }
+    for (auto const& lab : recolorings) {
+        canonical_form(t, &lab, other);
+        if (other < form) return false;
+    }
+    return early_seen || seen.first_time(key);
 }
 
 static bool fingerprint_if_minimal(tiling_t const& t, Fingerprints::Key& key) {
     thread_local std::vector<uint32_t> form, other;
+    if (congruence_test && covers_quotient(t)) return false;
     if (!canonical_form(t, nullptr, form)) return false;
     for (auto const& lab : recolorings) {
         canonical_form(t, &lab, other);
@@ -515,6 +785,128 @@ static bool orientable(tiling_t const& t) {
             if (nb.has_value() && mark[nb.value] != epoch) mark[nb.value] = epoch, reached++, stack.push_back(nb.value);
     }
     return reached < n;
+}
+
+// ── the certificate text: original_tiling_writer::write_content (tiling_writer.cpp), byte for byte ──
+// Written into a reused string instead of an ostream, numbers by to_chars (it was 29-61% of the search thread on
+// the output-heavy boards, 2026-11-07). A vertex's symbol is the lookup the writer makes (lookup_vertex_type_index
+// on the vertex's word, which does not tell axis classes apart), made once per vertex type of the search and kept:
+// the vertex holds that type's template, so its word is the same every time. TILESEARCH_FAST_WRITER=0 writes with
+// Marek's writer; TILESEARCH_CHECK_WRITER=1 writes with both and aborts at the first difference.
+static bool const fast_writer = !std::getenv("TILESEARCH_FAST_WRITER") || std::string(std::getenv("TILESEARCH_FAST_WRITER")) != "0";
+static bool const check_writer = std::getenv("TILESEARCH_CHECK_WRITER") != nullptr;
+static void put_int(std::string& out, int v) { char b[16]; out.append(b, std::to_chars(b, b + sizeof b, v).ptr); }
+struct StrOut { std::string& s; };   // what corner_decoder's operator<< writes to
+static StrOut& operator<<(StrOut& o, char const* x) { o.s += x; return o; }
+static StrOut& operator<<(StrOut& o, char x) { o.s += x; return o; }
+static StrOut& operator<<(StrOut& o, int x) { put_int(o.s, x); return o; }
+// conway_representation_t: the half-edge's place in its vertex (its mirror's, starred), the vertex as primes to 3, @n after
+struct ConwayRep { bool mirrored; int ix, v; };
+static ConwayRep conway_rep(tiling_t const& t, index_t ix) {
+    auto const& n = t.neighbourhood(ix);
+    bool const m = !(ix <= n.mirror);
+    return { m, (m ? n.mirror : ix) - n.vertex_start, n.vertex_ix };
+}
+static void put_rep(std::string& out, ConwayRep r, bool star) {
+    if (star && r.mirrored) out += '*';
+    put_int(out, r.ix);
+    if (r.v > 3) out += '@', put_int(out, r.v);
+    else out.append(r.v, '\'');
+}
+// for_each_vertex's orbit from the vertex's first half-edge, read as for_each_vertex_type reads it
+static int vertex_symbol(tiling_t const& t, vertex_classification const& vc, index_t start) {
+    index_t const mirror_start = t.mirror(start);
+    std::optional<int> axis;
+    std::vector<corner_t> corners;
+    for (index_t ix = start;;) {
+        if (ix == mirror_start) axis = (int)corners.size() + 1;
+        corners.push_back(t.left_label(ix));
+        if ((ix = t.right_neighbour(ix)) == start) break;
+    }
+    auto const r = vc.lookup_vertex_type_index(cyclic_word_with_symmetries{ corners, 1, axis });
+    return r ? *r : -1;
+}
+static void write_certificate(std::string& out, tiling_t const& t, vertex_classification const& vc, std::vector<int> const* types) {
+    thread_local std::vector<int> sym, by_type, sorted;   // each vertex's symbol; each search type's
+    thread_local void const* by_type_vc = nullptr;
+    if (by_type_vc != &vc) by_type.clear(), by_type_vc = &vc;
+    sym.clear();
+    for (auto ix : t.indices()) {
+        auto const& n = t.neighbourhood(ix);
+        if (n.vertex_start != ix) continue;
+        int s;
+        if (!types) s = vertex_symbol(t, vc, ix);
+        else {
+            int const ty = (*types)[n.vertex_ix];
+            if (ty >= (int)by_type.size()) by_type.resize(ty + 1, -2);
+            if (by_type[ty] == -2) by_type[ty] = vertex_symbol(t, vc, ix);
+            s = by_type[ty];
+        }
+        if (s >= 0) sym.push_back(s);   // the writer skips a vertex its lookup misses
+    }
+    out += "Number of vertices: ", put_int(out, t.num_vertices()), out += '\n';
+    for (size_t i = 0; i < sym.size(); i++) out += i ? ", " : "", out += vc.symbol_of(sym[i]);
+    out += '\n';
+    sorted = sym;
+    std::sort(sorted.begin(), sorted.end());
+    for (size_t i = 0, j; i < sorted.size(); i = j) {
+        for (j = i; j < sorted.size() && sorted[j] == sorted[i]; j++) {}
+        out += i ? ", " : "", out += vc.symbol_of(sorted[i]);
+        if (j - i > 1) out += 'x', put_int(out, int(j - i));
+    }
+    out += '\n';
+    for (auto ix : complete_edges_of(t)) {   // conwaysymbols
+        ConwayRep const a = conway_rep(t, ix), b = conway_rep(t, t.opposite(ix));
+        bool const flip = a.mirrored != b.mirrored;
+        out += flip ? '[' : '(';
+        put_rep(out, a, false);
+        if (a.ix != b.ix || a.v != b.v) out += ' ', put_rep(out, b, false);
+        out += flip ? ']' : ')';
+    }
+    out += '\n';
+    StrOut so{ out };
+    for (auto& face : faces_of(t)) {
+        bool first = true;
+        for (auto& c : face) {
+            if (!first) out += " - ";
+            put_rep(out, conway_rep(t, c.back), true);
+            out += '/';
+            put_rep(out, conway_rep(t, c.forward), true);
+            out += '(';
+            so << corner_decoder{ t.right_label(c.forward) };
+            out += ')';
+            first = false;
+        }
+        out += '\n';
+    }
+    out += "---\n\n";
+}
+// The certificate of t into out (replacing it): `types` is each vertex's search type, or null to look each one up
+static void certificate(std::string& out, original_tiling_writer& writer, tiling_t const& t, vertex_classification const& vc,
+                        std::vector<int> const* types) {
+    out.clear();
+    if (fast_writer && !check_writer) return write_certificate(out, t, vc, types);
+    thread_local std::ostringstream os;
+    os.str("");
+    writer.write_content(os, t);
+    if (!fast_writer) { out = os.view(); return; }
+    write_certificate(out, t, vc, types);
+    if (out != os.view()) {
+        std::string const slow{ os.view() };
+        size_t i = 0;
+        while (i < out.size() && i < slow.size() && out[i] == slow[i]) i++;
+        std::cerr << "TILESEARCH_CHECK_WRITER: the texts differ at byte " << i << "\n--- writer:\n" << slow << "--- fast:\n" << out;
+        std::abort();
+    }
+}
+
+// from's bytes appended to to, a block at a time (`out << in.rdbuf()` moved them one character at a time: 2-18% of
+// the CPU on the output boards, and the merge of the last root is the end of an 8-thread run)
+static void append_file(fs::path const& from, fs::path const& to) {
+    thread_local std::vector<char> buf(1 << 20);
+    std::ifstream in(from, std::ios::binary);
+    std::ofstream out(to, std::ios::app | std::ios::binary);
+    while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) out.write(buf.data(), in.gcount());
 }
 
 // One root vertex's share of the search. The search never adds a vertex type below its root, so root r
@@ -911,6 +1303,8 @@ public:
 // buffer per thread, and matching starts only at offsets that carry the segment's first letter (every
 // other offset fails on that letter, in both directions). TILESEARCH_CROSSCHECK=1 runs both checkers on
 // every call and aborts on the first disagreement.
+// not const: a run begun before mark 4 resumes with the walk-length rule (see engine_mark in main)
+static bool slack_rule = !std::getenv("TILESEARCH_SLACK") || std::string(std::getenv("TILESEARCH_SLACK")) != "0";
 struct FastFaces {
     std::vector<cyclic_word_with_symmetries> words;
     std::vector<int> letters;                              // sorted distinct labels of the face words
@@ -924,6 +1318,7 @@ struct FastFaces {
     struct Stretch { int word, offset, dir, len; bool closes; };
     std::unordered_map<uint64_t, std::vector<Stretch>> stretches;
     std::vector<int> infinite;                             // apeirogon words: an open stretch of any length fits
+    std::vector<int> shortest;                             // per letter id: the shortest word holding it (face_full)
     bool indexed = false;   // only where some label starts many stretches: on small boards the scan is faster
     int stride = 0;
     // id(): a perfect hash of the letters, found at startup (one multiply and one compare per lookup;
@@ -966,6 +1361,12 @@ struct FastFaces {
                 set(a, b), set(b, a);
                 starts[a].push_back({ wi, i });
             }
+        shortest.assign(letters.size(), INT_MAX);
+        for (int wi = 0; wi < (int)words.size(); wi++)
+            for (int i = 0; i < words[wi].rotational_generator(); i++) {
+                int& m = shortest[id(words[wi].letter(i))];
+                m = std::min(m, words[wi].size() > 0 ? (int)words[wi].size() : INT_MAX);
+            }
         for (auto const& st : starts) indexed = indexed || st.size() > 64;
         for (int wi = 0; indexed && wi < (int)words.size(); wi++) {
             auto const& w = words[wi];
@@ -983,6 +1384,67 @@ struct FastFaces {
                     }
                 }
         }
+        build_trie();
+    }
+    // Every reading of every finite face word, from every offset, both ways, as a trie on corner labels; a node keeps the
+    // fewest corners any word reading it still lacks (its slack). The face rule steps it along a walk: one child lookup
+    // per corner. Readings no finite word has fall off the trie (an apeirogon's, or a dead walk's): they never close.
+    // Children are a dense row per node, indexed by the letter's id: one read per corner, which matters because orderly's
+    // replays run the face rule at every step (with a scan of a child list, slack cost more per node than it saved).
+    struct TrieNode { int rem; std::vector<std::pair<int, int>> kids; };
+    std::vector<TrieNode> trie;   // built with child lists, then flattened into trie_next / trie_rem
+    std::vector<int> trie_next, trie_rem;
+    bool trie_dense = false;      // false: the rows would pass 256 MB, so the child lists stay (same slack, slower)
+    int trie_child(int node, int c) const {   // during the build only
+        for (auto const& [l, k] : trie[node].kids) if (l == c) return k;
+        return -1;
+    }
+    int trie_step(int node, int c) const {
+        if (!trie_dense) return trie_child(node, c);
+        int const l = id(c);
+        return l < 0 ? -1 : trie_next[(size_t)node * letters.size() + l];
+    }
+    int trie_slack(int node) const { return trie_dense ? trie_rem[node] : trie[node].rem; }
+    // Every finite word one length m and no apeirogons: every walk at a node passed the face check, so a word reads it
+    // and its slack is m minus its corners, the walk-length rule's order exactly. No trie is built then (2026-11-07:
+    // the hyperbolic bubble boards paid 8% for trie walks that picked the same half-edges).
+    int uniform_m = -1;
+    void build_trie() {
+        uniform_m = 0;
+        for (auto const& w : words) {
+            if (w.size() == 0 || (uniform_m && w.size() != uniform_m)) { uniform_m = -1; break; }
+            uniform_m = w.size();
+        }
+        if (uniform_m > 0) return;
+        trie.assign(1, TrieNode{ 1 << 20, {} });
+        for (auto const& w : words) {
+            int const m = w.size();
+            if (m == 0) continue;   // apeirogons: no slack to read
+            for (int p = 0; p < w.rotational_generator(); p++)
+                for (int d : { 1, -1 }) {
+                    int node = 0;
+                    for (int i = 0; i < m; i++) {
+                        int const c = w.letter(p + d * i);
+                        int k = trie_child(node, c);
+                        if (k < 0) { k = (int)trie.size(); trie[node].kids.push_back({ c, k }); trie.push_back(TrieNode{ 1 << 20, {} }); }
+                        node = k;
+                        trie[node].rem = std::min(trie[node].rem, m - (i + 1));
+                    }
+                }
+        }
+        size_t const L = letters.size();
+        // Dense rows cost nodes x letters x 4 bytes. The worst of 4,027 saved boards needs 54 MB; past 256 MB (a board
+        // with ~100 labels and long words) keep the child lists instead.
+        trie_dense = trie.size() * L * sizeof(int) <= (size_t(256) << 20);
+        if (!trie_dense) return;
+        trie_next.assign(trie.size() * L, -1);
+        trie_rem.resize(trie.size());
+        for (size_t v = 0; v < trie.size(); v++) {
+            trie_rem[v] = trie[v].rem;
+            for (auto const& [c, k] : trie[v].kids) trie_next[v * L + id(c)] = k;
+        }
+        trie.clear();
+        trie.shrink_to_fit();
     }
     static constexpr uint64_t HASH0 = 0xcbf29ce484222325ULL;
     static uint64_t step(uint64_t h, int c) { return (h ^ (uint32_t)c) * 0x100000001b3ULL; }
@@ -1040,11 +1502,109 @@ struct FastFaces {
         return false;
     }
     bool check_adjacent_ccw_face(tiling_t const& conf, index_t ix) const { return check_adjacent_cw_face(conf, conf.mirror(ix)); }
+    /** Whether an open face reading `seg` (the face check's walk) can take no more corners: no apeirogon and no word
+     *  longer than it reads it. Gluing its end to anything but its other end then makes it longer, so fails. */
+    bool face_full(std::vector<int> const& seg) const {
+        int const q = (int)seg.size(), s0 = id(seg[0]);
+        if (s0 < 0 || q < shortest[s0]) return false;   // every word that could read it is longer
+        for (auto [wi, p] : starts[s0]) {
+            auto const& w = words[wi];
+            if (w.size() > 0 && (int)w.size() <= q) continue;   // holds no longer stretch
+            bool fwd = true, rev = true;
+            for (int i = 1; i < q && fwd; i++) fwd = seg[i] == w.letter(p + i);
+            if (fwd) return false;
+            for (int i = 1; i < q && rev; i++) rev = seg[i] == w.letter(p - i);
+            if (rev) return false;
+        }
+        return true;
+    }
+    // TRUE SLACK (2026-11-06). The face rule branches on the free half-edge whose open face needs the fewest corners to
+    // close: the least, over the face words that read its walk forward or backward, of word length minus walk length.
+    // A walk no finite word reads (an apeirogon's) never closes and comes last. This was minus the walk length (Marek's GenericFaceChecker; his UnitRegularFaceChecker had true
+    // slack), which branches on the LONGEST walk whatever its polygon: on regulars k <= 13 that cost 2,009,799 internal
+    // nodes against 1,247,861 with slack, eu_solver's count to 0.4%, same tilings (experiments/results/
+    // searcher-node-gap-2026-11-06.md). Ties go to the FIRST such half-edge in index order (face_rule_choice's strict
+    // <), as in eu_solver: the tie-break is not cosmetic, last-instead-of-first takes eu_solver's regular k <= 11 from
+    // 1.15M to 3.80M nodes. The slack is read off a trie of the face words' readings (build_trie), one step per corner.
+    // TILESEARCH_SLACK=0 restores the walk-length rule (runs begun before it must resume with it); TILESEARCH_CHECK_SLACK=1
+    // recomputes every slack from the words and aborts on a difference.
+    // The slack of ix's open face, and the free half-edge its walk stops at (none when the walk fell off the trie).
+    int slack_end(tiling_t const& conf, index_t ix, index_t& end) const {
+        index_t it = conf.right_neighbour(ix);
+        if (uniform_m > 0) {
+            int q = 1;
+            while (!conf.is_free(it)) it = conf.ccw_step(it), q++;
+            end = it;
+            return uniform_m - q;
+        }
+        int node = trie_step(0, conf.label(ix));
+        while (node >= 0 && !conf.is_free(it)) { node = trie_step(node, conf.label(conf.opposite(it))); it = conf.ccw_step(it); }
+        if (node < 0) { end = index_t{}; return 1 << 20; }
+        end = it;
+        return trie_slack(node);
+    }
+    static inline bool const check_slack = std::getenv("TILESEARCH_CHECK_SLACK") != nullptr;
     int edges_needed_to_complete(tiling_t const& conf, index_t ix) const {
         index_t it = conf.right_neighbour(ix);
         int len = 0;
-        while (!conf.is_free(it)) it = conf.ccw_step(it), len++;
-        return -len;
+        if (!slack_rule) {
+            while (!conf.is_free(it)) it = conf.ccw_step(it), len++;
+            return -len;
+        }
+        index_t end;
+        int const r = slack_end(conf, ix, end);
+        if (check_slack && r != naive_slack(conf, ix)) {
+            std::cerr << "TILESEARCH_CHECK_SLACK: the trie gives " << r << ", the words give " << naive_slack(conf, ix) << "\n";
+            std::abort();
+        }
+        return r;
+    }
+    // The face rule's half-edge under true slack: least slack, ties to the lowest index. Each open face is walked once
+    // already: a free half-edge's walk covers the face on its right, and an open face lies to the right of one of its
+    // two free ends only, so there is no second walk to save (checked 2026-11-07: from the far end the walk reads
+    // another face).
+    index_t face_pick(tiling_t const& c) const {
+        index_t best{};
+        int least = std::numeric_limits<int>::max();
+        if (uniform_m > 0 && !check_slack) {   // slack = m - corners: the walk rule's own loop, the same order and ties
+            for (auto ix : c.indices()) {
+                if (!c.is_free(ix)) continue;
+                index_t it = c.right_neighbour(ix);
+                int len = 0;
+                while (!c.is_free(it)) it = c.ccw_step(it), len++;
+                if (-len < least) best = ix, least = -len;
+            }
+            return best;
+        }
+        for (auto ix : c.indices()) {
+            if (!c.is_free(ix)) continue;
+            index_t end;
+            int const r = slack_end(c, ix, end);
+            if (check_slack && r != naive_slack(c, ix)) {
+                std::cerr << "TILESEARCH_CHECK_SLACK: slack " << r << " against " << naive_slack(c, ix) << "\n";
+                std::abort();
+            }
+            if (r < least) best = ix, least = r;
+        }
+        return best;
+    }
+    // The verify mode's reference: the walk's corners matched against every finite face word, every offset, both ways.
+    int naive_slack(tiling_t const& conf, index_t ix) const {
+        std::vector<int> seg{ conf.label(ix) };
+        for (index_t it = conf.right_neighbour(ix); !conf.is_free(it); it = conf.ccw_step(it)) seg.push_back(conf.label(conf.opposite(it)));
+        int const q = (int)seg.size();
+        int best = 1 << 20;
+        for (auto const& w : words) {
+            int const m = w.size();
+            if (m == 0 || m < q) continue;
+            for (int p = 0; p < w.rotational_generator(); p++)
+                for (int d : { 1, -1 }) {
+                    bool ok = true;
+                    for (int i = 0; i < q && ok; i++) ok = seg[i] == w.letter(p + d * i);
+                    if (ok) best = std::min(best, m - q);
+                }
+        }
+        return best;
     }
 };
 
@@ -1062,7 +1622,11 @@ struct CrossCheck {
     bool can_be_adjacent(corner_t a, corner_t b) const { return same(slow.can_be_adjacent(a, b), fast.can_be_adjacent(a, b), "can_be_adjacent"); }
     bool check_adjacent_cw_face(tiling_t const& c, index_t i) const { return same(slow.check_adjacent_cw_face(c, i), fast.check_adjacent_cw_face(c, i), "cw face"); }
     bool check_adjacent_ccw_face(tiling_t const& c, index_t i) const { return same(slow.check_adjacent_ccw_face(c, i), fast.check_adjacent_ccw_face(c, i), "ccw face"); }
-    int edges_needed_to_complete(tiling_t const& c, index_t i) const { return same(slow.edges_needed_to_complete(c, i), fast.edges_needed_to_complete(c, i), "edges needed"); }
+    // the generic checker knows only the walk-length rule, so under true slack this one measure is not compared
+    int edges_needed_to_complete(tiling_t const& c, index_t i) const {
+        int const f = fast.edges_needed_to_complete(c, i);
+        return slack_rule ? f : same(slow.edges_needed_to_complete(c, i), f, "edges needed");
+    }
 };
 
 // The tiling's half-edge vector, reached legally through a pointer to its protected member.
@@ -1341,6 +1905,8 @@ static index_t choose_halfedge(tiling_t& conf, Faces const& faces, FastFaces con
     index_t best{};
     int least = std::numeric_limits<int>::max();
     if (face_first) {
+        if constexpr (std::is_same_v<Faces, FastFaces>)
+            if (slack_rule) return faces.face_pick(conf);
         for (auto ix : conf.indices()) {
             if (!conf.is_free(ix)) continue;
             int const r = faces.edges_needed_to_complete(conf, ix);
@@ -1712,6 +2278,88 @@ static bool reverses(tiling_t const& c) {
 //    try_joining rejects before touching the tiling.
 //  - push_vertex_from reserves exactly size + valence, so every push reallocated the whole half-edge
 //    vector. Capacity now grows geometrically first, which turns that reserve into a no-op.
+// ── orderly generation (EU_ORDERLY in eu_solver, 2026-11-06; TILESEARCH_ORDERLY=1) ──
+// Every closed configuration is built once, from its canonical root. A root is a vertex of the root's type with a
+// frame (an automorphism of its template, `symmetries`); the code of a root is the sequence of branch moves the
+// search makes reaching that copy (the face rule's half-edge, glued to a placed half-edge, or to a fresh vertex at
+// its orbit's representative), forced closures included. The canonical copy is the root with the least code; a
+// node where another root's code is already smaller is cut, one where it is larger drops that root. Here only with
+// the face rule, whose choice is a function of the configuration and so can be replayed on another copy. The
+// symmetry cut (sym_break) picks its own copy and is off in this mode.
+static bool orderly_on = false;
+static bool orderly_dec = false;   // decoupled: every root's code read by the lowest-free rule (fail-first runs)
+struct OrderlyTables {
+    std::vector<std::vector<std::vector<int>>> aut, autinv;   // [type][frame][local half-edge]
+    std::vector<std::vector<int>> torep, repof;                // [type][half-edge]: the frame to its rep, the rep
+    bool ok = true;
+    std::string why;
+    OrderlyTables(vertex_classification const& vc) {
+        int const n = vc.count();
+        aut.resize(n), autinv.resize(n), torep.resize(n), repof.resize(n);
+        for (int t = 0; t < n && ok; t++) {
+            auto all = symmetries(vc, t);
+            int const v = vc.valence_of(t);
+            if (all.empty() || (int)all[0].size() != v) { ok = false, why = "type without its identity"; break; }
+            aut[t] = all;
+            torep[t].assign(v, -1), repof[t].assign(v, -1);
+            for (int a = 0; a < (int)all.size(); a++) {
+                std::vector<int> inv(v);
+                for (int q = 0; q < v; q++) inv[all[a][q]] = q;
+                autinv[t].push_back(inv);
+            }
+            for (int q = 0; q < v; q++) {
+                int found = 0;
+                for (int a = 0; a < (int)all.size(); a++)
+                    if (vc.is_representative_of_orbit(t, all[a][q])) {
+                        if (!found++) torep[t][q] = a, repof[t][q] = all[a][q];
+                    }
+                // the engine attaches fresh vertices at its representatives: each orbit must hold exactly one, and a
+                // representative's own frame must be the identity, or the codes would not be the search's
+                if (found != 1) { ok = false, why = "an orbit with " + std::to_string(found) + " representatives"; break; }
+                if (vc.is_representative_of_orbit(t, q) && all[torep[t][q]][q] != q) { ok = false, why = "a representative moved by its frame"; break; }
+            }
+        }
+    }
+};
+static OrderlyTables const* run_orderly = nullptr;
+static inline long long enc_exist(int i) { return (1LL << 50) + i; }
+static inline long long enc_new(int g, int r) { return ((1LL << 32) - g) * 4096 + r; }
+/** open_face's walk on any configuration: labels into seg, the two free ends (far, end); false for a loop. */
+static bool open_face_in(tiling_t const& c, index_t g, index_t& far, index_t& end, std::vector<int>& seg) {
+    counterclockwise_corner<tiling_t> cc{ c, g };
+    auto const [n, is_loop] = advance_to_back_or_loop(cc, cc.end());
+    (void)n;
+    if (is_loop) return false;
+    seg.clear();
+    index_t const start = cc.back;
+    for (index_t h = start;;) {
+        seg.push_back(c.right_label(h));
+        if (c.is_free(h)) { end = h; break; }
+        h = c.cw_step(h);
+        if (h == start) return false;
+    }
+    far = c.right_neighbour(start);
+    return far.has_value() && c.is_free(far);
+}
+/** The face rule's half-edge (choose_halfedge with face_first), on any configuration. */
+static index_t face_rule_choice(tiling_t const& c, FastFaces const& F) {
+    if (slack_rule) return F.face_pick(c);
+    index_t best{};
+    int least = std::numeric_limits<int>::max();
+    for (auto ix : c.indices()) {
+        if (!c.is_free(ix)) continue;
+        int const r = F.edges_needed_to_complete(c, ix);
+        if (r < least) best = ix, least = r;
+    }
+    return best;
+}
+
+// Forced glues (Martin Olivier's forced closure, epsln/k-uniform-enumeration, generalised to face words): after a
+// glue, a free half-edge on a face it touched whose options (fail first's count: the joins plus, while a vertex may
+// be added, the passing new-vertex pairs from the root's type on) are exactly one join is glued at once, to a
+// fixpoint, before the next node. The count never under-counts, so a forced glue is the only move that half-edge
+// has in any completion; it saves the node that would make it. TILESEARCH_FORCE=0 turns it off.
+static bool forcing = !std::getenv("TILESEARCH_FORCE") || std::string(std::getenv("TILESEARCH_FORCE")) != "0";
 template<class Faces, class FI, class FS>
 struct Extender {
     tiling_t conf;
@@ -1748,6 +2396,320 @@ struct Extender {
     bool room(int t) const { return is_flat(*vc, t) ? num_flat < max_flat : num_vertices_added < max_num_vertices; }
     bool can_add() const { return num_vertices_added < max_num_vertices || num_flat < max_flat; }
 
+    struct Forced { index_t a, b; int settled; CtxCache::Changed changed; };
+    std::vector<Forced> forced;   // the glues propagate made, undone by unwind
+    std::vector<index_t> queue;
+    mutable index_t open_end{};   // open_face's free end on the walk (the other is `far`)
+    void enqueue_owners(index_t a) {   // the free half-edges whose faces the glue at a touched
+        auto const ch = CtxCache::changed_by(conf, a);
+        for (int i = 0; i < ch.n; i++)
+            if (conf.is_free(index_t{ ch.h[i] })) queue.push_back(index_t{ ch.h[i] });
+    }
+    /** The open face on g's clockwise side, as the face check walks it: its corner labels into seg, and the free
+     *  half-edge at its far end; false when the walk closes on itself. */
+    bool open_face(index_t g, index_t& far, std::vector<int>& seg) const {
+        counterclockwise_corner<tiling_t> c{ conf, g };
+        auto const [n, is_loop] = advance_to_back_or_loop(c, c.end());
+        (void)n;
+        if (is_loop) return false;
+        seg.clear();
+        index_t const start = c.back;
+        for (index_t h = start;;) {
+            seg.push_back(conf.right_label(h));
+            if (conf.is_free(h)) { open_end = h; break; }
+            h = conf.cw_step(h);
+            if (h == start) return false;
+        }
+        far = conf.right_neighbour(start);
+        return far.has_value() && conf.is_free(far);
+    }
+    /** Glue every forced closure, to a fixpoint; false when the node is dead or cut. A face changes only when an edge is
+     *  glued into it, so after each glue the two faces through the new edge (the face check's two: a's clockwise face
+     *  and its mirror's) are walked; one that is open and full (face_full) has one possible move, gluing its two
+     *  free ends, which is made at once. */
+    bool propagate(index_t a) {
+        thread_local std::vector<int> seg;
+        queue.clear();
+        queue.push_back(a);
+        while (!queue.empty()) {
+            index_t const e = queue.back();
+            queue.pop_back();
+            for (index_t x : { e, conf.mirror(e) }) {
+                if (!x.has_value() || conf.is_free(x)) continue;
+                index_t far{};
+                if (!open_face(x, far, seg) || !ids->face_full(seg)) continue;
+                index_t const g = far, partner = open_end;   // the face's two free ends
+                if (!partner.has_value() || partner == g || !conf.is_free(g) || !conf.is_free(partner)) continue;
+                if (check_force) verify_forced(g, partner);
+                if (!can_join(conf, *faces, g, partner)) return false;                  // its one move fails: dead
+                if (chiral && !sides.ok(conf, *vc, types, g, partner)) return false;
+                Forced f{ g, partner, chiral ? sides.settle(conf, *vc, types, g, partner) : -1, {} };
+                conf.add_edge(g, partner);
+                if (!face_first) f.changed = CtxCache::changed_by(conf, g);
+                for (int i = 0; i < f.changed.n; i++) ctx.touch(f.changed.h[i]);
+                forced.push_back(f);
+                if (sym_break && run_syms && run_syms->cut(conf, types, g)) return false;
+                if (ring_check && run_ring && !faces_close(conf, types, *run_ring, *ids, g)) return false;
+                queue.push_back(g);   // the faces through the forced edge, in turn
+            }
+        }
+        return true;
+    }
+    /** TILESEARCH_CHECK_FORCE=1: fail first's own count must give g exactly one option, the join to p. */
+    void verify_forced(index_t g, index_t p) {
+        int joins = 0;
+        bool hit = false;
+        for (auto ix : conf.indices())
+            if (conf.is_free(ix) && can_join(conf, *faces, g, ix)) joins++, hit = hit || ix == p;
+        size_t pairs = 0;
+        if (can_add()) {
+            auto const& list = passing_pairs(conf, *faces, *ids, *vc, *cand, g);
+            pairs = list.end() - std::lower_bound(list.begin(), list.end(), first_vertex, [](Candidates::Pair q, int t) { return q.t < t; });
+        }
+        if (joins > 1 || (joins == 1 && !hit) || pairs) {
+            std::cerr << "CHECK_FORCE: forced half-edge has " << joins << " joins (partner " << (hit ? "among them" : "not among them") << ") and " << pairs << " new-vertex pairs\n";
+            std::abort();
+        }
+    }
+    void unwind(size_t mark) {
+        while (forced.size() > mark) {
+            Forced const& f = forced.back();
+            for (int i = 0; i < f.changed.n; i++) ctx.touch(f.changed.h[i]);
+            conf.remove_edge(f.a, f.b);
+            sides.unsettle(f.settled);
+            forced.pop_back();
+        }
+    }
+
+    // orderly generation (see orderly_on): the code so far, and the alternative roots still undecided per depth
+    int depth = 0;                    // branch moves on the path to this node
+    long long pending = 0;            // the move try_joining is about to make
+    std::vector<long long> moves;     // moves[d]: the branch move at code position d
+    struct RState { tiling_t Q; std::vector<int> qv2p, qaut, pv2q, qtype, qstart; std::vector<long long> code; int s = 0, nfree = 0, low = 0; bool done = false, broken = false; };
+    struct Alt { int v, a, wait, st; };
+    std::deque<RState> pool;
+    std::vector<int> pool_end;
+    int pool_used = 0;
+    std::vector<std::vector<Alt>> alive;
+    std::vector<int> alive_nv;
+    int replay_wait = -1;
+    enum { R_TIED, R_PRUNE, R_DROP };
+    int pool_alloc() { if (pool_used == (int)pool.size()) pool.emplace_back(); return pool_used++; }
+    std::vector<int> pstart;   // P's vertex -> its first half-edge (rebuilt per test)
+    void rs_add(RState& R, int g, int pv, int a) {
+        int const before = R.Q.num_halfedges();
+        R.qstart.push_back(before);
+        vc->push_vertex_to(R.Q, g);
+        R.nfree += R.Q.num_halfedges() - before;
+        R.qv2p.push_back(pv), R.qaut.push_back(a), R.qtype.push_back(g);
+        R.pv2q[pv] = (int)R.qv2p.size() - 1;
+    }
+    int q2p(RState const& R, index_t d) const {
+        auto const& nb = R.Q.neighbourhood(d);
+        int const qv = nb.vertex_ix, g = R.qtype[qv];
+        return pstart[R.qv2p[qv]] + run_orderly->autinv[g][R.qaut[qv]][d.get_value() - nb.vertex_start.get_value()];
+    }
+    void rs_glue(RState& R, index_t a, index_t b) {   // the free half-edges the glue (and its mirror) uses up
+        index_t xs[4] = { a, b, R.Q.mirror(a), R.Q.mirror(b) };
+        int was = 0;
+        for (int i = 0; i < 4; i++) {
+            bool dup = !xs[i].has_value();
+            for (int j = 0; j < i && !dup; j++) dup = xs[j] == xs[i];
+            if (!dup && R.Q.is_free(xs[i])) was |= 1 << i;
+        }
+        R.Q.add_edge(a, b);
+        for (int i = 0; i < 4; i++) if (was >> i & 1 && !R.Q.is_free(xs[i])) R.nfree--;
+    }
+    /** Continue the replay R on this node (code length D). full: the node is closed. */
+    int replay_from(RState& R, int D, bool full) {
+        replay_wait = -1;
+        R.pv2q.resize(types.size(), -1);
+        thread_local std::vector<int> seg;
+        thread_local std::vector<index_t> work;
+        for (;; R.s++) {
+            int const s = R.s;
+            if (R.nfree == 0) return full && s < D ? R_PRUNE : R_TIED;   // a strict prefix is smaller; equal = automorphism
+            index_t const ff = face_rule_choice(R.Q, *ids);
+            index_t const x{ q2p(R, ff) }, y = conf.opposite(x);
+            if (!y.has_value()) { replay_wait = x.get_value(); return R_TIED; }
+            auto const& nb = conf.neighbourhood(y);
+            int const pv = nb.vertex_ix, qv = R.pv2q[pv], g = types[pv], qy = y.get_value() - nb.vertex_start.get_value();
+            long long code;
+            int partner = -1;
+            if (qv >= 0) { partner = R.qstart[qv] + run_orderly->aut[g][R.qaut[qv]][qy]; code = enc_exist(partner); }
+            else code = enc_new(g, run_orderly->repof[g][qy]);
+            if (s >= D) return full ? R_DROP : R_TIED;
+            if (code != moves[s]) return code < moves[s] ? R_PRUNE : R_DROP;
+            if (qv < 0) {
+                int const base = R.Q.num_halfedges();
+                rs_add(R, g, pv, run_orderly->torep[g][qy]);
+                partner = base + run_orderly->repof[g][qy];
+            }
+            rs_glue(R, ff, index_t{ partner });
+            if (!forcing) continue;
+            work.assign(1, ff);   // forced closure, as propagate makes it, read off this node
+            while (!work.empty()) {
+                index_t const e = work.back();
+                work.pop_back();
+                for (index_t z : { e, R.Q.mirror(e) }) {
+                    if (!z.has_value() || R.Q.is_free(z)) continue;
+                    index_t far{}, end{};
+                    if (!open_face_in(R.Q, z, far, end, seg) || !ids->face_full(seg)) continue;
+                    if (!end.has_value() || end == far) continue;
+                    // the node made this closure too (it is at its forcing fixpoint); if not, decide nothing
+                    if (conf.opposite(index_t{ q2p(R, far) }) != index_t{ q2p(R, end) }) return R_TIED;
+                    rs_glue(R, far, end);
+                    work.push_back(far);
+                }
+            }
+        }
+    }
+    // ── decoupled (fail-first runs): the search branches by its own rule, so OUR code is a replay too. Every root's code
+    // is read off this node by a rule that is a function of its replay copy alone (the lowest free half-edge, then the
+    // forced closures), kept with the copy and resumed; codes are compared only where both are determined.
+    void init_replay(RState& R, int t0, int v, int a, int nv) {
+        R.Q = tiling_t{}, R.qv2p.clear(), R.qaut.clear(), R.qtype.clear(), R.qstart.clear(), R.code.clear();
+        R.pv2q.assign(nv, -1), R.s = 0, R.nfree = 0, R.low = 0, R.done = R.broken = false;
+        rs_add(R, t0, v, a);
+    }
+    void advance(RState& R) {
+        replay_wait = -1;
+        if (R.broken) return;
+        R.pv2q.resize(types.size(), -1);
+        thread_local std::vector<int> seg;
+        thread_local std::vector<index_t> work;
+        for (;;) {
+            if (R.nfree == 0) { R.done = true; return; }
+            while (!R.Q.is_free(index_t{ R.low })) R.low++;   // glues are never undone in a replay: the lowest only rises
+            index_t const ff{ R.low };
+            index_t const x{ q2p(R, ff) }, y = conf.opposite(x);
+            if (!y.has_value()) { replay_wait = x.get_value(); return; }
+            auto const& nb = conf.neighbourhood(y);
+            int const pv = nb.vertex_ix, qv = R.pv2q[pv], g = types[pv], qy = y.get_value() - nb.vertex_start.get_value();
+            int partner;
+            if (qv >= 0) partner = R.qstart[qv] + run_orderly->aut[g][R.qaut[qv]][qy], R.code.push_back(enc_exist(partner));
+            else {
+                R.code.push_back(enc_new(g, run_orderly->repof[g][qy]));
+                int const base = R.Q.num_halfedges();
+                rs_add(R, g, pv, run_orderly->torep[g][qy]);
+                partner = base + run_orderly->repof[g][qy];
+            }
+            rs_glue(R, ff, index_t{ partner });
+            if (!forcing) continue;
+            work.assign(1, ff);
+            while (!work.empty()) {
+                index_t const e = work.back();
+                work.pop_back();
+                for (index_t z : { e, R.Q.mirror(e) }) {
+                    if (!z.has_value() || R.Q.is_free(z)) continue;
+                    index_t far{}, end{};
+                    if (!open_face_in(R.Q, z, far, end, seg) || !ids->face_full(seg)) continue;
+                    if (!end.has_value() || end == far) continue;
+                    if (conf.opposite(index_t{ q2p(R, far) }) != index_t{ q2p(R, end) }) { R.broken = true; return; }   // decide nothing
+                    rs_glue(R, far, end);
+                    work.push_back(far);
+                }
+            }
+        }
+    }
+    /** Another root's code against ours, where both are determined. */
+    static int compare_codes(RState const& O, RState const& X) {
+        if (O.broken || X.broken) return R_TIED;
+        size_t const n = std::min(O.code.size(), X.code.size());
+        for (size_t i = 0; i < n; i++)
+            if (X.code[i] != O.code[i]) return X.code[i] < O.code[i] ? R_PRUNE : R_DROP;
+        if (X.done && X.code.size() < O.code.size()) return R_PRUNE;   // a complete strict prefix is smaller
+        if (O.done && O.code.size() < X.code.size()) return R_DROP;
+        return R_TIED;                                                   // equal and complete: an automorphism
+    }
+    std::vector<int> ours_st, ours_wait;
+    bool orderly_ok_dec(bool full) {
+        int const D = depth, nv = (int)types.size(), t0 = types[0];
+        auto const& T = *run_orderly;
+        if ((int)alive.size() <= D) alive.resize(D + 1), alive_nv.resize(D + 1), pool_end.resize(D + 1), ours_st.resize(D + 1), ours_wait.resize(D + 1);
+        pool_used = D == 0 ? 0 : pool_end[D - 1];
+        std::vector<Alt>& out = alive[D];
+        out.clear();
+        alive_nv[D] = nv;
+        thread_local std::vector<Alt> cand;
+        cand.clear();
+        int const nf = (int)T.aut[t0].size();
+        if (D == 0) { for (int a = 1; a < nf; a++) cand.push_back({ 0, a, -1, -1 }); }
+        else {
+            cand = alive[D - 1];
+            for (int v = alive_nv[D - 1]; v < nv; v++)
+                if (types[v] == t0) for (int a = 0; a < nf; a++) cand.push_back({ v, a, -1, -1 });
+        }
+        if (cand.empty() && (D == 0 || alive[D - 1].empty())) { pool_end[D] = pool_used; if (D) ours_st[D] = ours_st[D - 1], ours_wait[D] = ours_wait[D - 1]; else ours_st[D] = -1; return true; }
+        pstart.assign(nv, 0);
+        for (int v = 1; v < nv; v++) pstart[v] = pstart[v - 1] + vc->valence_of(types[v - 1]);
+        // ours: resumed when the half-edge it stalled on has been glued
+        int os = D == 0 ? -1 : ours_st[D - 1], ow = D == 0 ? -1 : ours_wait[D - 1];
+        if (os < 0 || full || ow < 0 || !conf.is_free(index_t{ ow })) {
+            int const slot = pool_alloc();
+            if (os >= 0) pool[slot] = pool[os]; else init_replay(pool[slot], t0, 0, 0, nv);
+            advance(pool[slot]);
+            os = slot, ow = replay_wait;
+        }
+        ours_st[D] = os, ours_wait[D] = ow;
+        for (Alt const& r : cand) {
+            int slot = r.st, w = r.wait;
+            bool fresh = false;
+            if (slot < 0 || full || w < 0 || !conf.is_free(index_t{ w })) {
+                int const ns = pool_alloc();
+                if (slot >= 0) pool[ns] = pool[slot]; else init_replay(pool[ns], t0, r.v, r.a, nv);
+                advance(pool[ns]);
+                slot = ns, w = replay_wait, fresh = true;
+            }
+            int const res = compare_codes(pool[os], pool[slot]);
+            if (res == R_PRUNE) { pool_end[D] = pool_used; return false; }
+            if (res == R_DROP) { if (fresh && slot == pool_used - 1) pool_used--; continue; }
+            out.push_back({ r.v, r.a, w, slot });
+        }
+        pool_end[D] = pool_used;
+        return true;
+    }
+    /** False = cut this node (full: reject the closure). */
+    bool orderly_ok(bool full) {
+        if (orderly_dec) return orderly_ok_dec(full);
+        int const D = depth, nv = (int)types.size(), t0 = types[0];
+        auto const& T = *run_orderly;
+        if ((int)alive.size() <= D) alive.resize(D + 1), alive_nv.resize(D + 1), pool_end.resize(D + 1);
+        pool_used = D == 0 ? 0 : pool_end[D - 1];
+        std::vector<Alt>& out = alive[D];
+        out.clear();
+        alive_nv[D] = nv;
+        pool_end[D] = pool_used;
+        thread_local std::vector<Alt> cand;
+        cand.clear();
+        int const nf = (int)T.aut[t0].size();
+        if (D == 0) { for (int a = 1; a < nf; a++) cand.push_back({ 0, a, -1, -1 }); }   // symmetries() lists the identity first
+        else {
+            cand = alive[D - 1];
+            for (int v = alive_nv[D - 1]; v < nv; v++)
+                if (types[v] == t0) for (int a = 0; a < nf; a++) cand.push_back({ v, a, -1, -1 });
+        }
+        if (cand.empty()) return true;
+        pstart.assign(nv, 0);
+        for (int v = 1; v < nv; v++) pstart[v] = pstart[v - 1] + vc->valence_of(types[v - 1]);
+        for (Alt const& r : cand) {
+            if (!full && r.st >= 0 && r.wait >= 0 && conf.is_free(index_t{ r.wait })) { out.push_back(r); continue; }
+            int const slot = pool_alloc();
+            RState& R = pool[slot];
+            if (r.st >= 0) R = pool[r.st];
+            else {
+                R.Q = tiling_t{}, R.qv2p.clear(), R.qaut.clear(), R.qtype.clear(), R.qstart.clear(), R.code.clear(), R.low = 0, R.done = R.broken = false, R.pv2q.assign(nv, -1), R.s = 0, R.nfree = 0;
+                rs_add(R, t0, r.v, r.a);
+            }
+            int const res = replay_from(R, D, full);
+            if (res == R_PRUNE) { pool_end[D] = pool_used; return false; }
+            if (res == R_DROP) { pool_used--; continue; }
+            out.push_back({ r.v, r.a, replay_wait, slot });
+        }
+        pool_end[D] = pool_used;
+        return true;
+    }
+
     void extend() {
         num_iterations++;
         task_nodes++;
@@ -1758,12 +2720,14 @@ struct Extender {
         Budget const budget{ int(max_num_vertices) - int(num_vertices_added), num_flat < max_flat, required.missing(types) };
         index_t const f = choose_halfedge(conf, *faces, *ids, *vc, *cand, first_vertex, can_add(), dead, budget, &ctx);
         if (dead) return;
+        if (orderly_on && depth == 0 && types.size() == 1 && !orderly_ok(false)) return;   // the root's other frames
         if (!f.has_value()) {
+            if (orderly_on && !orderly_ok(true)) return;
             if (!required.missing(types) && !(check_chiral && reverses(conf))) solution(*this);
             return;
         }
         for (auto ix : conf.indices())
-            if (conf.is_free(ix)) try_joining(f, ix);
+            if (conf.is_free(ix)) pending = enc_exist(ix.get_value()), try_joining(f, ix);
         if (can_add()) extend_by_adding_vertex(f);
     }
     void extend_by_adding_vertex(index_t f) {
@@ -1779,12 +2743,13 @@ struct Extender {
         uint64_t const miss = required.missing(types);
         while (it != list.end()) {
             int const t = it->t, base = conf.num_halfedges();
-            if (!room(t) || !required.may_add(miss, first_vertex, t, max_num_vertices - num_vertices_added - !is_flat(*vc, t))) {
+            if (!room(t) || !required.may_add(miss, first_vertex, t, max_num_vertices - num_vertices_added - !is_flat(*vc, t)) ||
+                (cut_vc == (void const*)vc && recolor_min_type[t] < first_vertex)) {
                 while (it != list.end() && it->t == t) ++it;
                 continue;
             }
             add_vertex(t);
-            for (; it != list.end() && it->t == t; ++it) try_joining(f, index_t{ base + it->i });
+            for (; it != list.end() && it->t == t; ++it) pending = enc_new(t, it->i), try_joining(f, index_t{ base + it->i });
             remove_last_vertex();
         }
     }
@@ -1799,7 +2764,16 @@ struct Extender {
             index_t const was = last;
             auto const changed = face_first ? CtxCache::Changed{} : CtxCache::changed_by(conf, a);   // fewest options' lists only
             for (int i = 0; i < changed.n; i++) ctx.touch(changed.h[i]);
-            last = a, extend(), last = was;
+            size_t const mark = forced.size();
+            if (!forcing || propagate(a)) {
+                if (orderly_on) {
+                    if ((int)moves.size() <= depth) moves.resize(depth + 1);
+                    moves[depth++] = pending;
+                    if (orderly_ok(false)) last = a, extend(), last = was;
+                    depth--;
+                } else last = a, extend(), last = was;
+            }
+            unwind(mark);
             for (int i = 0; i < changed.n; i++) ctx.touch(changed.h[i]);
         }
         conf.remove_edge(a, b);
@@ -1887,7 +2861,7 @@ static void search(std::vector<int> const& roots, int kmax, vertex_classificatio
                 pool.push([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
                 return false;
             },
-            [&](auto const& s) { my_complete++; on_tiling(s.first_vertex, s.unit, s.conf, (int)s.num_vertices_added); } };
+            [&](auto const& s) { my_complete++; cur_types = &s.types; on_tiling(s.first_vertex, s.unit, s.conf, (int)s.num_vertices_added); cur_types = nullptr; } };
         s.add_vertex(r);
         s.first_vertex = r;
         s.part = &state[r]->units[0];
@@ -1896,7 +2870,7 @@ static void search(std::vector<int> const& roots, int kmax, vertex_classificatio
         pool.push([s, &finish, &pool, &state, unit_depth, kmax, &vc, &faces, &ids, &cand]() mutable {
             state[s.first_vertex]->started = true;
             if (unit_depth) state[s.first_vertex]->depth = unit_depth_of(s.first_vertex, unit_depth, kmax, vc, faces, ids, cand);
-            s.extend();
+            if (!(cut_vc == (void const*)&vc && recolor_min_type[s.first_vertex] < s.first_vertex)) s.extend();
             // last first: the stack is LIFO, so one thread runs the units in the head's order
             for (auto it = found.rbegin(); it != found.rend(); ++it) pool.push(std::move(*it));
             found.clear();
@@ -2099,9 +3073,8 @@ static double leaf_cost(Node const& n, original_tiling_writer& writer, bool& min
 	write = 0;
 	if (minimal) {
 		double const t1 = cpu_now();
-		thread_local std::ostringstream text;
-		text.str("");
-		writer.write_content(text, n.conf);
+		thread_local std::string text;
+		certificate(text, writer, n.conf, n.s->vc, &n.types);
 		write = (cpu_now() - t1);
 	}
 	return fp;
@@ -2734,10 +3707,25 @@ int main(int argc, char** argv) {
         board_text << (l.rfind("k ", 0) == 0 ? "k " + std::to_string(b.kmin) + " " + std::to_string(b.kmax) : l) << "\n";
     bool const resuming = fs::exists(dir) && !fs::is_empty(dir);
     if (resuming && !resume) { std::cerr << dir << " is not empty: pass --resume to continue it, or move it away\n"; return 2; }
+    // A run's units are numbered on its search tree, which forced closure and orderly generation change. This engine
+    // marks its runs' board.txt, so an engine from before them refuses to resume one ("a different board") instead of
+    // renumbering its units; a run without the mark was begun before them, and resumes on their old tree (`legacy`).
+    // Each change to the tree, or to which tiling of a colour class is written, gets its own mark: a run resumes with the
+    // rules it began with, or roots done and roots to come would disagree (units renumbered, or a class written twice
+    // or never). Mark 2: forced closure and orderly generation. Mark 3: also colour classes by key and the colour cut.
+    // Mark 4: also true slack in the face rule (FastFaces::edges_needed_to_complete).
+    std::string const engine_mark2 = "# engine: forced closure and orderly generation (resumable by this engine or later)\n";
+    std::string const engine_mark3 = "# engine 3: forced closure, orderly generation, colour classes by key (resumable by this engine or later)\n";
+    std::string const engine_mark = "# engine 4: forced closure, orderly generation, colour classes by key, true slack (resumable by this engine or later)\n";
+    bool legacy = false;   // begun before mark 2
     if (resuming) {
         std::ifstream old(dir / "board.txt");
         std::string was((std::istreambuf_iterator<char>(old)), std::istreambuf_iterator<char>());
-        if (was != board_text.str()) { std::cerr << "cannot resume: " << dir / "board.txt" << " is a different board\n"; return 2; }
+        legacy = was == board_text.str();
+        bool const mark2 = was == board_text.str() + engine_mark2, mark3 = was == board_text.str() + engine_mark3;
+        if (!legacy && !mark2 && !mark3 && was != board_text.str() + engine_mark) { std::cerr << "cannot resume: " << dir / "board.txt" << " is a different board\n"; return 2; }
+        if (legacy || mark2) color_sig = false, std::cout << "engine: resuming a run from before colour classes by key, so with the colour rules it began with" << std::endl;
+        if (legacy || mark2 || mark3) slack_rule = false, std::cout << "engine: resuming a run from before true slack, so with the walk-length face rule" << std::endl;
     }
     fs::remove(dir / "latest.txt");   // a stopped session's, from a root it dropped
     Plan const pl = plan(b, threads, resuming ? &dir : nullptr);
@@ -2808,7 +3796,7 @@ int main(int argc, char** argv) {
             for (size_t i = 0; i < order.size(); i++) f << (i ? " " : "") << order[i] + 1;
             f << "\n";
         }
-        std::ofstream(dir / "board.txt") << board_text.str();
+        std::ofstream(dir / "board.txt") << board_text.str() << engine_mark;
         {   // read back by --resume and by tileestimate
             std::ofstream rf(dir / "rule");
             rf << (face_first ? "face" : "fewest") << (ring_check ? " ring" : "") << "\n";
@@ -2826,9 +3814,107 @@ int main(int argc, char** argv) {
     if (show_stages) std::cout << "stage tables 0 0" << std::endl;
     vertex_classification vc{};
     int const roots = classify(b, order, n_initial, vc);
+    if (color_sig && !recolorings.empty() && !(std::getenv("TILESEARCH_COLOR_CUT") && std::string(std::getenv("TILESEARCH_COLOR_CUT")) == "0")) {
+        // The recoloured type, matched on templates: type t's template with its labels recoloured must be isomorphic to
+        // exactly one type's template (labels, mirror kind, right, left and mirror links, as symmetries() checks). Not
+        // vc.lookup_vertex_type_index, which ignores the mirror axis: on colors3_4 it gave A4@B A4@C A4@B A4@C with its
+        // mirror through the B corners for the one through the C corners, which the swap B <-> C exchanges, and the cut
+        // lost tilings. No match or two, a map that is not a permutation, or one its inverse does not undo: cut off.
+        recolor_type.assign(recolorings.size(), std::vector<int>(vc.count(), -1));
+        recolor_min_type.resize(vc.count());
+        std::vector<tiling_t> tpl(vc.count());
+        std::map<std::pair<int, std::vector<int>>, std::vector<int>> bucket;   // (half-edges, sorted labels) -> types
+        auto labels_of = [](tiling_t const& x, std::unordered_map<int, int> const* lab) {
+            std::vector<int> v;
+            for (int i = 0; i < x.num_halfedges(); i++)
+                for (int c : { x.left_label(index_t{ i }), x.right_label(index_t{ i }) }) {
+                    if (lab) if (auto it = lab->find(c); it != lab->end()) c = it->second;
+                    v.push_back(c);
+                }
+            std::sort(v.begin(), v.end());
+            return v;
+        };
+        for (int t = 0; t < vc.count(); t++) {
+            vc.push_vertex_to(tpl[t], t);
+            bucket[{ tpl[t].num_halfedges(), labels_of(tpl[t], nullptr) }].push_back(t);
+        }
+        auto iso = [](tiling_t const& x, std::unordered_map<int, int> const& lab, tiling_t const& y) {
+            int const n = x.num_halfedges();
+            if (y.num_halfedges() != n) return false;
+            auto L = [&](int c) { auto it = lab.find(c); return it == lab.end() ? c : it->second; };
+            for (int s0 = 0; s0 < n; s0++) {
+                std::vector<int> p(n, -1), todo{ 0 };
+                p[0] = s0;
+                bool ok = true;
+                while (ok && !todo.empty()) {
+                    index_t const u0{ todo.back() }, v0{ p[todo.back()] };
+                    todo.pop_back();
+                    ok = L(x.left_label(u0)) == y.left_label(v0) && L(x.right_label(u0)) == y.right_label(v0) &&
+                         x.mirror(u0).has_value() == y.mirror(v0).has_value();
+                    for (auto [u, v] : { std::pair{ x.right_neighbour(u0), y.right_neighbour(v0) },
+                                         { x.left_neighbour(u0), y.left_neighbour(v0) }, { x.mirror(u0), y.mirror(v0) } }) {
+                        if (!ok || !u.has_value()) continue;
+                        if (!v.has_value()) { ok = false; break; }
+                        int& q = p[u.get_value()];
+                        if (q < 0) q = v.get_value(), todo.push_back(u.get_value());
+                        else ok = q == v.get_value();
+                    }
+                }
+                std::vector<bool> hit(n);
+                for (int q : p) ok = ok && q >= 0 && !hit[q] && (hit[q] = true);
+                if (ok) return true;
+            }
+            return false;
+        };
+        bool ok = true;
+        for (size_t r = 0; r < recolorings.size() && ok; r++)
+            for (int t = 0; t < vc.count() && ok; t++) {
+                auto const it = bucket.find({ tpl[t].num_halfedges(), labels_of(tpl[t], &recolorings[r]) });
+                int found = -1, matches = 0;
+                if (it != bucket.end())
+                    for (int u : it->second) if (iso(tpl[t], recolorings[r], tpl[u])) found = u, matches++;
+                if (matches != 1) { ok = false; break; }
+                recolor_type[r][t] = found;
+            }
+        // each recolouring permutes the types, and undoing it (the inverse letter map) gives every type back
+        for (size_t r = 0; r < recolorings.size() && ok; r++) {
+            std::vector<char> hit(vc.count(), 0);
+            for (int t = 0; t < vc.count() && ok; t++) { if (hit[recolor_type[r][t]]) ok = false; hit[recolor_type[r][t]] = 1; }
+            int inv = -1;
+            for (size_t q = 0; q < recolorings.size() && inv < 0; q++) {
+                bool id = true;
+                for (int L = 0; L < 8 && id; L++) id = recolor_letters[q][recolor_letters[r][L]] == L;
+                if (id) inv = (int)q;
+            }
+            if (inv < 0) { ok = false; break; }
+            for (int t = 0; t < vc.count() && ok; t++) ok = recolor_type[inv][recolor_type[r][t]] == t;
+        }
+        if (ok) {
+            for (int t = 0; t < vc.count(); t++) {
+                recolor_min_type[t] = t;
+                for (size_t r = 0; r < recolorings.size(); r++) recolor_min_type[t] = std::min(recolor_min_type[t], recolor_type[r][t]);
+            }
+            cut_vc = &vc;
+            int skipped = 0;
+            for (int t = 0; t < roots; t++) skipped += recolor_min_type[t] < t;
+            std::cout << "colour cut: on (" << skipped << " of " << roots << " roots map below themselves)" << std::endl;
+        } else std::cout << "colour cut: off (a recoloured type has no unique match, or the map is not a permutation)" << std::endl;
+    }
     std::unique_ptr<RingTables const> ring_tables;
     if (ring_check) ring_tables = std::make_unique<RingTables>(vc), run_ring = ring_tables.get();
     std::unique_ptr<RootSyms const> root_syms;
+    std::unique_ptr<OrderlyTables const> orderly_tables;
+    if (legacy) forcing = false, std::cout << "engine: resuming a run from before forced closure, so without it and without orderly" << std::endl;
+    char const* ord_env = std::getenv("TILESEARCH_ORDERLY");
+    if (std::string const o = ord_env ? ord_env : "1"; o != "0" && !legacy) {
+        // coupled (the search's own moves are the code) needs the face rule; under fewest options it would be unsound,
+        // so those runs use the decoupled codes
+        orderly_dec = !face_first || o == "dec";
+        if (orderly_tables = std::make_unique<OrderlyTables>(vc); !orderly_tables->ok)
+            std::cout << "orderly: off (" << orderly_tables->why << ")" << std::endl;
+        else orderly_on = true, run_orderly = orderly_tables.get(), sym_break = false,
+             std::cout << "orderly: on (" << (orderly_dec ? "decoupled, lowest free half-edge" : "coupled, face rule") << ")" << std::endl;
+    }
     if (sym_break) root_syms = std::make_unique<RootSyms>(vc, roots), run_syms = root_syms.get();
     original_tiling_writer writer{ vc };
     if (!resuming) {
@@ -2952,11 +4038,17 @@ int main(int argc, char** argv) {
         Root& st = *state[r];
         if (!st.skip.empty() && st.skip.count(u)) return;   // the head, run again only to number the units
         Fingerprints::Key key;
-        if (!fingerprint_if_minimal(conf, key) || !st.seen.first_time(key)) return;
+        if (!new_minimal(conf, key, st.seen)) return;
+        {   // TILESEARCH_KEYS=<file>: every written tiling's canonical key, to compare engines tiling for tiling
+            static FILE* kf = std::getenv("TILESEARCH_KEYS") ? std::fopen(std::getenv("TILESEARCH_KEYS"), "w") : nullptr;
+            if (kf) { static std::mutex km; std::lock_guard<std::mutex> l(km);
+                std::fprintf(kf, "%d %016llx%016llx\n", k, (unsigned long long)key.a, (unsigned long long)key.b); std::fflush(kf); }
+        }
         // solutions_processor::process, with its streams and the std::set of corners kept per thread
-        thread_local std::ostringstream name, text;
+        thread_local std::ostringstream name;
+        thread_local std::string text;
         thread_local std::vector<corner_t> corners;
-        name.str(""), text.str("");
+        name.str("");
         corners.clear();
         for (auto ix : conf.indices()) corners.push_back(conf.label(ix));
         std::sort(corners.begin(), corners.end());
@@ -2972,15 +4064,12 @@ int main(int argc, char** argv) {
             name << (named.size() <= 160 ? named : cs.str());
         }
         name << (orientable(conf) ? "_o" : "") << "_" << conf.num_edges() << "." << writer.extension();
-        writer.write_content(text, conf);
-        if (!in_text.empty()) {
-            std::string t = relabel(text.str(), in_text, "0123456789");
-            text.str(t);
-        }
+        certificate(text, writer, conf, vc, cur_types);
+        if (!in_text.empty()) text = relabel(text, in_text, "0123456789");
         if (first_only) {
             static std::mutex m;
             std::lock_guard<std::mutex> l(m);
-            std::ofstream(dir / name.str(), std::ios::binary) << text.view();
+            std::ofstream(dir / name.str(), std::ios::binary) << text;
             std::ofstream(dir / "census.txt") << "k=" << k << " -- 1\nMAX\n";
             std::cout << "first " << k << " " << name.str() << std::endl;
             std::_Exit(0);
@@ -2992,7 +4081,7 @@ int main(int argc, char** argv) {
             int64_t const ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
             int64_t was = latest_at.load(std::memory_order_relaxed);
             if ((was < 0 || ms - was >= LATEST_MS) && latest_at.compare_exchange_strong(was, ms)) {
-                std::ofstream(dir / "latest.tmp", std::ios::binary) << text.view();
+                std::ofstream(dir / "latest.tmp", std::ios::binary) << text;
                 std::error_code ec;
                 fs::rename(dir / "latest.tmp", dir / "latest.txt", ec);
             }
@@ -3002,8 +4091,8 @@ int main(int argc, char** argv) {
         batch.root = r, batch.unit = u;
         batch.counts[k]++;
         if (unit_depth) batch.keys.push_back(key);
-        batch.bytes += text.view().size();
-        batch.out[name.str()] += text.view();
+        batch.bytes += text.size();
+        batch.out[name.str()] += text;
         if (batch.bytes > (1 << 18)) hand_over();
     };
     // Finished units and roots are written by one thread of their own, in the order they finish: a worker
@@ -3048,7 +4137,7 @@ int main(int argc, char** argv) {
                 pf << (fs::exists(dir / f) ? (long long)fs::file_size(dir / f) : -1LL) << " " << f.string() << "\n";
         }
         for (auto const& f : files)
-            std::ofstream(dir / f.filename(), std::ios::app | std::ios::binary) << std::ifstream(f, std::ios::binary).rdbuf();
+            append_file(f, dir / f.filename());
         {
             std::ofstream df(done_file, std::ios::app);
             df << r;
