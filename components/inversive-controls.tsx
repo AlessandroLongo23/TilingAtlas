@@ -21,7 +21,7 @@ import { SpiralVelocityPad } from "@/components/spiral-velocity-pad";
  * X toggles the lens — the same key /play binds, so the shortcut means one thing across the atlas.
  *
  * /play does not use this: its keyboard map covers a dozen view flags at once and X is one row of it
- * (app/(app)/play/_play-client.tsx). The parametric shelves have no such map, so they call this.
+ * (app/(app)/(atlas)/_atlas-client.tsx). The parametric shelves have no such map, so they call this.
  *
  * `enabled` is what the page knows and the store does not — the isohedral shelf's twelve marked types
  * have no geometry to draw, so the key is inert there instead of silently arming a view that will only

@@ -5,7 +5,7 @@
 //   pnpm tsx scripts/gen-atlas-manifest.ts --write
 //
 // Only the tiers NOTHING in the UI can currently reach are listed. /play already pulls composable,
-// isotoxal, period, tri45 and penrose eagerly (KNOWN_HIGHER_TIERS in _play-client.tsx), so adding
+// isotoxal, period, tri45 and penrose eagerly (KNOWN_HIGHER_TIERS in _atlas-client.tsx), so adding
 // them here would draw a row for records that are already in the list.
 //
 // Counts come from decoding the real shard and calling the real tileClassOf/subOf, not from a table

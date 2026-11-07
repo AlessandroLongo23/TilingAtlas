@@ -365,6 +365,14 @@ The output folder must be empty or absent, unless `--resume` is given; a run nev
 an earlier run's. While a run is unfinished the folder also holds `roots.done` (the finished roots
 and their counts) and, for a moment after each root, `merge.pending`.
 
+## Opening a board from a link
+
+`tilingsearcher://board?text=<the board file as UTF-8, base64url>` opens that board on the app's Board page, as
+Open… would; nothing runs until asked. The installed app claims the scheme (a launch from source does not). The
+atlas's "Open in the Searcher" makes these links from `public/searcher-boards.json.gz`, which
+`scripts/build-searcher-boards.ts` writes and, with `--check`, tests board by board against each shelf's counts.
+On Windows the link reaches the app as a command-line argument, so one past about 30,000 characters fails there.
+
 ## Not in this draft
 
 - Deriving the vertex lines from angle values (all words whose angles sum to 360°, or to less or more

@@ -1,6 +1,6 @@
 # Other tiles
 
-The [k-uniform](/play/about/k-uniform) shelf rests on three rules: every tile is a regular polygon, every side has length one, and tiles meet edge to edge. Each class on this page breaks one of them, or keeps the rules and changes what a tile is. The counting stays the same throughout: a vertex is a point where three or more tiles meet, and k is the number of orbits of vertices under the tiling's symmetries. Most of these classes have no published enumeration to compare with, so their counts say what the atlas's searches found, and the page says where a count is known to be partial.
+The [k-uniform](/catalogue/about/k-uniform) shelf rests on three rules: every tile is a regular polygon, every side has length one, and tiles meet edge to edge. Each class on this page breaks one of them, or keeps the rules and changes what a tile is. The counting stays the same throughout: a vertex is a point where three or more tiles meet, and k is the number of orbits of vertices under the tiling's symmetries. Most of these classes have no published enumeration to compare with, so their counts say what the atlas's searches found, and the page says where a count is known to be partial.
 
 ## Regular polygons at two or three sizes
 
@@ -15,7 +15,7 @@ The shelf holds 6, 41, 208, 745, 2,792, 9,020 and 29,500 tilings with sides 1 an
 
 ## Equilateral polygons that flex
 
-Keep every side of length one and let the corners vary, under one constraint: the corner angles repeat with period p as you walk round the tile. A hexagon with corners 135°, 120°, 105°, 135°, 120°, 105° has period 3. The isotoxal polygons of the [star and isotoxal](/play/about/star-and-isotoxal) page are the case p = 2. Such tiles flex, and many tilings by them come in families with one or two free angles, which the catalogue stores once with their ranges. The period-p shelf holds 1, 66, 256, 73, 16 and 15 families and tilings for k = 1 to 6. The k = 3 count is a lower bound, and the smaller counts beyond it should be read the same way: they say how far the search was run, not how many tilings exist.
+Keep every side of length one and let the corners vary, under one constraint: the corner angles repeat with period p as you walk round the tile. A hexagon with corners 135°, 120°, 105°, 135°, 120°, 105° has period 3. The isotoxal polygons of the [star and isotoxal](/catalogue/about/star-and-isotoxal) page are the case p = 2. Such tiles flex, and many tilings by them come in families with one or two free angles, which the catalogue stores once with their ranges. The period-p shelf holds 1, 66, 256, 73, 16 and 15 families and tilings for k = 1 to 6. The k = 3 count is a lower bound, and the smaller counts beyond it should be read the same way: they say how far the search was run, not how many tilings exist.
 
 <tiling-card tiling="period-k2-044" title="a period-3 hexagon" caption="A 2-uniform family of a hexagon with unit sides and corners repeating with period 3, beside regular hexagons. Its corner angles move together along a one-parameter family.">
 </tiling-card>

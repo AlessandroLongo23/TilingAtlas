@@ -388,7 +388,7 @@ export function EuclideanFreedraw({
 			null,
 			selected.pattern.id,
 		);
-		return q ? `/play?${q}` : "/play";
+		return q ? `/catalogue/view?${q}` : "/catalogue/view";
 	}, [selected, fillMode, showScaffold, showLattice, showVertices, showArcs, arcWiring, arcTwist]);
 
 	// Mirror the filter into the URL without navigating, so a reload restores the view and the address

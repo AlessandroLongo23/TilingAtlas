@@ -22,11 +22,11 @@ export function LandingButtons() {
 				classes="max-md:w-full"
 			/>
 			<Button
-				href="/library"
+				href="/catalogue"
 				variant="secondary"
 				size="md"
 				icon={Library}
-				label="Browse the library"
+				label="Browse the catalogue"
 				classes="max-md:w-full"
 			/>
 		</div>

@@ -57,12 +57,15 @@ export function ResultsTable({
 	sortDir,
 	onSort,
 	hrefOf,
+	onOpen,
 }: {
 	tilings: readonly ReferenceTiling[];
 	sortKey: SortKey;
 	sortDir: SortDir;
 	onSort: (key: SortKey) => void;
 	hrefOf: (t: ReferenceTiling) => string;
+	/** A plain click opens the tiling in place; the href still serves a new tab or a copied link. */
+	onOpen?: (t: ReferenceTiling) => void;
 }) {
 	const hyperbolic = tilings.some((t) => t.edge != null);
 	const columns: Column[] = [
@@ -137,6 +140,11 @@ export function ResultsTable({
 								<td className="px-3 py-2 align-top">
 									<Link
 										href={hrefOf(t)}
+										onClick={(e) => {
+											if (!onOpen || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+											e.preventDefault();
+											onOpen(t);
+										}}
 										className="block font-mono text-[11.5px] break-all text-fg group-hover:underline after:absolute after:inset-0 focus:outline-none focus-visible:underline"
 										title={t.id}
 									>

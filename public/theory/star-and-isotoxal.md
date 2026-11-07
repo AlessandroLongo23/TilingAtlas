@@ -13,11 +13,11 @@ For small α the dents are reflex and the polygon is a star. Following *Tilings 
 <ku-star-shape caption="The polygon with 2n unit sides and corners alternating between α and β. Drag α to pass from a sharp star through the regular n-gon (β = 180°) and the convex isotoxal 2n-gon to the regular 2n-gon (α = β). Colours follow the catalogue's: stars by their number of points, convex tiles by their number of sides.">
 </ku-star-shape>
 
-These are the star polygons Kepler used. In *Harmonices Mundi* he drew patches of tilings that mix them with regular polygons, without saying exactly which polygons or which tilings he allowed. The other modern meaning of a star polygon, the self-intersecting $\{n/d\}$ whose sides cross, gives a different theory with its own rules, described on the [other tiles](/play/about/other-tiles) page under hollow tilings.
+These are the star polygons Kepler used. In *Harmonices Mundi* he drew patches of tilings that mix them with regular polygons, without saying exactly which polygons or which tilings he allowed. The other modern meaning of a star polygon, the self-intersecting $\{n/d\}$ whose sides cross, gives a different theory with its own rules, described on the [other tiles](/catalogue/about/other-tiles) page under hollow tilings.
 
 ## The uniform star tilings
 
-The rules are the ones of the [k-uniform](/play/about/k-uniform) shelf, with one change that the stars force. A vertex of the tiling is a point where three or more tiles meet. When the dent of a star is filled by a single corner of one other tile, the two tiles meet there, but the point is not a vertex of the tiling, so it is not counted in an orbit.
+The rules are the ones of the [k-uniform](/catalogue/about/k-uniform) shelf, with one change that the stars force. A vertex of the tiling is a point where three or more tiles meet. When the dent of a star is filled by a single corner of one other tile, the two tiles meet there, but the point is not a vertex of the tiling, so it is not counted in an orbit.
 
 Branko Grünbaum and Geoffrey Shephard made the first attempt to list the uniform tilings by regular polygons and stars in 1977, and refined the definitions and the lists in *Tilings and Patterns* (1987), where they asked as an exercise whether the lists were complete. Joseph Myers took up the exercise in 1993 and found three uniform tilings missing from them. His article *Tiling with regular star polygons* (Eureka, 2004) gives the whole enumeration: six uniform tilings that are not edge-to-edge, and 23 edge-to-edge ones. Four of those 23 are families in which the star's angle α can take any value in a range, and stay uniform throughout.
 

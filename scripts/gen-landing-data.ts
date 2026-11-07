@@ -70,7 +70,7 @@ const HERO_CELLS_DIR = path.join(process.cwd(), "public", "hero-cells");
 // (e.g. "t1003", "ctrnact-07_34-5c2_5e_5f3_6f-1"); anything else is skipped defensively.
 const SAFE_ID = /^[A-Za-z0-9._-]+$/;
 
-// The higher-k shards /play preloads (KNOWN_HIGHER_TIERS in _play-client.tsx). Counted, never drawn.
+// The higher-k shards /play preloads (KNOWN_HIGHER_TIERS in _atlas-client.tsx). Counted, never drawn.
 const HIGHER_ATLAS_FILES = (
 	[
 		["composable", COMPOSABLE_SHARD_KS],

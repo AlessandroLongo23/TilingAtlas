@@ -83,7 +83,7 @@ const tiling = (id: string, label: string, w: number): SpecimenSpec => ({
 	id,
 	klass: "tiling",
 	label,
-	href: `/play?source=reference&tiling=${id}`,
+	href: `/catalogue/view?source=reference&tiling=${id}`,
 	cell: () => tilingPeriodicCell(uniform(id)),
 	opts: { view: frame(w), world: box(w), flipY: true, strokeWidth: w / 220 },
 });
@@ -96,7 +96,7 @@ const coloring = (file: string, id: string, label: string, w: number): SpecimenS
 	id,
 	klass: "coloring",
 	label,
-	href: `/play?tiling=${id}&coedge=0`,
+	href: `/catalogue/view?tiling=${id}&coedge=0`,
 	cell: async () => {
 		const shelf = await readShelf<ColorPattern>(`public/colors/${file}`);
 		const p = shelf.find((c) => c.id === id);
@@ -114,7 +114,7 @@ const edges = (file: string, id: string, label: string, w: number): SpecimenSpec
 	id,
 	klass: "edges",
 	label,
-	href: `/play?tiling=${id}&fdfill=shape`,
+	href: `/catalogue/view?tiling=${id}&fdfill=shape`,
 	cell: async () => {
 		const shelf = await readShelf<FreedrawPattern>(`public/freedraw/${file}`);
 		const p = shelf.find((f) => f.id === id);
@@ -137,7 +137,7 @@ const hollow = (id: string, label: string, w: number): SpecimenSpec => ({
 	id,
 	klass: "hollow",
 	label,
-	href: `/play?tiling=${id}`,
+	href: `/catalogue/view?tiling=${id}`,
 	cell: async () => {
 		const patch = await readJson<HollowPatch>(`public/hollow/${id}.json`);
 		return hollowPeriodicCell(patch, { dark: false, fillMode: "tile" });

@@ -50,7 +50,7 @@ export default async function HomePage() {
 						<div className="flex flex-col lg:pt-10">
 							<p className="ta-label">
 								<Link
-									href="/library"
+									href="/catalogue"
 									className="transition-colors hover:text-fg max-md:inline-flex max-md:min-h-11 max-md:items-center"
 								>
 									{fmt(counts.total)} tilings
@@ -84,7 +84,7 @@ export default async function HomePage() {
 					{START_HERE.map(([hash, label]) => (
 						<Link
 							key={hash}
-							href={`/play/about/uniform-tilings#${hash}`}
+							href={`/catalogue/about/uniform-tilings#${hash}`}
 							className="inline-flex h-7 items-center rounded-control px-2.5 text-fg transition-colors hover:bg-surface-overlay hover:text-accent max-md:h-11 max-md:text-sm"
 						>
 							{label}
@@ -106,11 +106,11 @@ export default async function HomePage() {
 					    instead of baked stills, so their media takes the drag and the caption below carries
 					    the link — see CollectionCard's `interactive`. */}
 						<CollectionCard
-							title="Play"
+							title="Viewer"
 							span="2x1"
 							interactive
 							subtitle={`${fmt(counts.total)} tilings`}
-							href={`/play?source=reference&tiling=${encodeURIComponent(data.play.id)}`}
+							href={`/catalogue/view?source=reference&tiling=${encodeURIComponent(data.play.id)}`}
 							description="Explore any tiling in the atlas from the interactive viewer."
 							badge={<CompletenessBadge tone="complete" label="3 geometries" />}
 						>
@@ -118,9 +118,9 @@ export default async function HomePage() {
 						</CollectionCard>
 
 						<CollectionCard
-							title="Library"
+							title="Catalogue"
 							subtitle={`${fmt(counts.euclidean)} Euclidean tilings`}
-							href="/library"
+							href="/catalogue"
 							description="Every tiling on a filterable shelf: geometry, tile class, symmetry."
 							badge={<CompletenessBadge tone="complete" label="k ≤ 6 complete" />}
 						>
@@ -130,7 +130,7 @@ export default async function HomePage() {
 						<CollectionCard
 							title="Uniform tilings"
 							subtitle="11 uniform tilings"
-							href="/play/about/uniform-tilings"
+							href="/catalogue/about/uniform-tilings"
 							description="The three regular and eight semiregular tilings, and why there are exactly eleven. Every shelf has articles like this one behind the book button in its corner."
 							badge={<CompletenessBadge tone="proven" label="11 · proven" />}
 						>
@@ -141,7 +141,7 @@ export default async function HomePage() {
 							title="Hyperbolic"
 							interactive={!!data.hyperbolicPatch}
 							subtitle={`${fmt(counts.hyperbolic)} tilings`}
-							href="/library?geo=hyperbolic"
+							href="/catalogue?geo=hyperbolic"
 							description="Tilings of the hyperbolic plane, developed into the Poincaré disk."
 							badge={<CompletenessBadge tone="infinite" label="infinite" />}
 						>
@@ -154,7 +154,7 @@ export default async function HomePage() {
 							title="Spherical"
 							interactive={!!data.sphericalSolid}
 							subtitle={`${fmt(counts.spherical)} tilings`}
-							href="/library?geo=spherical"
+							href="/catalogue?geo=spherical"
 							description="Platonic and Archimedean solids as tilings of the sphere."
 							badge={<CompletenessBadge tone="finite" label="finite" />}
 						>

@@ -184,6 +184,7 @@ import {
 	hypPolyBoardLabel,
 	hypPolyFamilyLabel,
 	hypPolyTileSet,
+	hypPolyTileCodes,
 	hypPolyShardUrls,
 	hypPolySub,
 	HYP_POLY_BOARDS,
@@ -1034,7 +1035,7 @@ export function sortCatalogueForDisplay<T extends CatalogueTiling>(rows: readonl
 // The geometry axis — the /play catalogue's top-level split (Euclidean / hyperbolic / spherical), one
 // level above the tile-class tree. Derived from the render-routing flags the canvases already key on
 // (spherical wins, then developed), NOT the optional `geometry` field (not reliably populated). Same
-// precedence as _play-client's canvas swap, so the toggle and the rendered view can never disagree.
+// precedence as _atlas-client's canvas swap, so the toggle and the rendered view can never disagree.
 export function geometryOf(t: {
 	spherical?: unknown;
 	sphericalFreedraw?: unknown;
@@ -1525,6 +1526,16 @@ export interface ReferenceFilter {
 	// tilings never match while this is active.
 	// DEPRECATED in favour of `board`, kept so shared links carrying ?fdgrid= still resolve.
 	freedrawGrid?: FreedrawGrid;
+	// The FAMILY a record's sub belongs to (familyOfSub), one level above `board`: the browse tree's
+	// family rows ("Hybrid boards", "{3,n} boards") scope the results with it. "_spine" names the subs with
+	// no family, the anonymous rows a class lists beside its families. Records outside never match.
+	family?: string;
+	// The exact sub a record sits in (subOf). `board` already names every sub that has a family; this
+	// reaches the ones that do not, which the browse tree lists too. Anything else never matches.
+	sub?: string;
+	// A hybrid board's ROW: the exact set of tiles its tilings use (hypPolyTileCodes, comma-joined), the
+	// same key the browse rows and the manifest's `facets.polygons` count by. Anything else never matches.
+	polySet?: string;
 	// Colors shelf sub-class: which grid the coloring lives on. Non-colors tilings never match while
 	// this is active.
 	// DEPRECATED in favour of `board`, kept so shared links carrying ?cgrid= still resolve.
@@ -1622,6 +1633,13 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	}
 	if (f.board) {
 		if (boardOf(t) !== f.board) return false; // a record with no board never matches the board facet
+	}
+	if (f.family) {
+		if ((familyOfSub(subOf(t)) ?? "_spine") !== f.family) return false;
+	}
+	if (f.sub != null && subOf(t) !== f.sub) return false;
+	if (f.polySet) {
+		if (!t.hypPoly || hypPolyTileCodes(t.hypPoly).join(",") !== f.polySet) return false;
 	}
 	if (f.freedrawGrid) {
 		if (freedrawGridOf(t) !== f.freedrawGrid) return false; // non-freedraw never matches the grid facet
@@ -1791,7 +1809,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 	// Forward `renderCell` lazily instead of copying it.
 	//
 	// /play does `atlas.map(referenceToCatalogue)` over the WHOLE loaded corpus at open
-	// (_play-client.tsx), and a plain `renderCell: r.renderCell` is a property READ — which fires the
+	// (_atlas-client.tsx), and a plain `renderCell: r.renderCell` is a property READ — which fires the
 	// codec's lazy accessor, or the ℤ[ζ₂₄] derive, on every record in the atlas. That defeats the
 	// laziness entirely: the adapter, not the renderer, decides what gets materialised. Sixteen merge
 	// sites do this, so it is the whole corpus every time a shard lands too.

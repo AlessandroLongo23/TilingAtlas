@@ -70,7 +70,7 @@ export function useStudioKeys(canEdit: boolean) {
 	const active = useConfiguration((s) => s.studioActive);
 	// 1-6 are the NAV's route shortcuts (components/nav.tsx pushes a route on each), so this listener runs
 	// in the CAPTURE phase and stops the event dead: while the editor is up those keys are the editor's.
-	// _play-client already does the same interception for P on the freedraw boards, and ThemeToggle for
+	// _atlas-client already does the same interception for P on the freedraw boards, and ThemeToggle for
 	// Shift+T. They are bound only while `studioActive`, so nav keeps its keys the rest of the time; the
 	// one key bound with the editor down is E, which opens it.
 	useEffect(() => {

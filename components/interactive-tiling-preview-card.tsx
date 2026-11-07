@@ -317,7 +317,7 @@ export function InteractiveTilingPreviewCard({
 						) : null}
 						{showOpenInPlay && tilingId ? (
 							<Link
-								href={openHref ?? `/play?source=reference&tiling=${encodeURIComponent(tilingId)}`}
+								href={openHref ?? `/catalogue/view?source=reference&tiling=${encodeURIComponent(tilingId)}`}
 								onPointerDown={stopDrag}
 								title={openHref ? "Open" : "Open in Play"}
 								aria-label={openHref ? "Open this tiling on its page" : "Open this tiling in Play"}

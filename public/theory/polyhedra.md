@@ -1,12 +1,12 @@
 # Polyhedra as tilings of the sphere
 
-A polyhedron whose faces are regular polygons is a tiling of the sphere in disguise. Blow it up from its centre until the faces press against a surrounding sphere and each flat face becomes a curved one, while the edges become arcs of great circles; the arrangement of faces around each vertex is unchanged. The spherical half of the [explorer](/play) is built on that reading. It holds 773 solids, sorted the way the plane's tilings are sorted: by which polygons meet at a vertex and by how many kinds of vertex there are.
+A polyhedron whose faces are regular polygons is a tiling of the sphere in disguise. Blow it up from its centre until the faces press against a surrounding sphere and each flat face becomes a curved one, while the edges become arcs of great circles; the arrangement of faces around each vertex is unchanged. The spherical half of the [explorer](/catalogue) is built on that reading. It holds 773 solids, sorted the way the plane's tilings are sorted: by which polygons meet at a vertex and by how many kinds of vertex there are.
 
-This page goes through the shelf from the convex solids, whose classification is finished, to the non-convex, star, one-sided and toroidal ones, where it is not. Every figure below can be turned by dragging it, and under each one is the count that ties it to the [previous article](/play/about): the vertices, edges and faces, the Euler characteristic $V - E + F$, and the total angle defect.
+This page goes through the shelf from the convex solids, whose classification is finished, to the non-convex, star, one-sided and toroidal ones, where it is not. Every figure below can be turned by dragging it, and under each one is the count that ties it to the [previous article](/catalogue/about): the vertices, edges and faces, the Euler characteristic $V - E + F$, and the total angle defect.
 
 ## Vertex orbits: the k of a solid
 
-A symmetry of a polyhedron is a rotation or reflection that carries it onto itself. Two vertices are in the same *orbit* when some symmetry takes one to the other, and the number of orbits is the solid's $k$, exactly as for the [k-uniform tilings](/play/about/k-uniform) of the plane. A solid with $k = 1$ is vertex-transitive: from any vertex the solid looks the same.
+A symmetry of a polyhedron is a rotation or reflection that carries it onto itself. Two vertices are in the same *orbit* when some symmetry takes one to the other, and the number of orbits is the solid's $k$, exactly as for the [k-uniform tilings](/catalogue/about/k-uniform) of the plane. A solid with $k = 1$ is vertex-transitive: from any vertex the solid looks the same.
 
 The number of kinds of vertex configuration is a different thing, and the classic example of the difference is on the shelf. The rhombicuboctahedron has three squares and a triangle at every vertex, 3.4.4.4, and one orbit. Cut it in half across the middle band, turn the top cap by 45° and put it back: every vertex still reads 3.4.4.4, but the vertices near the turned cap can no longer be carried onto the ones near the other cap, and the solid has two orbits. This is the pseudo-rhombicuboctahedron, Johnson's J37, which looks uniform at every vertex and is not.
 
@@ -17,7 +17,7 @@ The number of kinds of vertex configuration is a different thing, and the classi
 
 ## The convex solids with one kind of vertex
 
-The five Platonic solids, with one kind of regular face and one kind of vertex, close Euclid's *Elements*. The tetrahedron, cube and dodecahedron are traditionally credited to the Pythagoreans and the octahedron and icosahedron to Theaetetus, which is how the shelf credits them. The [previous article](/play/about) shows why there are only five: the angle sum at a vertex has to stay below 360°.
+The five Platonic solids, with one kind of regular face and one kind of vertex, close Euclid's *Elements*. The tetrahedron, cube and dodecahedron are traditionally credited to the Pythagoreans and the octahedron and icosahedron to Theaetetus, which is how the shelf credits them. The [previous article](/catalogue/about) shows why there are only five: the angle sum at a vertex has to stay below 360°.
 
 Allow several kinds of regular face and keep one kind of vertex, and the convex solids are the thirteen Archimedean solids and two infinite families, the prisms and the antiprisms. Pappus of Alexandria attributes the thirteen to a lost work of Archimedes; Johannes Kepler reconstructed all of them in *Harmonices Mundi* (1619) and also described the prisms and antiprisms as families. The shelf holds all thirteen Archimedean solids and twelve members of the two families: the prisms on 3, 5, 6, 8, 10 and 12 sides and the antiprisms on 4, 5, 6, 8, 10 and 12 sides. The square prism is the cube and the triangular antiprism is the octahedron, so those two appear under their Platonic names.
 

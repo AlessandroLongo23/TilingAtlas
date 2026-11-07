@@ -189,7 +189,7 @@ describe("update entries", () => {
 							shelf.kind === "pentagon" ? /^\/pentagons\?type=\d+$/ : /^\/isohedral\?type=IH\d{2}$/,
 						);
 					} else {
-						expect(href, `${id} should deep-link to /play`).toContain("/play?");
+						expect(href, `${id} should deep-link to the viewer`).toContain("/catalogue/view?");
 					}
 				}
 			}

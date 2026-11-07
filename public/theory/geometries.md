@@ -1,6 +1,6 @@
 # Three geometries
 
-Put regular polygons edge to edge around a point and add up their angles at that point. If the angles make exactly 360°, the polygons lie flat and can go on to tile the plane. If they make less, the corner cannot lie flat: it buckles into a cone, and a surface built from such corners curves round and closes up, which is how a polyhedron is made. If they make more, the polygons crumple like a lettuce leaf, and the surface they build is the hyperbolic plane. Every tiling in this catalogue sits in one of those three places, and the [explorer](/play) is split along exactly that line.
+Put regular polygons edge to edge around a point and add up their angles at that point. If the angles make exactly 360°, the polygons lie flat and can go on to tile the plane. If they make less, the corner cannot lie flat: it buckles into a cone, and a surface built from such corners curves round and closes up, which is how a polyhedron is made. If they make more, the polygons crumple like a lettuce leaf, and the surface they build is the hyperbolic plane. Every tiling in this catalogue sits in one of those three places, and the [explorer](/catalogue) is split along exactly that line.
 
 <geo-vertex start="3.3.3.3.3" caption="Regular polygons around one vertex, drawn in the geometry their angles put them in. Add polygons with the buttons or pick a preset. The polygons keep one common edge length, solved so that they close exactly around the vertex: on a sphere seen from outside when the flat angles fall short of 360°, flat when they make 360°, and in the Poincaré disk when they exceed it.">
 </geo-vertex>
@@ -33,7 +33,7 @@ When every face is the same regular $p$-gon and $q$ of them meet at each vertex,
 
 $$q\,\alpha_p \lessgtr 360^\circ \iff \frac{1}{p} + \frac{1}{q} \gtrless \frac{1}{2}.$$
 
-A sum above one half is the sphere. With $p, q \geq 3$ that leaves only five pairs, $\{3,3\}$, $\{3,4\}$, $\{4,3\}$, $\{3,5\}$ and $\{5,3\}$: the tetrahedron, octahedron, cube, icosahedron and dodecahedron. A sum of exactly one half is the plane, and only $\{3,6\}$, $\{4,4\}$ and $\{6,3\}$ solve it. Every other pair is hyperbolic, and there are infinitely many of those: $\{7,3\}$, $\{3,7\}$, $\{4,5\}$, $\{5,4\}$, and on without end. The article on the [hyperbolic catalogue](/play/about/hyperbolic) explains what that endlessness does to an enumeration.
+A sum above one half is the sphere. With $p, q \geq 3$ that leaves only five pairs, $\{3,3\}$, $\{3,4\}$, $\{4,3\}$, $\{3,5\}$ and $\{5,3\}$: the tetrahedron, octahedron, cube, icosahedron and dodecahedron. A sum of exactly one half is the plane, and only $\{3,6\}$, $\{4,4\}$ and $\{6,3\}$ solve it. Every other pair is hyperbolic, and there are infinitely many of those: $\{7,3\}$, $\{3,7\}$, $\{4,5\}$, $\{5,4\}$, and on without end. The article on the [hyperbolic catalogue](/catalogue/about/hyperbolic) explains what that endlessness does to an enumeration.
 
 <card-grid caption="Left, {3,5}: five triangles at a vertex, 1/3 + 1/5 > 1/2. The readout counts 12 vertices, each 60° short of flat, for a total defect of 720°. Middle, {3,6}: six triangles, 1/3 + 1/6 = 1/2, and the tiling goes on forever without bending. Right, {3,7}: seven triangles, 1/3 + 1/7 < 1/2, in the Poincaré disk. Its triangles are all congruent; they look smaller toward the rim because the disk squeezes an infinite plane into a bounded circle.">
 <geo-solid solids="icosahedron" labels="{3,5} · icosahedron"></geo-solid>
@@ -64,7 +64,7 @@ The plane and the hyperbolic plane have no such total. A tiling of the plane has
 
 A polyhedron with regular faces is not, on its face, a tiling of anything: its faces are flat and it has corners. But when all its vertices lie on one sphere, as they do for every Platonic and Archimedean solid, projecting each face from the centre onto that sphere turns the solid into a tiling of the sphere by spherical polygons. The flat faces become curved ones, and the defect that sat at each corner is spread over the faces as the sphere's curvature. That is why the atlas files the solids under the spherical geometry, and why the same vertex notation describes a solid and a planar tiling alike.
 
-Not every solid has such a sphere. Some Johnson solids have vertices at more than one distance from the centre, and for those the explorer shows the solid itself; the article on [polyhedra as tilings of the sphere](/play/about/polyhedra) takes up the whole shelf.
+Not every solid has such a sphere. Some Johnson solids have vertices at more than one distance from the centre, and for those the explorer shows the solid itself; the article on [polyhedra as tilings of the sphere](/catalogue/about/polyhedra) takes up the whole shelf.
 
 ## How the explorer splits the catalogue
 

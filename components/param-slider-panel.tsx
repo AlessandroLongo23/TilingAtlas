@@ -34,7 +34,7 @@ function foldFraction(p: ParametricCellData["params"][number]): number | null {
 	return (c - lo) / (hi - lo);
 }
 
-// On a phone the panel is one card in /play's bottom tray (app/(app)/play/_play-client.tsx), so it drops
+// On a phone the panel is one card in /play's bottom tray (app/(app)/(atlas)/_atlas-client.tsx), so it drops
 // its own floating position and takes the tray's width.
 const PHONE_CARD = "max-md:static max-md:shrink-0 max-md:translate-x-0 max-md:justify-center max-md:px-3";
 

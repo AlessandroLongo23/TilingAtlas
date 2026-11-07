@@ -37,7 +37,7 @@ export default function ErrorBoundary({
 				<>
 					{retry ? <Button variant="primary" size="sm" icon={RotateCw} label="Try again" onClick={retry} /> : null}
 					<Button href="/" variant="secondary" size="sm" icon={Home} label="Atlas" />
-					<Button href="/library" variant="secondary" size="sm" icon={Library} label="Library" />
+					<Button href="/catalogue" variant="secondary" size="sm" icon={Library} label="Catalogue" />
 				</>
 			}
 		/>

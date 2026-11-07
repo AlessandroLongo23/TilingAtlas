@@ -32,7 +32,7 @@ export interface AboutSection {
 
 export const ABOUT: AboutSection[] = [
 	{
-		section: "/play",
+		section: "/catalogue",
 		topic: "the catalogue",
 		articles: [
 			{
@@ -261,6 +261,7 @@ export const articleHref = (s: AboutSection, a: AboutArticle) =>
 
 /** The section a path belongs to, and whether it is one of its articles (else the explorer). */
 export function aboutAt(pathname: string): { section: AboutSection; reading: boolean } | null {
-	const section = ABOUT.find((s) => pathname === s.section || pathname.startsWith(`${s.section}/about`));
-	return section ? { section, reading: pathname !== section.section } : null;
+	// Any path under a section belongs to it: the catalogue's viewer is /catalogue/view.
+	const section = ABOUT.find((s) => pathname === s.section || pathname.startsWith(`${s.section}/`));
+	return section ? { section, reading: pathname.startsWith(`${section.section}/about`) } : null;
 }

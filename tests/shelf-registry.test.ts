@@ -54,7 +54,7 @@ describe("the shelf registry", () => {
 	});
 
 	it("puts the 3.4.n.4 tilings on the disk and their solids on the sphere", () => {
-		// THE REGRESSION. Both shelves shipped in v1.13.0 counting as flat in the sidebar while _play-client
+		// THE REGRESSION. Both shelves shipped in v1.13.0 counting as flat in the sidebar while _atlas-client
 		// had already routed them to the disk / sphere and blanked the p5 layer, so 36,945 hyperbolic and 20
 		// spherical records offered symmetry elements, fundamental domain, vertex orbits and polygon points
 		// over a canvas that could not draw any of them — plus an Inversive checkbox the page would refuse.

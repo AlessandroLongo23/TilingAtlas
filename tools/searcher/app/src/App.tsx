@@ -368,6 +368,10 @@ export function App() {
 			if ("run" in h) document.getElementById("run-search")?.click();
 		});
 		const offQuit = api().onQuitRequest(() => setAskQuit(true));
+		// a board from an atlas link that came before this listened (one that starts the app)
+		void api()
+			.takeBoard()
+			.then((t) => t && loadBoard(t));
 		return () => (off(), offHook(), offQuit());
 	}, [loadBoard]);
 		// Esc on a run goes back to the disk map, unless a field or a dialog has it

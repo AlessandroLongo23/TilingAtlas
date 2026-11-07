@@ -38,7 +38,7 @@ export function parseShelfPreviewId(id: string): ShelfPreview | null {
 /** Where a preview card and a text chip both point. */
 export function previewHref(id: string): string {
 	const shelf = parseShelfPreviewId(id);
-	if (!shelf) return `/play?source=reference&tiling=${encodeURIComponent(id)}`;
+	if (!shelf) return `/catalogue/view?source=reference&tiling=${encodeURIComponent(id)}`;
 	// The two pages take their type through ?type=, in the form each one's own picker writes:
 	// a bare number on /pentagons, the zero-padded label on /isohedral.
 	return shelf.kind === "pentagon"
