@@ -136,7 +136,7 @@ struct Finder {
         for (size_t at = text.find("vertex "); at != std::string::npos; at = text.find("\nvertex ", at + 1)) recs.back().lines++;
         recs.back().kfrom = kfrom, recs.back().kto = kto;
         fs::path dir = root / name;
-        fs::create_directories(dir);
+        make_dirs(dir);
         {   // a step finished in an earlier session of this run, on the same board, is taken as it was
             std::ifstream old(dir / "step.board");
             std::string was((std::istreambuf_iterator<char>(old)), std::istreambuf_iterator<char>());
@@ -150,12 +150,12 @@ struct Finder {
                 return st;
             }
         }
-        std::ofstream(dir / "step.board") << text;
+        write_file(dir / "step.board", text);
         st.through = kfrom - 1;
         for (int k = kfrom; k <= kto && !st.found && !st.timed; k++) {
             fs::path kd = dir / ("k" + std::to_string(k));
             fs::remove_all(kd);   // a k cut short by a stop
-            fs::create_directories(kd);
+            make_dirs(kd);
             std::string cmd = quote(exe) + " " + quote((dir / "step.board").string()) + " --k " + std::to_string(k) + " "
                 + std::to_string(k) + " --threads " + std::to_string(threads) + " --first --progress";
             if (seconds > 0) cmd += " --seconds " + std::to_string(int(seconds));
@@ -189,9 +189,10 @@ struct Finder {
                 st.types = types_of(st.cert);
             } else if (code == 4) st.timed = true;
             else if (code == 0) st.through = k;
+            else if (code == WRITE_FAILED) { std::cout << "step " << name << ": a write failed at k=" << k << std::endl; std::exit(WRITE_FAILED); }
             else { std::cout << "step " << name << " failed at k=" << k << " (exit " << code << ")" << std::endl; std::exit(3); }
         }
-        std::ofstream(dir / "result.txt") << "step " << st.found << " " << st.through << " " << st.timed << "\n" << st.cert.string() << "\n";
+        write_file(dir / "result.txt", "step " + std::to_string(st.found) + " " + std::to_string(st.through) + " " + std::to_string(st.timed) + "\n" + st.cert.string() + "\n");
         report(what, st, false);
         return st;
     }
@@ -215,7 +216,7 @@ struct Finder {
         return o;
     }
     void write_json() const {
-        std::ofstream j(base / "find.json.part");
+        std::ostringstream j;
         j << "{\"targets\":[";
         for (size_t t = 0; t < targets.size(); t++) j << (t ? "," : "") << "\"" << esc(label(int(t))) << "\"";
         j << "],\"seconds\":" << seconds << ",\"prune\":" << (prune ? "true" : "false") << ",\"proven\":" << proven
@@ -235,8 +236,10 @@ struct Finder {
               << "\",\"found\":" << r.found << ",\"through\":" << r.through << ",\"kept\":" << (r.kept ? "true" : "false") << "}";
         }
         j << "]}\n";
-        j.close();
-        fs::rename(base / "find.json.part", base / "find.json");
+        write_file(base / "find.json.part", j.str());
+        std::error_code ec;
+        fs::rename(base / "find.json.part", base / "find.json", ec);
+        if (ec) errno = ec.value(), io_failed("write", base / "find.json");
     }
 
     std::string label(int t) const {
@@ -268,15 +271,19 @@ struct Finder {
         proven = lower, result = st.found, done = true;
         write_json();
         fs::path dir = base / ("solver_" + b.name);
-        fs::create_directories(dir);
+        make_dirs(dir);
         if (st.found) {
-            fs::copy_file(st.cert, dir / st.cert.filename(), fs::copy_options::overwrite_existing);
+            std::error_code ec;
+            fs::copy_file(st.cert, dir / st.cert.filename(), fs::copy_options::overwrite_existing, ec);
+            if (ec) errno = ec.value(), io_failed("write", dir / st.cert.filename());
             fs::path sym = st.cert.parent_path() / "symbols.txt";
-            if (fs::exists(sym)) fs::copy_file(sym, dir / "symbols.txt", fs::copy_options::overwrite_existing);
+            if (fs::exists(sym)) fs::copy_file(sym, dir / "symbols.txt", fs::copy_options::overwrite_existing, ec);
+            if (ec) errno = ec.value(), io_failed("write", dir / "symbols.txt");
         }
-        std::ofstream census(dir / "census.txt");
+        std::ostringstream census;
         for (int k = b.kmin; k <= b.kmax; k++) census << "k=" << k << " -- " << (k == st.found) << "\n";
         census << "MAX\n";
+        write_file(dir / "census.txt", census.str());
         double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
         if (lower > b.kmin) std::cout << "proven: no tiling meets every target below k=" << lower << std::endl;
         if (!st.found) std::cout << "no tiling found up to k=" << b.kmax << std::endl;

@@ -38,6 +38,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <cerrno>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -900,6 +901,39 @@ static void certificate(std::string& out, original_tiling_writer& writer, tiling
     }
 }
 
+// Every file the run writes is checked, and the first that fails ends it at once with exit code 5, naming the file.
+// Unchecked, a full disk lost 26 of 3,4,6,12 k <= 13's 882 files while the run printed "Finished", wrote a whole
+// census and exited 0 (2026-11-07). Ending before the next write keeps the unit or root that failed out of
+// units.done and roots.done, so --resume searches it again (and the merge it was in is undone by merge.pending).
+static int const WRITE_FAILED = 5;
+[[noreturn]] static void io_failed(char const* what, fs::path const& file) {
+    int const e = errno;
+    std::cerr << "cannot " << what << " " << file.string() << ": " << (e ? std::strerror(e) : "failed") << std::endl;
+    std::_Exit(WRITE_FAILED);
+}
+/** `text` written to `file` (opened with `mode`: std::ios::app to append), and closed: a write fails on the close too. */
+static void write_file(fs::path const& file, std::string_view text, std::ios::openmode mode = {}) {
+    std::ofstream f(file, mode | std::ios::out);
+    f.write(text.data(), std::streamsize(text.size()));
+    f.close();
+    if (!f) io_failed("write", file);
+}
+static void make_dirs(fs::path const& dir) {
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+    if (ec) errno = ec.value(), io_failed("create", dir);
+}
+/** A file of lines that a failed append can have left half a line at the end of: cut back to its last whole line. */
+static void drop_torn_line(fs::path const& file) {
+    std::ifstream in(file, std::ios::binary);
+    std::string s((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    in.close();
+    if (s.empty() || s.back() == '\n') return;
+    std::error_code ec;
+    fs::resize_file(file, s.rfind('\n') + 1, ec);   // npos + 1 is 0: no whole line at all
+    if (ec) errno = ec.value(), io_failed("write", file);
+}
+
 // from's bytes appended to to, a block at a time (`out << in.rdbuf()` moved them one character at a time: 2-18% of
 // the CPU on the output boards, and the merge of the last root is the end of an 8-thread run)
 static void append_file(fs::path const& from, fs::path const& to) {
@@ -907,6 +941,9 @@ static void append_file(fs::path const& from, fs::path const& to) {
     std::ifstream in(from, std::ios::binary);
     std::ofstream out(to, std::ios::app | std::ios::binary);
     while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) out.write(buf.data(), in.gcount());
+    if (!in.eof()) io_failed("read", from);
+    out.close();
+    if (!out) io_failed("write", to);
 }
 
 // One root vertex's share of the search. The search never adds a vertex type below its root, so root r
@@ -3756,6 +3793,7 @@ int main(int argc, char** argv) {
     std::vector<std::atomic<uint64_t>> per_k(MAX_K + 1);   // tilings per k: finished roots plus the running ones
     if (resuming) {
         gzip = fs::exists(dir / "gzip");
+        drop_torn_line(done_file), drop_torn_line(units_file);   // a run that ended on a failed write
         std::ifstream df(done_file);
         for (std::string line; std::getline(df, line);) {
             std::istringstream ls(line);
@@ -3788,27 +3826,27 @@ int main(int argc, char** argv) {
             }
         }
         uf.close();
-        if (fs::exists(units_file)) std::ofstream(units_file) << live.str();
+        if (fs::exists(units_file)) write_file(units_file, live.str());
     } else {
-        fs::create_directories(dir);
+        make_dirs(dir);
         {
-            std::ofstream f(dir / "order.txt");
+            std::ostringstream f;
             for (size_t i = 0; i < order.size(); i++) f << (i ? " " : "") << order[i] + 1;
             f << "\n";
+            write_file(dir / "order.txt", f.str());
         }
-        std::ofstream(dir / "board.txt") << board_text.str() << engine_mark;
-        {   // read back by --resume and by tileestimate
-            std::ofstream rf(dir / "rule");
-            rf << (face_first ? "face" : "fewest") << (ring_check ? " ring" : "") << "\n";
-        }
-        if (gzip) std::ofstream(dir / "gzip");   // the format of this run's certificates, read back by --resume
-        std::ofstream(dir / "named");   // certificates say the board's own symbols, not X<n>; read back by --resume
-        std::ofstream f(dir / "symbols.txt");
+        write_file(dir / "board.txt", board_text.str() + engine_mark);
+        // read back by --resume and by tileestimate
+        write_file(dir / "rule", std::string(face_first ? "face" : "fewest") + (ring_check ? " ring" : "") + "\n");
+        if (gzip) write_file(dir / "gzip", "");   // the format of this run's certificates, read back by --resume
+        write_file(dir / "named", "");   // certificates say the board's own symbols, not X<n>; read back by --resume
+        std::ostringstream f;
         for (auto const& [s, c] : b.codes) {
             std::ostringstream printed;
             printed << corner_decoder{ c };
             if (printed.str() != s) f << printed.str() << " " << s << "\n";
         }
+        write_file(dir / "symbols.txt", f.str());
     }
 
     if (show_stages) std::cout << "stage tables 0 0" << std::endl;
@@ -3920,7 +3958,8 @@ int main(int argc, char** argv) {
     if (!resuming) {
         char const* forced = std::getenv("TILESEARCH_UNITS");
         unit_depth = forced ? std::atoi(forced) : pl.predicted >= UNIT_NODES * roots ? UNIT_DEPTH : 0;
-        if (unit_depth > 0) std::ofstream(dir / "units") << unit_depth << " " << face_first << " " << ring_check << " " << sym_break << "\n";
+        if (unit_depth > 0)
+            write_file(dir / "units", std::to_string(unit_depth) + " " + std::to_string(face_first) + " " + std::to_string(ring_check) + " " + std::to_string(sym_break) + "\n");
     }
     if (unit_depth > 0) std::cout << "units: each root split where it has " << UNIT_TARGET << " partial tilings, at most " << unit_depth << " edges deep" << std::endl;
 
@@ -3988,13 +4027,15 @@ int main(int argc, char** argv) {
     // a unit's folder under .part/ is made when it first has output: most have none, and making 77,075 of
     // them up front took 12 s on a star board
     auto spill = [&](int r, int u, Unit& p) {   // caller holds the root's mutex, or is the only one left
-        if (!p.out.empty()) fs::create_directories(unit_dir(r, u));
+        if (!p.out.empty()) make_dirs(unit_dir(r, u));
         for (auto& [name, text] : p.out) {
-            if (!gzip) { std::ofstream(unit_dir(r, u) / name, std::ios::app | std::ios::binary) << text; continue; }
+            if (!gzip) { write_file(unit_dir(r, u) / name, text, std::ios::app | std::ios::binary); continue; }
             // one gzip member per spill; level 1: this text compresses ~10x even so, and level 6 costs more time
-            gzFile z = gzopen((unit_dir(r, u) / (name + ".gz")).c_str(), "ab1");
-            gzwrite(z, text.data(), (unsigned)text.size());
-            gzclose(z);
+            fs::path const gz = unit_dir(r, u) / (name + ".gz");
+            gzFile z = gzopen(gz.c_str(), "ab1");
+            if (!z) io_failed("write", gz);
+            bool const wrote = gzwrite(z, text.data(), (unsigned)text.size()) == (int)text.size();
+            if (gzclose(z) != Z_OK || !wrote) io_failed("write", gz);
         }
         p.out.clear();
         p.buffered = 0;
@@ -4040,9 +4081,11 @@ int main(int argc, char** argv) {
         Fingerprints::Key key;
         if (!new_minimal(conf, key, st.seen)) return;
         {   // TILESEARCH_KEYS=<file>: every written tiling's canonical key, to compare engines tiling for tiling
-            static FILE* kf = std::getenv("TILESEARCH_KEYS") ? std::fopen(std::getenv("TILESEARCH_KEYS"), "w") : nullptr;
-            if (kf) { static std::mutex km; std::lock_guard<std::mutex> l(km);
-                std::fprintf(kf, "%d %016llx%016llx\n", k, (unsigned long long)key.a, (unsigned long long)key.b); std::fflush(kf); }
+            static char const* const keys = std::getenv("TILESEARCH_KEYS");
+            static FILE* kf = keys ? std::fopen(keys, "w") : nullptr;
+            if (keys) { static std::mutex km; std::lock_guard<std::mutex> l(km);
+                if (!kf || std::fprintf(kf, "%d %016llx%016llx\n", k, (unsigned long long)key.a, (unsigned long long)key.b) < 0 || std::fflush(kf))
+                    io_failed("write", keys); }
         }
         // solutions_processor::process, with its streams and the std::set of corners kept per thread
         thread_local std::ostringstream name;
@@ -4069,8 +4112,8 @@ int main(int argc, char** argv) {
         if (first_only) {
             static std::mutex m;
             std::lock_guard<std::mutex> l(m);
-            std::ofstream(dir / name.str(), std::ios::binary) << text;
-            std::ofstream(dir / "census.txt") << "k=" << k << " -- 1\nMAX\n";
+            write_file(dir / name.str(), text, std::ios::binary);
+            write_file(dir / "census.txt", "k=" + std::to_string(k) + " -- 1\nMAX\n");
             std::cout << "first " << k << " " << name.str() << std::endl;
             std::_Exit(0);
         }
@@ -4081,7 +4124,7 @@ int main(int argc, char** argv) {
             int64_t const ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
             int64_t was = latest_at.load(std::memory_order_relaxed);
             if ((was < 0 || ms - was >= LATEST_MS) && latest_at.compare_exchange_strong(was, ms)) {
-                std::ofstream(dir / "latest.tmp", std::ios::binary) << text;
+                write_file(dir / "latest.tmp", text, std::ios::binary);
                 std::error_code ec;
                 fs::rename(dir / "latest.tmp", dir / "latest.txt", ec);
             }
@@ -4109,13 +4152,14 @@ int main(int argc, char** argv) {
         if (!st.skip.count(u)) {
             spill(r, u, p);
             if (!p.keys.empty()) {
-                fs::create_directories(unit_dir(r, u));
-                std::ofstream(unit_dir(r, u) / "keys", std::ios::binary).write((char const*)p.keys.data(), std::streamsize(p.keys.size() * sizeof p.keys[0]));
+                make_dirs(unit_dir(r, u));
+                write_file(unit_dir(r, u) / "keys", { (char const*)p.keys.data(), p.keys.size() * sizeof p.keys[0] }, std::ios::binary);
             }
-            std::ofstream uf(units_file, std::ios::app);
+            std::ostringstream uf;
             uf << r << " " << u;
             for (auto const& [k, n] : p.counts) uf << " " << k << ":" << n;
             uf << "\n";
+            write_file(units_file, uf.str(), std::ios::app);
         }
         st.units.erase(u);
     };
@@ -4130,19 +4174,25 @@ int main(int argc, char** argv) {
         for (auto const& [u, d] : units)
             for (auto const& e : fs::directory_iterator(d))
                 if (e.path().filename() != "keys") files.push_back(e.path()), names.insert(e.path().filename());
-        {
-            std::ofstream pf(pending_file);
+        {   // whole or not at all: a half-written list would undo the wrong files (written under .part, then moved)
+            std::ostringstream pf;
             pf << r << "\n";
             for (auto const& f : names)
                 pf << (fs::exists(dir / f) ? (long long)fs::file_size(dir / f) : -1LL) << " " << f.string() << "\n";
+            make_dirs(part);
+            write_file(part / "merge.pending", pf.str());
+            std::error_code ec;
+            fs::rename(part / "merge.pending", pending_file, ec);
+            if (ec) errno = ec.value(), io_failed("write", pending_file);
         }
         for (auto const& f : files)
             append_file(f, dir / f.filename());
         {
-            std::ofstream df(done_file, std::ios::app);
+            std::ostringstream df;
             df << r;
             for (auto const& [k, n] : st.counts) df << " " << k << ":" << n;
             df << "\n";
+            write_file(done_file, df.str(), std::ios::app);
         }
         fs::remove(pending_file);
         fs::remove_all(part / std::to_string(r));
@@ -4194,9 +4244,10 @@ int main(int argc, char** argv) {
     double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
 
     size_t total = 0;
-    std::ofstream census(dir / "census.txt");
+    std::ostringstream census;
     for (int k = b.kmin; k <= b.kmax; k++) census << "k=" << k << " -- " << per_k[k] << "\n", total += per_k[k];
     census << "MAX\n";
+    write_file(dir / "census.txt", census.str());
     std::cout << "\nFinished with " << total << " solutions after " << secs << "s.\n";
     std::cout << "stats nodes " << total_nodes << " complete " << total_complete << " unique " << total << "\n";
     return 0;
