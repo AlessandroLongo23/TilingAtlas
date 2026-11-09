@@ -338,15 +338,36 @@ struct Fingerprints {
     }
 };
 
+// THE VERTEX FIGURE IN THE MINIMALITY TEST (2026-11-09). A tiling is written only when its configuration covers no smaller
+// one, and the test refines a colouring of the half-edges; its seed was the corner label alone. A covering keeps every
+// half-edge at the same vertex, so the vertex's whole figure (its word, round the vertex) is an invariant too, and labels
+// do not imply it: on a board of one polygon at vertices of two degrees every label is the same, the refinement stays
+// one class, and every tiling read as a covering. hyp-k2 at k = 2 lost 1,319 of 52,450 tilings that way, among them all
+// 584 by hexagons at vertices of degree 5 and 6 (a Delaney-Dress census gives the same 584; eu_solver fixed its seed the
+// same way on 2026-08-20, eu_solver.cpp's MINIMALITY note). The stored half-edges are folded by each vertex's rotations,
+// so the structure cannot tell those vertices apart either: the figure also goes into the canonical form, or two such
+// tilings could share a key.
+// The figure is the vertex type's word with colours read away (`<base>@<letter>` as `<base>`), up to rotation and
+// reflection, so a recolouring keeps it. The label seed is tried first and the figure added only when that leaves
+// classes, so a tiling the label seed already settles is numbered as before; its form gains the figures after its old
+// entries, so forms order as before wherever they differed. Runs begun before engine mark 5 resume without it.
+static thread_local std::vector<int> const* cur_types = nullptr;   // the leaf's vertex types, set before on_tiling
+static std::vector<uint32_t> type_fig;   // per vertex type of the run's classification: its figure's number
+static bool figures_on = true;           // off for a run resumed from before mark 5
+static bool figures() { return figures_on && !type_fig.empty() && cur_types != nullptr; }
+static uint32_t figure_of(tiling_t const& t, index_t ix) { return type_fig[(*cur_types)[t.neighbourhood(ix).vertex_ix]]; }
+
 // canonical_form_if_minimal (tiling_properties.h): the same refinement, sort for sort, and the same
 // test (the tiling is dropped when two half-edges stay in one class, i.e. it covers a smaller quotient),
 // with buffers kept per thread. His version allocated three vectors for every complete tiling,
 // duplicates included, and allocation was the largest cost on output-heavy boards.
 // The canonical form itself, with every label read through `lab` (a recolouring; null reads them as they
 // are). False when the tiling covers a smaller quotient, which no relabelling changes.
-static bool canonical_form_global(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form) {
+// figs: 0 the label seed; 1 the label seed, and the figures appended to the form; 2 the figure and label seed, appended.
+static bool canonical_form_global(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form, int figs = 0) {
     using Row = std::pair<std::array<uint32_t, 5>, uint32_t>;
-    thread_local std::vector<uint32_t> eq, ranks;
+    thread_local std::vector<uint32_t> eq;
+    thread_local std::vector<uint64_t> ranks;
     auto label = [&](index_t ix) -> uint32_t {
         int c = t.left_label(ix);
         if (lab) if (auto it = lab->find(c); it != lab->end()) c = it->second;
@@ -356,12 +377,13 @@ static bool canonical_form_global(tiling_t const& t, std::unordered_map<int, int
     thread_local std::vector<std::pair<uint64_t, uint32_t>> packed;
     int const n = t.num_halfedges();
     // Labels are replaced by their ranks: the sort below sees the same order, so it makes the same classes.
+    auto seed = [&](index_t ix) -> uint64_t { return figs == 2 ? uint64_t(figure_of(t, ix)) << 32 | label(ix) : label(ix); };
     ranks.clear();
-    for (int i = 0; i < n; i++) ranks.push_back(label(index_t{ i }));
+    for (int i = 0; i < n; i++) ranks.push_back(seed(index_t{ i }));
     std::sort(ranks.begin(), ranks.end());
     ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
     eq.resize(n);
-    for (int i = 0; i < n; i++) eq[i] = uint32_t(std::lower_bound(ranks.begin(), ranks.end(), label(index_t{ i })) - ranks.begin());
+    for (int i = 0; i < n; i++) eq[i] = uint32_t(std::lower_bound(ranks.begin(), ranks.end(), seed(index_t{ i })) - ranks.begin());
     // Every entry is now below n, so while n^5 fits in 64 bits a row packs into one number that sorts
     // exactly as the 5-tuple does (n <= 7131); larger tilings sort the tuples.
     bool const pack = n <= 7131;
@@ -403,18 +425,24 @@ static bool canonical_form_global(tiling_t const& t, std::unordered_map<int, int
         }
     }
     if (classes != n) return false;
-    form.resize(4 * n);
+    form.resize(figs ? 5 * n : 4 * n);
     for (int i = 0; i < n; i++) {
         index_t ix{ i };
         uint32_t* f = &form[4 * eq[i]];
         f[0] = eq[t.opposite(ix).value], f[1] = eq[t.mirror(ix).value], f[2] = eq[t.left_neighbour(ix).value], f[3] = label(ix);
+        if (figs) form[4 * n + eq[i]] = figure_of(t, ix);
     }
     return true;
 }
 
-static bool canonical_form_classes(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form) {
+// figs: 0 the label seed; 1 the label seed, and the figures appended to the form; 2 the figure and label seed, appended.
+// When the label seed leaves classes, fig_split says whether one of them holds two figures. If none does, the figure seed
+// ends in the same classes (they already respect it), so the second refinement would only confirm the covering.
+static thread_local bool fig_split = false;
+static bool canonical_form_classes(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form, int figs = 0) {
     using Row = std::pair<std::array<uint32_t, 5>, uint32_t>;
-    thread_local std::vector<uint32_t> eq, ranks;
+    thread_local std::vector<uint32_t> eq;
+    thread_local std::vector<uint64_t> ranks;
     auto label = [&](index_t ix) -> uint32_t {
         int c = t.left_label(ix);
         if (lab) if (auto it = lab->find(c); it != lab->end()) c = it->second;
@@ -424,12 +452,13 @@ static bool canonical_form_classes(tiling_t const& t, std::unordered_map<int, in
     thread_local std::vector<std::pair<uint64_t, uint32_t>> packed;
     int const n = t.num_halfedges();
     // Labels are replaced by their ranks: the sort below sees the same order, so it makes the same classes.
+    auto seed = [&](index_t ix) -> uint64_t { return figs == 2 ? uint64_t(figure_of(t, ix)) << 32 | label(ix) : label(ix); };
     ranks.clear();
-    for (int i = 0; i < n; i++) ranks.push_back(label(index_t{ i }));
+    for (int i = 0; i < n; i++) ranks.push_back(seed(index_t{ i }));
     std::sort(ranks.begin(), ranks.end());
     ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
     eq.resize(n);
-    for (int i = 0; i < n; i++) eq[i] = uint32_t(std::lower_bound(ranks.begin(), ranks.end(), label(index_t{ i })) - ranks.begin());
+    for (int i = 0; i < n; i++) eq[i] = uint32_t(std::lower_bound(ranks.begin(), ranks.end(), seed(index_t{ i })) - ranks.begin());
     // Every entry is now below n, so while n^5 fits in 64 bits a row packs into one number that sorts
     // exactly as the 5-tuple does (n <= 7131); larger tilings sort the tuples.
     //
@@ -504,22 +533,37 @@ static bool canonical_form_classes(tiling_t const& t, std::unordered_map<int, in
             }
         }
     }
-    if (classes != n) return false;
-    form.resize(4 * n);
+    if (classes != n) {
+        if (figs == 1) {
+            thread_local std::vector<int64_t> fig_of_class;
+            fig_of_class.assign(classes, -1);
+            fig_split = false;
+            for (int i = 0; i < n && !fig_split; i++) {
+                int64_t const f = figure_of(t, index_t{ i });
+                if (fig_of_class[eq[i]] < 0) fig_of_class[eq[i]] = f;
+                else fig_split = fig_of_class[eq[i]] != f;
+            }
+        }
+        return false;
+    }
+    form.resize(figs ? 5 * n : 4 * n);
     for (int i = 0; i < n; i++) {
         index_t ix{ i };
         uint32_t* f = &form[4 * eq[i]];
         f[0] = eq[t.opposite(ix).value], f[1] = eq[t.mirror(ix).value], f[2] = eq[t.left_neighbour(ix).value], f[3] = label(ix);
+        if (figs) form[4 * n + eq[i]] = figure_of(t, ix);
     }
     return true;
 }
 
 static bool const check_canon = std::getenv("TILESEARCH_CHECK_CANON") != nullptr;
 static bool canonical_form(tiling_t const& t, std::unordered_map<int, int> const* lab, std::vector<uint32_t>& form) {
-    bool const r = canonical_form_classes(t, lab, form);
+    int figs = figures() ? 1 : 0;
+    bool r = canonical_form_classes(t, lab, form, figs);
+    if (!r && figs && fig_split) r = canonical_form_classes(t, lab, form, figs = 2);
     if (check_canon) {
         thread_local std::vector<uint32_t> g;
-        if (canonical_form_global(t, lab, g) != r || (r && g != form)) {
+        if (canonical_form_global(t, lab, g, figs) != r || (r && g != form)) {
             std::cerr << "TILESEARCH_CHECK_CANON: the class-wise sort and the global sort disagree (" << t.num_halfedges() << " half-edges)\n";
             std::abort();
         }
@@ -554,7 +598,6 @@ static int sig_nbase = 0;
 static std::vector<std::vector<int>> recolor_type;
 static std::vector<int> recolor_min_type;          // least recoloured type, per type
 static void const* cut_vc = nullptr;               // the classification the tables index (the run's, not a probe's)
-static thread_local std::vector<int> const* cur_types = nullptr;   // the leaf's vertex types, set before on_tiling
 static bool color_sig = !std::getenv("TILESEARCH_COLOR_SIG") || std::string(std::getenv("TILESEARCH_COLOR_SIG")) != "0";
 static bool const class_key_dump = std::getenv("TILESEARCH_CLASSKEY") != nullptr;
 
@@ -660,8 +703,9 @@ static bool covers_quotient(tiling_t const& t) {
     for (int i = 0; i < n; i++)
         if (!t.mirror(index_t{ i }).has_value()) return false;   // canonical_form decides these
     int const a = 0, la = lab(0);   // any anchor gives the same verdict
+    bool const figs = figures();   // and the vertex figure, which a covering keeps as it keeps the label
     for (int b = 1; b < n; b++) {
-        if (lab(b) != la) continue;
+        if (lab(b) != la || (figs && figure_of(t, index_t{ b }) != figure_of(t, index_t{ a }))) continue;
         bool ok = true;
         work.assign(1, { a, b });
         while (ok && !work.empty()) {
@@ -669,7 +713,7 @@ static bool covers_quotient(tiling_t const& t) {
             work.pop_back();
             int const x = find(u), y = find(v);
             if (x == y) continue;
-            if (lab(x) != lab(y)) { ok = false; break; }
+            if (lab(x) != lab(y) || (figs && figure_of(t, index_t{ x }) != figure_of(t, index_t{ y }))) { ok = false; break; }
             par[y] = x, touched.push_back(y);
             index_t const iu{ u }, iv{ v };
             index_t const mu = t.mirror(iu), mv = t.mirror(iv);
@@ -3753,16 +3797,20 @@ int main(int argc, char** argv) {
     // Mark 4: also true slack in the face rule (FastFaces::edges_needed_to_complete).
     std::string const engine_mark2 = "# engine: forced closure and orderly generation (resumable by this engine or later)\n";
     std::string const engine_mark3 = "# engine 3: forced closure, orderly generation, colour classes by key (resumable by this engine or later)\n";
-    std::string const engine_mark = "# engine 4: forced closure, orderly generation, colour classes by key, true slack (resumable by this engine or later)\n";
+    std::string const engine_mark4 = "# engine 4: forced closure, orderly generation, colour classes by key, true slack (resumable by this engine or later)\n";
+    std::string const engine_mark = "# engine 5: forced closure, orderly generation, colour classes by key, true slack, vertex figures in the minimality test (resumable by this engine or later)\n";
     bool legacy = false;   // begun before mark 2
     if (resuming) {
         std::ifstream old(dir / "board.txt");
         std::string was((std::istreambuf_iterator<char>(old)), std::istreambuf_iterator<char>());
         legacy = was == board_text.str();
         bool const mark2 = was == board_text.str() + engine_mark2, mark3 = was == board_text.str() + engine_mark3;
-        if (!legacy && !mark2 && !mark3 && was != board_text.str() + engine_mark) { std::cerr << "cannot resume: " << dir / "board.txt" << " is a different board\n"; return 2; }
+        bool const mark4 = was == board_text.str() + engine_mark4;
+        if (!legacy && !mark2 && !mark3 && !mark4 && was != board_text.str() + engine_mark) { std::cerr << "cannot resume: " << dir / "board.txt" << " is a different board\n"; return 2; }
         if (legacy || mark2) color_sig = false, std::cout << "engine: resuming a run from before colour classes by key, so with the colour rules it began with" << std::endl;
         if (legacy || mark2 || mark3) slack_rule = false, std::cout << "engine: resuming a run from before true slack, so with the walk-length face rule" << std::endl;
+        if (legacy || mark2 || mark3 || mark4)
+            figures_on = false, std::cout << "engine: resuming a run from before vertex figures in the minimality test, so with labels alone (a fresh run can find tilings this one misses)" << std::endl;
     }
     fs::remove(dir / "latest.txt");   // a stopped session's, from a root it dropped
     Plan const pl = plan(b, threads, resuming ? &dir : nullptr);
@@ -3852,6 +3900,26 @@ int main(int argc, char** argv) {
     if (show_stages) std::cout << "stage tables 0 0" << std::endl;
     vertex_classification vc{};
     int const roots = classify(b, order, n_initial, vc);
+    {   // the vertex figures (type_fig): each type's word, colours read away, up to rotation and reflection
+        std::unordered_map<int, int> base;   // corner code -> its base symbol's number
+        std::map<std::string, int> base_ids;
+        for (auto const& [sym, c] : b.codes)
+            base[c] = base_ids.try_emplace(sym.substr(0, sym.find('@')), (int)base_ids.size()).first->second;
+        std::map<std::vector<int>, uint32_t> ids;
+        type_fig.assign(vc.count(), 0);
+        for (int t = 0; t < vc.count(); t++) {
+            auto const& w = vc.word_with_symmetries(t);
+            std::vector<int> word, best;
+            for (int i = 0; i < (int)w.size(); i++) { auto const it = base.find(w.letter(i)); word.push_back(it == base.end() ? -1 - w.letter(i) : it->second); }
+            for (int r = 0; r < 2; r++, std::reverse(word.begin(), word.end()))
+                for (size_t j = 0; j < word.size(); j++) {
+                    std::vector<int> x(word.begin() + j, word.end());
+                    x.insert(x.end(), word.begin(), word.begin() + j);
+                    if (best.empty() || x < best) best = x;
+                }
+            type_fig[t] = ids.try_emplace(best, (uint32_t)ids.size()).first->second;
+        }
+    }
     if (color_sig && !recolorings.empty() && !(std::getenv("TILESEARCH_COLOR_CUT") && std::string(std::getenv("TILESEARCH_COLOR_CUT")) == "0")) {
         // The recoloured type, matched on templates: type t's template with its labels recoloured must be isomorphic to
         // exactly one type's template (labels, mirror kind, right, left and mirror links, as symmetries() checks). Not
