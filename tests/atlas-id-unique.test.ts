@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataText } from "../scripts/atlas/io.mjs";
@@ -11,26 +11,17 @@ import { readDataText } from "../scripts/atlas/io.mjs";
 // warning is dev-only and easy to miss — this test makes the invariant loud.
 
 const PUB = join(__dirname, "..", "public");
-const FILES = [
-	"reference-atlas.json",
-	"reference-atlas-composable.json",
-	"reference-atlas-isotoxal.json",
-	"reference-atlas-mixed.json",
-	"reference-atlas-scaled.json",
-	"reference-atlas-polyomino.json",
-	"reference-atlas-islamic.json",
-	"reference-atlas-hyperbolic.json",
-	"reference-atlas-spherical.json",
-];
+// Every shelf file and lazy shard there is, read the way the builders read them. A fixed list of `.json`
+// names checked nothing from 2026-10-21, when the data went to `.json.gz` and every name stopped existing.
+const FILES = readdirSync(PUB).filter((f) => /^reference-atlas.*\.json(\.br)?$/.test(f));
 
 describe("reference shelf id uniqueness (React list keys)", () => {
 	it("no id appears twice within or across the merged reference files", () => {
+		expect(FILES.length, "no reference-atlas files found").toBeGreaterThan(0);
 		const seen = new Map<string, string>(); // id -> first file
 		const dups: string[] = [];
 		for (const f of FILES) {
-			const path = join(PUB, f);
-			if (!existsSync(path)) continue; // best-effort shelves may be absent, matching the loader
-			const entries = decodeAtlas<{ id?: string }>(JSON.parse(readFileSync(path, "utf8")));
+			const entries = decodeAtlas<{ id?: string }>(JSON.parse(readDataText(join(PUB, f))));
 			for (const e of entries) {
 				if (!e.id) continue;
 				const prev = seen.get(e.id);
@@ -38,8 +29,9 @@ describe("reference shelf id uniqueness (React list keys)", () => {
 				else seen.set(e.id, f);
 			}
 		}
+		expect(seen.size, "no ids read").toBeGreaterThan(0);
 		expect(dups, `duplicate ids: ${dups.slice(0, 20).join("; ")}`).toEqual([]);
-	});
+	}, 300_000);
 
 	it("hyperbolic developed patches key uniquely too (thumbnail/tiling caches key on patch id)", () => {
 		const patches = ["hyperbolic-developed.json", "hyperbolic-developed-stars.json"].flatMap((f) =>

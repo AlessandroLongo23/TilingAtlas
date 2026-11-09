@@ -1,4 +1,4 @@
-import { CyclotomicRing } from "@/classes";
+import { CyclotomicRing } from "@/classes/Cyclotomic";
 import { enumerateConvexFamily } from "./convexTiles";
 import { dissect } from "./dissect";
 

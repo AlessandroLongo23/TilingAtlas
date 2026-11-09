@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { Segmented } from "@/components/shelf";
 import { Figure, FigureLoading, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
 import {
@@ -118,11 +118,11 @@ export function CoronaFigure({ set = "", shapes = "0", caption }: { set?: string
 					aria-label="More coronas"
 					onClick={() => setRing(Math.min(H, k + 1))}
 				/>
-				<span className="ml-2 font-mono text-xs text-fg-muted tabular-nums">
+				<span className="ml-2 font-mono text-small text-fg-muted tabular-nums">
 					corona {k} of {H}
 				</span>
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				{k === 0
 					? `The ${label(shape)} on its own, with the seams between its cells.`
 					: k < H
@@ -183,9 +183,9 @@ export function HeeschCensusFigure({ caption }: { caption?: string }) {
 			</div>
 			{index ? (
 				// A grid of divs, not a <table>: the article styles every table full-width at prose size.
-				<div className="mt-3 overflow-x-auto">
+				<div tabIndex={0} className="mt-3 overflow-x-auto">
 					<div
-						className="mx-auto grid w-max font-mono text-[11px] tabular-nums sm:text-xs"
+						className="mx-auto grid w-max font-mono text-caption tabular-nums sm:text-small"
 						style={{ gridTemplateColumns: `repeat(${width + 2}, auto)` }}
 					>
 						{["cells", "non-tilers", ...Array.from({ length: width }, (_, h) => `H = ${h}`)].map((t) => (

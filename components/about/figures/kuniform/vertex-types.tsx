@@ -79,6 +79,7 @@ function VertexGlyph({
 		[word],
 	);
 	return (
+		// ds-check: keep (a selection card: the drawn vertex figure is the option)
 		<button
 			type="button"
 			onClick={onPick}
@@ -95,7 +96,7 @@ function VertexGlyph({
 				))}
 				<circle cx={0} cy={0} r={0.12} fill="#000" />
 			</Stage>
-			<span className="mt-1 font-mono text-[11px] leading-tight text-fg-secondary">{word}</span>
+			<span className="mt-1 font-mono text-caption leading-tight text-fg-secondary">{word}</span>
 		</button>
 	);
 }
@@ -125,7 +126,7 @@ export function KuVertexTypes({ caption }: { caption?: string }) {
 					cols={4}
 				/>
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				<span className="font-mono text-fg-secondary">{chosen}</span>: {ns.map((n) => deg(angle(n))).join(" + ")} =
 				360°. {why(chosen)}
 			</p>

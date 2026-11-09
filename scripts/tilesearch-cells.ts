@@ -4,13 +4,14 @@
 // It reuses what draws these tilings already: the app's decoder and developer (tools/searcher/app/src)
 // for the run, and the site's renderCellFromExactSource for atlas records that ship only an exact cell.
 //
-//   pnpm tsx scripts/tilesearch-cells.ts <run folder> <out.json.gz>
+//   pnpm tsx scripts/tilesearch-cells.ts <run folder> <out.json.br>
 //
 // Output: { run: {...what the run claims and what the board is complete for}, tilings: [...], atlas: [...] }.
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText, writeDataFile } from "./atlas/io.mjs";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 import { faceSize, parse, type Board } from "@/tools/searcher/app/src/board";
 import { closingVertices } from "@/tools/searcher/app/src/corners";
@@ -97,7 +98,7 @@ const cross = (a: number[], p: number[], b: number[]): [number, number] => {
 
 function main() {
 	const [dir, out] = process.argv.slice(2);
-	if (!dir || !out) throw new Error("usage: tilesearch-cells.ts <run folder> <out.json.gz>");
+	if (!dir || !out) throw new Error("usage: tilesearch-cells.ts <run folder> <out.json.br>");
 	const text = read(path.join(dir, "input.board"));
 	if (!text) throw new Error(`${dir} has no input.board`);
 	const board = parse(text).board;
@@ -158,11 +159,11 @@ function main() {
 		const pub = path.join(ROOT, "public");
 		const shards = fs
 			.readdirSync(pub)
-			.filter((n) => n === `${shelf}.json.gz` || new RegExp(`^${shelf}-k\\d+\\.json\\.gz$`).test(n));
+			.filter((n) => n === `${shelf}.json.br` || new RegExp(`^${shelf}-k\\d+\\.json\\.br$`).test(n));
 		for (const f of shards) {
 			const records = hydrateRenderCells(
 				decodeAtlas<Record<string, unknown> & { id: string; exactSource?: never }>(
-					JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(pub, f))).toString("utf8")),
+					JSON.parse(readDataText(path.join(pub, f))),
 				),
 			);
 			for (const r of records) {
@@ -204,7 +205,7 @@ function main() {
 		atlas,
 		atlasScanned: scanned,
 	};
-	fs.writeFileSync(out, zlib.gzipSync(JSON.stringify(result)));
+	writeDataFile(out, JSON.stringify(result));
 	const failed = tilings.filter((t) => t.error).length;
 	console.log(
 		`${tilings.length} certificates (${failed} not developed), ${atlas.length} atlas candidates of ${scanned} scanned → ${out}`,

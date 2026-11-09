@@ -260,7 +260,7 @@ describe("tilingToPatch on hand-built cells", () => {
 // Hand-built cells are all axis-aligned and all fold trivially. The records that actually exercise the
 // fold are the developed ones, where a cell can sit whole periods from the origin on a skewed basis.
 
-const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json.gz");
+const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json.br");
 type Rec = { id: string; exactSource?: ExactCellSource };
 const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(readDataText(atlasPath))) : [];
 

@@ -106,7 +106,7 @@ describe("the shipped field agrees with the geometry walk", () => {
 	it("agrees on every annotated record in every shipped root shelf", () => {
 		const dir = path.join(process.cwd(), "public");
 		if (!fs.existsSync(dir)) return; // corpus not present in this checkout
-		const files = fs.readdirSync(dir).filter((f) => f.startsWith("reference-atlas") && /\.json(\.gz)?$/.test(f));
+		const files = fs.readdirSync(dir).filter((f) => f.startsWith("reference-atlas") && /\.json(\.br)?$/.test(f));
 		let checked = 0;
 		let annotatedFiles = 0;
 		for (const f of files) {

@@ -12,6 +12,7 @@ import {
 } from "@/lib/vocabulary";
 export type { CurvedGeometry, Decoration, Geometry, TileClass, TilingSource };
 import { chiralityOf, type ChiralityFacet } from "@/lib/services/chirality";
+import { inClassification, loadClassification } from "@/lib/classifications";
 import {
 	polygonSpeciesOf,
 	tilePeriodsOf,
@@ -24,7 +25,7 @@ import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCel
 import { LENGTH_FAMILIES } from "@/lib/tilings/length-families";
 import { bendTegula, type TegulaCell } from "@/lib/tilings/tegula";
 import type { HollowPattern } from "@/lib/hollow/pattern";
-import type { HypFamily } from "@/lib/render/hypStarFamily";
+import { starTurns, type HypFamily } from "@/lib/render/hypStarFamily";
 // One alias table per shelf, each written by that shelf's builder, so two builders never clobber each
 // other's keys. Ids are globally unique across shelves (tests/atlas-id-unique.test.ts), so a flat merge is
 // unambiguous — and a collision would be that test's failure, not a silent shadowing here.
@@ -32,7 +33,7 @@ import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
 import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
 import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
 import ABSORBED_ALIASES from "@/lib/services/absorbedFamilyAliases.json";
-import { decodeAtlas, decodeShard, defineLazyRenderCell, readAtlas, shardBody } from "@/lib/services/atlasCodec";
+import { decodeAtlas, decodeShard, defineLazy, fetchData, isLazy, readAtlas, shardBody } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
@@ -493,11 +494,66 @@ export interface ReferenceTiling {
 	// intersection; star tiles are non-convex ⇒ omitted, NOTES §9.4). Absent for every star tiling.
 	wallpaperGroup?: WallpaperGroup;
 	latticeShape?: LatticeShape;
+	// Edge and tile orbits under the full symmetry group, beside k's vertex orbits: scripts/enrich-reference-
+	// atlas.ts --orbits, from the exactSource (KUniformityChecker.edgeFaceOrbits). Absent when not computed.
+	edgeOrbits?: number;
+	faceOrbits?: number;
 }
 
 // The star folds an atlas actually uses (the n of each n* token): 3,4,6,8,9,12,18. Used to seed the
 // star-fold filter without re-deriving from the whole atlas.
 export const STAR_FOLDS = [3, 4, 6, 8, 9, 12, 18] as const;
+
+/** The regular shelf holds every tiling to this k: the base atlas to k = 7, the Čtrnáct engine's shards for 8 to
+ *  16 (scripts/build-regular-shards.ts). */
+export const REGULAR_COMPLETE_K = 16;
+/** The regular shelf's lazy shards, public/reference-atlas-k{k}.json.br. Above REGULAR_COMPLETE_K a shard holds
+ *  only what targeted Searcher runs found (scripts/tilesearch-exact.ts): every tiling whose vertex types are
+ *  exactly those of Galebach's #2938, complete to k = 22. */
+export const REGULAR_SHARD_KS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+/** The ks split into parts of 100,000 tilings sorted by id (-p0, -p1, …), as the first id of each part, so a link
+ *  fetches only its tiling's part. Printed by scripts/build-regular-shards.ts. A split k is too big to load by
+ *  itself: it waits for its Load button. */
+export const REGULAR_SHARD_PARTS: Record<number, string[]> = {
+	13: ["ctrnact-13_34-4o2_5d4_5f6_6j-1", "ctrnact-13_36-4e2_4g_5a6_5b_6g_6h_6j-1"],
+	14: [
+		"ctrnact-14_34-4o_4u2_5d6_5e_5f3_6f-1",
+		"ctrnact-14_346-4e_4h3_4j_4k_4u4_5b_5d_6i2-1",
+		"ctrnact-14_36-3e_3g_4e4_4j_5b4_6b_6j2-1",
+	],
+	15: [
+		"ctrnact-15_34-4o_4p_4s_4u_5c2_5d5_5f4-1",
+		"ctrnact-15_346-4d_4e_4h4_4k4_4u_5b_5d_6i2-255",
+		"ctrnact-15_346-4e_4g_4h4_4k4_5b_6i3_6j-18",
+		"ctrnact-15_346-4g_4h3_4j_4k_4u_5b2_5d2_6i4-31",
+		"ctrnact-15_346-4h_4k_4p2_5b_5c2_5d3_6g_6i4-3",
+	],
+	16: [
+		"ctrnact-16_34-4o_4p_4s3_4u2_5c2_5d4_5f_6j2-1",
+		"ctrnact-16_34-4s5_5c10_6i-16",
+		"ctrnact-16_346-4d_4e_4h4_4k3_4s_4u2_5b2_6i2-70",
+		"ctrnact-16_346-4e2_4h4_4k3_4s_4u3_5b_5c2-87",
+		"ctrnact-16_346-4e_4f_4h4_4j_4k5_4s_4u3-719",
+		"ctrnact-16_346-4e_4h4_4j_4k4_4s_4u2_5c2_5d-137",
+		"ctrnact-16_346-4f_4h3_4k5_5b2_5d_6f2_6i2-17",
+		"ctrnact-16_346-4h2_4k3_4s6_4u2_5b_5c2-12",
+		"ctrnact-16_346-4h4_4j2_4k3_4s_4u_5b_6i3_6j-10",
+		"ctrnact-16_36-3e_3g2_4e6_4h_4j3_5b_6d_6i-1",
+	],
+};
+
+/** The regular shard a tiling id lives in, or null for one in the base atlas or on another shelf. Čtrnáct's ids
+ *  and the Searcher's carry their k ("ctrnact-09_…", "ts-gal2938solver_22_…"); Galebach's edge-homogeneous ones
+ *  ("eh2962") are looked up in that classification's member list. */
+export async function regularShardOf(id: string): Promise<number | null> {
+	const m = /^ctrnact-(\d+)_/.exec(id) ?? /^ts-.*solver_(\d+)_/.exec(id);
+	const k = m
+		? Number(m[1])
+		: /^eh\d+$/.test(id)
+			? (await loadClassification("edge-homogeneous"))?.members.find((x) => x.id === id)?.k
+			: undefined;
+	return k != null && REGULAR_SHARD_KS.includes(k) ? k : null;
+}
 
 // Higher-k demo shards shipped as separate lazy files (the eager main atlas carries only k≤2 for these
 // classes — build-{composable,isotoxal}-atlas MAIN_MAX_K=2). Both the /library shelf and the /play browse
@@ -1015,14 +1071,8 @@ export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTil
  * against both.
  */
 export function sortCatalogueForDisplay<T extends CatalogueTiling>(rows: readonly T[]): T[] {
-	const r = ranks();
 	const keyed = rows.map((t) => {
-		// Once per record, not once per sort: /play re-sorts the whole corpus each time shelves land.
-		let ranked = DISPLAY_RANKS.get(t);
-		if (!ranked) {
-			ranked = [rank(r.dec, decorationOf(t)), rank(r.cls, tileClassOf(t)), rank(r.sub, subOf(t))];
-			DISPLAY_RANKS.set(t, ranked);
-		}
+		const ranked = displayRanks(t);
 		return { t, dec: ranked[0], cls: ranked[1], sub: ranked[2], k: t.k, key: t.canonicalKey };
 	});
 	keyed.sort(
@@ -1030,6 +1080,37 @@ export function sortCatalogueForDisplay<T extends CatalogueTiling>(rows: readonl
 			x.dec - y.dec || x.cls - y.cls || x.sub - y.sub || x.k - y.k || (x.key < y.key ? -1 : x.key > y.key ? 1 : 0),
 	);
 	return keyed.map((e) => e.t);
+}
+
+/** A record's three ranked keys, worked out once per record: a corpus that grows by shelves sees each record many times. */
+function displayRanks(t: CatalogueTiling): [number, number, number] {
+	let ranked = DISPLAY_RANKS.get(t);
+	if (!ranked) {
+		const r = ranks();
+		ranked = [rank(r.dec, decorationOf(t)), rank(r.cls, tileClassOf(t)), rank(r.sub, subOf(t))];
+		DISPLAY_RANKS.set(t, ranked);
+	}
+	return ranked;
+}
+
+/**
+ * Two lists already in display order, as one list in that order. A shelf landing on a loaded corpus then
+ * costs its own sort and one pass over the cell it joins, not a sort of everything loaded.
+ */
+export function mergeCatalogueForDisplay<T extends CatalogueTiling>(a: readonly T[], b: readonly T[]): T[] {
+	const out: T[] = [];
+	let i = 0;
+	let j = 0;
+	while (i < a.length && j < b.length) {
+		const x = displayRanks(a[i]);
+		const y = displayRanks(b[j]);
+		const c =
+			x[0] - y[0] || x[1] - y[1] || x[2] - y[2] || a[i].k - b[j].k || (a[i].canonicalKey <= b[j].canonicalKey ? -1 : 1);
+		out.push(c < 0 ? a[i++] : b[j++]);
+	}
+	while (i < a.length) out.push(a[i++]);
+	while (j < b.length) out.push(b[j++]);
+	return out;
 }
 
 // The geometry axis — the /play catalogue's top-level split (Euclidean / hyperbolic / spherical), one
@@ -1559,8 +1640,13 @@ export interface ReferenceFilter {
 	// sense, non-convex but not crossing. Anything outside that shelf never matches while this is active.
 	ncxCrossing?: "self-intersecting" | "embedded";
 	mValue?: number; // single distinct-vertex-config count; unclassified tilings never match
+	// Edge and tile orbit counts (edgeOrbits / faceOrbits); a tiling without the count never matches.
+	eValue?: number;
+	tValue?: number;
 	partitionKey?: string; // single partition key (e.g. "511"); unclassified tilings never match
 	maximalOnly?: boolean; // Krötenheerdt: keep only m === k
+	// A classification's slug (lib/classifications.ts): only its members, wherever they live.
+	classification?: string;
 	// Marek's five levels of increasing complexity (lib/tilings/tiling-level.ts). A CURVED-geometry
 	// facet: it needs per-orbit vertex configurations, which only the hyperbolic and spherical shelves
 	// ship, and its top rung means nothing in E², where every combination shares one edge length for
@@ -1673,8 +1759,11 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	// M/partition/maximal: an active filter EXCLUDES unclassified tilings instead of matching them —
 	// completeness ethos, we never silently pass a tiling whose classification we don't have.
 	if (f.mValue != null && t.m !== f.mValue) return false;
+	if (f.eValue != null && t.edgeOrbits !== f.eValue) return false;
+	if (f.tValue != null && t.faceOrbits !== f.tValue) return false;
 	if (f.partitionKey != null && partitionKeyOf(t) !== f.partitionKey) return false;
 	if (f.maximalOnly && !isMaximal(t)) return false;
+	if (f.classification && !inClassification(f.classification, t)) return false;
 	if (f.levels?.length) {
 		const lv = tilingLevel(t);
 		if (lv == null || !f.levels.includes(lv)) return false;
@@ -1763,7 +1852,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 	const out: CatalogueTiling = {
 		canonicalKey: r.id,
 		k: r.k,
-		family: r.family,
+		family: isLazy(r, "family") ? "" : r.family,
 		source: r.source,
 		// renderCell is installed lazily below, NOT copied here — see the note after the return.
 		renderCell: undefined as unknown as CatalogueTiling["renderCell"],
@@ -1788,6 +1877,8 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		partition: r.partition,
 		wallpaperGroup: r.wallpaperGroup,
 		latticeShape: r.latticeShape,
+		edgeOrbits: r.edgeOrbits,
+		faceOrbits: r.faceOrbits,
 		freedraw: r.freedraw,
 		bubbleGrid: r.bubbleGrid,
 		bubble: r.bubble,
@@ -1815,8 +1906,15 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 	// sites do this, so it is the whole corpus every time a shard lands too.
 	//
 	// Non-enumerable, so that a prop walk cannot do the same thing the adapter is careful not to do:
-	// React DEV's render logging read all 6,200 of these on every /play open. See defineLazyRenderCell.
-	defineLazyRenderCell(out, () => r.renderCell);
+	// React DEV's render logging read all 6,200 of these on every /play open. See defineLazy.
+	//
+	// A cell that is already a plain value (every decoration row's shared empty cell) is copied: reading it
+	// costs nothing, and an accessor per row was 100 ms of the Colorings chip.
+	if (isLazy(r, "renderCell")) defineLazy(out, "renderCell", () => r.renderCell);
+	else out.renderCell = r.renderCell;
+	// The same for a label still waiting to be worked out (the edge-pattern shelves): read here, it was built
+	// for every record of the shelf.
+	if (isLazy(r, "family")) defineLazy(out, "family", () => r.family);
 	return out;
 }
 
@@ -1836,8 +1934,6 @@ const FREEDRAW_EMPTY_CELL: TranslationalCellData = {
 };
 
 function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
-	const stats = summarise(analyseFaces(p));
-	freedrawStatsCache.set(p.id, stats);
 	const grid = gridOf(p);
 	// Certification tracks how each SLICE was obtained. Square k ≤ 3 and triangle k = 1 were enumerated
 	// independently here AND reproduced from Čtrnáct's solver — matched counts, hence "reproduced".
@@ -1851,17 +1947,21 @@ function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 	// Schwarz tiling, which is the only thing it could be. That is the decoder verifying itself, not an
 	// independent enumeration of the family.
 	const verified = grid === FREEDRAW_GRIDS.SQUARE ? p.k <= 3 : grid === FREEDRAW_GRIDS.TRIANGLE ? p.k <= 1 : false;
-	return {
+	const out: ReferenceTiling = {
 		id: p.id,
 		source: SOURCES.FREEDRAW,
 		k: p.k,
-		family: freedrawFamilyLabel(stats, grid),
+		family: "",
 		renderCell: FREEDRAW_EMPTY_CELL,
 		freedraw: p,
 		geometry: GEOMETRIES.EUCLIDEAN,
 		discoverer: "Marek Čtrnáct",
 		certification: verified ? "reproduced" : "candidate",
 	};
+	// The label counts the pattern's faces, which takes a flood fill: worked out when a card or a search
+	// reads it, not for the 120,000 patterns the Edge patterns chip loads.
+	defineLazy(out, "family", () => freedrawFamilyLabel(freedrawStatsOf(out)!, grid));
+	return out;
 }
 
 // The colors shelf's GRID facet — the same axis planar freedraw carries, one level above k.
@@ -1961,7 +2061,7 @@ export async function loadHyperbolicEdgesAtlas(): Promise<ReferenceTiling[]> {
 	heInflight = Promise.all(
 		HYP_EDGES_BASES.flatMap((b) =>
 			b.eagerKs.map((k) =>
-				fetch(`/hyperbolic-edges/e${b.id}-k${k}.json.gz`)
+				fetchData(`/hyperbolic-edges/e${b.id}-k${k}.json.br`)
 					.then((res) => (res.ok ? readAtlas<HypEdgesPattern>(res) : []))
 					.catch(() => [] as HypEdgesPattern[])
 					.then((pats) => pats.map(hypEdgesToReference)),
@@ -1992,7 +2092,7 @@ export async function loadHyperbolicEdgesShard(base: string, k: number): Promise
 	if (cached) return cached;
 	const existing = heShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/hyperbolic-edges/e${base}-k${k}.json.gz`)
+	const p = fetchData(`/hyperbolic-edges/e${base}-k${k}.json.br`)
 		.then((res) => (res.ok ? readAtlas<HypEdgesPattern>(res) : []))
 		.catch(() => [] as HypEdgesPattern[])
 		.then((pats) => {
@@ -2055,7 +2155,7 @@ export async function loadHyperbolicColorsAtlas(): Promise<ReferenceTiling[]> {
 	hcInflight = Promise.all(
 		HYP_COLORS_BASES.flatMap((b) =>
 			b.eagerKs.map((k) =>
-				fetch(`/hyperbolic-colors/c${b.id}-k${k}.json.gz`)
+				fetchData(`/hyperbolic-colors/c${b.id}-k${k}.json.br`)
 					.then((res) => (res.ok ? readAtlas<HypColorsPattern>(res) : []))
 					.catch(() => [] as HypColorsPattern[])
 					.then((pats) => pats.map(hypColorsToReference)),
@@ -2084,7 +2184,7 @@ export async function loadHyperbolicColorsShard(base: string, k: number): Promis
 	if (cached) return cached;
 	const existing = hcShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/hyperbolic-colors/c${base}-k${k}.json.gz`)
+	const p = fetchData(`/hyperbolic-colors/c${base}-k${k}.json.br`)
 		.then((res) => (res.ok ? readAtlas<HypColorsPattern>(res) : []))
 		.catch(() => [] as HypColorsPattern[])
 		.then((pats) => {
@@ -2112,7 +2212,7 @@ export async function loadSphericalColorsAtlas(): Promise<ReferenceTiling[]> {
 	scInflight = Promise.all(
 		SPH_COLORS_SOLIDS.flatMap((s) =>
 			s.eagerKs.map((k) =>
-				fetch(`/spherical-colors/${s.id}-k${k}.json.gz`)
+				fetchData(`/spherical-colors/${s.id}-k${k}.json.br`)
 					.then((res) => (res.ok ? readAtlas<SphColorsPattern>(res) : []))
 					.catch(() => [] as SphColorsPattern[])
 					.then((pats) => pats.map(sphColorsToReference)),
@@ -2141,7 +2241,7 @@ export async function loadSphericalColorsShard(solid: string, k: number): Promis
 	if (cached) return cached;
 	const existing = scShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/spherical-colors/${solid}-k${k}.json.gz`)
+	const p = fetchData(`/spherical-colors/${solid}-k${k}.json.br`)
 		.then((res) => (res.ok ? readAtlas<SphColorsPattern>(res) : []))
 		.catch(() => [] as SphColorsPattern[])
 		.then((pats) => {
@@ -2172,7 +2272,7 @@ export async function loadSphericalFreedrawAtlas(): Promise<ReferenceTiling[]> {
 	sfInflight = Promise.all(
 		ICO_SOLIDS.flatMap((s) =>
 			icoSolidKs(s).map((k) =>
-				fetch(`/freedraw-ico/${s.id}-k${k}.json.gz`)
+				fetchData(`/freedraw-ico/${s.id}-k${k}.json.br`)
 					.then((res) => (res.ok ? readAtlas<IcoPattern>(res) : []))
 					.catch(() => [] as IcoPattern[])
 					.then((pats) => pats.map((p) => sphericalFreedrawToReference(s.id, k, p))),
@@ -2220,7 +2320,7 @@ function schwarzToReference(p: SchwarzPattern): ReferenceTiling {
  *  array of dart records. */
 async function fetchSchwarzShard(b: SchwarzBoard, k: number): Promise<ReferenceTiling[]> {
 	try {
-		const res = await fetch(schwarzShardUrl(b, k));
+		const res = await fetchData(schwarzShardUrl(b, k));
 		if (!res.ok) return [];
 		if (b.geometry === GEOMETRIES.SPHERICAL) {
 			const shard = decodeShard((await shardBody(res)) as SphSchwarzShard);
@@ -2313,7 +2413,7 @@ function sphEdgesToReference(p: SphEdgesPattern): ReferenceTiling {
 
 async function fetchSphEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
 	try {
-		const res = await fetch(sphEdgesShardUrl(board, k));
+		const res = await fetchData(sphEdgesShardUrl(board, k));
 		if (!res.ok) return [];
 		const shard = decodeShard((await shardBody(res)) as SphEdgesShard);
 		return hydrateSphEdgesShard(shard).map(sphEdgesToReference);
@@ -2380,12 +2480,19 @@ function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
 		k: p.k,
 		family: `${hypPolyBoardLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypPolyFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
-		hypPoly: p,
+		// a star board ships each turn as a kind and the record's point; the renderer wants the angles
+		hypPoly:
+			p.point !== undefined && p.darts.starKind && !p.darts.alpha
+				? { ...p, darts: { ...p.darts, alpha: starTurns(p.darts, [p.point], p.edge) } }
+				: p,
 		polygonSpecies: hypPolyTileSet(p),
 		// H² has no similarity, so the forced edge length is a coordinate, not a scale — the card shows it.
 		edge: p.edge,
 		geometry: GEOMETRIES.HYPERBOLIC,
-		discoverer: "Marek Čtrnáct",
+		// The star boards are ours: the points come from experiments/star-hybrid, the tilings from the Searcher.
+		discoverer: HYP_POLY_BOARD_BY_ID.get(p.base)?.star
+			? "The Tiling Searcher (star hybrid boards), 2026-11"
+			: "Marek Čtrnáct",
 		// Every record developed to a patch whose edges and face sides all measure ℓ (residuals ~1e-12)
 		// before it was emitted; 26,605 of 26,605 ai1 certificates and 33,795 of 33,795 ai2 ones passed,
 		// and every ai2 per-k count reproduces Marek's own census. The enumeration behind them is his
@@ -2398,9 +2505,9 @@ async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[
 	try {
 		const out: ReferenceTiling[] = [];
 		for (const url of hypPolyShardUrls(n, k)) {
-			const res = await fetch(url);
+			const res = await fetchData(url);
 			if (!res.ok) return [];
-			// `readAtlas` and not `shardBody(res)`: the abcd shards are stored gzipped, and parsing those bytes as
+			// `readAtlas` and not `res.json()`: the abcd shards are stored compressed, and parsing those bytes as
 			// JSON throws into the catch below, which returns [] — a board that fetched its shard with a 200
 			// and then rendered "No tilings match the current filters".
 			for (const p of await readAtlas<HypPolyPattern>(res)) out.push(hypPolyToReference(p));
@@ -2435,7 +2542,7 @@ function hypHalfToReference(p: HypPolyPattern): ReferenceTiling {
 
 async function fetchHypHalfShard(id: string, k: number): Promise<ReferenceTiling[]> {
 	try {
-		const res = await fetch(hypHalfShardUrl(id, k));
+		const res = await fetchData(hypHalfShardUrl(id, k));
 		if (!res.ok) return [];
 		const recs = decodeAtlas<HypPolyPattern>(await shardBody(res));
 		return recs.map(hypHalfToReference);
@@ -2529,7 +2636,7 @@ export async function loadPentagonEdgesAtlas(): Promise<ReferenceTiling[]> {
 	pentEdgesInflight = Promise.all(
 		PENT_EDGE_BOARDS.flatMap((b) =>
 			b.eagerKs.map((k) =>
-				fetch(pentEdgeShardUrl(b.id, k))
+				fetchData(pentEdgeShardUrl(b.id, k))
 					.then((res) => (res.ok ? readAtlas<PentEdgeRecord>(res) : []))
 					.catch(() => [] as PentEdgeRecord[])
 					.then((recs) => recs.map(pentEdgesToReference)),
@@ -2551,7 +2658,7 @@ export async function loadPentagonEdgesAtlas(): Promise<ReferenceTiling[]> {
 
 /** One lazy (board, k) shard. */
 export async function loadPentagonEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
-	const res = await fetch(pentEdgeShardUrl(board, k));
+	const res = await fetchData(pentEdgeShardUrl(board, k));
 	if (!res.ok) return [];
 	const recs = decodeAtlas<PentEdgeRecord>(await shardBody(res));
 	return recs.map(pentEdgesToReference);
@@ -2588,7 +2695,7 @@ export async function loadIsohedralEdgesAtlas(): Promise<ReferenceTiling[]> {
 	ihEdgesInflight = Promise.all(
 		IH_EDGE_BOARDS.flatMap((b) =>
 			b.eagerKs.map((k) =>
-				fetch(ihEdgeShardUrl(b.id, k))
+				fetchData(ihEdgeShardUrl(b.id, k))
 					.then((res) => (res.ok ? readAtlas<IhEdgeRecord>(res) : []))
 					.catch(() => [] as IhEdgeRecord[])
 					.then((recs) => recs.map(ihEdgesToReference)),
@@ -2610,7 +2717,7 @@ export async function loadIsohedralEdgesAtlas(): Promise<ReferenceTiling[]> {
 
 /** One lazy (board, k) shard. */
 export async function loadIsohedralEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
-	const res = await fetch(ihEdgeShardUrl(board, k));
+	const res = await fetchData(ihEdgeShardUrl(board, k));
 	if (!res.ok) return [];
 	const recs = decodeAtlas<IhEdgeRecord>(await shardBody(res));
 	return recs.map(ihEdgesToReference);
@@ -2697,6 +2804,26 @@ function sphHalfToReference(p: SphPolyPattern): ReferenceTiling {
 let sphPolyCache: ReferenceTiling[] | null = null;
 let sphPolyInflight: Promise<ReferenceTiling[]> | null = null;
 
+let tegulaSph: Promise<ReferenceTiling[]> | null = null;
+/**
+ * The Tegula types on the sphere: 872 rows, but each carries its whole solid, so the file is 1 MB gzipped,
+ * the largest the catalogue fetched on open. Loaded with the Spherical geometry and not on every open.
+ * The rows draw on the three.js sphere, so their plane cell is the empty one.
+ */
+export function loadTegulaSphAtlas(): Promise<ReferenceTiling[]> {
+	tegulaSph ??= fetchData("/reference-atlas-tegula-sph.json.br")
+		.then((res) => (res.ok ? readAtlas<ReferenceTiling>(res) : []))
+		.then((rows) => {
+			for (const r of rows) r.renderCell = FREEDRAW_EMPTY_CELL;
+			return rows;
+		})
+		.catch(() => {
+			tegulaSph = null;
+			return [];
+		});
+	return tegulaSph;
+}
+
 export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 	if (sphPolyCache) return sphPolyCache;
 	if (sphPolyInflight) return sphPolyInflight;
@@ -2715,7 +2842,7 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 			.concat(
 				SPH_HALF_BOARDS.flatMap((b) =>
 					b.ks.map((k) =>
-						fetch(sphHalfShardUrl(b.id, k))
+						fetchData(sphHalfShardUrl(b.id, k))
 							.then((res) => (res.ok ? readAtlas<SphPolyPattern>(res) : []))
 							.catch(() => [] as SphPolyPattern[])
 							.then((recs) => recs.map(sphHalfToReference)),
@@ -2726,7 +2853,7 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 				// One fetch per solid: this shelf has no shared board to index into (every record IS a different
 				// polyhedron) and the whole thing is ~460 kB across 83 files, so there is nothing to defer.
 				SPH_STAR_INDEX.map((e) =>
-					fetch(sphStarShardUrl(e.id))
+					fetchData(sphStarShardUrl(e.id))
 						.then((res) => (res.ok ? (shardBody(res) as Promise<SphStarPattern>) : null))
 						.catch(() => null)
 						.then((rec) => (rec ? [sphStarToReference(rec)] : [])),
@@ -2762,10 +2889,10 @@ export async function loadHyperbolicBaseAtlas(): Promise<ReferenceTiling[]> {
 	if (hypBaseCache) return hypBaseCache;
 	if (hypBaseInflight) return hypBaseInflight;
 	hypBaseInflight = Promise.all([
-		fetch("/reference-atlas-hyperbolic.json.gz")
+		fetchData("/reference-atlas-hyperbolic.json.br")
 			.then((res) => (res.ok ? readAtlas<ReferenceTiling>(res) : []))
 			.catch(() => [] as ReferenceTiling[]),
-		fetch("/hyperbolic-developed.json.gz")
+		fetchData("/hyperbolic-developed.json.br")
 			.then((res) => (res.ok ? readAtlas<{ id: string; edge?: number }>(res) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
@@ -2796,7 +2923,7 @@ export async function loadFreedrawDecorAtlas(): Promise<ReferenceTiling[]> {
 	if (fdDecorInflight) return fdDecorInflight;
 	fdDecorInflight = Promise.all(
 		FREEDRAW_EAGER_FILES.map((url) =>
-			fetch(url)
+			fetchData(url)
 				.then((res) => (res.ok ? readAtlas<FreedrawPattern>(res) : []))
 				.catch(() => [] as FreedrawPattern[]),
 		),
@@ -2819,7 +2946,8 @@ export function bubbleToReference(p: BubblePattern): ReferenceTiling {
 		id: p.id,
 		source: SOURCES.BUBBLE,
 		k: p.k,
-		family: bubbleFamilyLabel(p),
+		// Installed lazily below with the cell: the label walks every face of the pattern.
+		family: "",
 		// A REAL translational cell, not freedraw's throwaway: a bubble tiling is an ordinary periodic
 		// tiling whose tiles have curved edges, so every existing surface draws it and it inherits fill
 		// mode, line stroke, hue shift, rotation and the conformal lens with no renderer of its own.
@@ -2849,7 +2977,8 @@ export function bubbleToReference(p: BubblePattern): ReferenceTiling {
 	// Curved-edge geometry is the most expensive cell the atlas builds — arcs flattened to cubics, per
 	// face — and the shelf ships 35 MB of bubble patterns, of which a page draws 25. Deriving it on
 	// first read is the same bargain the ℤ[ζ₂₄] cells already take.
-	defineLazyRenderCell(out, () => bubbleRenderCell(p));
+	defineLazy(out, "renderCell", () => bubbleRenderCell(p));
+	defineLazy(out, "family", () => bubbleFamilyLabel(p));
 	return out;
 }
 
@@ -2881,13 +3010,13 @@ let sphBubInflight: Promise<ReferenceTiling[]> | null = null;
 export async function loadSphBubbleAtlas(): Promise<ReferenceTiling[]> {
 	if (sphBubCache) return sphBubCache;
 	if (sphBubInflight) return sphBubInflight;
-	sphBubInflight = fetch("/bubble-sphere/manifest.json.gz")
+	sphBubInflight = fetchData("/bubble-sphere/manifest.json.br")
 		.then((res) => (res.ok ? (shardBody(res) as Promise<SphBubbleBoard[]>) : []))
 		.then((boards) =>
 			Promise.all(
 				boards.flatMap((b) =>
 					b.shards.map((f) =>
-						fetch(`/bubble-sphere/${f}.gz`)
+						fetchData(`/bubble-sphere/${f}.br`)
 							.then((res) => (res.ok ? (shardBody(res) as Promise<SphBubblePattern[]>) : []))
 							.then((rows) => rows.map((r) => sphBubbleToReference(r, b)))
 							.catch(() => [] as ReferenceTiling[]),
@@ -2916,7 +3045,7 @@ export async function loadBubbleDecorAtlas(): Promise<ReferenceTiling[]> {
 	if (bubDecorInflight) return bubDecorInflight;
 	bubDecorInflight = Promise.all(
 		BUBBLE_FILES.map((url) =>
-			fetch(url)
+			fetchData(url)
 				.then((res) => (res.ok ? readAtlas<BubblePattern>(res) : []))
 				.catch(() => [] as BubblePattern[]),
 		),
@@ -2953,7 +3082,7 @@ export const EXTERNAL_CELL_CATALOGUES: { files: readonly string[]; build: (row: 
 	{
 		files: ["reference-atlas-tegula.json"],
 		build: ((r: ReferenceTiling) => {
-			if (r.tegula) defineLazyRenderCell(r, (self) => bendTegula(self.tegula!));
+			if (r.tegula) defineLazy(r, "renderCell", (self) => bendTegula(self.tegula!));
 			return r;
 		}) as (row: never) => ReferenceTiling,
 	},
@@ -2966,8 +3095,8 @@ export async function loadColorsDecorAtlas(): Promise<ReferenceTiling[]> {
 	if (colDecorCache) return colDecorCache;
 	if (colDecorInflight) return colDecorInflight;
 	colDecorInflight = Promise.all(
-		COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json.gz`)).map((url) =>
-			fetch(url)
+		COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json.br`)).map((url) =>
+			fetchData(url)
 				.then((res) => (res.ok ? readAtlas<ColorPattern>(res) : []))
 				.catch(() => [] as ColorPattern[]),
 		),
@@ -2991,27 +3120,27 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 	// The base atlas is required; the convex-irregular + isotoxal demo shelves are best-effort — a missing/broken
 	// reference-atlas-{composable,isotoxal}.json degrades to an empty merge, never breaks the library.
 	const bestEffort = (url: string) =>
-		fetch(url)
+		fetchData(url)
 			.then((res) => (res.ok ? readAtlas<ReferenceTiling>(res) : []))
 			.catch(() => [] as ReferenceTiling[]);
 	inflight = Promise.all([
-		fetch("/reference-atlas.json.gz").then(async (res) => {
+		fetchData("/reference-atlas.json.br").then(async (res) => {
 			if (!res.ok) throw new Error(`reference-atlas.json: HTTP ${res.status}`);
 			// The ctrnact files ship no renderCell where exactSource reproduces it; the accessor derives
 			// it on first draw. See lib/services/renderCellDerive.ts.
 			return hydrateRenderCells(await readAtlas<ReferenceTiling>(res));
 		}),
-		bestEffort("/reference-atlas-composable.json.gz"),
-		bestEffort("/reference-atlas-isotoxal.json.gz"),
-		bestEffort("/reference-atlas-mixed.json.gz"),
-		bestEffort("/reference-atlas-scaled.json.gz"),
-		bestEffort("/reference-atlas-period.json.gz"),
-		bestEffort("/reference-atlas-tri45.json.gz"),
-		bestEffort("/reference-atlas-planigon.json.gz"),
-		bestEffort("/reference-atlas-penrose.json.gz"),
-		bestEffort("/reference-atlas-euhalf.json.gz"),
-		bestEffort("/reference-atlas-polyomino.json.gz"),
-		bestEffort("/reference-atlas-islamic.json.gz"),
+		bestEffort("/reference-atlas-composable.json.br"),
+		bestEffort("/reference-atlas-isotoxal.json.br"),
+		bestEffort("/reference-atlas-mixed.json.br"),
+		bestEffort("/reference-atlas-scaled.json.br"),
+		bestEffort("/reference-atlas-period.json.br"),
+		bestEffort("/reference-atlas-tri45.json.br"),
+		bestEffort("/reference-atlas-planigon.json.br"),
+		bestEffort("/reference-atlas-penrose.json.br"),
+		bestEffort("/reference-atlas-euhalf.json.br"),
+		bestEffort("/reference-atlas-polyomino.json.br"),
+		bestEffort("/reference-atlas-islamic.json.br"),
 		// DEFERRED, 2026-08-17. This file is 15.9 MB and 28,453 rows — 61% of the eager payload — and it
 		// was parsed on every page load including /play opening on Euclidean, where not one of its rows
 		// can be drawn. Measured before the change: 1,000 MB of JS heap, a 9.3 s main-thread block and a
@@ -3020,8 +3149,8 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		// The SLOT stays so the positional destructuring below keeps its bindings — emptying it is safe,
 		// removing it is what shifted every later binding and silently dropped the Colorings shelf.
 		Promise.resolve([] as ReferenceTiling[]),
-		bestEffort("/reference-atlas-spherical.json.gz"),
-		bestEffort("/reference-atlas-hollow.json.gz"),
+		bestEffort("/reference-atlas-spherical.json.br"),
+		bestEffort("/reference-atlas-hollow.json.br"),
 		// DEFERRED, 2026-08-17. Measured on /play: 172 MB decoded over 200 resources, of which the
 		// colours catalogues alone are ~70 MB (colors/tri-2-k6.json is 20 MB by itself) and freedraw
 		// ~25 MB — all of it parsed at page open for DECORATIONS the viewer has not selected. They now
@@ -3031,15 +3160,10 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		Promise.resolve([] as ReferenceTiling[]),
 		// Deferred with it: its only consumer is the hyperbolic edge-length merge below.
 		Promise.resolve([] as Array<{ id: string; edge?: number }>),
-		// One slot for both Tegula files: the destructuring below is positional. The spherical rows carry
-		// a whole solid (sphPoly) and draw on the three.js sphere, so their plane cell is the empty one.
-		Promise.all([
-			bestEffort("/reference-atlas-tegula.json.gz"),
-			bestEffort("/reference-atlas-tegula-sph.json.gz"),
-		]).then(([plane, sphere]) => {
-			for (const r of plane) if (r.tegula) defineLazyRenderCell(r, (self) => bendTegula(self.tegula!));
-			for (const r of sphere) r.renderCell = FREEDRAW_EMPTY_CELL;
-			return [...plane, ...sphere];
+		// The plane's Tegula types. The sphere's load with the Spherical geometry (loadTegulaSphAtlas).
+		bestEffort("/reference-atlas-tegula.json.br").then((plane) => {
+			for (const r of plane) if (r.tegula) defineLazy(r, "renderCell", (self) => bendTegula(self.tegula!));
+			return plane;
 		}),
 	])
 		// One name per Promise.all entry, IN ORDER, and the list below must spread every one of them.
@@ -3116,38 +3240,32 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 	return inflight;
 }
 
-// Per-k lazy shards for the higher-k Čtrnáct atlas (k≥8, generated by scripts/build-reference-atlas.ts
-// into public/reference-atlas-k{k}.json). Fetched only when that k is selected in the shelf filter, so
-// a heavy shard (k=10 ≈ 73 MB) never loads unless the user opens it. Cached per-k across the session.
-// NOTE: these records carry no m/partition/wallpaper classification yet (the build ctrnact path doesn't
-// compute it) — they filter by k/tileClass/discoverer/certification and render, but are excluded from
-// the M/partition/wallpaper facets until the build stamps those fields.
-const shardCache = new Map<number, ReferenceTiling[]>();
-const shardInflight = new Map<number, Promise<ReferenceTiling[]>>();
-
-export async function loadReferenceAtlasShard(k: number): Promise<ReferenceTiling[]> {
-	const cached = shardCache.get(k);
-	if (cached) return cached;
-	const existing = shardInflight.get(k);
-	if (existing) return existing;
-	const p = fetch(`/reference-atlas-k${k}.json.gz`)
-		.then((res) => {
-			if (!res.ok) throw new Error(`reference-atlas-k${k}.json: HTTP ${res.status}`);
-			return readAtlas<ReferenceTiling>(res);
-		})
-		.then((data) => {
+// The regular shelf's lazy shards (k ≥ 8), public/reference-atlas-k{k}.json.br, or its -p{i} parts where
+// REGULAR_SHARD_PARTS splits a k. Fetched when that k is selected, or one part for a link to a tiling in it.
+// Cached per file across the session; a failed file is fetched again on the next ask.
+const shardCache = new Map<string, Promise<ReferenceTiling[]>>();
+function loadShardFile(file: string): Promise<ReferenceTiling[]> {
+	let p = shardCache.get(file);
+	if (!p) {
+		p = fetchData(`/${file}`)
+			.then((res) => {
+				if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`);
+				return readAtlas<ReferenceTiling>(res);
+			})
 			// Same contract as the base atlas: no shipped renderCell where exactSource reproduces it.
-			hydrateRenderCells(data);
-			shardCache.set(k, data);
-			shardInflight.delete(k);
-			return data;
-		})
-		.catch((err) => {
-			shardInflight.delete(k);
-			throw err;
-		});
-	shardInflight.set(k, p);
+			.then((data) => hydrateRenderCells(data));
+		shardCache.set(file, p);
+		p.catch(() => shardCache.delete(file));
+	}
 	return p;
+}
+
+/** k's regular shard, every part of it; with `id`, only the part that holds that tiling. */
+export async function loadReferenceAtlasShard(k: number, id?: string): Promise<ReferenceTiling[]> {
+	const parts = REGULAR_SHARD_PARTS[k];
+	if (!parts) return loadShardFile(`reference-atlas-k${k}.json.br`);
+	const which = id ? [parts.reduce((at, first, i) => (first <= id ? i : at), 0)] : parts.map((_, i) => i);
+	return (await Promise.all(which.map((i) => loadShardFile(`reference-atlas-k${k}-p${i}.json.br`)))).flat();
 }
 
 // Per-k lazy shards for the convex-irregular demo shelf (k≥3, generated by scripts/build-composable-atlas.ts
@@ -3173,7 +3291,7 @@ export async function loadShelfShard(shelf: string, k: number): Promise<Referenc
 	if (cached) return cached;
 	const existing = shelfShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/reference-atlas-${key}.json.gz`)
+	const p = fetchData(`/reference-atlas-${key}.json.br`)
 		.then((res) => {
 			if (res.status === 404) return [] as ReferenceTiling[]; // shard not built for this k — empty merge
 			if (!res.ok) throw new Error(`reference-atlas-${key}.json: HTTP ${res.status}`);
@@ -3218,7 +3336,7 @@ function loadDecorationShard<T>(url: string, adapt: (p: T) => ReferenceTiling): 
 	if (cached) return Promise.resolve(cached);
 	const existing = decorationShardInflight.get(url);
 	if (existing) return existing;
-	const p = fetch(url)
+	const p = fetchData(url)
 		.then((res) => {
 			if (res.status === 404) return [] as T[]; // slice not shipped at this k — empty merge
 			if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
@@ -3251,7 +3369,7 @@ export async function loadColorsShardsForK(k: number): Promise<ReferenceTiling[]
 	const shards = colorsLazyShardsForK(k);
 	if (!shards.length) return [];
 	const lists = await Promise.all(
-		shards.map((s) => loadDecorationShard<ColorPattern>(`${s.prefix}${s.k}.json.gz`, colorsToReference)),
+		shards.map((s) => loadDecorationShard<ColorPattern>(`${s.prefix}${s.k}.json.br`, colorsToReference)),
 	);
 	return lists.flat();
 }

@@ -20,7 +20,7 @@ import {
 	type SphericalCamera,
 	sphereDriver,
 } from "@/lib/render/sphericalCamera";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { useSolid } from "@/lib/render/sphericalSolids";
 import { measureBox } from "@/lib/render/canvasSize";
 import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
 import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render/sphericalLook";
@@ -90,7 +90,7 @@ export function IcoFreedrawCanvas({
 	const hueOffset = useConfiguration((s) => s.hueOffset);
 	const lineWidth = useConfiguration((s) => s.lineWidth);
 	const faceOpacity = useConfiguration((s) => s.sphericalFaceOpacity);
-	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
+	const solid = useSolid(vertices ? null : solidId);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
 		() => allEdges ?? (solid ? solidEdges(solid) : []),
@@ -376,7 +376,7 @@ export function IcoFreedrawCanvas({
 	if (errored) {
 		return (
 			<div className="absolute inset-0 z-10 flex items-center justify-center">
-				<p className="max-w-xs text-center text-sm text-fg-muted">
+				<p className="max-w-xs text-center text-body text-fg-muted">
 					3D view unavailable — the browser ran out of WebGL contexts. Reload to free them.
 				</p>
 			</div>

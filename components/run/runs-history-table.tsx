@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Radio } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Badge, type BadgeTone } from "@/design-system/components/badge";
 import type { RunRow, RunParams } from "@/lib/services/runsService";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
@@ -93,22 +93,22 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 	return (
 		<div className="p-6 max-md:p-4">
 			<div className="mb-4 flex items-center gap-2">
-				<Radio size={16} className="text-accent" />
-				<h1 className="text-base font-semibold text-fg">Run history</h1>
-				<span className="bg-surface-overlay px-2 py-0.5 text-xs text-fg-muted tabular-nums">{runs.length}</span>
+				<Radio className="size-icon-md text-fg-accent" />
+				<h1 className="text-title font-semibold text-fg">Run history</h1>
+				<span className="bg-surface-overlay px-2 py-0.5 text-small text-fg-muted tabular-nums">{runs.length}</span>
 			</div>
 
 			{runs.length === 0 ? (
-				<p className="text-sm text-fg-disabled">
+				<p className="text-body text-fg-muted">
 					No runs yet. Launch one with{" "}
 					<code className="font-mono text-fg-muted">EMIT=1 pnpm tsx scripts/scout-parallel.ts …</code> and it appears
 					here live.
 				</p>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-line">
-					<table className="w-full min-w-[720px] border-collapse text-sm">
+				<div className="ta-card overflow-x-auto">
+					<table className="w-full min-w-[720px] border-collapse text-body">
 						<thead>
-							<tr className="border-b border-line bg-surface-overlay/40 text-left text-xs text-fg-muted">
+							<tr className="border-b border-line bg-surface-overlay/40 text-left text-small text-fg-muted">
 								<th className="px-3 py-2 font-medium">Status</th>
 								<th className="px-3 py-2 font-medium">k</th>
 								<th className="px-3 py-2 font-medium">Family</th>
@@ -127,21 +127,11 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 								>
 									<td className="px-3 py-2">
 										<Link href={`/history/run/${run.id}`} className="flex flex-wrap items-center gap-1">
-											<Badge tone={STATUS_TONE[run.status] ?? "neutral"} pill>
-												{run.status}
-											</Badge>
-											{run.certified ? (
-												<Badge tone="success" pill>
-													certified
-												</Badge>
-											) : null}
-											{run.incomplete ? (
-												<Badge tone="warn" pill>
-													incomplete
-												</Badge>
-											) : null}
+											<Badge tone={STATUS_TONE[run.status] ?? "neutral"}>{run.status}</Badge>
+											{run.certified ? <Badge tone="success">certified</Badge> : null}
+											{run.incomplete ? <Badge tone="warn">incomplete</Badge> : null}
 											{run.timeouts > 0 ? (
-												<Badge tone="danger" pill>
+												<Badge tone="danger">
 													{run.timeouts} timeout{run.timeouts === 1 ? "" : "s"}
 												</Badge>
 											) : null}
@@ -152,7 +142,7 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 											{run.k}
 										</Link>
 									</td>
-									<td className="px-3 py-2 font-mono text-xs text-fg-secondary">
+									<td className="px-3 py-2 font-mono text-small text-fg-secondary">
 										<Link href={`/history/run/${run.id}`} className="block">
 											{run.family}
 										</Link>
@@ -178,7 +168,7 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 										</Link>
 									</td>
 									<td className="px-3 py-2">
-										<Link href={`/history/run/${run.id}`} className="block font-mono text-xs text-fg-disabled">
+										<Link href={`/history/run/${run.id}`} className="block font-mono text-small text-fg-muted">
 											{run.digest ? run.digest.slice(0, 8) : "—"}
 										</Link>
 									</td>

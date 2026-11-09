@@ -17,7 +17,7 @@ Nothing here writes to public/. The staging folder is what a shelf build reads.
 
   python3 scripts/tilesearch-import.py <run folder> [--out DIR] [--workers N]
 
-Writes DIR/tilings.json.gz (the new tilings, atlas record form), DIR/known.json (run tiling → atlas ids),
+Writes DIR/tilings.json.br (the new tilings, atlas record form), DIR/known.json (run tiling → atlas ids),
 DIR/coverage.json, and a progress log in experiments/results/.
 """
 import argparse
@@ -145,7 +145,7 @@ def main():
     LOG = open(os.path.join(ROOT, "experiments", "results",
                             f"tilesearch-import-{folder}-{time.strftime('%Y-%m-%d')}.log"), "w")
 
-    cells = args.cells or os.path.join(out, "cells.json.gz")
+    cells = args.cells or os.path.join(out, "cells.json.br")
     if not args.cells:
         log(f"=== developing {folder} and gathering atlas candidates ===")
         tsx = os.path.join(ROOT, "node_modules", ".bin", "tsx")
@@ -216,7 +216,7 @@ def main():
     atlas = [a for a in atlas if (composition(a["renderCell"], False) in coarse if "paramCell" in a
                                   else (int(a["k"]), composition(a["renderCell"], True)) in exact)]
     # Keys of atlas records are cached per shelf file, invalidated when the file changes.
-    cache_path = os.path.join(ROOT, "experiments", "tilesearch-import", "atlas-keys.json.gz")
+    cache_path = os.path.join(ROOT, "experiments", "tilesearch-import", "atlas-keys.json.br")
     try:
         cache = read_json(cache_path)
     except Exception:                                           # noqa: BLE001
@@ -287,7 +287,7 @@ def main():
             "renderCell": t["renderCell"],
             "tilesearch": {"run": folder, "file": t["file"], "index": t["index"]},
         })
-    write_json(os.path.join(out, "tilings.json.gz"), records)
+    write_json(os.path.join(out, "tilings.json.br"), records)
     with open(os.path.join(out, "known.json"), "w") as f:
         json.dump(known, f, indent=1)
     coverage = {

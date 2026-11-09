@@ -2,8 +2,10 @@
 
 import { useMemo } from "react";
 import { Check, X } from "lucide-react";
-import { Modal } from "@/components/ui/modal";
-import { OptionWall } from "@/components/ui/option-wall";
+import { Button } from "@/design-system/components/button";
+import { Modal } from "@/design-system/components/modal";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { speciesPolygons } from "@/components/polygon-glyph";
 import { parseSpecies, speciesLabel } from "@/lib/services/polygonSpecies";
@@ -54,46 +56,47 @@ function SpeciesCard({
 	const polygons = useMemo(() => speciesPolygons(species), [species]);
 	if (!polygons) return null;
 	return (
-		<button
-			type="button"
-			aria-pressed={selected ? true : excluded ? "mixed" : false}
-			onClick={onToggle}
-			title={`${speciesLabel(species)} — ${count.toLocaleString()} tiling${count === 1 ? "" : "s"}${excluded ? " (excluded)" : ""}`}
-			className={cn(
-				"group relative flex flex-col overflow-hidden rounded-lg border text-left transition-colors",
-				"focus:outline-none focus-visible:ring-1 focus-visible:ring-fg",
-				selected
-					? "border-fg bg-surface-overlay/60"
-					: excluded
-						? "border-line-strong bg-surface-overlay/30 opacity-50"
-						: "border-line bg-surface-overlay/30 hover:border-line-strong hover:bg-surface-overlay/50",
-				count === 0 && !selected && !excluded ? "opacity-40" : null,
-			)}
+		<Tooltip
+			label={`${speciesLabel(species)} — ${count.toLocaleString()} tiling${count === 1 ? "" : "s"}${excluded ? " (excluded)" : ""}`}
 		>
-			<div className="relative aspect-square bg-surface-raised">
-				<TilingThumbnail polygons={polygons} fit={0.66} />
-				{selected ? (
-					<span className="text-bg absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg">
-						<Check size={11} strokeWidth={3.5} />
+			{/* ds-check: keep (a three-state thumbnail card, either → required → excluded; Button pressed and OptionWall are two-state) */}
+			<button
+				type="button"
+				aria-pressed={selected ? true : excluded ? "mixed" : false}
+				onClick={onToggle}
+				className={cn(
+					"group ta-well relative flex flex-col overflow-hidden text-left transition-colors",
+					"focus:outline-none focus-visible:ring-1 focus-visible:ring-fg",
+					selected
+						? "border-fg bg-surface-overlay/60"
+						: excluded
+							? "border-line-strong opacity-50"
+							: "hover:border-line-strong hover:bg-surface-overlay/50",
+					count === 0 && !selected && !excluded ? "opacity-40" : null,
+				)}
+			>
+				<div className="relative aspect-square bg-surface-raised">
+					<TilingThumbnail polygons={polygons} fit={0.66} />
+					{selected ? (
+						<span className="text-bg absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg">
+							<Check className="size-icon-xs" strokeWidth={3.5} />
+						</span>
+					) : excluded ? (
+						<span className="text-bg absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg-muted">
+							<X className="size-icon-xs" strokeWidth={3.5} />
+						</span>
+					) : null}
+				</div>
+				<div className="flex items-baseline justify-between gap-1 px-1.5 py-1">
+					<span
+						className={cn("truncate text-caption leading-none font-medium", selected ? "text-fg" : "text-fg-secondary")}
+					>
+						{speciesLabel(species)}
 					</span>
-				) : excluded ? (
-					<span className="text-bg absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg-muted">
-						<X size={11} strokeWidth={3.5} />
-					</span>
-				) : null}
-			</div>
-			<div className="flex items-baseline justify-between gap-1 px-1.5 py-1">
-				<span
-					className={cn(
-						"truncate text-[11px] leading-none font-medium max-md:text-xs",
-						selected ? "text-fg" : "text-fg-secondary",
-					)}
-				>
-					{speciesLabel(species)}
-				</span>
-				<span className="shrink-0 text-[10px] leading-none text-fg-muted tabular-nums">{count.toLocaleString()}</span>
-			</div>
-		</button>
+					<span className="shrink-0 text-micro leading-none text-fg-muted tabular-nums">{count.toLocaleString()}</span>
+				</div>
+			</button>
+		</Tooltip>
 	);
 }
 
@@ -137,7 +140,7 @@ export function PolygonFilterModal({
 	return (
 		// On a phone the sheet takes the full 92dvh; the Modal body scrolls and the footer below sticks to
 		// its bottom edge, so Done is always in reach.
-		<Modal isOpen={isOpen} onOpenChange={onOpenChange} title="Filter by polygon" maxWidth="max-w-4xl max-md:h-[92dvh]">
+		<Modal open={isOpen} onOpenChange={onOpenChange} title="Filter by polygon" maxWidth="max-w-4xl max-md:h-[92dvh]">
 			{/* Modal renders children unpadded — every caller supplies its own inset. */}
 			<div className="flex max-h-[68vh] flex-col gap-4 overflow-y-auto p-4 max-md:max-h-none max-md:overflow-visible">
 				<div className="flex flex-col gap-1.5">
@@ -147,7 +150,7 @@ export function PolygonFilterModal({
 						selected={mode}
 						onChange={onModeChange}
 					/>
-					<p className="text-[11px] leading-snug text-fg-muted">
+					<p className="text-caption leading-tight text-fg-muted">
 						{MODE_OPTIONS.find((o) => o.value === mode)?.note}. Click a tile again to exclude it, a third time to clear
 						it.
 					</p>
@@ -155,7 +158,7 @@ export function PolygonFilterModal({
 
 				{regular.length ? (
 					<section className="flex flex-col gap-2">
-						<h4 className="text-[11px] font-semibold tracking-[0.08em] text-fg-muted uppercase">Regular polygons</h4>
+						<h4 className="ta-label">Regular polygons</h4>
 						<div className={grid}>
 							{regular.map((key) => (
 								<SpeciesCard
@@ -173,15 +176,15 @@ export function PolygonFilterModal({
 
 				{starRows.length ? (
 					<section className="flex flex-col gap-3">
-						<h4 className="text-[11px] font-semibold tracking-[0.08em] text-fg-muted uppercase">
+						<h4 className="ta-label">
 							Star polygons
-							<span className="ml-1.5 font-normal tracking-normal text-fg-disabled normal-case">
+							<span className="ml-1.5 font-sans font-normal tracking-normal text-fg-muted normal-case">
 								by fold, each at every point angle in the atlas
 							</span>
 						</h4>
 						{starRows.map(([fold, keys]) => (
 							<div key={fold} className="flex flex-col gap-1.5">
-								<span className="text-[10px] font-medium text-fg-disabled tabular-nums">{fold}★</span>
+								<span className="text-micro font-medium text-fg-muted tabular-nums">{fold}★</span>
 								<div className={grid}>
 									{keys.map((key) => (
 										<SpeciesCard
@@ -201,7 +204,7 @@ export function PolygonFilterModal({
 			</div>
 
 			<div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3 max-md:sticky max-md:bottom-0 max-md:bg-surface-raised">
-				<span className="text-xs text-fg-muted">
+				<span className="text-small text-fg-muted">
 					{selected.length + excluded.length === 0 ? (
 						"No polygons selected — the facet is off"
 					) : (
@@ -213,21 +216,14 @@ export function PolygonFilterModal({
 					)}
 				</span>
 				<div className="flex items-center gap-2">
-					<button
-						type="button"
+					<Button
+						variant="ghost"
+						size="sm"
+						label="Clear"
 						onClick={onClear}
 						disabled={selected.length + excluded.length === 0}
-						className="px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 max-md:min-h-11 max-md:text-sm"
-					>
-						Clear
-					</button>
-					<button
-						type="button"
-						onClick={() => onOpenChange(false)}
-						className="border border-line-strong bg-surface-raised px-3 py-1.5 text-xs font-medium text-fg hover:bg-surface-overlay max-md:min-h-11 max-md:px-5 max-md:text-sm"
-					>
-						Done
-					</button>
+					/>
+					<Button variant="secondary" size="sm" label="Done" onClick={() => onOpenChange(false)} />
 				</div>
 			</div>
 		</Modal>

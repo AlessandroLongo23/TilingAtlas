@@ -3,6 +3,7 @@
 import { useCallback, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
+import { Button } from "@/design-system/components/button";
 
 // The four-stage board: a control rail beside a 2x2 grid of stages, sized to one screen.
 //
@@ -43,14 +44,14 @@ export function StageBoard({
 				{stages.map((s) => (
 					<section key={s.n} className="flex min-h-0 flex-col border border-line bg-surface-raised">
 						<header className="shrink-0 border-b border-line px-2.5 py-1.5">
-							<h2 className="text-[12px] leading-tight text-fg max-md:text-sm">
-								<span className="font-mono text-[10px] text-fg-muted max-md:text-xs">stage {s.n}</span> · {s.title}
+							<h2 className="text-small leading-tight text-fg max-md:text-body">
+								<span className="font-mono text-micro text-fg-muted">stage {s.n}</span> · {s.title}
 							</h2>
 							{/* One line, clipped, with the full text on hover: the blurbs are worth having and not
 							    worth two rows of a height budget that the figures need. A phone stacks the stages
 							    and has no hover, so there the blurb wraps in full. */}
 							<p
-								className="mt-0.5 truncate text-[10px] leading-snug text-fg-muted max-md:overflow-visible max-md:text-xs max-md:whitespace-normal"
+								className="mt-0.5 truncate text-micro leading-tight text-fg-muted max-md:overflow-visible max-md:whitespace-normal"
 								title={s.blurb}
 							>
 								{s.blurb}
@@ -79,10 +80,10 @@ export function RailPanel({
 	return (
 		<section className="flex shrink-0 flex-col border border-line bg-surface-raised">
 			<header className="border-b border-line px-2.5 py-1.5">
-				<h2 className="text-[12px] leading-tight text-fg max-md:text-sm">
-					<span className="font-mono text-[10px] text-fg-muted max-md:text-xs">{label}</span> · {title}
+				<h2 className="text-small leading-tight text-fg max-md:text-body">
+					<span className="font-mono text-micro text-fg-muted">{label}</span> · {title}
 				</h2>
-				{hint ? <p className="mt-0.5 text-[10px] leading-snug text-fg-muted max-md:text-xs">{hint}</p> : null}
+				{hint ? <p className="mt-0.5 text-micro leading-tight text-fg-muted">{hint}</p> : null}
 			</header>
 			<div className="p-2.5">{children}</div>
 		</section>
@@ -100,7 +101,7 @@ export function RailPanel({
  */
 export function FigureCaption({ children }: { children: ReactNode }) {
 	return (
-		<span className="h-[26px] shrink-0 overflow-hidden px-1 font-mono text-[10px] leading-[13px] text-fg-muted max-md:h-auto max-md:min-h-[26px] max-md:text-xs max-md:leading-4">
+		<span className="h-[26px] shrink-0 overflow-hidden px-1 font-mono text-micro leading-tight text-fg-muted max-md:h-auto max-md:min-h-[26px] max-md:leading-4">
 			{children}
 		</span>
 	);
@@ -155,15 +156,11 @@ export function EdgeHitLine({
 export function Fact({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
 	return (
 		<div className={wide ? "flex flex-col max-md:col-span-2" : "flex flex-col"}>
-			<dt className="text-[9px] tracking-wide text-fg-muted uppercase max-md:text-xs">{label}</dt>
+			<dt className="ta-label">{label}</dt>
 			<dd className="break-all text-fg">{value}</dd>
 		</div>
 	);
 }
-
-/** The small bordered text button of a figure's control row (pause, replay, reset), 44px on a phone. */
-export const FIGURE_BUTTON =
-	"shrink-0 border border-line px-2 py-0.5 text-[10px] text-fg-muted transition-colors hover:text-fg max-md:min-h-11 max-md:px-3 max-md:text-xs";
 
 /**
  * The stages' shared hover, made to survive a finger. On touch the figure's pointerleave fires the
@@ -188,16 +185,9 @@ export function useTapHover<K>(set: (key: K | null) => void): (key: K | null) =>
  */
 export function InspectBar({ children, onClear }: { children: ReactNode; onClear: () => void }) {
 	return (
-		<div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+72px)] z-30 flex items-center gap-2 rounded-xl border border-line bg-surface-raised py-1 pr-1 pl-3.5 shadow-lg md:hidden">
-			<div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-fg">{children}</div>
-			<button
-				type="button"
-				onClick={onClear}
-				aria-label="Clear the highlight"
-				className="flex size-11 shrink-0 items-center justify-center text-fg-muted hover:text-fg"
-			>
-				<X size={18} />
-			</button>
+		<div className="ta-float fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+72px)] z-chrome flex items-center gap-2 py-1 pr-1 pl-3.5 md:hidden">
+			<div className="flex min-w-0 flex-1 items-center gap-2 text-body text-fg">{children}</div>
+			<Button variant="ghost" size="bar" icon={X} aria-label="Clear the highlight" onClick={onClear} />
 		</div>
 	);
 }

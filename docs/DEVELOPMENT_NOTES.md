@@ -21072,6 +21072,384 @@ turned into its board; plan agreed, then run in full. Everything is in `experime
   runner must not read pipes only at exit (a chatty batch deadlocks); on macOS multiprocessing workers do not
   carry the script's name, so `ps | grep script.py` cannot see them.
 
+**Study page: the time limit changes while a study runs (AL, 5 November).** "Lift the time limit" is now "Time
+limit": a number with minutes or seconds, or no limit, raised or lowered at any time (`Study.setLimit`, which
+replaces `unlimit`). A study that raises k keeps it as its rule's ceiling, which a running search reads as it goes;
+another keeps it as its own limit. A row searching past a lower limit stops there; a row a limit stopped goes on
+from where it stopped while under a higher one. The dialog counts both before it is set, and the facts show the
+limit by itself (it was hidden in the truncated raise line as "2 min a search"). Checked on a copy of the stars
+study: 2 to 5 min sent 8 of its 9 capped rows on (the ninth had run 385 s), 0.1 min stopped the running row within
+seconds, then 30 seconds and 3 minutes through the unit picker.
+
+The unit picker found a bug in every Dropdown inside a Modal: the list showed and took no click, since the Radix
+dialog blocks pointer events outside itself and the Base UI list was portalled to the body. The Modal now marks its
+content (`data-modal`) and a Dropdown inside opens its list there; the other Dropdowns in Modals (Run again's
+folder picker, the editor's) go through the same path, unchecked one by one.
+
+## The hybrid shelf against the hybrid triage (2026-11-05, CC)
+
+The k <= 3 triage of Marek's write-up systems (`experiments/results/hybrid-exact/triage-writeup-k3-2026-11-04.log`)
+runs each system's whole proven board, tiles at longer sides included, in the Searcher. Split by the tiles a
+tiling uses, its base-length tilings equal the shipped count at every complete k of every board (af2 to af5,
+1.0377 to 2.9387; 2,495,842 at 2.4578 k = 3 is a complete slice the shelf does not carry yet). The rest:
+
+- ⚑ `y29830` is a stopped run: 682 of 1,094 tilings at k = 1 and 1,134,119 of 2,672,268 at k = 2 (Marek's board
+  run to the end in `tools/searcher/solver_hybrid_2_9830`; his own solver agrees at k = 1). 84 of the 1,094 carry
+  the 24-gon develop_ai1.py reads as a 30-gon (2026-10-25). Labelled "k slices partial".
+- ⚑ `y33086` k = 2 is a stopped run: 27,967 of about 470 million (tileestimate, standard error 205 million), too
+  many to ship as records. Labelled "k = 2 partial".
+- a1 (0.6197): k = 1 and 2 are zeros, by a complete search of the whole system.
+- Tilings with longer sides: at af3, 2 / 44 / 30,693 use only long tiles (tilings at twice the edge, not
+  hybrids here) and 0 / 1 / 2 mix lengths. af2, af4 and 1.6628 have both kinds at k <= 2;
+  1.7191 has long-only tilings (10,145 at k = 1), 2.9830 mixed ones (15 at k = 1).
+  At 1.0612 they are the shipped `1247` board.
+
+develop_ai1.py `--multi` now develops Searcher corpora: a file's k there omits (Pi, Pi) midpoints (the atlas's
+k, where Marek's solver counted them), and tokens that never stand alone in a figure (af3's B10 and B5) take
+their letter's multiple, then must pass the closure check. af3 develops whole: 30,795 of 30,795, 2.0 MB gzipped.
+Nothing new ships yet: tracked `public/` is at 499.9 MB of its 500 MB budget.
+
+That fix broke every Dropdown outside a Modal for one install (AL, 5 November): it passed `container={null}` there,
+and Base UI's portal reads null as "no container yet" and draws nothing (undefined means the body). It passes
+undefined now. My checks had only opened the one Dropdown inside the dialog; the filters, Sort and the dialog's
+unit picker were all checked after the fix.
+
+**Disk map: the hover card keeps up (AL, 5 November).** Measured on a clone of AL's output folder (1,251 runs,
+1,155 tiles), with Playwright moving the pointer every 16 ms. Before: a move took 155 ms (median) to reach the card,
+frames ran at 133 ms while sweeping, and an idle window spent about a third of its time drawing. Three causes:
+- every move set state in `DiskMap`, which rebuilt the tree and layout and drew every tile again for one card;
+- `push` sent the whole status twice a second, some 20 MB (5 MB of boards, 49,293 certificate-file entries), and
+  the window drew everything again for each, though at idle only the free space had changed;
+- each run the pointer crossed read three files and developed three tilings.
+Now the card has its own state (a tile hands it the run through a ref), tiles light up on CSS hover, and each tile
+is a memoized `RunTile` over a layout keyed on folders and sizes only. `push` sends a run in full only when its JSON
+changed and its id otherwise (the window keeps that object), and sends nothing when nothing changed (free space is
+rounded to the three figures shown). `RunPreviews` waits 80 ms of rest before reading and keeps the last 100 runs'
+drawings. After: moves reach the card in 0.3 ms (median, 7.8 ms p95), no frame over 50 ms while sweeping, no frame
+over 30 ms in 3 s idle or in 4 s with a search running, and a run hovered again shows its tilings in 10 ms.
+
+## Missing faces, and apeirogons that tore when panned (2026-11-05, CC)
+
+**The studies missed faces.** Marek's screenshot showed a C∞ at 2.4994601, a face that study lacked. The cause was
+mine: `make_studies.py` asked the inverse map only for tiles with sides of 1 edge (single-length) or 1 and 2 edges
+(2-to-1), though phase 3b had searched sides up to 25 edges. `experiments/hybrid-exact/audit_faces.py` now checks
+every hyperbolic study, AL's two originals and every edge of Marek's AC list (sides 1 and 3): the tiles whose angle
+lies in the Q-span of pi and the known angles, over polygons to 200 sides and sides to 50 edges (55 at the smallest
+edge), then every vertex they close, each certified. 377 edges, no timeouts. Nothing joined beyond phase 3b's box
+(100 sides, 25 edges). 32 studies missed faces: 31 of the 2-to-1 ones and AL's 0.7671972 (Aoo B5 C3 Coo Eoo Goo
+Koo); 0.931302 is complete. Faces that close only combinations `board.py` drops (no cyclic order can occur:
+`usable`) can be in no tiling, so they are left out: that empties 0.8813736 and 1.128384 of additions and takes
+0.8314429 from 10 new faces to 4. Results in `experiments/results/hybrid-exact/audit-faces.jsonl`.
+
+The fixes append to each board (angles, optional faces, vertex lines) so every old row keeps its name and run:
+15 studies edited and paused, every old row still planned, none of the runs unhooked (a `subsets 1 7` cap on
+0.4812118 keeps all its old rows). Two boards gain an old-faces line usable only with a new face (0.9064069,
+0.9426164), harmless in the old rows. The A3,An,Bn family's edges at n = 4m gain D_m, so a new family
+`A3,A4m,B4m,Dm` requires it (15 edges). The AC list's 60 edges without a study became `3-to-1/`: two families
+(A3,Cn,A2n over 26 edges; A6,Aoo,Coo,Cn,A3n over 21) and 12 single studies; 1.6774197 has no realisable face.
+Every family reproduces each member's board through the app's `substitute`. Heavy: 1.4657154 (2.95 million
+cyclic orders) and 2.4693138 (64 million). Not covered: two new faces that close a vertex only together.
+
+PARI's thread pool deadlocked in lindep's LLL under the alarm interrupt (two workers waited 35 minutes on a
+pthread_join); `hyb.pari()` now sets `nbthreads` to 1, since the runs are parallel over processes anyway.
+
+**Apeirogons tore when panned.** The A6,Coo tilings at 2.4994601 drew seams and stray slivers after a pan. The walk
+was right: replayed in float64 from every anchor face it has no seam. Float32 was not: an apeirogon's frame kept a
+corner at 0 and its whole period (here 3 sides of 7.5) near the rim, so maps into and out of it had entries of
+20 to 130, and the period shift was a matrix product of the same size; 15 to 28 % of pixels landed wrong. Now each
+unit side of an apeirogon has a frame of its own (midpoint at 0) and a chart into the face's half-plane, side maps
+start and end in those frames, the table codes the side an apeirogon is entered by in `next`, and the shader holds
+a point of an apeirogon in the half-plane, where the shift is a subtraction. The CPU walk (`sideMapOf`) converts
+back, so `walkPoint`, the camera, overlays and materials see the face frames as before. Replayed: float32 now
+agrees with float64 on 100 % of pixels on both test tables, and the new walk equals the old one in float64. A
+second fault: the camera refused a pan that put the centre 0.998 out in the anchor's frame, so a pan into a C∞
+stopped dead; the renderer now starts an apeirogon anchor from a frame on the centre, and the cap is 1 − 1e−10.
+
+**Apeirogons are grey by side length** (AL): A∞ white, B∞, C∞, … darker (`apeirogonGrey`, hyperbolic.ts), in the
+disk and in the Searcher's board figures. `lib/render` tests 21/21, Searcher develop tests 18/18, `pnpm build` clean.
+
+**Addendum, same day: every study board checked, the limits written down, the polynomial shown.** A stricter
+check (`dump_studies.ts` through the app's `substitute` and planner, then against the proven board of each
+edge): every study holds only realisable faces, and exactly the proven vertex lines on its faces; the studies on
+an edge together hold every realisable face. 144 studies, 393 boards (family members counted), no problem.
+Four 2-to-1 boards still declared faces from Marek's lines that no usable line holds (0.8314429 A24 A4 B4 B8,
+1.9916524, 2.5170055, 2.965702): left out, with their 534 rows, all ruled out before search and none with a run.
+The two 14-face studies (2-to-1/0.4812118, 3-to-1/0.6329743) get `_more` companions with the rows of 8 to 14
+faces the 10,000-row ceiling had cut. The 120-polygon cap on vertices could bind at 11 edges (the smallest angle
+allows up to 9,717 corners at 0.8314429): enumerated again to the angle bound, nothing new.
+`docs/HYBRID_SEARCH_LIMITS.md` states the limits every completeness claim holds within, and each board's header
+cites it. Each board also carries `# minpoly <s> <polynomial>` (cosh s's minimal polynomial from
+certify-marek-v3.jsonl, one line per edge of a family; board-format.md): a comment, so older apps and engines
+read past it. The Searcher shows it on the study (Edge, degree, the polynomial when short) and under each
+hyperbolic tiling (in full, with a copy button); a study passes it on to its rows' boards, and an older run reads
+its study's. The other 4,880 annotated edges are being audited and assessed (`assess_rest.py`).
+
+## The hybrid shelf, filled (2026-11-05, CC)
+
+Follows "The hybrid shelf against the hybrid triage" above. AL raised the `public/` budget to 650 MB for this
+drop (CLAUDE.md); `public/` is now 618 MB. Every "complete" below holds within `docs/HYBRID_SEARCH_LIMITS.md`.
+
+- `y29830` re-shipped whole from Marek's board run to the end in the Searcher: 1,094 and 2,672,268 tilings at
+  k = 1 and 2 (was 682 and 1,134,119), 2,673,362 of 2,673,362 developed. develop_ai1.py now reads face sizes
+  from a run's board.txt (`FACE_SIZES` in develop_hyp_edges.py), so A30 is the 24-gon it is. 67 MB.
+- `y24578` gains k = 3: 2,495,842 tilings from the triage's complete run of the same board. 82 MB.
+- Seven boards of tilings with long sides, filed under "Different edge lengths" (`multiLength`), next to their
+  system's own board: af2 (622 / 14,557, k = 2 partial), af3 (2 / 45 / 30,695), af4 (5 / 2,489), 1.6628 (66),
+  1.7191 (10,145, all 3₂ and 18₂ alone, tilings at twice the edge), 2.9830 (15) and ai2+3 (3 / 125 / 6,958,
+  the Boo the face audit adds at 2.1226). Each is its system's whole board run in the Searcher, developed with
+  `--multi`, cut to tilings that use a long tile and renumbered; the rest equal the shipped base board's counts
+  at every k, which is the check. 3 MB.
+- ⚑ Not filled: af1 (0.7672). The audit adds nine faces (Aoo B5 C3 C5 Coo E3 Eoo Goo Koo); its 100 vertex
+  combinations have 234,978 cyclic orders, and tileestimate ran 89 CPU-minutes without finishing its setup.
+- The face audit (the fork's ledger entry) and the triage boards agree on all 30 write-up systems, faces and
+  vertex combinations alike.
+
+## The Searcher's board figures coloured by side length, as the disk is (2026-11-05, CC)
+
+The disk colours a face whose sides are cut by Pi points with `flatCornerHue(corners, unit sides)` (the scaled
+shelf's hue for a side-s n-gon), so A3, B3 and C3 differ there, and C6 is purple, not the hexagon's green. The
+board page's face cards and vertex figures still coloured by corner count, so on 3-to-1/1.6446509 every triangle
+was the same red. `faceFill` (figures.tsx) now takes the side length and goes through `flatCornerHue`, for face
+cards (`fillOf`) and for vertex sectors (`fillAt`, which reads the corner's shape). A corner of no one face (a Pi
+point) takes the fill of the faces that hold it when they all share one, so `A6 A6 B3 Pi` shows its Pi sector in
+B3's colour; where faces of different colours share it, it keeps the old fallback. Checked in the app against the
+Tilings preview on two runs of that study (A3,C3,C6 and A6,B3): the board's colours match the disk's.
+
+## Rows the pre-check failed, and the loose studies filed (2026-11-05, CC)
+
+⚑ 18 study rows were never searched: the Searcher's pre-check (`tilesearch --balance`) has 120 s, a failed check
+counts as settled (`studies.ts` `settled`), so 9 of the 10 studies show "done", and resume never retries it. The
+engine lists every cyclic order of every vertex line first: 5 rows (to 1.4·10⁵ orders) pass alone in 1 to 12
+minutes; 13 (9·10⁶ to 2·10²⁸, e.g. 40 triangles and 40 24-gons at 7.2733788, where the uniform (3.24)⁴⁰ lives)
+are past it. Recorded in `docs/HYBRID_SEARCH_LIMITS.md` and `experiments/results/hybrid-exact/failed-rows-2026-11-05.json`.
+App fix proposed (failed check unsettled, retried on resume, 30 min limit, a named reason past an order ceiling).
+The three studies outside the list folders were filed: 0.931302 into 2-to-1 (Marek's AB list), 0.7671972 into
+single-length (his A list), and hybrid_34n4_4n2n beside the family A3,A4,An,A2n, whose board it equals for n = 7..15
+in written order; it keeps tilings to k = 15 the family never searched. 997 searched rows match their boards.
+
+## A study's whole board: every row's tilings together, from one search (2026-11-05, CC)
+
+AL asked for a collective, per-k view of a study, complete up to the lowest k every row has finished, with a way
+to re-run all rows to a chosen k. Each row requires exactly its optional faces, so the rows' tilings together are
+the tilings of the study's board with every optional face made ordinary. Before building anything, the two ways
+were measured against each other (`experiments/study-union/`: gen.ts writes the plain board and every row the
+study searches through the app's own planner; run.py runs both straight to k on the installed engine and compares
+counts, CPU, wall and nodes; logs in `experiments/results/study-union/`):
+
+| study (rows searched) | k | tilings, plain = rows | CPU plain | CPU rows |
+|---|---|---|---|---|
+| 2-to-1/1.5285709 (24) | 2 | 13,960 | 31 s | 102 s (3.3x) |
+| 2-to-1/2.1225501 (24) | 3 | 362,098 | 31 s | 95 s (3.1x) |
+| Laves (97) | 7 | 18,173 | 9.7 s | 316 s (33x) |
+
+Counts agree at every level measured (3 studies, k = 1 to 7 on Laves). At small k the rows cost 30 to 280 times
+more, nearly all start-up (each row ranks its required sets before searching, about 2 s of CPU). Where search
+dominates they still cost about 3x: they visit 0.6 to 1.05 times the plain board's nodes but each node costs more.
+Both hit the wall at the same k (1.5285709 at k = 3: the plain board had 13 of ~456 roots after 30 min; 2.1225501
+at k = 4: past 20 min and 2.07e9 nodes), so re-running every row can never reach a k the plain board cannot
+reach for less. Raising one k at a time repeats little, since each k costs a fraction of the next (2.1225501:
+1.9 s at k = 2, 31 s at k = 3).
+
+So the collective view is that plain search, not the rows re-run. The study page's main panel now has two tabs,
+Rows and Whole board (an enumeration with optional faces). Whole board shows the run of `wholeBoards(template)`
+(study.ts: the plain board per combination of parameter values, named `whole-board`): its runs sit in the study
+folder and are found by board (`withoutK`, the text minus comments and k, which the row follow in
+electron/studies.ts now shares). The panel shows the finished run that went highest ("Complete to k = 3 ·
+362,098 tilings") with the run view's k picker and Tilings panel, a newer run's state beside it, Run the whole
+board (one k at a time by a raise rule without ceilings, the default, or straight to a k), Raise k (the run
+view's dialog) and Open run. Checked in the app on a copy of 2.1225501: k = 1, 2, then 3 gave 50, 4,401 and
+362,098, the rows' union as measured, with one run left in the folder. Rows keep their own job, which face
+combinations have a tiling at all (under "found: 1" some go past k = 20, which no plain run reaches).
+
+Two fixes on the way: a raised run in a study folder skipped the size estimator whenever it sat in the folder;
+now only a row's run does (`Study.holds`), so the whole board keeps its estimate. And the Tilings panel threw
+an unhandled rejection reading a file of a run its raise had just deleted (also possible in the run view); the
+read now gives up quietly and the next status moves on.
+
+Correction to what I told AL during the measurement: the 18 hyperbolic studies whose study.board has more faces
+than study.json has rows (the face audit rewrote the boards) are not stale in the app. Study re-plans its rows
+from study.board on every open and keeps saved results by row name, so the old rows keep valid results (each
+still requires exactly its faces) and the new ones wait to be searched; only study.json on disk lags.
+
+## Single studies folded into families; failed checks no longer read as done (2026-11-05, CC)
+
+48 single-edge studies were members of a family. Two families needed a count that grows with n, so study boards
+gained `A3^{n-2j}` (a power of 0 drops the corner) and a `for j 0..{n/2}` line generator (`substitute`,
+app/src/study.ts; board-format.md): single-length A3,An (n = 7, 9, 11..40, every vertex A3^(n-2j) An^j) and
+A3,A3n,A5n (n = 2..8). Two families of 2026-11-04 had stopped at n = 7 because the generator only made sizes above
+6 into n: A4,A2n,Aoo,Bn and A3,A4,A2n,Bn now run n = 3..35, A4,A2n,Bn,B2n takes n = 4. Each member's board was
+checked equal to its family's at its n, and each finished run's board to its new row's, before 26 runs moved in;
+the old studies are in the Trash. No single study is now any family's board at any n from 1 to 200.
+The Searcher (reinstalled): a balance check has an hour, not 120 s; a row past 5·10⁵ vertex orders is not handed to
+the engine and says why (`cyclicOrders`, `MAX_ORDERS`); a study with a row whose check failed is paused with a
+note, not done; Resume checks such rows again. 24 rows were in that state: 9 within reach, 15 past the ceiling.
+
+## The whole board, again: the rows' results together, no search of its own (2026-11-05, CC)
+
+Supersedes the Whole board tab of the entry above, the same day. AL: why run another search when the rows'
+results are already there, and why does the band on top not change? He was right: the rows' tilings at each k add
+up to the whole board's, so a view of them needs no new search; one is needed only past the k the rows finished,
+and the study's own Raise k already takes every row further. The plain-board run, its dialog and the tab are gone
+(and with them `Study.holds`, which existed only for that run's estimator).
+
+Now a Rows | Whole board switch sits on the title line. With Whole board picked, the band keeps the study's three
+columns: the left one becomes the tilings count, final up to the lowest k every row has searched to the end, with
+the rows that end there and why (searching, stopped raising, stopped, not run yet); the middle one is the run
+page's tilings-per-k chart (`KChart`, exported, with a `complete` k past which columns are pale and read "so far");
+the facts stay. Below, in the rows' place, every row's tilings together through the run page's k picker and
+Tilings panel. `wholeOf` (studies.tsx) builds them as one run: counts summed per k; a row raising its k counted at
+the finished run its new run replaces, plus the new run's counts above it; a ruled-out row complete at every k; a
+"same" row standing in for the row it repeats; files tagged with their run's symbols, since each row's engine
+numbers its X labels on its own board (`OutFile.symbols`, read per file by TilingsView). It draws on
+`wholeBoards(template)`, the board with every optional face ordinary, per parameter value (a dropdown when there
+are several).
+
+Checked in the app on copies: Laves (97 rows to k = 10) reads complete for k = 1 to 10, and k = 1 to 7 equal the
+plain board's counts from experiments/study-union (14, 55, 195, 641, 1,627, 4,910, 10,731); 2-to-1/2.1225501 reads
+complete for k = 1 with 50 (the plain board's), k = 2 to 4 pale, 8 rows having stopped raising at 1 under "until 1
+tiling"; 3-to-1/A3,Cn,A2n at n = 7 and 8 equals the sums of its rows' census files. The measurement stands: going
+higher costs the rows about 3x what one plain search would, so if that bites, Raise k on the whole board could run
+the plain board instead; not built.
+
+## The Searcher's run list marks what is open (2026-11-05, CC)
+
+AL could not tell which sidebar entry was open on the right. Two causes. A study was never marked: App passed the
+list only the open run (`selected={run?.id}`), so with a study open nothing matched; it now passes the study too.
+And the mark was the hover fill (surface-overlay), faint in light and lost on the dark sidebar. The open entry now
+sits on the lifted surface of a selected segment (`--color-tab-on`, the `--color-tab-ring` hairline, a soft drop),
+one shared element that glides to the entry opened next, with the header's spring: `NavActivePill` took a
+`className` for it (its default, the header's, is unchanged). A first try with an accent tint and a bar on the
+left edge was dropped at AL's word: it is no part of this app's components. Hover stays the plain grey.
+
+## Boards that kept the lines of faces they had dropped (2026-11-05, CC)
+
+3-to-1/A6,Aoo,Coo,Cn,A3n had faces A6 and A{3n} only: Marek's other vertex there, (Aoo^3,Coo,Cn^2), has no cyclic
+order (`usable`), so Aoo, Coo and Cn are in no tiling. The name kept them, and the 180-degree lines `A6 A{3n} Pi`
+and `Pi Pi` stayed with no long side left to put a Pi point on; five single studies had such orphan lines too. The
+study is now A6,A3n and the six boards lost those lines (no row board held them: 1,115 searched rows unchanged).
+`board.build` now drops a tile only dead combinations hold, then the 180-degree lines and `edge Pi` that go with
+it, to a fixpoint: on the 377 study edges 33 boards lose such lines and no live vertex changes.
+
+## Vertex figures: Pi exactly flat, long sides at their true angle (2026-11-05, CC)
+
+AL: the `Pi Pi` vertex figure did not close (a sliver open on the right). The figure (`vertexFigure`,
+components/about/figures/geometry/vertex.ts, shared with /about) knew only regular polygons of unit side, so the
+Searcher stood a Pi corner in as a 400-gon's, 179.1° in the plane: two left 1.8° open, and with Pi among other
+corners every vertex came out a little off. The same blind spot drew a face whose sides take several edges (B3
+of `B3 Pi x 3`, C6 of `C6 Pi Pi x 6`) as one of unit sides, so a hyperbolic vertex solved the wrong edge. Now a
+corner of n = Infinity is flat, exactly 180° in every geometry, drawn as the half-plane its straight side bounds
+(a diameter in the plane's and the disk's charts, a lune a hair short of a hemisphere on the ball), and an
+optional `segs` gives each corner's polygon its side in edges, which the edge solve and the drawing both use. The
+check that it is right: 3-to-1/1.6446509's `A3 x6 C6 x6` now closes at edge 1.6446509, the board's own. The
+solver also returns null, not a meaningless edge, when flat corners alone make 360° (their partners' shrinking
+angles vanished in rounding, and it "closed" at 71). A Pi whose face cannot be told (C3 and C6 both hold it) is
+filled neutral, no longer the triangle's red. Tests: three in corners.test.ts. estimate.test.ts's two-second
+estimate failed once in four runs (11% against a 10% bound), unrelated and flaky on its own.
+
+## Star hybrids: the hybrid-edge method for hyperbolic stars, first pass (2026-11-05, CC)
+
+AL asked to apply the regular-polygon hybrid approach to the hyperbolic stars. Method, results and what is not
+covered: `experiments/star-hybrid/README.md`; logs in `experiments/results/star-hybrid/`.
+
+The method does not carry over one to one: a star's point is free in H², so a tiling has 1 + m unknowns (edge, one
+point per star type) and one equation per vertex orbit, dent fills included. Families, rigid tilings and hybrids are
+rank below, equal to and above that count; the hybrids are the analogue of Marek's edges, points of an arrangement
+of curves, not a list of numbers. Two identities hold for every edge and explain most coincidences: the capped
+n-gon (point = triangle angle) and the notched n-gon (dent + triangle = 2π). Both are regular tilings regrouped.
+
+- Shelf (`shelf_rank.py`): of 23,458 star records, 36 are overdetermined; 34 have a capped or notched star; one
+  tiling (two records), 4.4.4.12 + 4.12.6*.12 at cosh s = (9 + 4√3)/11, is a star hybrid proper.
+- Sieve pinned by a regular vertex (`sieve_pinned.py`), shelf-sized box (polygons 3..12 and ∞, stars 3*..12*,
+  valence 5): 41 star hybrids verified to 40 digits, 393 capped and 306 notched points, no third identity under
+  rewrites by ±3 regular vertices. 12 of the 41 edges are regular hybrid edges of Marek's through vertices outside
+  the box.
+- Engine (`star_board.py`, k ≤ 3, every run complete): 16 of the 41 have tilings that need the star coincidence,
+  10 at k = 2 (the shelf's pair among them, reproduced) and 5,875 at k = 3; 17 have only tilings that do not, 8 none.
+
+⚑ `β + p·P` is not unimodal in P for p ≥ 2 (a shallow dip, n = 6 at s = 1.069): the first sieve assumed one
+maximum and stopped; it now inverts every monotone piece. ∂β/∂P ≤ −1 holds and is what makes p ≤ 1 unique.
+⚑ First count of "hybrid tilings" took rank 3 as enough; at a regular hybrid edge the regular orbits alone reach
+rank 2. The test now asks the star orbits to add two (116 → 34 at 2.1226).
+⚑ The first identity test called 699 capped and notched points isolated: a crossing pair matches the identity only
+after adding the regular vertex's equation. Rewriting by multiples of it fixed that and is the self-check now.
+⚑ `board.py` holds uncommitted work from another session (the held-faces loop), so the star board writer is
+`experiments/star-hybrid/star_board.py` for now; it belongs in `board.py` once that lands. `triage.tilings` gained
+`min_corners` (default 3, unchanged) to count dent fills.
+⚑ The 3* and 5* boards at the {∞,5} edge both give 2,826 hybrid tilings at k = 3. Plausible (same three vertex
+shapes), not yet looked at.
+
+## Binary tilings on /aperiodic (2026-11-05, CC)
+
+Chakot (Discord) asked for the binary tiling, its ternary and higher versions and their duals; Marek pointed him at
+AL because they are not periodic. They are weakly aperiodic (Böröczky 1974; Dolbilin and Frettlöh 2010): no finite
+quotient, so no walk table can hold one and the disk renderer could not draw them. New view `binary` on
+/aperiodic, group "Hyperbolic", the shelf's first: n = 2 to 8 children a tile, tiles, dual or both, standard or
+random ancestry.
+
+- The camera anchors on a tile named by its ancestry (lib/tilings/binary.ts): digit i is the child index of the
+  anchor's i-th ancestor, moves are n-adic arithmetic on that string, and a tail is constant (the standard tiling,
+  every digit 0) or seeded random. `HypCamera` now takes a `DiskChart<F>` (seed, home, reanchor, snap), with
+  `walkChart` wrapping a walk table as before; the binary charts are the second kind. `HyperbolicViewInput` and
+  the local stepping moved to hypCamera.ts (`stepLocal`).
+- Horocyclic geometry (any n): a pixel's tile is read off its half-plane coordinates, row ⌊logₙ y⌋, column from
+  the ancestry's offsets F(m) = c(m)/nᵐ. The dual's edges are geodesics between tile centres; in a tile's frame
+  they are rays from 0 and no other dual edge enters the tile, so the dual face is the wedge the pixel is in.
+- Geodesic geometry (n = 2): the binary tiling's dual has every vertex 3.4.3.4.4, which closes with regular
+  triangles and squares at edge 0.7389979438517287, exactly the edge of the catalogue's three periodic k = 2
+  records of that type (hyp-k2-3-4-3-4-4__3-4-3-4-4, -b, -c). Its tiles are the dual vertices' Voronoi cells,
+  congruent pentagons with corners 90, 120, 90, 120, 90. The shader walks cell to cell with integer tile
+  coordinates; side maps in REG_MAPS, face closure tested in lib/tilings/binary.test.ts. For n ≥ 3 the dual has two
+  vertex types (n triangles + 3 squares, n + 1 triangles + 2 squares), which close at one edge only if a
+  triangle's angle equals a square's: never, so the regular version exists for n = 2 alone.
+- ⚑ GPU atan: the first shader found the wedge by `atan(y, x)` and broke every leftmost child's left half at odd
+  n. The middle child's direction is exactly (−1, −0), and this machine's GPU returns 0 for atan(−0, −1), not π;
+  JavaScript's Math.atan2 is right, so a CPU replica of the shader was correct and hid it. The wedge is now found
+  by two cross products (every wedge is under π). Do not compare GLSL angles from atan near the negative x-axis.
+
+### Star hybrids as paused Searcher studies (2026-11-05, CC)
+
+AL: add them to the atlas, or set them up in the Searcher paused. Not the atlas yet: `develop_ai1.py` has no star
+faces, so the certificates cannot become records (a missing developer, not a size decision). All 41 hybrids are
+now paused studies in `results/hyperbolic/tilings/star-hybrids/` (`star_board.py --studies`): face audit
+(`lattice.joiners` gained `extra=()` for the star's point and dent), every vertex to 120 corners, regular faces
+optional, the star in every row, certified `# minpoly` of the regular vertex, k raised to 5. 295 rows, all planned
+cleanly by the app's `planStudy`. The audit added A24 at 0.63029 and Aoo, A3 at 2.1225501 (8.17° point).
+⚑ The triage boards capped vertices at 6 corners: the 3* board at the {∞,5} edge misses 4 lines of 7 to 10 corners,
+so the triage's 2,826 there counts a sub-board. The studies redo it.
+⚑ Study names carry the point (`2.1225501-5star-12.00deg`): two 5* hybrids share that edge, and the first write
+collided after 37 studies; those 37 folders held only the two written files, paused, and were rewritten.
+
+### Star studies: the star required, k raised to 5, and why boards are empty (2026-11-05, CC)
+
+AL ran 24 of the 41 star studies and saw regular-only tilings and mostly empty results. Two causes, both in the
+setup: the star was a plain `face` (allowed, not required), and the raise rule `found 1` stopped each row at its
+first tiling, a regular one or a star family member at k = 1, while the hybrid tilings come at k = 2 to 5 (45
+tilings found, 17 regular only, 10 needing the coincidence). The studies are rewritten with `require face
+pt<n> dn<n> x <n>` and `raise {minutes 1, upTo 5}` (no `found`), still paused; the run version is kept outside the
+output folder in `TheTilingSearcher/star-hybrids-before-require-2026-11-05/` (41 studies, 957 files, moved, not
+deleted). `triage.tilings` reads the app's gzipped certificates now.
+With the star required and k ≤ 5 on all faces at once: 28 of 41 boards have tilings that need the coincidence
+(16 at k ≤ 3 before), 4 only star tilings that do not, 9 none. `corona.py` proves 6 of the 9 empty for every k
+(a dent filled by one corner forces fillers on both sides of every point); 10* at 0.7613 is empty for every k by a
+decagon period argument (README); 12* at 0.8033 and 7* at 0.8190 are empty to k = 5 only. Details and the table:
+`experiments/star-hybrid/README.md`, `experiments/results/star-hybrid/require-analysis-2026-11-05.log`.
+⚑ At the 1-minute raise limit, the boards at 2.2483544 and 2.1225501 stop short of k = 5 (k = 4 alone took 30 to
+81 s there); they want a longer limit to be complete.
+
+### The assessment of the other edges: two crashes in board.py (2026-11-05, CC)
+
+The run over the 4,878 audited edges outside the studies (`assess_rest.py`) died twice in its first step, and both
+were in `board.py`, not in the audit. First, 551 edges have apeirogons with sides past Y (k = 26 to 106), which
+the audit writes `[0,k]`; `board.tiles_of` and `hyb.parse_vertex` read letters only and skipped them, so vertices
+read as not closing. The audit itself worked on (n, k) pairs and wrote the labels last, so its verdicts stand.
+`hyb.parse_vertex` reads `[n,k]` now, `hyb.tile_of` reads one label, and `board.py` uses them in place of its own
+copy. Second, the 180° multisets came from a float search over every count of every corner, which never finished
+on edges with a dozen corners under 50° and some under 1° (0.18 ≤ s ≤ 0.2). They now come from
+`lattice.vertices_at(…, turn=1)`, the vertex search pointed at π (pivots solved exactly), to 120 corners like the
+vertices, each still checked to 1e-40; the fixpoint filters one search instead of repeating it. Same boards line
+for line on the 377 study edges and the first 2,510 others. One such edge, 0.1958888, is live with 18,221 lines.
+`assess_rest.classify` records a per-edge error now instead of ending the run. Limits doc updated.
+
 ## Martin Olivier's solver, studied and ported: forced closure, leaf dedup, a 10x covering test (2026-11-06, CC)
 
 A Discord member, Martin Olivier, shared his rewrite of the Čtrnáct search (github.com/epsln/k-uniform-enumeration,
@@ -21126,30 +21504,1294 @@ TT off. ⚑ Also found: the generated tables for star24full, composite-convex, r
 `check-star`'s last step fails only because `golden/star-shelf.sha256` names the `.json` files that the gzip
 migration renamed (all 100 match unzipped).
 
-## Binary tilings on /aperiodic (2026-11-05, CC)
+## Orderly generation: every closed configuration built once, from its canonical root (2026-11-06, CC)
 
-Chakot (Discord) asked for the binary tiling, its ternary and higher versions and their duals; Marek pointed him at
-AL because they are not periodic. They are weakly aperiodic (Böröczky 1974; Dolbilin and Frettlöh 2010): no finite
-quotient, so no walk table can hold one and the disk renderer could not draw them. New view `binary` on
-/aperiodic, group "Hyperbolic", the shelf's first: n = 2 to 8 children a tile, tiles, dual or both, standard or
-random ancestry.
+AL asked whether a McKay-style generator "that never builds coverings or repeats" was worth a try, after I had
+put an order of magnitude on it. Measured first, then built.
 
-- The camera anchors on a tile named by its ancestry (lib/tilings/binary.ts): digit i is the child index of the
-  anchor's i-th ancestor, moves are n-adic arithmetic on that string, and a tail is constant (the standard tiling,
-  every digit 0) or seeded random. `HypCamera` now takes a `DiskChart<F>` (seed, home, reanchor, snap), with
-  `walkChart` wrapping a walk table as before; the binary charts are the second kind. `HyperbolicViewInput` and
-  the local stepping moved to hypCamera.ts (`stepLocal`).
-- Horocyclic geometry (any n): a pixel's tile is read off its half-plane coordinates, row ⌊logₙ y⌋, column from
-  the ancestry's offsets F(m) = c(m)/nᵐ. The dual's edges are geodesics between tile centres; in a tile's frame
-  they are rays from 0 and no other dual edge enters the tile, so the dual face is the wedge the pixel is in.
-- Geodesic geometry (n = 2): the binary tiling's dual has every vertex 3.4.3.4.4, which closes with regular
-  triangles and squares at edge 0.7389979438517287, exactly the edge of the catalogue's three periodic k = 2
-  records of that type (hyp-k2-3-4-3-4-4__3-4-3-4-4, -b, -c). Its tiles are the dual vertices' Voronoi cells,
-  congruent pentagons with corners 90, 120, 90, 120, 90. The shader walks cell to cell with integer tile
-  coordinates; side maps in REG_MAPS, face closure tested in lib/tilings/binary.test.ts. For n ≥ 3 the dual has two
-  vertex types (n triangles + 3 squares, n + 1 triangles + 2 squares), which close at one edge only if a
-  triangle's angle equals a square's: never, so the regular version exists for n = 2 alone.
-- ⚑ GPU atan: the first shader found the wedge by `atan(y, x)` and broke every leftmost child's left half at odd
-  n. The middle child's direction is exactly (−1, −0), and this machine's GPU returns 0 for atan(−0, −1), not π;
-  JavaScript's Math.atan2 is right, so a CPU replica of the shader was correct and hid it. The wedge is now found
-  by two cross products (every wedge is under π). Do not compare GLSL angles from atan near the negative x-axis.
+**The ceiling, and a correction.** An instrumented copy gives every closure a true canonical form (least BFS
+code over start darts of the rarest seed) and every node the content of its subtree. Regular k ≤ 10: 592,076
+nodes, 265,459 closures of which 60,361 distinct; 70,919 minimal (23,395 distinct, the new tilings) and 194,540
+coverings (36,966 distinct, 69% with the same vertex count as the tiling they cover). Coverings are NOT repeats:
+a covering is the tiling under a smaller symmetry group, a different object with its own canonical form, and
+whether a partial configuration can only close into coverings depends on the global symmetry, known only at
+closure. So no canonical-augmentation scheme removes them, and my "10x without coverings or repeats" mixed two
+things. The bounds, as nodes still visited: one copy per closed configuration, pruned where the subtree's
+closures are all copies, 227,022 (2.6x); also no coverings, 140,868 (4.2x); only paths to first copies,
+dead ends included, 61,449 (9.6x). An orderly test can beat the first bound, because it can prove a root wrong
+before the subtree closes, dead ends included.
+
+**The method.** A node P is built from root (vertex 0, identity frame) by its branch moves, its code.
+Replaying the search from another root (v, frame a) of the minimal type, same min-slack dart choice and same
+forced closures, reads that root's code off P's glues until it meets a free dart. The canonical copy is the one
+whose root has the least code: another root smaller at a position both have determined means no completion of
+P is canonical, so P is pruned; larger, and the root is dropped for the subtree; at a closure every replay is
+complete, so exactly one copy survives. Frames are the type's automorphisms, the generator's Aut (R, L, M,
+class, edge type), whose action is free, so the frame taking a dart to its rep is unique. Replays keep their
+state between nodes in a pool that follows the DFS and are skipped while the dart they stalled on is still
+free (glues only grow below a node). `EU_ORDERLY=1`, in `eu_solver.cpp`.
+
+**Exact.** Closures under orderly equal the oracle's distinct count to the unit (17,961 at k ≤ 8, 60,361 at
+k ≤ 10) and leaf_dups reads 0. On ten palettes (regular to k ≤ 12, domino, trihex, tetromino, bubble-sq,
+isotox-cmp8-2, ring18, composite-convex, star24full k ≤ 3 and k ≤ 5) the raw outputs of the default engine and
+of orderly, pruned together, keep exactly the count of either alone: the same set of tilings. check-regular is
+byte-identical with it off.
+
+**Gains**, one core, same binary: regular k ≤ 12, 2,236,853 → 682,032 nodes, 1,104,273 → 215,151 closures,
+67.9 → 24.0 billion instructions (2.83x), CPU 5.94 → 2.09 s; the node ratio grows with k (2.05x at k ≤ 8, 3.28x
+at k ≤ 12). domino k ≤ 4 2.57x, star24full k ≤ 5 1.70x, ring18 1.14x, polyforms and trihex about even; it loses
+where there is nothing to remove, k ≤ 2 on large alphabets: bubble-sq and composite-convex 0.91x, isotox-cmp8-2
+k ≤ 1 0.77x (every alternative root is a frame of the one vertex). A deep-k tool.
+
+**Move order matters, any is exact.** Five orders measured at k ≤ 10: a fresh vertex before a glue to a placed
+dart, higher types first, gives 204K nodes against 256K for the reverse; adopted.
+
+**The transposition table is gone** (fix 19, `EU_TT_MB`): orderly beats it wherever either helps (regular
+k ≤ 12 2.8x against 1.2x, domino k ≤ 4 74K nodes against 181K, star24full k ≤ 5 2.05M against 3.69M), and the
+two do not combine, since the table merges nodes whatever their root. eu_solver.cpp +229/-40: the
+count rises because orderly is new machinery; the TT's 40 lines went out with it.
+
+**Measured and dropped:** a bound at the stall (the stalled dart can only pair with a compatible free dart or,
+within the k budget, a fresh vertex; prune if every such move is smaller): 9% fewer nodes and no time under the
+old order, nothing under the new one.
+
+⚑ Like the TT, orderly writes a different labelled copy of each tiling, so the serial in `eu raw <sig> <n>.tes`
+and ctrnact-* ids change. Its serials are gap-free and independent of MAXNUM, which makes it the natural basis
+for canonical ids, but that is AL's call (same decision as before). Detail and tables:
+`experiments/results/orderly-generation-2026-11-06.md`, `orderly-palettes-2026-11-06.log`.
+
+## Edge and tile orbits (2026-11-06, CC)
+
+AL asked whether the vertex, edge and tile orbit counts (v = k, e, t) are related, whether /library could group
+by them, and for an overlay per kind; then to build it. Every regular and star record with an exact cell now
+carries `edgeOrbits` and `faceOrbits`, /library has an Edge orbits axis with a tile-orbit filter, and the /play
+overlay switches between vertices, edges and tiles.
+
+**Relations.** One exact equation: Σ1/|G_v| − Σ1/|G_e| + Σ1/|G_t| = 0 over orbits, which is V − E + F = 0 on the
+torus divided by the group (an orbit whose stabilizer has s elements splits into [G:T]/s translation classes).
+From the counts alone there are only bounds. v ≤ e + 1 and t ≤ e + 1 for any periodic tiling, since vertex orbits
+joined by edge orbits form a connected graph, and so do tile orbits joined across edges. v ≤ e with regular
+polygons: equality would make that graph a tree, a triangle's boundary is an odd closed walk, and the
+triangle-free tilings (4⁴, 6³, 4.8.8, 4.6.12) all have v = 1. e ≤ 6v from dart orbits while no vertex has more
+than 6 edges. Measured on every shipped record, no bound fails anywhere:
+
+| shelf | k | e | t |
+|---|---|---|---|
+| regular | 1, 2, 3 | 1-3, 3-6, 3-9 | 1-3, 2-5, 2-7 |
+| regular | 4 to 10 | k + 1 to 3k | up to 2k + 1 |
+| star | 1 to 9 | at least k, at most 6k − 1 (reached at every k) | up to 32 at k = 9 |
+
+The regular maxima e = 3k (reached by 3⁶ tilings at every k) and t = 2k + 1 are measured, not proved. Stars reach
+e = 6k − 1 at every k, so 3k is a fact about regular polygons only. Consequence for the shelf: the regular
+enumeration is whole to k = 10, so it holds every regular tiling with e ≤ 10. t stays a filter, since nothing
+useful bounds v by t.
+
+**Computation.** `KUniformityChecker.edgeFaceOrbits` reuses the vertex pass's symmetry group: cosets deduped
+modulo the lattice exactly, each edge keyed by its exact midpoint and each tile by its exact vertex mean,
+union-find per kind; floats only choose the integer lattice shift. It returns null unless the torus Euler count,
+edge-to-edge (2 · edge classes = Σ sides) and the orbifold sum all hold. It agrees with an independent float
+computation on the 243 regular tilings to k = 4, stabilizer orders included. The step costs 2-14 ms a tiling;
+the enrichment's time goes to `vertexOrbits`, about 1 s a tiling at k = 9.
+
+**Data.** `scripts/enrich-reference-atlas.ts --orbits [--jobs N]` runs worker processes, and
+`build-reference-atlas.ts` calls it unless given `--no-orbits`. 36,312 records carry e and t: all 23,396 regular
+(k ≤ 10) and 12,916 of the 12,960 stars (k ≤ 9). The other 44 are the s24f star families, which have a free angle
+and so no exact cell. Manifest tiers carry an `edgeOrbits` tally, so the shelf lists the e values of unloaded
+shards and fetches only the shards that hold a picked e. Log: `experiments/results/reference-atlas-orbits-2026-11-06.log`.
+
+**Interface.** Info panel rows Edges (e) and Tiles (t), replacing the dead `EDGE_FACE_ORBITS_ENABLED` flag; cards
+show `e… t…`; the CSV gains two columns; new sort keys. /library: a Vertex orbits / Edge orbits switch (URL
+`axis=edge`, `e`, `t`) and a note giving the largest e whose list is whole. /play: the Orbits checkbox gains a
+Vertices / Edges / Tiles switch (`orbm`) on both renderers, and hovering an edge or tile highlights its orbit.
+
+⚑ The orbit pass took 97 min at 9 processes over the four files (721 + 831 + 1,886 + 2,386 s), and a full
+`build-reference-atlas.ts` now includes it. `--no-orbits` skips it, but the rebuilt files then lack e and t.
+⚑ A first float version rounded lattice coordinates and split a translation class whenever a coordinate was an
+exact fraction like 17/64 (12 to 22 Euler failures per shard at k = 9). The shipped code reduces exactly.
+⚑ The regular shards above k = 10 (added by the edge-homogeneous session) hold targeted-search tilings, not whole
+layers. The completeness note counts only whole layers (k = 1, 2, … with no gap and an e on every record) and caps
+regular at `REGULAR_COMPLETE_K` (lib/services/referenceAtlas.ts). Star lists lack
+the s24f families, and the note says so. Computing e for a family needs a parameter value inside ℤ[ζ₂₄] with
+generic symmetry; not done.
+⚑ The orbits log appends per run under a dated header; the first version emptied it on start, which a second
+run on other files would have wiped.
+
+**Edge-homogeneous tilings (Galebach's 203).** The definition is the strict one: every edge orbit has its own
+full edge figure (tags C1, C2, D−, D|, D+). Through k = 4 the shelf's edge-homogeneous tilings match Galebach's
+95 one to one. His 29-edge-orbit tiling (2962) was reproduced at k = 13 by a targeted Searcher board
+(`experiments/results/edge-homogeneous-2026-11-06/targeted/`). The k ≤ 10 comparison and the Classifications
+facet continue in the edge-homogeneous session.
+
+Also checked: the square-triangle composition invariant asked about on Discord (Impéror-Clerc et al. 2021) is the
+composition point `experiments/composition-space/` already computes; it agrees with the paper's eq. 8b, eq. 17
+and Table 2, with 3³.4² on H1 and 3².4.3.4 on Σ.
+
+## Classifications: proven lists across the shelves, and the regular shelf past k = 10 (2026-11-06, CC)
+
+Brian Galebach asked for his 203 edge-homogeneous tilings in the Atlas. Through k = 10 they were already on the
+regular shelf, scattered, so AL asked what a shelf that only collects existing entries is, and how it differs
+from a filter. The answer AL agreed to: a third kind, a **classification**, a list someone proved complete for one
+property. It owns no records (every tiling keeps its one home shelf, the 2026-08-09 rule), and it holds what a
+filter has nowhere to put: the published count, who proved it, and how far the Atlas has checked it. It also
+reaches past the shelf, which a filter cannot: six of the 203 have more than 10 vertex orbits. Admission rule: a
+named source that proved the list complete; a property without that proof stays a filter.
+
+- Registry `lib/classifications.ts`. Members come by `rule` (read off the records) or by `list` (a data file a
+  script derives from the atlas and checks against the source). `inClassification` sits in
+  `matchesReferenceFilters` (`ReferenceFilter.classification`), so every facet count respects it.
+- /library: a Classifications group after Kind, every entry with the same checklist icon (lucide `ListChecks`).
+  Picking one starts a clean Euclidean view and shows the members wherever they live, under a banner with the
+  definition, source link, published count, how many are in the Atlas, what we checked, and any member not in the
+  Atlas yet (`components/library/classifications.tsx`). URL key `set`. A list's file loads once, then a fresh
+  filters object reruns the memos; the higher-k shards holding members load on their own.
+- **Krötenheerdt tilings** (rule: m = k on the regular shelf). The shelf reproduces Krötenheerdt's 11, 20, 39,
+  33, 15, 10, 7 for k = 1 to 7 and holds none at k = 8 to 10 (OEIS A068600). The "Maximal (M = k)" toggle stays,
+  since it also filters the star shelf, where m = k is not Krötenheerdt's class.
+- **Edge-homogeneous tilings** (list). Source data `figures/data/galebach-edge-homogeneous.json`, parsed from
+  probabilitysports.com/edgeproof.html (fetched 2026-11-06; the page carries no date). Membership:
+  `scripts/classify-edge-homogeneous.ts` → `public/classifications/edge-homogeneous.json.gz`. Per tiling: edge
+  orbits under KUniformityChecker's verified symmetries, one full edge figure per orbit plus Galebach's tag;
+  edge-homogeneous when the untagged figures are all distinct; matched to his entries by tagged figure set.
+  Results append per tiling to JSONL, so a stopped run resumes. Its scope is the complete part of the shelf plus
+  his own tilings above it.
+- **Result: all 203 are in the Atlas.** The 8-shard scan of the whole regular shelf (23,396 tilings, k ≤ 10,
+  0 failures; the 3,679 tilings a second run also checked agree on every one) finds 197 edge-homogeneous
+  tilings, every one in his list: by k 11, 17, 32, 35, 34, 18, 23, 16, 7, 4. So the shelf holds no
+  edge-homogeneous tiling he missed. The other six have k > 10 and came from targeted Searcher boards (his
+  vertex types, all required, k up to his e): #2920, #2933, #2938, #2941 at k = 11, #2957 at 12, #2962 at 13.
+  Each matched its figures exactly, and #2933/#2941 are the two edge-homogeneous tilings of one board. Ids
+  `eh<entry>`, source `galebach`.
+- **The regular shelf past k = 10.** `REGULAR_COMPLETE_K = 10` and `REGULAR_SHARD_KS` (now 8 to 22) in
+  referenceAtlas.ts; /library, /play (eagerly: their ids carry no k) and gen-atlas-manifest read them, and the
+  k-chip note says that above 10 a k holds only what targeted searches found. `scripts/tilesearch-exact.ts`
+  takes a run folder (named picks, or `--all` for every tiling above k = 10). The Searcher's float cell becomes an
+  exact ℤ[ζ₂₄] cell by walking unit edges (each direction is an exact multiple of 15°), checked against the float
+  polygons and against vertex orbits = the run's k. New source `tilesearch` (vocabulary; the enrich treats it
+  like galebach, orbits from the cell); discoverer "Čtrnáct engine (Tiling Searcher), <run date>", certification
+  candidate.
+- **Shipped corpus:** the #2938 board (9 vertex types, all required, k ≤ 22, complete): 1,451 tilings, every one
+  at k ≥ 11, so all new; 1,450 shipped in shards k11 to k22, and one (k = 22) does not develop ("faces cover
+  1.005 periods"). Its only edge-homogeneous tiling is #2938.
+- **Running at nice 19** when this was written (`targeted/import-runs.sh`, log `experiments/results/tilesearch-exact.log`):
+  the #2920 (8,557 tilings, k ≤ 23), #2933 (13,834, k ≤ 23), #2957 (27,465, k ≤ 25) and #2962 (13,352, k ≤ 30)
+  boards, about 63,200 tilings above k = 10, then enrich and orbits on every partial shard. When it ends: add
+  23 to 30 to `REGULAR_SHARD_KS`, regenerate the manifest, rerun the classification match. The #2962 board was
+  rerun from scratch in `targeted/gal2962/` (the first run was stopped part-way); its only tiling at k = 13 is #2962.
+- ⚑ **This reverses the 2026-08-18 rule** ("a shelf ships only the k it can enumerate": AL then preferred no
+  records at all to records from a partial enumeration) for the regular shelf above k = 10. AL approved partial,
+  labelled levels on 2026-11-06, and the 2026-08-31 "everything ships" rule points the same way.
+- ⚑ tilesearch keeps its scratch in `./.part/<root>/<unit>` relative to the working directory, and a starting run
+  deletes whatever there it does not own. Three CLI runs started from one directory crashed one another and merged
+  each other's files (`targeted/collided-2026-11-06/`, kept). The app is unaffected (one folder per run); from the
+  CLI, give every run its own directory.
+- ⚑ Two pairs of Galebach entries share every tagged figure (1656/1657; 2791/2794; 2792/2795). Both sides hold two
+  tilings each, so membership is exact, but which of ours is which of his numbers the figures cannot say: those
+  members carry `same` in the file.
+- ⚑ The first shelf scan this morning wrote only at its end and lost an hour when it died; the script now appends.
+  A worker-argument bug in tilesearch-exact dropped the named pick and wrote #2938 twice; fixed, duplicate removed.
+
+## feat/browse-merge merged; classifications move into the browse tree (2026-11-07, CC)
+
+AL made the merged /play + /library page the definitive view and asked for it on master, with the classifications
+and the k > 10 shelves fitted to it. Merge commit `24934bf8` (the branch's four commits: one /catalogue page with a
+grid and a tiling lens, the browse tree, Open in the Searcher, the Searcher's download page). The branch touched 7
+files that held uncommitted work here (classifications and k > 10 from this session, edge and tile orbits from the
+orbits session, now tilingatlas-41): backed up, stashed, merged, reapplied with `git stash apply`. Six applied
+cleanly (`_play-client.tsx` changes followed the rename to `(atlas)/_atlas-client.tsx`); `reference-shelf.tsx`
+took six conflict hunks, resolved to upstream's layout with both sessions' changes carried into it. Every item of
+tilingatlas-41's orbit checklist was verified present afterwards.
+
+- **Classifications are a node kind of the browse tree** (`lib/atlas/browse.ts`: kind `classification`, scope
+  `{ classification }`, `classificationNodes(cell)`), drawn under a "Classifications" heading after the cell's
+  classes with the checklist icon and "proved by …" as the second line. Each registry entry names its cell
+  (`euclidean|tilings` for both today). A pick issues the scope like any node, so the breadcrumb, the title and
+  the tree highlight all name it; `classification` joined `SCOPE_FIELDS`, so another pick or a cell change clears
+  it. The sidebar picker and the active-filter chip from 2026-11-06 are gone (the tree and the breadcrumb are
+  both); the banner stays, above the results. Links: `/catalogue?set=edge-homogeneous`.
+- **The k > 10 shards no longer load at mount.** The 2026-11-06 version added them to /play's eager tier table;
+  the redesign cut first load from 252 to 140 data files, and the partial tiers will hold tens of thousands of
+  tilings once the import below lands. The tree lists them as slices with Load buttons (they are manifest tiers),
+  and a deep link resolves through `regularShardOf(id)` in referenceAtlas.ts: `ctrnact-<k>_…` and
+  `ts-…solver_<k>_…` carry their k, `eh<entry>` is looked up in the edge-homogeneous member list. Checked:
+  `/catalogue/view?tiling=eh2962` opens #2962 from a cold load.
+- **The import of the four targeted boards died with the session that ran it**, about halfway through its first
+  board, and its workers held results in memory: about three hours lost. `scripts/tilesearch-exact.ts` now
+  appends every finished tiling to `experiments/results/tilesearch-exact/<board>/w<i>.jsonl` and skips those on a
+  restart. ⚑ A rerun also showed that replacing a record by id dropped its enrichment (m, orbits, wallpaper group):
+  existing records are now kept and only new ids added; k = 13 was re-enriched. The chain
+  (`targeted/import-runs.sh`) was restarted at nice 19 on 2026-11-07.
+- Checks: tsc clean except `.next/types` (stale route types from the pre-merge dev server) and
+  `tests/build-orbit-dot-mesh.test.ts` (tilingatlas-41's work in progress); eslint clean; 31 tests in
+  reference-to-catalogue, tiling-spec, shelf-registry and atlasManifest pass; `pnpm build` passes with no warnings.
+  The merge was not pushed.
+
+## One component library for both apps; the disk filled (2026-11-07, CC)
+
+AL saw the hover glide on some controls and not on others (the Info/View tabs had the sliding selection
+but each tab lit up on its own under the pointer). The cause was the one Lume had: a look written by hand
+in many files, so a change to the shared piece missed the copies. Fixed at the source, then the copies
+moved onto the library.
+
+- **Library changes.** `SegIndicator` now carries the `HoverPill` too, so every segmented control (Tabs,
+  OptionWall, Pagination, the hand-built tracks) has both glides. `OptionWall` absorbed `ButtonGroup`,
+  `ToggleButton` and `Toggle` (a second "selected" look, bordered chips) and gained a wrapping layout,
+  `dense`, icons and per-option keycaps. `Button` gained `pressed` (the toolbar's sunken look), `xs` and
+  `bar` sizes, and renders children at icon size. New: `Disclosure` and `FoldChevron` (five chevron
+  variants before), `POPUP`/`POPUP_ITEM` (the Dropdown, menu and combobox popups were three copies; the
+  combobox had no glide), `Field` (from the Searcher, 25 hand-written label rows), Badge tag tones,
+  `.ta-tab-on`, SearchInput `ariaLabel`/`size`. `Switch` folded into `Checkbox`. Phone rule once in
+  globals.css: `.ta-tab` at least 40px, `.ta-label` 12px (docs/mobile/DESIGN.md asked for both).
+- **Catalogue and guard.** `components/ui/README.md` says which component does which job; CLAUDE.md
+  points to it. `pnpm ui:audit` (scripts/ui-audit.mjs) counts hand-written copies: 91 after the library
+  pass, 0 after migration; deliberate exceptions carry `ui-audit: keep (reason)` (16).
+- **Dead code.** 20 files with no importers deleted (2,020 lines), among them tiling-card, tiling-list-item,
+  tiling-modal-content with its store, board-picker, studio-inspector. Backups in the session scratchpad.
+- **Disk.** The disk filled twice (133 MB free). Next 16's Turbopack dev cache had grown to 69 GB since
+  2026-09-24 (it never shrinks); Lume's to 53 GB. Cleared those and the other projects' `.next` caches
+  and the npm cache: 166 GB free. Not touched: tools/ctrnact-oracle (149 GB of engine runs), another
+  session's 33 GB of solver output in /private/tmp, ~/.cache/edl-docs model weights (44 GB).
+
+## The whole component library reviewed, not only the glide (2026-11-07, CC)
+
+The first pass had followed the glide; AL asked for the whole library. Every component in components/ui was
+checked for users, the props its call sites pass, and overlap with another component; the audit grew to
+the looks it had not covered.
+
+- **Removed:** `SidebarSection` (no users left), `AngleFilterBlock`, `ReloadButton`, the unused barrel
+  `index.ts`, `MultiSelect` (a third copy of the chip look; its one site is a `Field` around an
+  `OptionWall multi`), and `Fold`, merged into `Reveal` (two height animations with different timings;
+  only Reveal honoured reduced motion). `Disclosure`/`FoldChevron` moved to disclosure.tsx.
+  `components/shelf`'s `Segmented` (77 uses) was a fork of OptionWall; OptionWall gained `sub` and `dim`
+  and Segmented is now a 20-line adapter over it.
+- **One prop convention:** `className` everywhere (Button/OptionWall took `classes`; Button's `fullWidth`
+  gone), `aria-label` (Dropdown/SearchInput/VelocityPad took `ariaLabel`), `open` (Modal took `isOpen`),
+  `value`/`onChange` (SearchInput). Tooltip `delay` is now `instant | normal | late` (six millisecond
+  values were in use). A disabled Button no longer drops pointer events, so a tooltip saying why it is
+  disabled opens (Chromium sends pointer events to disabled buttons; checked).
+- **New:** `Spinner`, `Notice`, `Field aside`, `.ta-card`, `.ta-well`, `.ta-link`, `.ta-link-quiet` (the
+  last four in `@layer components`, so a clickable card's hover utilities still apply). 44 card surfaces
+  had come in 39 variants with three radii; the tokens say `radius-surface` for cards, xl for overlays.
+- **Audit:** 10 more patterns; 122 new hits → 0, 24 marked exceptions in all. The run inspector became a
+  Modal (centred, no longer a right-hand drawer).
+- **Found on the way:** figure-panel's caption lost its colour and mono font (`text-fg${…"font-mono"}`,
+  already in HEAD); the Tailwind Prettier plugin trims the leading space of such a fix, so it is `cn()` now.
+- **Not done:** type tokens. 343 arbitrary pixel sizes over about 20 values (9 to 15px in half steps);
+  a type scale is AL's call. Full test run, final build and the Searcher reinstall were stopped when AL
+  asked the machine to go quiet.
+
+## The design system: curated tokens, a compact type scale, one library (2026-11-08, CC)
+
+AL asked for the text sizes to become a compact scale and for what we have to become a design system with a
+curated token layer, at the level of the Axon and NemTilmeld systems (both studied first; Axon's quality is its
+enforcement, NemTilmeld's its ratcheting checker and decision comments). Everything is in `design-system/`;
+its README and DECISIONS.md (D1 to D8) hold the detail.
+
+- **Tokens:** four layers. Of the old token layer, 103 of its tokens were referenced by nothing, among them
+  every semantic type, spacing, z and motion-transition token; the accent was hard-coded in the themed file. The
+  Tailwind theme now clears every default scale (colour, text, radius, shadow, weight, leading, tracking) and
+  refills it from the roles, so off-scale classes generate nothing.
+- **Type:** ten roles, `micro` 10 to `display` 32, plus a fluid `hero`, each bundling size, line height and
+  tracking; `text-ui` (13/18) is the page default. They replaced about 20 sizes in use. The phone floors (12px,
+  15px body) moved into the tokens, so 63 `max-md:text-xs` bumps and a selector hack in mobile.css went away.
+- **Density:** control heights as tokens (24/28/32/36/44); the default Button and Input are now 32px (were 36),
+  Button `sm` 28 (was 32).
+- **Found:** `bg-surface-base` generated no CSS (11 figure frames and the canvas root had no background), and the
+  figure panel's mono caption had been broken by a missing space that the Tailwind Prettier plugin keeps trimming.
+- **Library:** `components/ui` moved to `design-system/components` (138 importers rewritten); its CSS left
+  globals.css (975 → 175 lines) for `design-system/styles/`. New: `.ta-field` (five hand-drawn field surfaces),
+  `text-hero`, `rounded-mark`, `shadow-sheet`, two signal hues for indicators. `HoverPill` takes each item's radius.
+- **Governance:** `pnpm ds:check` (replaces ui:audit) adds token rules read from the theme itself, a ratcheting
+  baseline (`check-baseline.json`, at zero), path arguments, and keeps that must give a reason.
+  `design-system/migrate.py` moves older branches (seven roadmap worktrees) onto it.
+- **Not done:** the Searcher is not rebuilt or reinstalled (quiet hours; tilingatlas-7a takes it into its rc4.2
+  rebuild). No living style-guide page yet.
+
+## Searcher studies with "Require any" over optional faces (2026-11-08, CC)
+
+AL ran a study of 15 optional faces (5 scaled B faces, 10 stars), 1 to 3 at a time, with one `require face`
+line over all the stars and one over all the scaled faces. The 200 rows lacking a star or a scaled face were
+ruled out correctly, but all 375 others failed with "The engine could not check this row's board". Each row
+board kept both lines word for word, naming faces the row had dropped along with their angle lines, and
+tilesearch stopped at `symbol 'B4' has no angle line`.
+
+- **Fix (`study.ts` rowMaker):** a row's faces come from `withoutFaces`, which cuts the board's `require face`
+  lines to the faces it keeps; a line naming one of the row's own optional faces then goes, since that face's
+  own line already meets it. Rows over the same faces as a hand-made board now read the same (searchKey).
+- **Label:** a row ruled out for holding no face of a required group read "a corner fits nowhere"; it now reads
+  "lacks a required face".
+- **Measured:** all 375 rows pass `--balance` in about 1 s (experiments/results/study-require-any-2026-11-08.log);
+  B6 + A4p30 has 3 tilings to k = 3, one at k = 1. AL's rerun on the reinstalled app found 171 tilings for
+  B3 + A3p30 to k = 8 in 5 s.
+- **Found, not fixed:** `TILESEARCH_ROOT` is documented as "for this launch only", but `resumeInterrupted` and
+  `quitNow` save the whole settings object, so a test launch writes its scratch root into AL's settings.json.
+- **Then (AL): rows filtered up front.** A subset holding no face of a `require face` line made only of optional
+  faces is now no row at all (`requiredGroups`, `subsetsOf` in study.ts), so the board page reads 375 rows, not
+  575 with 200 ruled out. The count comes by inclusion–exclusion over those lines (supersets dropped, at most 20),
+  so it holds past the 10,000-row listing limit; a test checks it against a brute-force count. The two "every
+  combination of …" sentences became one helper, and the "lacks a required face" label went with the rows it
+  named. Studies saved before keep their rows by name and drop the others on load.
+
+## The token layer completed: colour to core, space, icons, motion, layers (2026-11-08, CC)
+
+AL asked whether colour, spacing, radius, shadows and motion followed the core/semantic pattern of the work
+projects (Axon's `axon-maestro-ds-css` and `ao-ds-tw`, NemTilmeld's `src/tokens`). Type and radius did. The rest
+did not, and the audit says how far:
+
+- **Colour:** the dark theme's six surfaces and the phone's four contrast fixes were oklch literals in
+  `themed.css`. The neutral ramp now has the steps they need (450, 550, 800, 850, 875, 925), and every role
+  resolves to a core step. The phone's disabled text was 4.3:1 on the sunken track (its comment said 4.5); it is
+  5.1 now. `fg-accent` was unused and is gone. Static colours (scrim, hazard tape, accent contrast, thumb) moved to
+  `semantic.css`.
+- **Spacing:** no token at all beyond Tailwind's unit, which v4 multiplies by any number. A curated step set is
+  now checked; reading the off-scale uses found two named distances (`pl-indent`, 14 uses; `pr-corner`).
+- **Motion:** tokens existed, but the library's own CSS used them for 11 of about 40 timings, call sites wrote
+  `duration-300 ease-in-out`, and JavaScript had its own seconds and curves. Six roles now (feedback, floating,
+  glide, travel, arrive, settle), one `motion-*` class each, `ease-*` cleared, reduced motion in the token layer,
+  and `design-system/motion.ts` for Framer and WAAPI with a parity test against the CSS.
+- **Layers:** `z-30` to `z-[1000]` meant five things; named layers above 20 now, with the same numbers. The
+  catalogue tree's depth stack is computed inside its scroller.
+- **Icons:** nine sizes; four roles now, tied to the type beside them (119 icons).
+- **Shadows:** stay themed (a dark multiplier was tried on paper and rejected, DECISIONS D14); the two literal
+  shadows in the library became `handle` and `lift`.
+- **Breakpoints:** `767.98px` written in seven CSS rules; they read `theme(--breakpoint-md)` now.
+
+**Found:** five squaring figures stroked with `var(--color-bg)`, which never existed (their halos never drew);
+the WebGL debug badge's `text-lime-300` generated nothing since the colour scale was cleared, unseen because
+ds:check did not read `lib/`. ds:check now reads `lib/` and the CSS, and flags a `var(--…)` of a token that does
+not exist. Rules added: motion, layers, spacing, blur and drop shadow, breakpoints, icon size, motion written in
+code, undefined tokens, and four CSS rules. Total 0 over 815 files.
+
+**Verified:** ds:check 0; tsc clean for both apps; 3,318 tests pass (motion parity included); `pnpm build`
+passes; catalogue light, dark and phone, and the command palette's scrim, checked in screenshots.
+
+**Not done:** the Searcher is not reinstalled: the installed app was running three searches, and a reinstall
+quits it. Container widths (`max-w-md` and 20 arbitrary `max-w-[…]`) and alpha steps (19 different `/NN`) are
+not tokens yet. Lines: code about +380 (tokens +203, ds:check +112, motion.ts and its test +88; the library's
+CSS −37), docs +108. Uncommitted.
+
+## Study page: limit reached, Finish, threads and priority, more faces per row (2026-11-08, CC)
+
+AL asked for four things on a running study; all are on its page now, built on the existing study code.
+
+- **Limit reached:** rows a time limit or a raise-rule ceiling stopped had been counted under "Left"; they are an
+  outcome of their own in the band and the filter (amber, `signal-attention`, the design system's timer hue).
+- **Finish N:** a header button, shown while such rows exist, sends them on (studies.ts `finish`). A capped run is
+  uncapped with no rule, so the resume that `RunFolder.start` already does finishes its k and raises no further; a
+  row the study's own limit stopped is marked `free`, which the limit check skips. A disk ceiling holds.
+- **Threads and priority:** rows at once, threads per row and priority, set while the study goes or waits
+  (`setResources`). New searches take them as they start; a running engine is reniced at once (`RunFolder.renice`;
+  macOS lets a priority go down, not up), and an opt-in restart resumes running rows from their finished roots with
+  the new threads.
+- **More faces per row:** raises `subsets` in study.board (`withSubsets`, `widen`); the new rows join by name, as
+  the constructor already matched saved rows, now through one `load`. The dialog previews the rows added with
+  `planStudy(…, false)`: 1,150 for AL's study at 4 faces, which is C(15,4) less the all-star and all-scaled sets.
+- **Header:** Pause/Resume, Finish and Raise k stay as buttons; Time limit, the two new dialogs and Edit board moved
+  into the "…" menu. The three study IPC handlers became one `onStudy` helper, and the dialogs share `ModalFooter`.
+- **Tests:** a study built on disk (no engine) covers finish and widen. Checked by screenshot in a hidden instance
+  on a copy of AL's study. The test launch wrote its scratch root into settings.json again (the bug noted above);
+  settings were backed up first and restored exactly.
+
+## A study's board edited while it goes; faces summed up; raised rows keep showing (2026-11-08, CC)
+
+AL asked to drop B8 (the octagon of side 2) from scaled+stars without restarting it, with a warning when a face's
+rows have tilings, and for the app to point at faces that found nothing.
+
+- **One mechanism, `Study.edit`:** an edited study board is planned and compared with the study row by row (same
+  name and same row board, k aside, keeps check and run). Changed rows start over, rows that leave have their runs
+  stopped or dequeued (main's `stopRun`, shared with the stop handler), new rows join. Preview and apply are one
+  call; apply reuses the preview's comparison. It yields every 200 rows: a row board costs about 0.3 ms on this
+  887-line board, so 10,000 rows take seconds. The More faces per row dialog now goes through it, and `widen` and
+  `studyRows` are gone.
+- **Removing B8 measured on a copy of AL's study:** 95 rows leave, the other 280 keep byte-identical boards (a row
+  only ever had the lines its own faces make), and the board loses two vertex lines and an angle. Preview 0.5 s.
+- **Not a proof:** B8 rows grow with k (45, 154, 369 nodes at k ≤ 4, 8, 12 for B8 + A3p30), so "none up to
+  k = 12" is a cutoff. A removed face is kept in study.json with its tally (`faceTally`: rows, found, tilings,
+  rows left, least k searched, or ruled out at every k), and the census prints it.
+- **Faces view:** each optional face with its rows, rows with tilings and verdict; Remove opens the same preview,
+  and is outlined where nothing was found. Dropped or re-searched rows with tilings need "Apply anyway".
+- **Raise k display:** a raised row now shows what its previous search found (`r.was`) until the new one
+  finishes; AL's page had read "0 found" with 251 rows queued for k = 12. A raise a limit stopped still reads
+  "Limit reached", so Finish keeps working.
+- **Verified** in a hidden instance on a copy (TILESEARCH_DATA keeps it off AL's settings; macOS takes no
+  single-instance lock): Faces view, Remove B8 preview (280 kept, 95 leave), Edit board then Apply. Built at 12:51
+  with tilingatlas-12's rc4.2.1 engine; install waits for AL, whose searches are running.
+- **Installed 13:01** on AL's go (engine sha256 8f053e7b…e1aa, "# engine 4", rc4.2.1's ": a write failed at k=");
+  the 01:35 copy is the fallback. Reported to tilingatlas-12.
+- **Then (AL): the run page too.** Opening a raised row showed the new, queued run: empty. `earlierOf`/`withEarlier`
+  (runs.tsx) make a run page show the finished run it replaces, every k up to its own, plus its own tilings above,
+  with a note and a link to that run; `wholeOf` now merges through them too. `replaces.txt` holds an absolute path,
+  so after a study folder is moved or renamed the earlier run is found by name beside the new one (test). Installed
+  13:31; the running 13:01 instance had been started from a shell and answered the quit with its own "searches are
+  running" dialog, so a watcher opens the new build once AL confirms.
+- **Lesson:** AL confirmed the quit and reopened the app from the Dock in the same second the watcher launched it,
+  so two instances ran (macOS takes no single-instance lock: `sole` is true on darwin). No search was running; the
+  watcher's copy was closed (SIGTERM). Next time: leave the relaunch to AL when the app is waiting on its dialog.
+
+## The whole site benched, then made lighter: route code on intent, lazy canvases, scoped facets (2026-11-08, CC)
+
+AL asked for a speed test of everything on production and then for it to be made faster. `scripts/bench-journey.mjs`
+is the instrument: every page cold in a fresh context (TTFB, FCP, LCP, ready = network quiet and no long frame for
+1 s, TBT, bytes by kind, heap), then one session through the site (every filter, the shelves opened and closed,
+pans and zooms, the grids scrolled, every article read to the end), each step timed to settled with its Event Timing
+INP and its long-animation-frame script attribution. Headed, 1440x900 at 2x. `--vs` runs a second build in the same
+pass, page by page and scenario by scenario, which is the only fair before/after on a machine other sessions keep at
+load 30 to 75. Reports in experiments/results (bench-prod-2026-11-08-1316, bench-before-vs-after-2026-11-08-1445).
+
+**What production showed.** Every page of the app shell downloaded 2.4 to 2.7 MB of gzipped JavaScript in ~110
+requests, /pentagons as much as /catalogue. About two thirds was Next prefetching the code of every route linked in
+the nav bar the moment it was on screen; the rest was the page's own bundle, which carried the legacy lattice engine,
+Supabase, zod, three.js and 400 kB of non-convex and genus solid data on pages that draw none of them. /library
+filter clicks blocked for about 1 s each (INP 920 to 1,600 ms), and typing into its search 1.5 s per key. Pans and
+zooms held 120 fps everywhere; nothing in the render loops needed work.
+
+**What changed.**
+- **Prefetch on intent.** `components/intent-link.tsx`: a Link that prefetches on hover, focus or touch. The nav,
+  the landing cards and links, the about corner button and the hero CTA use it; the Searcher download button does
+  not prefetch at all (its page only starts a download, and it was prefetched seven times per load).
+- **Barrels.** `lib/utils/math.ts` importing `@/classes` pulled every class (PeriodSolver and the rest), and through
+  TilingChecker's `@/stores` the Supabase client, into every page that touches a tile; `RegularPolygon` importing
+  `@/utils` pulled zod. 41 files now import from the defining file. A blanket `"sideEffects"` declaration was tried
+  first and broke /isohedral's prerender: dropping unused modules reorders evaluation and exposes cycles. The direct
+  imports exposed one too (Polygon -> utils/geometry -> StarPolygon, which extends Polygon), fixed by moving
+  `StarVertexTypes` into `PolygonType.ts`; tilingatlas-60 hit it in a script within minutes and was told.
+- **Lazy where only one is drawn.** The catalogue's sixteen geometry and decoration canvases, the grid card's nine
+  curved and decorated thumbnails (with the skeleton as the placeholder), the shell's export, screenshot and release
+  notes dialogs (mounted on first open, then kept for their exit motion), Chart.js behind debug, Supabase in the
+  symmetry and vertex-orbit hooks (only a tiling without an inline exact cell reaches it). The legacy tiling store
+  no longer queries Supabase on every page: the screenshot upload, its only reader, initializes it.
+- **Solids on demand.** `sphericalSolids.ts` answers the convex catalogues at once and loads the non-convex and
+  genus shelves (`ncx-`, `tor-`, `gen<g>-`) the first time one is asked for; `useSolid` / `useSolidsLoaded`
+  re-render whoever asked. `sphericalSolidsAll.ts` is the eager list for scripts and tests. Noble family members are
+  now cached like every other solid, so a lookup returns the same object.
+- **Grid clicks.** The card read `tiling.renderCell` in render, which reconstructs the exact cell (~8 to 14 ms in
+  ℤ[ζ]) for every card on the page; `TilingThumbnail` now takes a getter and calls it inside its frame-paced draw.
+  The shelf's facets scan the tree's scope once (`scopedTilings`): under "Regular polygons" that is 2,720 records,
+  not 40,666 ten times. A k click went from ~270 ms of React work to ~37.
+- **Smaller.** Freedraw caches each pattern's face analysis (switching back to a grid re-analysed thousands);
+  `tileNameOf` is memoized and `alignedTile` compares rotations without building strings (all 52,800 bubble labels
+  identical, half the time); article solids draw, and build their environment map, only near the viewport; the
+  viewer warms the hyperbolic and spherical canvases at idle; the favicon is cached a day (Chrome re-asks on every
+  URL rewrite, i.e. every filter).
+
+**Measured** (interleaved, 40 ms / 100 Mbps emulated, both local production builds): cold loads ready 115.1 s ->
+68.5 s summed over 50 pages (-41%), 134 -> 67 MB on the wire; most pages ready in 0.6 to 1.1 s from 1.6 to 2.4;
+journey steps -26%, summed INP -34%. JS per page (gzip, own + late): /parquet 2,175 -> 372 kB, /pentagons 2,175 ->
+519, landing 1,883 -> 737, /catalogue 2,605 -> 817.
+
+**Not done, in order of size.** Edge patterns still costs 4.7 s of main thread on first selection: every arriving
+batch re-sorts and re-classifies the whole catalogue (`sorted`, `loadedTiers`, the cells, the shelf's memos), so
+the cost grows with the number of batches. The spherical Tegula shelf (1.06 MB gzip, 4.7 MB raw) loads on every
+catalogue open although only Spherical draws it; deferring it needs a manifest tier so the Spherical count stays
+right. p5 2.x and its dependencies (~280 kB) arrive with the viewer. The exact cell reconstruction is BigInt
+arithmetic and was left alone. Gesture frame rates in the local A/B were capped at 30 fps by the session, not the
+code; production's 120 fps stands.
+
+## Galebach's 203 and Krötenheerdt's 135 proved complete with no bound on k (2026-11-08, CC)
+
+On Discord (2026-11-07) Brian Galebach asked for an independent search and proof of his 203 edge-homogeneous
+tilings, Marek suggested deriving the full edge figures from the vertex data, and AL said he would look. The
+2026-11-06 classification could not settle it: it filters the regular shelf, which is complete only to k = 10, and
+the six members above that came from Searcher boards seeded with Galebach's own vertex types. An edge-homogeneous
+tiling he missed at k > 10 would have been invisible to it.
+
+- **New engine, `tools/ctrnact-oracle/homogeneous.py` with its loop in `homogeneous_dfs.cpp`.** Homogeneous
+  tilings by regular polygons enumerated as Delaney–Dress symbols. A figure that occurs owns one orbit of cells,
+  so the symbol's chambers are its flags modulo the cell's stabilizer (a subgroup of the figure's own symmetries)
+  and two of the three involutions are read off the figure. Only the third is searched; when the figure it reaches
+  is already in the symbol, it is forced onto that figure's chambers. Each figure is used at most once, which bounds
+  the search without bounding k. Pruning: r_ij divides m_ij on every orbit that closes, an open orbit already longer
+  than m_ij dies, every open chamber must keep a candidate. Finished symbols go through the existing
+  `minimal_image` and `canonical_form`. Two figure kinds so far: vertex stars and full edge figures.
+- **Figures from the vertex data.** All 21 cyclic words with angle sum 360°, then two local tests to a fixpoint (an
+  edge of the star with no valid full edge figure; a face its corners cannot ring) remove exactly 3.7.42, 3.8.24,
+  3.9.18, 3.10.15, 4.5.20 and 5.5.10. The 15 left give 98 valid full edge figures (no overlaps; the far corner of
+  every triangle completable), the same 98 that occur in Galebach's 203. His statement that every valid figure is
+  realized holds.
+- **Krötenheerdt (the engine check).** The vertex kind gives 135: 11, 20, 39, 33, 15, 10, 7 for k = 1 to 7, none at
+  k ≥ 8. 24,471 nodes.
+- **Edge-homogeneous.** The edge kind gives exactly 203, equal to Galebach's list figure set by figure set, symmetry
+  tags (C1, C2, D−, D|, D+) and his three repeated figure sets included, and every k equals the Atlas member's: by k
+  11, 17, 32, 35, 34, 18, 23, 16, 7, 4, 4, 1, 1 for k = 1 to 13, e from 1 to 29. 126,767 nodes, under a second.
+  `lib/classifications.ts` now says so on both classifications. Results, logs, comparison:
+  `experiments/results/homogeneous-2026-11-08/` (README there).
+- **Open: Chavey's 20.** By the definition Galebach gave on Discord (each edge orbit has its own pair of polygons),
+  22 of the 203 are strongly edge-homogeneous (listed in `compare.txt`). Asked him for Chavey's list or definition.
+- ⚑ **The fill order decides everything.** Lowest-numbered open chamber first left 30 or more figures with 35 open
+  chambers in flight, so faces and vertices rarely closed and the divisibility test rarely fired: the 4.6.12 and
+  6^3 starts ran to billions of nodes (one sixteenth of one start passed 12 billion before it was stopped). Filling
+  the open chamber whose face or vertex is nearest to closing (fewest links missing) brought the whole edge search to
+  126,767 nodes; that run and the lowest-first one agree on the 203. Fewest-candidates first (classic fail-first) was
+  the worst of the three: 3^2.4.3.4 went from 0.27 s to over 60 s. Any order is complete, since every candidate of
+  the chosen chamber is branched on.
+- ⚑ The first loop was Python (about 4k nodes/s per process under load); the C++ loop reproduced its node counts
+  exactly on the vertex run and on three edge starts and ran about 100 times faster. With the new order Python would
+  have sufficed, but the loop stays in C++ for the face kind. The work-splitting added for the slow order (parts,
+  nested splits, a resumable task file) was removed once the run took a second.
+- ⚑ Shared machine: AL's Searcher ran three tilesearch engines throughout (load up to 66 on 10 cores); every run here
+  was at nice 10. A stopped `multiprocessing` driver orphans its spawn workers; kill them by parent PID, and in zsh
+  pass PIDs as separate words (`kill $PIDS` with a multi-word string fails).
+- Next, if Galebach wants it: his face-figure-homogeneous tilings (a face plus every face that shares a vertex with
+  it) as a third figure kind; the loop is already kind-agnostic.
+
+## A k = 20 tiling the Searcher could not draw: the develop loop outran its budget (2026-11-08, CC)
+
+- AL's scaled+stars row B4,B12,A12p90 found nothing at k ≤ 19 and one tiling at k = 20 (1.0 s, 40 roots, rooted
+  on the star's required face set, planned at 3.9e5 nodes), and its page said "No period of this tiling was found:
+  faces cover 1.010 periods, not one."
+- The tiling is real: p6m, both periods 9 + 5√3 ≈ 17.66 at 60°, 216 faces a period (1 B12, 2 A12p90, 6 B4, 51
+  squares, 12 hexagons, 144 triangles), V − E + F = 198 − 414 + 216 = 0. The same row rerun with
+  TILESEARCH_CHECK_FORCE/SLACK/CANON/CTX/REQ on gives the same census and a byte-identical certificate, no check
+  firing (`experiments/results/searcher-k20-crosscheck-2026-11-08.log`; a first rerun with every rc4.2 speedup off
+  passed 596M nodes in 14 min and was stopped).
+- ⚑ The bug was in `buildEdgePatch` (`lib/freedraw/edgePatchCore.ts`). With one period found and no cell area to
+  size the second, it jumps to "four times the shortest": radius 14.4 to 146.5, about 207k darts against the
+  Searcher's 80k budget. The walk stopped short, and three retries at 264, 475 and 854 walked the same 80k darts (a
+  wider radius on the same budget covers the same ground). The ragged walk cut 218 faces for 216, hence 1.010.
+  Radius 30 is enough: 8,876 darts, 76 ms.
+- Fix: each attempt caps the next radius at the widest the budget covers, judged by the walk just made
+  (reach·√(budget/placed)·0.9), and a walk that ran out of budget ends the loop with "period larger than the
+  develop budget allows". This tiling now goes 14.4 → 80.6 and draws in 0.5 s. The budget stays 80k: a full walk
+  costs about 9 µs a dart (80k 0.6 s, 400k 3.5 s, 1M 9.7 s) and the run page develops synchronously.
+- The loop is shared with the site's isohedral and pentagon edge shelves: all 100,229 shipped records swept through
+  the committed loop and the new one draw, with the same face count a period on every record, 0 differ
+  (`experiments/results/edgepatch-sweep-2026-11-08*.log`).
+- Regression test with the certificate inline in `tools/searcher/app/src/develop.test.ts`; on the old loop it
+  fails with AL's message. The Searcher was repackaged and swapped in without quitting AL's running app.
+- ⚑ For reading studies: this row was empty for 19 values of k, then had a tiling. "None up to k" says nothing
+  above k, which matters when deciding to drop a face (B8) for showing no results.
+
+## The catalogue's second pass: shelves grow the corpus, labels wait to be read, the sphere's Tegula file waits for the sphere (2026-11-08, CC)
+
+Follow-up to "The whole site benched". CPU profiles of the Edge patterns chip (headed, the profiling build with
+BENCH_SOURCEMAPS=1, helpers in the session scratchpad) put its cost in three places, none of them drawing.
+
+- **Labels nobody had read.** `freedrawToReference` ran a face analysis on each of the ~120,000 eager freedraw
+  patterns to build its `family` label, and `bubbleToReference` aligned every face of the 52,800 bubble patterns for
+  its own: 1.25 s, for text a card shows 25 at a time. Both labels are now lazy (`defineLazy`, the generalised
+  `defineLazyRenderCell` in atlasCodec.ts, non-enumerable like the cell), and `referenceToCatalogue` forwards a lazy
+  label lazily (`isLazy`). The shelf's star-fold and polygon-count facets read tile tokens off the label, and only
+  the Tilings segment shows them, so they no longer run under the other two. Search still reads labels and pays
+  for them on its first keystroke under Edge patterns.
+- **The whole corpus per batch.** Each landing shelf re-sorted every loaded record, re-partitioned the nine cells,
+  rebuilt the tier list and rebuilt the key index (a Map of up to 300k entries; copying one costs 300 to 600 ms
+  here). `_atlas-client.tsx` now keeps a `Corpus` grown by `growCorpus`: the batch is sorted alone and merged into
+  the cells it joins (`mergeCatalogueForDisplay`, tested against the full sort at every split), tiers and the key
+  index are added to. The global `sorted` list is gone; the switch handlers read the target cell's first row.
+- **The grid's scans.** `filtered` classified both records in every comparison of its sort (millions of
+  `decorationOf` calls on a 170k cell); keys are computed once now. Every facet scan re-tested the scope its list
+  had already passed; they use `unscoped` (the filters minus SCOPE_FIELDS, exact because matchesReferenceFilters is
+  one independent test per field), and `inScope` returns the cell list as it is when the scope adds nothing but
+  the cell itself.
+- **Plain cells copied.** A decoration row's cell is the shared empty one, so `referenceToCatalogue` copies it and
+  keeps the lazy accessor for cells that are lazy (100 ms of the Colorings chip).
+- **Tegula on the sphere.** `reference-atlas-tegula-sph.json.gz` (872 rows, 1.03 MB gzipped, the largest file the
+  catalogue fetched on open) loads with the Spherical geometry (`loadTegulaSphAtlas`), or for a link to one of its
+  ids once the base atlas has landed without it (plane and sphere ids share the "tegula-DS" prefix). The Spherical
+  chip reads "–" until it and the polyhedron shelf are in, as Hyperbolic does: before, it read 1,529 against a true
+  1,645. ⚑ The manifest route was not taken: the manifest's loaded-tier key is (class, sub, k) with no geometry, so
+  the plane's Tegula tiers (topological, "", 1 and 2) would cancel the sphere's; and atlasManifest.ts, its
+  generator and the shipped manifest carry another session's uncommitted edge-orbit work.
+
+**Measured.** Edge patterns, main-thread busy in a CPU profile from a fresh page: 3.0 s -> 1.7 s (two runs each,
+interleaved, load average 5 to 9). Colorings: grid 1.54 -> 1.25 s, viewer 1.40 -> 1.35 s. Bench, catalogue only,
+interleaved at 40 ms / 100 Mbps (bench-before-vs-after-2026-11-08-1935): journey steps 52.6 -> 38.5 s summed (-27%),
+INP -18%; Edge patterns TBT 2,176 -> 529 ms (grid) and 2,298 -> 434 ms (viewer); paging and page size ~490 -> 32 ms;
+opening a card 1,588 -> 309 ms; /catalogue 4.06 -> 3.02 MB and ready 1,875 -> 1,687 ms. The bench's viewer Colorings
+step read 169 -> 1,394 ms; the direct profiles above show no added work there, and the step time depends on when
+its 4 MB lands against the settle window.
+
+**Left.** The remaining Edge patterns cost is spread thin: gzip and JSON parse (~200 ms), the lazy accessors
+themselves (~90 ms for ~300k defineProperty calls), and React re-rendering the page shell on each of ~40 commits as
+shelves land. p5 (~280 kB) still loads with the viewer because canvas.tsx draws its overlays through a p5 instance
+even when WebGL draws the tiling; removing it means porting that overlay layer to Canvas 2D. /catalogue CLS is
+0.094 (facet sections appearing as data lands), inside the 0.1 threshold.
+
+## The homogeneous search's symbols in the two classifications (2026-11-08, CC)
+
+AL asked for the search's result to go into the Atlas's Krötenheerdt and edge-homogeneous classifications. The
+"checked" sentences already cited it; this ties it to the records. Each member of both lists now carries its
+Delaney–Dress symbol, and the pairing is made by the record's own symbol: `cellMap` + `minimalBlocks` on the
+record's cell, the path /play uses (`lib/tilings/recordSymbol.ts`), so it does not lean on the search's figure sets.
+
+- **Result.** One to one with equal k on both: the regular shelf's 135 tilings with m = k are exactly the vertex
+  run's 135 symbols, and the 203 placed edge-homogeneous members are exactly the edge run's 203. The figure-set
+  match of 2026-11-06 could not say which of two tilings with the same figures was which (1656/1657 and the two
+  k = 7 pairs); the symbols can, though Galebach's entry numbers for those three pairs stay ambiguous (`same`).
+- **Code.** `scripts/atlas/symbols.ts` (`regularShelf`, `provedOnShelf`: throws on a record whose symbol the search
+  did not find, on two records with one symbol, on a k mismatch). `scripts/classify-krotenheerdt.ts` writes
+  `public/classifications/krotenheerdt.json.gz` (4 KB); `classify-edge-homogeneous.ts --match-only` adds `dsym` to
+  its members and now loads the shelf through `regularShelf`. `formatTegulaSymbol` (beside `parseTegulaSymbol`)
+  writes Delgado-Friedrichs' compressed form; every symbol is read back and compared before it ships. 4.8.8 comes
+  out as `<1.1:3:1 2 3,1 3,2 3:4 8,3>`, the textbook form.
+- **Atlas.** Krötenheerdt is a list now, so the `rule`/`ks` path in `lib/classifications.ts` and the banner's
+  `matching` count are gone. The CSV export adds a `delaney_dress_symbol` column while a classification is chosen
+  (135 and 203 rows, every one with a symbol, checked by downloading both in Playwright).
+- ⚑ **JSX whitespace.** `{c.checked} The CSV export gives⏎each…` rendered "here.The" in the dev build: the leading
+  space of a text run that spans lines was dropped, and Prettier rewrites `{" "}` back into that form. The banner
+  now puts the sentence in a template string.
+- **Strongly edge-homogeneous, cross-checked.** Run straight on the 11-06 shelf scan (23,667 tilings, every one to
+  k = 10), the definition Galebach gave (one edge class per pair of polygons) passes exactly 22, the same tilings as
+  the search's 22, matched by symbol; all at k ≤ 3 (10, 8, 4). None at k ≥ 4 for any k: strongly implies
+  edge-homogeneous, and the 143 of the proven 203 at k ≥ 4 each repeat a polygon pair across edge classes. The 22
+  against Chavey's reported 20 is a question of his definition, which no count can settle.
+- **Strongly edge-homogeneous is a classification now** (AL, 2026-11-09: "we certainly didn't overcount"). 22 members,
+  `public/classifications/strongly-edge-homogeneous.json.gz`, written by `classify-edge-homogeneous.ts --match-only`
+  from the scan's figures; the script fails unless the search's figures give the same tilings (by symbol). Its
+  completeness is the 203's. The banner says Chavey's thesis is reported to list 20 and that the Atlas has not seen
+  it: the archived thesis (web.archive.org) is refused by the fetch tool and the 1989 catalogue by ScienceDirect
+  (403). That catalogue says it covers "tilings which satisfy certain homogeneity criteria", so his list is likely
+  there. A grid of the 22 is `experiments/results/homogeneous-2026-11-08/strongly-edge-homogeneous.png`.
+
+## Face-figure-homogeneous tilings: a large family, and the figure search does not close it (2026-11-09, CC)
+
+Galebach's next idea (Discord, 2026-11-07): tiles with congruent full face figures (the tile and every tile
+sharing a vertex with it) always lie in one symmetry class. Taken with mirror images as the same figure and
+vertex neighbours included, the same conventions as the 203. AL: "now let's focus on the face-homogeneous".
+
+- **Figures.** A third kind in `homogeneous.py`: the p-gon with the star at each corner; s0 and s1 stay inside the
+  face, s2 is searched. From the 15 usable stars: 669 valid full face figures (83 triangles, 90 squares, 111
+  hexagons, 1 octagon, 384 dodecagons). Neighbours across an edge must agree on their polygons (same polygon or
+  disjoint), which cut the links from 1,012,319 to 200,749; symmetric, no flag left without one.
+- **The shelf, read directly** (each record's own symbol, the face figures walked off it; 30,374 tilings,
+  `experiments/results/homogeneous-2026-11-09/shelf-scan.log`): 1,587 face-figure-homogeneous, 1,441 of them in
+  the complete part k ≤ 10: 11, 19, 51, 85, 116, 146, 202, 233, 280, 298. The count rises at every k, and the
+  #2938 vertex-type board alone has 9 to 20 at each k up to 22. Finite (each figure at most once, so at most 669
+  face classes) but nothing like the 203. At k = 2 only t2020 fails (two triangle classes, one figure).
+- **The search does not finish.** 477 of 669 starts in 17 s, 494 in 50 min, 71 tilings; the low triangle starts
+  ran to 5e8 nodes each. Knuth's estimator (`face-knuth-estimate.cpp`; calibrated on start 57, 8.2e6 estimated
+  against 14.6e6 actual) puts them at 1e8 to 1e10 by the mean with single walks of 1e12 to 1e14, so the mean is a
+  floor. Stopped at 01:18.
+- ⚑ **Why.** Placing a face commits its whole figure, so its far corners are fixed before anything constrains
+  them: each new hexagon or triangle has 25 to 56 valid figures, and patches of all-distinct figures grow with no
+  reuse (a traced walk: open chambers 6, 16, 24 ... 64, no figure repeated). A stricter forward check (a new
+  figure only where the corner's ring has room, an existing partner only if the gluing passes ok()) did not move
+  the estimates.
+- ⚑ **What might.** Late commitment: grow by vertex stars, as the Krötenheerdt search does, and when a face's
+  corners are all known compare its figure with the other face classes, merging two classes whose figures are
+  equal. The bound (at most one class per figure) survives and the branching is per corner, not per face.
+  Untested. The face kind stays in `homogeneous.py` as its base (figures, links, reading).
+- **Shipped to k = 10** (AL: "Ship up until k=10, where the shelf is complete for the regular palette"). A fourth
+  classification, `face-homogeneous`, 1,441 members: `scripts/classify-face-homogeneous.ts` writes
+  `public/classifications/face-homogeneous.json.gz`. It fails unless the shelf holds A068599's count at every
+  k ≤ 10 and each record's symbol has k vertex orbits, then reads the face figures in TS (the reading of
+  `face-check.py`, ported); its 1,441 ids equal the Python reading's, id for id. The admission rule in
+  `lib/classifications.ts` now also takes an exact property checked on every tiling of a shelf complete to some k,
+  with that k in the title. The 146 above k = 10 stay on the shelf, outside the list. `rowSymbol` became
+  `canonicalSymbol` (any canonical form, the read-back check inside it).
+
+## Quick setup's edge presets keep side lengths; Schwarz triangles in Add family (2026-11-09, CC)
+
+AL built the (2,4,4) Schwarz edge-system board in the Searcher: the half square drawn (legs plain, the long side
+typed `Esqrt2`), then Quick setup with "Drawn and hidden". The faces came back as equilateral triangles and the
+vertices as hyperbolic figures. Cause: `plainOf` (corners.ts) took every edge type off before the preset typed
+the sides, `Esqrt2` with the styles, so the triangle had three unit sides and angles 45/90/45, a face that closes
+only in the hyperbolic plane. `colorize` went through the same `plainOf` and had the same bug.
+
+- **Fix.** `plainOf` keeps a side's length: an unstyled type of length ≠ 1 stays, a styled one goes back to its
+  length's own type. `decorate` gives each length the preset's types of its own, `Esqrt2_Ed` / `Esqrt2_Eu`
+  (length and style on one edge line), glued like to like within the length; `plainOf` reads `_Ed` back, so
+  running Quick setup twice gives the same board. Vertex typing became a depth-first walk that drops an order as
+  soon as a corner it settles is one no face has (it enumerates the same orders, in the same order, for boards
+  without lengths). Colourings now carry the length types' gluing lines. The variants card draws its polygon
+  from `plainOf`, so the √2 side shows there too.
+- **Check against the atlas** (`edges.test.ts`): the half square, drawn and hidden sides, no loose ends, the
+  vertices cut to the board's two kinds (four right angles, eight 45° corners), run through the engine:
+  0 / 111 / 283 for k = 1..3, the sch244 shelf's 111 and 283 exactly, every tiling drawn in the plane. With loose
+  ends it is 151 / 354, so Marek's Schwarz edge systems have none, like his square-grid ones. ⚑ Quick setup lists
+  every vertex that closes (201 here), which is all tilings by the triangle; the Schwarz board is the two kinds.
+- **Schwarz triangles family.** A fifth tab in Add family: (p,q,r), corners 180°/p, 180°/q, 180°/r, built by
+  `faceOfCorners` through `withMadeFace` (the declare-and-glue tail of `withDrawnFace`, now shared). Plane sides
+  exact (1, √2 for (2,4,4); 1, √3, 2 for (2,3,6)); curved sides by the law of cosines for angles, to ten places,
+  named for the corner across (`E237_2`). The (2,4,4) face is the hand-drawn half square up to rotation.
+  ⚑ Off the plane such a face searches but is not drawn: develop.ts draws curved faces of set angles only with
+  equal sides. Quick setup no longer needs an edge length when every corner's angle is set.
+- **Stars tab.** The "Regular polygons" checkbox is gone (AL: the Regular polygons tab covers them), and with it
+  the `regular` flag of the system family.
+
+## Drawn and hidden sides in the disk; digons against edge types, measured (2026-11-09, CC)
+
+AL ran the drawn/hidden preset on the {4,5} grid (55 / 2,559 at k = 1, 2) and the run page drew colourings: one
+hue per square variant, no edge. `prepare` (tilings.tsx) sent a hyperbolic board to the disk's edge mode only
+when it had digons; a typed board's squares differ only by their corner names, so `isColoring` claimed it.
+Fix: `hyperbolicDarts` gives a board that marks edges by type a per-dart `drawn` flag (the predicate the plane
+already used, now `dartsDrawn` in develop.ts, shared), the field the Schwarz records carry and hyperbolicWalk.ts
+already reads; `prepare` draws such darts in edge mode, and the disk's edge mode gets the Grid toggle (the faint
+scaffold) the plane has. Test: the {4,5} board through the engine, 55 at k = 1, every tiling reaching the disk
+with its edges marked (the old code fails it).
+
+AL asked whether digons and drawn/hidden edge types are the same thing twice. Measured on the same objects, no
+loose ends, one engine, 8 threads (`experiments/results/edge-encodings-2026-11-09.log`; the machine at load ~33):
+
+- Square grid, k = 1..6: both 13 / 153 / 1,254 / 7,848 / 43,792 / 279,905 (Marek's digon run). Digons 5.4 s and
+  5.4 s, 45 and 37 MB; edge types 9.9 s and 7.0 s, 55 and 52 MB.
+- {4,5}, k = 1..3: both 55 / 2,559 / 89,147. Digons 0.84 s, 33 MB; edge types 1.57 s, 42 MB.
+- The half square ((2,4,4)) with Quick setup's one digon: 0 / 15 / 22 against the edge types' 0 / 111 / 283 (the
+  sch244 shelf). `sidesMeet` lets the digon only into gaps between plain sides, so it never marks a √2 side.
+
+So on unit-edge boards they are the same objects (same counts), digons about 1.3-1.8× faster and lighter; but
+digons as written mark one length only, and edge types also carry lengths and bumps/bites. Not profiled: the
+likely cost of edge types is a midpoint vertex per edge for the engine to close, and three times the faces.
+⚑ Open, AL's call: drop the digon option from Quick setup (the engine and the drawing keep reading digon boards).
+
+⚑ Reinstall: with the app running, `ditto` into `~/Applications` failed partway ("Operation not permitted",
+9.9 MB of 261 MB written). The partial bundle was removed and the fallback moved back; then the build was copied
+to a staging folder and moved in with one `mv`, which worked. The asar matched the build byte for byte.
+
+## Quick setup: one way to mark edges (2026-11-09, CC)
+
+AL's call on the measurement above: edge types stay, the digon mode goes. Quick setup's "Edge systems (digons)"
+tab is removed, and so is Edge types' "The board's own": with no preset it kept the board's edge lines as written
+and glued each to itself, which is what Tilings already does with a board's edge types (same `b`, `target`, glue
+and vertex typing in the code). A board typed before opens on Edge types with its own preset (read off its sides'
+styles); one with lengths only, on Tilings. `decorate` always takes a preset now. `arrangements` (board.ts) lost
+its digon placing and `loose` (no caller left), the face editor its Digon side option, whose hint said marked
+edges are written as digons. The engine and the drawing still read digon boards (Marek's, and older runs);
+Quick setup on one leaves the digon out with a note pointing to Edge types. Net about −47 lines.
+
+⚑ Reinstall, with the app running: deleting `The Tiling Searcher-previous.app` removed the bundle the open app
+had been launched from (it was moved there by the 11:28 install, and the app was not restarted between). No
+search was running and the app kept its open files, but the step that prevents this is CLAUDE.md's: quit first,
+or when a search must keep running, keep the fallback the running app came from until it restarts.
+
+## Star hybrids in the atlas, and proven (2026-11-09, CC)
+
+AL ran all 41 star-hybrid studies; this session developed them into the hyp-poly shelf and certified the
+coincidences. Method and limits: `experiments/star-hybrid/README.md` ("Exactness", "In the atlas").
+
+- **Developer.** `develop_ai1.py --study <study folder>`: the board (edge and point) from the study's header; per row
+  and k the newest run that finished there (`stage_study`; a k no finished run reaches is named and left out). Shared
+  path generalized, not forked: `quotient_faces` accepts a face alternating a star's point and dent (`STARS` in
+  develop_hyp_edges.py, beside `FACE_SIZES`); a star is the size class -n (`hypPolyTileSet` prints `n*`); dent fills do
+  not count toward k (`counted`); certificates may be gzipped (`fd.open_text`). Darts ship `starKind` and one `point`
+  per record, and `hypPolyToReference` rebuilds the turns with the star shelf's `starTurns` (exported from
+  hypStarFamily.ts); explicit float turns cost 81 bytes a tiling against 66.
+- **Shipped.** 32 boards under Star polygons › Hybrid boards (`star: true`, manifest class `star`), 2,682,012 tilings,
+  0 develop failures, every census matched, 54 MB gzipped. Credit "The Tiling Searcher (star hybrid boards), 2026-11"
+  (every hyp-poly record had been credited to Marek, which is wrong for these). Tests (hyp-poly shelf, manifest,
+  islamic gate, hyp-half) and `pnpm build` pass; checked on screen at 0.9144 (6*), 2.2484 (3*), 1.8551 (9*).
+- **Proven.** `certify.py`: the star condition as an SO(2,1) trace identity in full angles only, decided in
+  `exact.Edge`'s algebra. 39 of 41 certified in 2 s (cosh s rational on 3 edges, quadratic on 23); negative controls
+  fail. The two not certified need half-angles and ship nothing that uses the coincidence.
+
+⚑ Four boards are labelled "k = 5 partial": rows stopped at the Searcher's 1-minute limit. Completing them is cheap to
+compute and impossible to ship as records: the 2.2484 rows alone are about 286 and 143 million tilings
+(tileestimate), several GB. The two 2.1226 boards would add about 3.5 million.
+⚑ Budget: with this drop and the uncommitted 2026-11-05 hybrid drop, `public/` is about 677 MB against 650. AL to
+decide (raise, as on 2026-11-05, or a delivery change); nothing is committed.
+⚑ First apeirogon run failed on all 12 apeirogon boards: the darts check computed the dent for every corner kind
+eagerly, star_dent(0) on an apeirogon. Fixed (only the corner's own kind is computed) and rerun.
+
+## Black on blue, and an accessibility check (2026-11-09, CC)
+
+Primary buttons rendered their label black on the accent blue in light mode (3.07:1), only in the working copy:
+`cn()` ran tailwind-merge with its stock config, which reads `text-ui`, `text-small` and the other type roles as
+colours, so `text-accent-contrast text-ui` kept only the size. The design-system migration (`text-sm` → `text-ui`)
+is what exposed it; production still has `text-sm`, which the merge knows. The same bug dropped a size wherever a
+colour followed it, about 50 `cn()` calls in both apps (tabs, dropdowns, inputs, tooltips, kbd, nav), so those
+controls rendered at an inherited, larger size; they now take their designed role. Dark mode hid it because the
+inherited ink is light. `lib/utils/cn.ts` registers the theme's scales, `cn.test.ts` fails when `tailwind.css`
+gains a name the merge does not know, and the merge no longer lets a later size delete a `leading-*` (Tailwind 4
+keeps the leading in any order). Design decision D16.
+
+`pnpm a11y` (`scripts/a11y-check.mjs`): axe-core 4.11 in Playwright over every route, light and dark, desktop and
+phone, all WCAG 2.2 A/AA rules, grouped by colour pair and component. DOM text only; canvas labels are not seen.
+Production run (168 page loads, reports in `experiments/results/a11y-production-2026-11-09*.md`; `/catalogue` is
+404 there, so the catalogue was checked at `/play` and `/library`):
+- Muted ink on the segmented-control track, 3.99:1 in light on desktop: about 340 elements, the largest group. The
+  phone already uses neutral-550 there (5.1:1); the desktop keeps the lighter value by choice (themed.css).
+- Muted ink on the page, 4.47:1 in light on desktop: about 130 elements (article indexes, captions, /updates).
+- Disabled ink used for text that is not disabled, 2.3 to 2.5:1: /history's empty state, the coloring ids on
+  /library cards; in the working copy also the micro labels on /catalogue/about/prototiles and vertex-configurations.
+- Text dimmed by opacity: /defense's timer 1.9:1; in the working copy the browse tree's counts (opacity-60) 2.27:1.
+- Dark: accent links 4.38:1 on the page, white on the accent fill 4.42:1 on desktop (the phone already darkens it).
+- Other rules: about 150 article figure SVGs with role img and no name, 96 image links without text on /updates,
+  an unnamed select on /polychora, nested interactive rows in four sidebars, unfocusable scroll regions (KaTeX,
+  wide tables), small info buttons in /library. The 404 page stays light in dark mode.
+⚑ Open, AL's call: the desktop muted value (one token) and the disabled-as-text uses. None fixed here.
+
+## Colourings with a side of another length drew in one colour (2026-11-09, CC)
+
+AL's `224_coloring` (the half square, three colours, every colour required: 0 / 162 at k ≤ 2) drew every tiling in
+one colour, though each certificate's corners carried all three letters. Two bugs in `flatCellWithOverlays`
+(develop.ts), both latent until colourings kept their side lengths this morning:
+
+- The walk round each face, which reads off its colour, stepped by the length of the dart it turned from, not of
+  the dart it then crossed (flatDartWalk.ts: a dart's length is its own edge's). Uniform sides hid it. With a √2
+  side no face closed, so none found its colour and all took the first. (My first guess, that the face centre
+  moved because the side's middle point sat in one list only, was wrong: both lists hold it.)
+- Faces were matched to their colour by a rounded key of the centre's place in the period. In 2 of the 162
+  (chiral, k = 2) centres sit on 1/32 of the period, exactly where the 1e-4 rounding flips, so one face filed
+  under two keys and others under none. Matched within 1e-6 now. ⚑ The vertex-orbit lookup (`orbitAt`, same
+  function) uses the same rounded key and can miss a vertex the same way; not seen, not fixed.
+
+Test: the engine-backed colouring runs now fail a tiling whose drawing shows a different number of colours than
+its certificate's letters; the half square in three colours is 0 / 162 with all 162 drawn in their colours.
+`colored()` adds the gluing lines of length types, as Quick setup does.
+
+## The accessibility check on the Searcher (2026-11-09, CC)
+
+`pnpm a11y --app <the app's binary>` checks the Searcher: a second copy with its own `TILESEARCH_DATA` folder and
+the installed app's settings (queue and interrupted runs cleared, so nothing resumes), driven over a DevTools port
+through 11 screens in both themes (`SEARCHER_SCREENS`: the board's modes, menus and dialogs, Settings, the disk map,
+an unfinished and a finished run). It clicks navigation and selection only.
+
+The first pass reported no contrast failures at all, which was false. axe-core 4.11 cannot parse the
+`oklab(0.9925 -2.18557e-11 0.0005)` Chromium computes for the sheet's `color-mix(in oklab, …)` background; the rule
+throws, reports one "incomplete" node and drops every other result on the page. axe 4.14 parses it. The script now
+lists any page where a rule errored as not fully checked (exit 1), and reports the text axe could not measure
+(gradients, overlaps, SVG text) as its own section instead of counting it as passing. The website's production
+run was repeated on 4.14: no rule errors, the same findings (515 elements).
+
+Searcher findings (`experiments/results/a11y-searcher-2026-11-09.md`): the same two muted-ink groups as the site
+(49 elements at 3.99:1 on the segmented track, 96 at 4.47:1 on the page, light); white on the accent fill 4.42:1
+in dark (Run search, Resume); disabled ink as a readable count, 2.2 to 2.3:1. Other rules: the disk map's 242
+tiles under 24px and 26 whose accessible name drops the visible size, the board's stepper buttons, nested
+interactive rows. 303 elements could not be measured (the disk map's gradients, SVG labels, overlapping text).
+
+## Freedraw colours: the tile palette in both themes, and shapes in the disk (2026-11-09, CC)
+
+AL: the plane's freedraw fills were dark in the dark theme while tilings keep one palette, and the disk filled
+every edge system with one hue, so its tiles' shapes did not read. Both renderers are shared by the atlas and the
+Searcher.
+
+- **The plane.** `orbitColour` and `rankColour` (lib/freedraw/render.ts) and their RGB twins in
+  lib/render/periodic/edges.ts (the atlas's WebGL path) fill from `tileFill` / `tileHueRgb01`, the palette every
+  tiling uses, at the same golden-angle hues; a filled pattern draws with the light theme's ink and scaffold in
+  either theme (`drawFreedraw`, `edgesPeriodicCell`). A pattern with no fill (bare lines) still follows the theme.
+- **The disk.** lib/render/hypEdgeShapes.ts: faces join across undrawn gaps (one edge, or a digon's two sides:
+  drawn by the record's `drawn` flag, else by the digon), each tile's boundary is walked and developed on the
+  hyperboloid until it closes (a finite tile) or does not (infinite, known by its period), and tiles whose
+  boundary words agree up to turning and mirroring share a hue (`shapeClassHue`, the plane's walk). `buildWalk`
+  puts it in the walk's colour slot for every edge system, so the Searcher, the hyperbolic edge shelf and the
+  hyperbolic Schwarz boards all get it; the shader's single `EDGE_PATTERN_HUE` is gone. An all-drawn record is
+  one colour per base polygon shape, not a mosaic (the reason the one hue was chosen).
+- First cut missed the Schwarz records: every edge carries a digon there and `drawn` says which are drawn, so
+  treating a digon as drawn merged nothing (hs237-3-00002, one tile orbit, came out in two colours). Test
+  (hypEdgeShapes.test.ts) on six shipped shards: one tile orbit, one hue; never more hues than orbits.
+- ⚑ Installing the Searcher while AL's app ran: its new search (12:44) had started its engine from the bundle the
+  install replaced; the processes kept running (a running program's file outlives its directory entry). The open
+  app ran from `-previous`, which was kept.
+
+## One colour per tile shape across a board (2026-11-09, CC)
+
+AL: within a board, a shape should keep its colour in every tiling (the square always A, a line of three always
+B, a strip C). A board has far more shapes than the eye has colours (measured on shipped shards: e3448 k = 5,
+218 tilings, 84 shapes, at most 5 in one tiling, the two commonest in 186 and 120 tilings; e33355 k = 4, 55
+shapes), so colours must repeat; AL chose a table per board ranked by frequency, the commonest shapes getting the
+golden-angle hues that sit furthest apart.
+
+- **One shape key for both geometries** (lib/render/tileShapes.ts, was hypEdgeShapes.ts): the boundary word up
+  to turning and mirroring, closure checked on the hyperboloid or in the plane. A plane patch is read as darts
+  (`patchShapeIds`: a half-edge per ring side, rings turned anticlockwise) and keyed by the same `dartShapeIds`.
+  Letters are rounded to 0.01° and 1e-4 (shipped patches carry 1e-6 noise, and 120° = 2.0943951 rad flipped at
+  the fifth decimal), and the closure walk runs on the rounded letters, so congruent tiles get identical words.
+- **The plane's old key was weaker:** `classifyPatchFaces` compares vertex point sets, and fd4436-3-00151's
+  tiles of 10 and 7 cells share one. The test holds the new key to the old where the old can tell (a split it
+  makes is backed by different cell counts); its point sets also read a strip by the tiling's period, so the same
+  strip took different keys in different tilings. The lattice grids (square, triangle) still use the old key.
+- **Ranks:** `rankShapes` (the shapes in most tilings first, ties by first sight); `shapeClasses` maps ids to
+  classes by the table, and a shape the table lacks takes a later hue by its id, so it too is stable.
+- **The Searcher:** `useShapeRanks` (tilings.tsx) reads the first 400 tilings in k order (2 MB of text), one per
+  frame, and ranks them; a finished run's table is saved as shapes.json in its folder (new `saveShapes` call,
+  limited to the output folder) and read back from then on. The disk gets it through `HypDiskTiling.shapeRanks` and
+  `buildWalk`, the plane through `FreedrawStyle.shapeRanks` (ParametricEdgesCanvas, FreedrawThumbnail).
+- ⚑ **The atlas is not done:** its shelves and pages pass no table yet, so they keep per-tiling colours (with the
+  new key on patch grids and in the disk). It needs a table per board from that board's records, and the square
+  and triangle grids moved onto the boundary-word key (they keep a lattice, not a patch).
+
+## Polyforms off the plane draw; Schwarz triangle polyforms (2026-11-09, CC)
+
+Marek (Discord, 9 November) tried pentominoes on {4,5} and nothing drew; Quick setup called the board plane; the
+Add family previews showed blue circles and one hourglass; he asked for grid lines inside hyperbolic polyforms and
+for polyforms of Schwarz triangles ((2,3,7) gave him his best patterns).
+
+- **The drawing bug was the edge solver.** `faceEdge` took the deepest sample of the closure miss. A {4,5}
+  pentomino's area is 5 × 72° = 360°, so its turns add up to 720°: the walk also closes in the plane, and its miss
+  falls to nothing as the side shrinks. The deepest sample sat at the smallest side, was rejected, and every face
+  came back null. Any polyform whose area is a multiple of 360° failed ({6,4} dominoes, {3,7} 14-iamonds).
+  `faceEdges` now refines every dip and returns all the sides a face closes at.
+- **One angle word can close at two sides**, both simple polygons: (90 90 90 180) ×4 is four pentagons of {5,4}
+  round a vertex and four hexagons of {6,4}. `geometry` takes the shortest side every face shares. Checked on 333
+  faces of ten grids: every face closes at its grid's edge; before the shared-side rule three did not.
+- **Quick setup** opens on the geometry the faces fix when every corner is set (`setFacesGeometry`: a polygon's
+  corners add up to (n − 2)·180° in the plane only) and says why; the vertices are the same in all three. Its
+  corner limit starts at what the smallest set corner needs (a (2,3,7) triangle's 180°/7 takes 14).
+- **Pictures.** `polyforms(…, draw)` lays each polyform's triangles out by reflection in its geometry (Poincaré
+  disk, the sphere seen stereographically) with its cells' sides inside; the modal draws those. Board face cards
+  draw a face of set angles that closes only off the plane in the disk, at the side the tilings use.
+- **Schwarz triangle polyforms.** The Schwarz family is now the polyforms of the triangle's grid (n = 1 the
+  triangle), each side typed by its length (`schwarzSides`); `withSchwarz` is gone and its test passes unchanged.
+  Off the plane `stepsOf` walks a typed side at its own length and `hyperbolicDarts` passes `elen`, so (2,3,7)
+  boards draw. Engine: the triangle finds its reflection tiling at k = 3 in 0.23 s; dominoes 2 tilings at k = 2;
+  (2,4,4) dominoes 4 at k = 1 and 19 at k = 2.
+- ⚑ A face whose angles also close in the plane by crossing itself (a pentagram, 36° ×5) is drawn as the
+  hyperbolic polygon those angles make ({5,10}); before, such a board drew nothing. Its card stays a pentagram
+  unless another face of the board closes only off the plane. Angles alone cannot tell the two apart.
+- ⚑ Not done: grid lines inside polyforms in the tilings themselves (a face carries no cells); polyforms on
+  mixed vertices (3.4.6.4 and the like); the face-first search Marek says these want.
+- About +600/−130 lines across polyform.ts, develop.ts, figures.tsx, family*.ts, corners.ts, editor.tsx and
+  tests: two features (pictures, Schwarz polyforms) and the typed-length walk off the plane.
+- ⚑ **Follow-up, same day: Quick setup froze** on AL's 5-cell (2,3,7) board. Opening on the hyperbolic plane (new,
+  above) ran `seedWords`, which tried every multiset of up to 14 of the board's 15 corners for an edge to solve
+  (some 10⁸) though no set angle fixes one. It now returns at once when no corner follows the edge, solves only
+  words with such a corner, and prunes a word whose set corners already reach 360°; capped at 2·10⁶ nodes. Driven
+  in the app (Playwright, own data folder): Quick setup opens in 0.13 s with 554 vertices. Reinstalled 14:10.
+
+### 2026-11-09 — Stars get their own arc of the wheel (plane, disk, Searcher icons)
+
+- **The bug.** AL, on a hyperbolic star hybrid: "this hexagon and 6-pointed star have the same color". The disk's
+  walk keyed a star face by its point count and the shader put that on the polygon ramp, so every n-pointed star
+  in the disk was the n-gon's colour. On AL's 47 star-hybrid study boards, 32 had their star exactly on one of the
+  board's polygons.
+- **Moving the disk onto the plane's `starHue` was not enough.** That ramp ran 325° down to 25° across the whole
+  wheel and crossed the polygon ramp: on the same 47 boards six stars landed within 4° of another polygon (ten-
+  and eleven-pointed stars on the pentagon, six-pointed ones on the 12-gon), and in the plane an eight-pointed
+  star sat 5° from the octagon.
+- **The rule now** (`starHue`, lib/utils/renderTiling.ts): stars take 240°–320°, which the polygon ramp reaches
+  only past 13 sides, as the sphere's stars already do (sphStar.ts). Log-spaced by points, 3 at 320° down to 12 at
+  240°; the apex angle nudges same-n stars apart within ±5°. Downward because one board pairs a twelve-pointed
+  star with 24-gons (325°); upward, as the sphere runs, put them 5° apart. Closest star-to-polygon gap on the 47
+  boards: 19° (a twelve-pointed star by the 12-gon); neighbouring polygons on the ramp are 14–15° apart.
+- The disk's walk hands the shader `starHue(points, tip angle)` as a place on the polygon ramp, as it already did
+  for flat-cornered faces. One function for the plane, the disk and the Searcher's tile icons, so the icons
+  needed no geometry test (a board cannot say whether its star is hyperbolic: the dent is left free).
+- ⚑ Every plane star tile in the atlas changes colour with this (6-stars were blue, 12-stars orange; now all
+  violet to magenta). The sphere keeps its own {n/d} arc, upward in n, so a five-pointed star is 258° there and
+  291° in the plane.
+- ⚑ **Same day: the arc is reverted; `starHue` is back as it was.** Checked against AL's plane scaled+stars study
+  (`results/euclidean/tilings/scaled+stars-20261108-003728`: A3–A12, scaled B3–B12, and ten stars 3*30 to 12*120,
+  rows that hold two 12-stars of different sharpness): with the ±5° nudge every same-n pair landed 2.5–7.5° apart,
+  ten pairs under 8° where the old rule has four, and the scaled shelf already uses 240°–320° (B12 at 314°, an
+  18-gon near 280°). No fixed hue rule keeps 19 faces of one board apart (360/19 is 19°). What stays: the disk
+  takes `starHue(points, tip angle)`, the plane's own ramp and the Searcher icons' already, so a star is no
+  longer its n-gon's colour. Measured on the 47 hyperbolic study boards: 32 had the star on a polygon of the
+  board (0°); now none do, but five sit 2–4° from another polygon (10- and 11-pointed stars by the pentagon,
+  6-pointed ones by the 12-gon; three of the five were far apart before), and the 8-pointed star is 12° from
+  the octagon. Separating those needs colours chosen per board.
+- AL chose the fixed rule over per-board star colours (2026-11-09); where a star still clashes, By shape gives each
+  board face its own hue. Driven in the app: the 6-pointed star of `2.5533737-6star-6.73deg` A6 is now light blue
+  (200°) by the green hexagons, as its tile icon already was. 633 tests pass; site build clean. Code delta for the
+  round: about +14/−7 (hyperbolicWalk.ts, two shader comments). Searcher reinstalled 14:25 by staging and renaming,
+  as AL had the 14:10 build open (no engine running); it stays the fallback.
+
+## Star hybrids, the wider search (2026-11-09, CC)
+
+AL: start the wider search. Two of its three axes done; details and tables in `experiments/star-hybrid/README.md`.
+
+- **Unpinned hybrids** (`sieve_free.py`): every crossing pair's rigid points on a 600-point edge grid, refined and
+  clustered; a point two pairs share is a candidate. 1,849,800 rigid points in the valence-5 box, 1,119 shared, of
+  which 705 are affinely dependent lines (rank 2: one line the mean of the others, meeting at every rigid point of the
+  pair), 360 at a regular vertex, 46 capped, 8 unpinned. `certify.py` now certifies without a vertex (pair solved at 220
+  digits, LLL candidates for cosh s accepted only by the exact checks): 6 certified, 2 float near misses (1.6e-10,
+  2e-12). Tilings needing the coincidence on 3 of the 6: 3* at 0.8712 (2), 3* at 1.5709 (12), 7* at 2.1408 (92,402 at
+  k = 4). All 6 are paused studies.
+- **Bigger box** (pinned, valence 6): 105 hybrids, the 41 among them; 80 certified, 25 need half-angles (determinant
+  ±2 pairs only). The 64 new, engine k <= 5 at 90 s a board: 40 with tilings needing the coincidence (629 at k = 2,
+  51,192 at k = 3, 1,470,461 at k = 4; k = 5 past 5.9 million and capped on 21 boards), 16 with star tilings only, 8
+  with none. 63 new paused studies (one is the {3,12}-edge 6* already there as unpinned); 110 studies in all.
+- **Two star types**: not started. Inside the existing shelf's box (engine, valence 5, k <= 2) there is none; the
+  sieve would face ~10^8 combinations per edge, so the engine, run further, is the tool.
+
+⚑ The pinned sieve set regular hybrid edges aside, so its valence-5 count was 41 where the box holds 60: 19 hybrids at
+Marek's a1, a2, af1, af2, af4, 1247 (five), 1.0905, 1.5286, 1.6629 and 1.7627 edges were missed. Each such edge is now
+scanned once, every vertex at it in the identity test. The README had named the set-aside; the count still read as
+complete for the box and was not.
+⚑ The unpinned sieve first called 76 points for 6* alone hybrids: three lines through a point, but one the mean of the
+other two. The affine rank test (>= 3) leaves 3.
+⚑ Volume: the 40 productive new boards hold ~1.5 million tilings to k = 4 and several million more at k = 5. With the
+2026-11-09 drop already 27 MB over the 650 MB budget, shipping them is a delivery decision for AL.
+
+## Polyforms of a board: cells from its faces, the rule from its vertex lines (2026-11-09, CC)
+
+Marek (Discord, 9 November): triangle-square polyforms "based on 3⁶, 4⁴ and 3.3.3.4.4 at once", which would drop
+corners of three squares and a triangle or a square and four triangles (330°, nothing fills the 30°); his lines
+were sets (permutations on). AL proposed defining the system by its polygons alone, with any leftover angle that
+is a sum of theirs. That rule cannot pick a subset of vertices, nor express Marek's Schwarz rule (only like
+corners meet inside a polyform), and it admits sums no tiling uses (3.8.24). So the rule is the board's vertex
+lines, and "any set of corners that closes" is only the default for a board that has none.
+
+- **boardforms.ts.** A patch grows one face at a time along a free edge. Each placement is laid out (the plane, or
+  the hyperboloid for set angles that close only there), every corner seated round its point, overlaps at a
+  point refused, every new face tested against the others in the plane or Beltrami–Klein (geodesics straight):
+  without a grid, two arms can meet far apart, the flaw polyform.ts was built to avoid. Every touched point must
+  still fit a vertex line, in place as a word or, as a set, with each gap filled exactly by the corners left.
+  Patches are named by their gluing (breadth first from every start of a largest face, both orientations).
+- **Checked:** one face and one line give the grids back: polyominoes 1…108 (107 without holes), polyiamonds to
+  66, polyhexes 82/81, {4,5} and {3,7} equal polyform.ts's grid counts. Marek's mixture: 2, 3, 9, 39, 180, 974,
+  5,514 (5,501 disks); the 9 by hand.
+- **The dialog** has a "From this board" tab (cells, which faces, the rule in force). It grows a slice at a time
+  (`growing` is a generator; `growAsync` runs it 12 ms at a time), so the window stays live and shows a count;
+  7 cells about 2 s idle (5 s at load 48). A quadratic dedupe of outlines had frozen it after growing: fixed.
+- ⚑ Not yet: sides typed by length (Laves tiles, Schwarz triangles: their grid generator covers them), the sphere.
+- About +620 lines (boardforms.ts 450 and its test 110, the tab 60): a new feature; withOutlines factored out.
+
+## Star hybrids with two star types, first slice (2026-11-09, CC)
+
+AL: start on two star types. With stars A and B, four lines whose star parts are independent make P_A, D_A, P_B, D_B
+regular-angle functions of the edge, and each star needs its own dent: two conditions on one edge. First slice: the
+four lines split into a crossing pair per star, i.e. rigid points of two stars at one edge. Method and tables:
+`experiments/star-hybrid/README.md` ("Two star types").
+
+- `sieve_free.py --dump` saves every refined rigid point (1,847,800); `sieve_two.py` pools them across stars, sets aside
+  those at a regular vertex's edge, checks the 2,294 two-type groups at 60 digits: 2,040 notched-identity pairs, 38 float
+  only, 216 left. `structural.py` (perturb a tile both stars share, see whether the edges move together) finds 194 more
+  structural: chiefly a 3*–5* family near s = 1.5 whose two star conditions are one curve in the shared angle. 22 remain.
+- `certify.py` `certify_stars`: 15 of 22 proven at one algebraic edge; 3 need half-angles; 4 pass no polynomial of degree
+  <= 24 (verified to 45 digits).
+- `star_board.py` takes several stars now (corner keys P, D, P1, D1, ...; one `require face` per star; one-star boards
+  byte-identical, checked on four records). Engine k <= 5: 10 boards with tilings needing both stars' coincidence, the
+  largest 4* + 4* at the {8,6} edge (640,590 at k = 5). All 22 are paused studies; 132 in the folder.
+
+⚑ sieve_two lists a star once per pair that found it; the first two-star boards treated three listings of one 6* (same
+point) as three star types, and the 6* + 6* board at 0.6090 came out "no tiling". `stars_of` merges by (size, point);
+the board has 7 hybrid tilings.
+⚑ Second slice not searched: lines mixing both stars' corners. Anchoring on each rigid point of A and scanning B there is
+about six CPU-days; the engine is the tool for it.
+⚑ None of this ships yet: the two-star records need `develop_ai1.py --study` to take several stars (STARS already allows
+it; the size class -n and the record's single `point` do not) and the storage budget question stands.
+
+## Shipped data moves from gzip to brotli (2026-11-09, CC)
+
+AL asked how to deal with the `public/` budget (650 MB, CLAUDE.md) before k = 17 and 18 of the regular palette
+arrive. Measured first: with every in-flight file counted, `public/` was already 693 MB, 483 MB of it
+`hyperbolic-poly` (172 MB untracked, from the hybrid drop). The regular shelf to k = 16 is about 33 MB.
+
+- **Why brotli.** Gzip's 32 KB window cannot see repeats between records far apart in a file; brotli with a 16 MB
+  window (lgwin 24) can. On `hyperbolic-poly/hp18-k17` (53 MB of JSON) the shipped gzip is 3.2 MB, brotli q9 1.7 MB,
+  q10 1.5 MB, q11 1.3 MB; xz -9e 1.26 MB and zstd -19 --long 1.42 MB are no better and no browser decodes them.
+  Speed decides the level: q11 ran at 0.2 MB/s on the loaded machine (about 14 CPU-hours for the 10 GB of JSON in
+  `public/`), q10 at 1 MB/s, q9 at 13 MB/s. The writers use q10.
+- **What a database would not fix.** The shelves are immutable and read whole; Postgres compresses per value, not
+  across records, and Supabase's free database is 500 MB. The real costs are the copy of `public/` in every kept
+  deployment and every shard version kept forever in git (pack 784 MB). The structural fix is object storage (R2
+  behind a custom domain; AL bought thetilingatlas.com), with brotli first.
+- **Reader.** `shardBody` decodes `.json.br`: `DecompressionStream("brotli")` where the runtime has it (Node 24,
+  Safari 18.4, Firefox 147) and the lazily imported `brotli-dec-wasm` 2.3.2 (208 KB WASM) where it does not
+  (Chromium 149, checked in Playwright). A body a CDN already unwrapped is sniffed as JSON: the writers' 16 MB
+  window fixes the brotli first byte's low nibble at 0xF, never `{` or `[`. Gzip still reads.
+- **Writers.** `scripts/atlas/io.mjs` (`writeDataFile`, new `dataBytes`) and Python `write_json`/`read_json` pick
+  the format by extension. `pack-hyp-poly-shelf.mjs` and `tilesearch-cells.ts` stopped gzipping by hand; the
+  temp-and-rename writers name the temp file with the final extension, since the extension picks the format.
+  `draft-update.mjs` reads a shard's history in whichever of the three forms it had.
+- **The rename.** `.json.gz` -> `.json.br` in 154 source files (Supabase pipeline batches, the Searcher's `.txt.gz`
+  certificates and `homogeneous.py` keep gzip). Tests that gunzipped public files by hand read through `io.mjs`;
+  `tests/atlas-gzip-shards.test.ts` became `atlas-compressed-shards.test.ts` (both formats, unwrapped bodies,
+  plain). docs-check rejects a staged `.json.gz` under `public/` as it does plain `.json`.
+- **The conversion.** 20,998 files at q9, the fast pass (8.5 minutes): each gunzipped, compressed, decoded again and
+  compared byte for byte before its `.gz` was removed; none failed. Untracked, modified and ignored files (13,312,
+  284 MB) were backed up first. No converted index or manifest names a `.json.gz` file. Result, gzip -> brotli q9:
+  hyperbolic-poly 482.6 -> 335.2 MB (1.44x), frames 78.3 -> 76.8 (1.02x: thousands of small files, which gzip's
+  window already covers), hyperbolic-edges 38.3 -> 25.5, top-level shelves 34.6 -> 25.0; all 687.6 -> 506.2 MB
+  (1.36x). The 2.4x of the one large shard did not carry over: most files are small.
+- **Checked.** Chromium (WASM path) loads `/`, `/catalogue`, `/catalogue?geo=hyperbolic` (133 shards),
+  `/frames` and `/colors` with every data fetch 200 and no console errors; tiles draw. tsc, eslint and `pnpm build`
+  clean; the build regenerates the landing data as `.br`. Full `pnpm test` under the k = 16 shard build's load:
+  3,355 pass, 13 fail, every one a timeout (one of them the solver's own budget, `diag.timedOut`) except
+  `referenceAtlasShard.test.ts`, whose expected message predated the split-k loader and now names the file. The two
+  timed-out files that read shards (`hyp-poly.test.ts`, `hypStarFamily.test.ts`) pass alone with a longer timeout,
+  21 of 21; brotli decodes the 53 MB shard in 110 ms against gzip's 224.
+- **Open.** Recompressing at q10 (writers' level) would take the hyperbolic shelf about 13% further; the dart glue
+  arrays are involutions, so storing half of each would cut that shelf by about 31% more (measured on hp18-k17).
+  `reference-atlas-k16` stays `.json.gz` until the k <= 16 shard build finishes.
+
+## {3,7} octiamonds: slow runs page, broken disk, and what the run counts (2026-11-09, CC)
+
+AL ran Marek's test ("8-iamonds in {3,7}, face-first: only two tile") as one board of all 78 free octiamonds,
+k 1 to 3, the Face first rule: 26,089 tilings. The run page was slow and the disk drew tilings in one colour with
+edges missing, or blank.
+
+- **What the run counts.** "Face first" in the Searcher is only the engine's branching rule
+  (TILESEARCH_FACE_FIRST); k still counts vertex orbits, and the board lets octiamonds mix: 26,054 of the 26,089
+  tilings use two to five different ones. Tilings by one octiamond: 35, by faces 55 and 65 only, none isohedral
+  (each has 2 to 7 face orbits; a certificate's face lines are its face orbits). Marek's claim (Discord, 22 Oct) is
+  about isohedral tilings, and his face-first search "swaps faces and vertices": with the octiamond words as vertex
+  lines and the vertex sets' cyclic orders as faces, k counts tile orbits. At k = 1 that gives 2 tilings, by faces 3
+  and 32, on rc4.2.1 and rc4.2.2 alike; with each chiral octiamond also listed mirrored (the engine reads vertex
+  lines as written, faces up to mirroring) 4 tilings, still only faces 3 and 32. Two octiamonds, as Marek says.
+- ⚑ **The swap is not validated.** The run's 17 tilings with 2 tile and 2 vertex orbits should come back from the
+  swapped board at k = 2 with 2 face orbits; none does (the fewest is 5). Suspects: the primal's 2-corner vertices
+  become digon faces, which the engine treats as edge marks, and chirality. Until that is explained, "only faces 3
+  and 32 tile isohedrally" is evidence, not a proof. A face-first search in the Searcher should be built on a swap
+  that passes this cross-check.
+- **Slow page: geometry() re-solved every face's side for every tiling** (5.4 s a tiling on 78 faces). Now
+  `sharedEdge` scans the first face and checks only its candidate sides on the others, and `missAt` walks with nine
+  numbers in place: 12 ms. Also `isColoring` (every pair of faces, three times a tiling) and `setFaceSize` (rotation
+  strings per orbit) are kept per board: hyperbolicDarts 50 ms to 0.8 ms. Card drawing and boardforms.ts use the
+  same helper.
+- **Broken disk: the walk read every face with a reflex corner by wedges about its barycentre (WALK_STAR).** Right
+  for isotoxal stars; an octiamond is often star-shaped about no usable point, so points were sent round in circles
+  between two faces (or two copies of one face glued to itself) until the step cap, and wedges stroke only their
+  own side. New `WALK_POLYGON`: centred on a point inside (the fattest ear), each slot holding its first vertex, read
+  by a straight walk: along one geodesic toward the point, leave across the first side met after the entry point
+  (always progress; "leave by the last side crossed" cycled between copies, and mixing walks with wedge faces
+  cycled too, so one such face puts every face with its own turns on it). A side is crossed when its corners lie on
+  either side of the chord, each corner judged once (a chord through a corner crosses exactly one side, in float32).
+  Strokes measure every side as a segment. In float32 a point on a side can still be handed back and forth until
+  the cap; it is stroked against the face it ends in. Isotoxal stars keep WALK_STAR (none of the 17,950 star
+  families changes); colours are unchanged. CPU check: 0 of 2,000 tilings with a point in the wrong face (125 of 600
+  before); in the app #41 draws (was blank) and every edge is continuous.
+- About +330/-80 lines: the new face kind and its walk in two places (TS and GLSL), tests.
+
+## The accessibility fixes, both apps (2026-11-09, CC)
+
+AL approved every fix the check had found ("apply all fixes"). Contrast is fixed in the tokens, the other rules in
+the components that produced them; design-system/DECISIONS.md D18 records the token side.
+
+- **Contrast, by cause.** Desktop muted text neutral 500 -> 550 (the phone's value; 5.1:1 on the segmented track,
+  was 3.96). Disabled ink no longer carries readable text: about 30 call sites moved to `text-fg-muted`, and the
+  `text-fg-disabled max-md:text-fg-muted` phone patches went with them; a dim OptionWall option is muted and its
+  neighbours lift to secondary. The dark accent split in two: the fill is ultramarine 450 (white 5.3:1), accent
+  text is a new role `--color-text-accent` / `text-fg-accent` (new step ultramarine 300, 5.1:1 or more on every
+  dark surface); 35 `text-accent` uses and the SVG labels drawn in it were renamed, and the phone-only
+  `.dark .bg-accent` override and the vertex-configurations `oklch(… 0.72 c h)` lift were deleted. Opacity-faded
+  text (browse-tree folder counts, the /defense timer, `text-fg-muted/70`) is plain muted. `.ta-link` is
+  underlined at rest in a faint accent (WCAG 1.4.1).
+- **Other rules.** svg-img-alt: `FigureSvg` in components/about/figure.tsx names an article drawing by its Figure's
+  caption (aria-labelledby through a context), or hides it when there is none; `Stage` and the life/freedraw
+  figures use it. nested-interactive: the Checkbox's hint sits beside the checkbox, and CheckboxBox's decorative
+  mode draws a span (axe counts even a tabindex=-1 input inside a control). button-name: OptionWall and Segmented
+  take `ariaLabel` for a drawn label (/heesch, /frames shape pickers). label-content-name-mismatch: the card
+  thumbnail's chips are one list that draws them and ends the button's name ("Open … in Play: decomp"); the
+  Popover trigger is named "<label>: <value shown>" through an sr-only prefix; a Searcher chart bar's name adds
+  the count as shown ("2M"); the landing shuffle button takes its visible word. Two axe 4.14 behaviours cost a
+  round each: it counts the text of an aria-hidden child as visible label text (hiding the chips did nothing),
+  and it strips parentheticals from the name before comparing ("Open … (decomp)" still failed).
+  scrollable-region-focusable: tabIndex 0 on the prototiles main, markdown table wrappers and display maths, two
+  article tables, the /defense slide frame and the Searcher's certificate <pre>. link-name: update screenshots
+  take the change's line as alt text. target-size: Checkbox rows are 24px tall; the InfoDot is a 24px box pulled in 4px a side; OptionWall cells are never
+  narrower than 24px (the wall takes a min-width; a first attempt floored the tracks and forgot the track's gaps,
+  pushing the 3/4/5/6 picker out of its 112px box); the Searcher's run and study charts scroll before a column
+  drops under 24px; the disk-map tiles and the number field's steppers are pointer-only drawing, since each has a
+  full-size equivalent (the run list; the spinbutton itself). Side-by-side steppers were tried first and
+  abandoned: fifteen Searcher fields are 80px wide and would have kept 4px for the digits.
+- **The check itself.** `scripts/a11y-check.mjs` prints axe's own message for a non-contrast rule and the element
+  it names, and picks a Searcher run by its disk-map tile as a shaded div (the tiles stopped being buttons). The
+  message found the last Searcher failure, a layout bug: on a narrow drawing the toggle bar lay over the "How to
+  move the drawing" dot (tilings.tsx); the bar now keeps clear of it and wraps.
+- **Result.** The atlas, local, every route on desktop and phone in both themes (148 loads): no failure of any WCAG 2.2
+  A/AA rule, against 695 contrast elements and 18 other-rule components before (desktop alone); reports
+  `a11y-local-final-2026-11-09.md` and `a11y-local-defense-2026-11-09.md` (/defense took 76 s to compile and
+  timed out in the full run). axe still cannot measure 239 elements, nearly all SVG text over a tiling. The Searcher, the installed 17:15 build (packaged
+  with the polyform and searcher-features sessions' work, which they cleared): 22 of 22 screens in both themes, no
+  failure (`a11y-searcher-after-2026-11-09.md`; 278 unmeasured, the disk map's gradients and SVG labels).
+- **Reversed by AL the same day.** The 24px-per-column floor on the run chart (since moved to
+  `design-system/components/column-chart.tsx` by the searcher-features session) scrolled k 12 to 22 out of the
+  catalogue's 300px filter panel; AL chose to fit every column, and that session removed the floor. Narrow columns
+  fail 2.5.8 again. The answer that keeps both is open for AL: bars as pointer-only drawing, the k chips beside
+  them as the keyboard's and screen reader's way in (the disk map's pattern).
+
+## Searching by tile orbits: `search faces` (2026-11-09, CC)
+
+AL asked for Marek's face-first search: k counting tile orbits (k = 1 isohedral) instead of vertex orbits.
+
+- ⚑ **Correction to the entry above.** The swap is validated, and the mirror lines were wrong. The cross-check
+  failed because it counted every vertex orbit, while the engine's k counts only vertices of three or more corners
+  (tilesearch.cpp `is_flat`): the run's "k = 2" tilings have four more orbits of 2-corner vertices. Counted the
+  engine's way, the swap (octiamonds written once) agrees with the vertex search exactly: 17 = 17 (2 tile, 2 vertex
+  orbits), 1,168 = 1,168 (2 tile, 3 vertex). Listing mirror images as well counted tilings twice (43 for 17): the
+  engine places a vertex mirrored as it does a face. So the isohedral octiamonds of {3,7} are 2 tilings, faces 3
+  and 32, as Marek says.
+- **How.** No engine change: `engineBoard` (board.ts) swaps faces and vertices. Each face written out becomes a
+  vertex, each vertex (its orders, with Permutations on) faces, once each up to turning and mirroring; a required
+  face becomes a required vertex, a required or initial vertex the faces of its orders. Every engine call goes
+  through `engineText`: a run writes engine.board beside input.board, and the estimates, the --dump check and a
+  study's balance check read the swapped text (the editor's dead-vertex check is skipped: its numbers would be the
+  swapped board's). Reading back, `decode` reads a certificate with the swapped board and takes the dual of its
+  darts (`dualOf`: vertex step = old face step, edges and corner symbols kept, mirror = old mirror across the edge,
+  vertex types = classes under the new steps and the mirror), then checks the faces are the board's;
+  `vertexWordsOf` gives each vertex whole for geometry() (a quotient step round it is one period, repeated to its
+  face of the swapped board). The editor's "k counts" picks Vertex orbits or Tile orbits; a board in tile orbits
+  must have every face finite.
+- **Checked against Joseph Myers' counts** (polyomino.org.uk/mathematics/polyform-tiling, updated 17 July 2026;
+  isohedral = his translation + 180° + isohedral columns): polyominoes n = 5..8 give 12, 35, 104, 342 isohedral
+  tiles, and one 8-omino first tiling alone at k = 2 (his 2-anisohedral count, 1); polyiamonds n = 7, 8, 9 give 23,
+  66, 133, and five 9-iamonds at k = 2 (his 5); polyhexes n = 5, 6 give 22 and 76. Every one matches. All tilings
+  sampled draw, read back as the board's. In the app the {3,7} octiamond board in tile orbits finds the 2 at k = 1
+  in 0.0 s and draws both. Tests: board.test.ts (the swap, its required sets, the finite-face check, the engine
+  reads the swap), develop.test.ts (Myers' counts for 6-ominoes, 8-iamonds, 5-hexes and the 9-iamonds' k = 2, and
+  the octiamonds drawn).
+- The branching rule "Face first" is now "Nearest face" (runs.tsx): it orders the search and was taken for this.
+- ⚑ Open: a run's certificates are the swapped board's (the Engine and Board views show them); the face-orbit
+  picker in tilings counts their face lines, which are the board's vertex orbits in a tile-orbit run. A few edges
+  of one octiamond tiling still show faint single-pixel gaps in their stroke (walks that end in a face, not at the
+  cap).
+- About +250/-10 lines: a new search mode, its swap both ways, tests.
+
+## Production reads the data from Cloudflare R2 (2026-11-09, CC)
+
+AL's go-ahead after the budget estimate. Brotli bought room; it did not change that every kept Vercel deployment
+stores all of `public/`. Now production fetches the shipped data from R2 and the deployments carry none of it.
+
+- **Domain.** AL bought `thetilingatlas.com` through Vercel (registrar Name.com). Its DNS moved to Cloudflare
+  (AL's own account, longoa02@gmail.com; the `cf` CLI profile `atlas`, never the default EDL profile): the apex has
+  Vercel's recommended A records (216.198.79.1, 64.29.17.1) and `www` a CNAME to the project target
+  `909e7d3e31ea2340.vercel-dns-017.com`, all DNS only, so Vercel keeps issuing the site's certificates. Nameservers
+  switched through `PATCH /v1/registrar/domains/{domain}/nameservers` (undo: an empty list); zone active in two
+  minutes, site serving 200 throughout. An R2 custom domain needs the zone on Cloudflare, and a partial (CNAME) setup
+  is Business-plan only, so the whole DNS moved.
+- **Bucket.** `tiling-atlas-data` (Standard, EEUR) at `https://data.thetilingatlas.com`, TLS 1.2+, CORS GET/HEAD from
+  any origin (the data is public). A cache rule makes the edge and browsers keep a file 1 hour: `.br` is not on
+  Cloudflare's default cacheable list, so without it every request reached R2 (`cf-cache-status: DYNAMIC`). One
+  hour, not a month with purges, because the Vercel build holds an R2 key that cannot purge.
+- **Code.** Browser data fetches go through `fetchData(path)` (`lib/services/atlasCodec.ts`, 58 call sites in 26
+  files), which prefixes `PUBLIC_DATA_URL` (Vercel: production and preview; unset locally). `scripts/data-sync.mjs`
+  lists the bucket, compares MD5 with ETags and uploads what changed (aws4fetch, 16 at a time); as the last step of
+  `pnpm build` on Vercel it deletes `public/**/*.json.br` from the build. Guards: it prunes only inside Vercel's
+  container (`/vercel/...`; `vercel build` on a laptop sets VERCEL too) and only with `PUBLIC_DATA_URL` set; a
+  production build that cannot upload fails. Previews read production's data and upload nothing.
+- **Upload.** `pnpm data:sync`: 21,003 files in 8 min 50 s; a second run finds 0 to change.
+- **Estimate behind the decision** (Web Analytics, 30 days to 2026-11-09: 2,981 page views, 1,026 visitors; per-page
+  data measured in Chromium): storage about 0.53 of R2's free 10 GB, reads under 1% of 10 M Class B even with no
+  edge cache, writes about 2% of 1 M Class A in the first month. Vercel loses about 3.2 GB a month of data transfer
+  and 80,000 edge requests, and up to about 3 GB of deployment storage.
+- **Open.** Git still holds every shard version (pack 784 MB); taking `public/` data out of git is AL's call.
+
+## The regular shelf to k = 16 (2026-11-09, CC)
+
+AL: "we already have millions of hyperbolic tilings, let's add these up to k = 16". The engine's k <= 16 run
+(`tools/ctrnact-oracle/work/k16-run`) already held every k-uniform tiling; only k <= 10 was on the shelf.
+
+- **Builder.** `scripts/build-regular-shards.ts` develops each k with `eu_develop` and gives every cell the fields a
+  k <= 10 record carries (nClassify group and lattice, vertex types, edge and face orbits from the Delaney–Dress
+  symbol, polygon facets). Gate: rebuilding k = 8 to 10 reproduces every shipped field (exactSource differs on 283,
+  559 and 984 records, each the same tiling on another basis by canonical key). Records already on the shelf under
+  another id (Galebach's eh*, the Searcher's ts-*) are kept and the engine's copy dropped, matched by canonical
+  symbol; none left unmatched (10, 11, 25, 36, 69, 137 at k = 11 to 16).
+- **Counts.** 24,459 / 49,794 / 103,082 (A068599, which ends at k = 13) / 212,631 / 445,289 / 933,637; with the k <= 10
+  shelf, 1,792,288. k >= 13 is split into parts of 100,000 by id (`REGULAR_SHARD_PARTS`), loaded by the k's Load
+  button or one part per deep link. k = 16 is 10.8 MB of brotli.
+- **Cost.** 1.6 / 3.5 / 10.8 / 23.3 / 86.4 / 372.9 minutes on 9 processes, under heavy load from other jobs. 83% of a
+  record is `reconstructOracleCell`, the browser's BigInt cyclotomic rebuild of the polygons on a 7x7 window (100 ms
+  at k = 16); `cellMap` 8%, `minimalBlocks` 4%, `nClassify` 4%. `eu_develop` itself developed all 933,637 in about a
+  minute. Taking the polygons from the engine instead would cut a record by about 100x; needed before k = 17 and 18
+  (6.2 million tilings in the Searcher's run).
+- **Vertex types.** m reaches 11 at k = 15 and 16 (one tiling each); no tiling with k >= 8 has m = k. The chart's
+  split (`components/about/figures/kuniform/counts.tsx`) and the theory pages now run to k = 16.
+
+## Star hybrids with two star types, second slice: vertices holding both stars (2026-11-09, CC)
+
+AL: "work on vertices mixing both stars". Second slice: some of the four lines hold a corner of each star. Method and
+results: `experiments/star-hybrid/README.md` ("Vertices holding both stars").
+
+- `sieve_mixed.py` searches the anchored kind: star A rigid on its own pair (1,845,300 anchors), star B closing on two
+  lines, at least one holding A's corners. 4.4 hours on four workers at the lowest priority (the first-slice entry
+  guessed six CPU-days). 2,499 float candidates; at 60 digits 400 do not hold, 2,040 are families, 58 are hybrids at
+  54 edges.
+- A second structural test: the tile nudge passed 7 identity curves on which every tile of A's pair is tied into the
+  identity. Sliding along the curve one A line and one B line leave free (s or P_A moved by 1e-12) catches them: 65 to 58.
+- Exactness: `certify.py` proves 32. Its new pass to degree 40 at 800 digits also proved 11* + 11* (degree 25) and the
+  first slice's four of degree 16, so the first slice is 21 of 22. The new `rational_angles.py` proves
+  determinant-±2 hybrids whose angles are rational (cosh(s/2) = φ, and the {3,12} edge): 2 of the second slice and 5
+  of the 25 pinned at valence 6. 24 of the second slice still need half-angles.
+- Quadratic edges: cosh s = φ (three pinned stars, 4*, 5* and 10*, anchor the same 3*), √5, 2√2 − 1, 2 + √5, 3 + 2√3.
+  One family runs across sizes: n* + n*, 7* to 12*, points near 117° and 66°.
+- Engine, k <= 5 on the triage board (vertices of at most 6 corners): 9 boards with tilings that need the coincidence,
+  8 of them proven; 3 with tilings that do not; 45 with none; 6* + 6* at 2.5534 none to k = 2, k = 3 unfinished after
+  30 minutes. Largest: 6* + 12* at 2.5534, 150,814 at k = 4. All 58 are paused studies in
+  `star-hybrids/2 stars sharing a vertex/`; the six first-slice studies whose edge is now proven got their `# minpoly`.
+
+⚑ Not searched: hybrids pinned by a regular vertex with a shared vertex (a sorted three-way match, about 17 CPU-hours)
+and hybrids no star fixes on its own lines (about 10^12 candidates; needs a tilings-first search).
+⚑ `sieve_pinned.py` misses dent lines with points under 0.075% of the largest point; `sieve_mixed.py`'s check against
+it at 400 anchors found them.
+⚑ Still none ships: `develop_ai1.py --study` needs several stars, and the storage question stands.

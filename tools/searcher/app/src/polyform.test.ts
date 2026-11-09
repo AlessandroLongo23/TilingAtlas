@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cyclicKey, emptyBoard } from "./board";
+import { seedWords, setFacesGeometry } from "./corners";
 import { Grid, polyforms, regularGrid, withPolyforms, type GridSpec } from "./polyform";
 
 const counts = (spec: GridSpec, upTo: number, mirror = true) =>
@@ -91,7 +92,7 @@ describe("Polyforms on hyperbolic, spherical and Schwarz grids", () => {
 
 describe("Polyforms as faces", () => {
 	it("adds the 12 pentominoes with shared corners, and leaves out the heptomino with a hole", () => {
-		const { board, added } = withPolyforms(emptyBoard(), 4, 4, 5);
+		const { board, added } = withPolyforms(emptyBoard(), regularGrid(4, 4), 5);
 		expect(added).toBe(12);
 		expect(board.angles.map((a) => `${a.sym}=${a.value ?? ""}`).sort()).toEqual(["F1_270=270", "F1_90=90", "Pi="]);
 		const I = board.faces.find((f) => f.word.filter((c) => c === "Pi").length * (f.repeat as number) === 8)!;
@@ -99,11 +100,60 @@ describe("Polyforms as faces", () => {
 		expect(cyclicKey(full)).toBe(
 			cyclicKey(["F1_90", "Pi", "Pi", "Pi", "Pi", "F1_90", "F1_90", "Pi", "Pi", "Pi", "Pi", "F1_90"]),
 		);
-		expect(withPolyforms(emptyBoard(), 4, 4, 7)).toMatchObject({ added: 107, holes: 1 });
+		expect(withPolyforms(emptyBoard(), regularGrid(4, 4), 7)).toMatchObject({ added: 107, holes: 1 });
+	});
+
+	// Marek, 2026-11-09: off the plane a polyform's shape is alien enough that its cells' sides help to read it
+	it("draws each polyform in its own geometry, with the sides its cells share", () => {
+		for (const [p, q] of [
+			[4, 4],
+			[4, 5],
+			[7, 3],
+			[4, 3],
+		]) {
+			const { added, pictures } = withPolyforms(emptyBoard(), regularGrid(p, q), 2);
+			expect(pictures).toHaveLength(added);
+			const [{ outline, lines }] = pictures;
+			// a domino: 2p − 2 sides, each two half sides of 8 points off the plane, and its middle side in two halves
+			expect(outline).toHaveLength((2 * p - 2) * 2 * (p === 4 && q === 4 ? 1 : 8));
+			expect(lines).toHaveLength(2);
+			const on = (a: { x: number; y: number }) => outline.some((b) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-9);
+			expect(lines.every((l) => on(l[0]) || on(l[l.length - 1]))).toBe(true);
+			if (q === 5 || p === 7) expect(Math.max(...outline.map((a) => Math.hypot(a.x, a.y)))).toBeLessThan(1);
+		}
+		expect(withPolyforms(emptyBoard(), regularGrid(4, 4), 7).pictures).toHaveLength(107);
+	});
+
+	// Marek, 2026-11-09: polyforms of a Schwarz triangle, (2,3,7) the one he made beautiful patterns with
+	it("adds Schwarz triangle polyforms, each side typed by its length", () => {
+		const { board, added, pictures } = withPolyforms(emptyBoard(), { m: [2, 3, 7], cell: [] }, 2);
+		expect(added).toBe(3);
+		// a domino of triangles: four sides, the one they share drawn inside
+		expect(pictures.map((p) => p.lines.length)).toEqual([1, 1, 1]);
+		const types = board.angles.filter((a) => a.edge).map((a) => a.sym);
+		expect(types.sort()).toEqual(["E237_2", "E237_3", "E237_7"]);
+		expect(board.vertices.map((v) => v.word.join(" ")).sort()).toEqual(types.map((t) => `${t} ${t}`));
+		for (const f of board.faces) expect(f.word.filter((c) => types.includes(c))).toHaveLength(4);
+		// glued along its right-angle side, the 90° corners make a straight angle
+		expect(board.faces.some((f) => f.word.includes("Pi"))).toBe(true);
+	});
+
+	// Marek's 5-cell (2,3,7) polyforms froze Quick setup: 15 corners, every word to 14 tried for an edge that no
+	// set angle can fix
+	it("looks for no edge to solve on a board whose corners all keep their angles", () => {
+		const { board } = withPolyforms(emptyBoard(), { m: [2, 3, 7], cell: [] }, 5);
+		const t = performance.now();
+		expect(seedWords(board, "hyperbolic", 14)).toEqual([]);
+		expect(performance.now() - t).toBeLessThan(100);
+	});
+
+	it("says where faces of set angles lie: their corners against a plane polygon's", () => {
+		const where = (p: number, q: number) => setFacesGeometry(withPolyforms(emptyBoard(), regularGrid(p, q), 3).board);
+		expect([where(4, 4), where(4, 5), where(4, 3)]).toEqual(["plane", "hyperbolic", "sphere"]);
 	});
 
 	it("names hyperbolic corners by their angle: {4,5} cells have 72° corners", () => {
-		const { board } = withPolyforms(emptyBoard(), 4, 5, 3);
+		const { board } = withPolyforms(emptyBoard(), regularGrid(4, 5), 3);
 		expect(
 			board.angles
 				.map((a) => a.value)

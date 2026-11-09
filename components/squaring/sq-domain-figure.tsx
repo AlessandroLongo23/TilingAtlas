@@ -241,7 +241,14 @@ export function SqDomainFigure({
 			{/* The class itself, and its antipode: the same tiling, reflected. */}
 			<line x1={C} y1={C} x2={tip[0]} y2={tip[1]} stroke="var(--color-accent)" strokeWidth={2} />
 			<circle cx={anti[0]} cy={anti[1]} r={5} fill="var(--color-accent)" opacity={0.35} />
-			<circle cx={tip[0]} cy={tip[1]} r={7.5} fill="var(--color-accent)" stroke="var(--color-bg)" strokeWidth={2} />
+			<circle
+				cx={tip[0]}
+				cy={tip[1]}
+				r={7.5}
+				fill="var(--color-accent)"
+				stroke="var(--color-surface-base)"
+				strokeWidth={2}
+			/>
 			<circle cx={C} cy={C} r={3.5} fill="var(--color-fg)" />
 
 			<text x={C + R + RIM + 6} y={C + 4} className="fill-fg-muted font-mono" fontSize={15}>

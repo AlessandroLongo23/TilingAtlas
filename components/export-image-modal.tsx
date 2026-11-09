@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Loader2, RotateCcw } from "lucide-react";
 
-import { Modal } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Input } from "@/components/ui/input";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { Slider } from "@/components/ui/slider";
+import { Modal } from "@/design-system/components/modal";
+import { Button } from "@/design-system/components/button";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Input } from "@/design-system/components/input";
+import { SectionHeading } from "@/design-system/components/section-heading";
+import { Notice } from "@/design-system/components/notice";
+import { Spinner } from "@/design-system/components/spinner";
+import { Slider } from "@/design-system/components/slider";
 import { useExportImage } from "@/stores/exportImage";
 import { useConfiguration } from "@/stores/configuration";
 import { captureFrame, freezeView, MAX_CAPTURE_EDGE, playSurfaceColor } from "@/lib/render/capture";
@@ -357,14 +359,18 @@ export function ExportImageModal() {
 	const handleCopy = async () => {
 		setBusy(true);
 		setError(null);
-		try {
+		// The clipboard gets the image as a promise, inside the click: a large tiling renders for longer than the
+		// click's user activation lasts, and a write begun after it lapses is refused ("blocked due to lack of user
+		// activation"). The browser keeps the permission while it waits for the promise.
+		const png = (async () => {
 			const canvas = await runCapture(out.w);
 			const blob = canvas ? await toBlob(canvas) : null;
-			if (!blob) {
-				setError("The capture came back empty.");
-				return;
-			}
-			await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+			if (!blob) throw new Error("The capture came back empty.");
+			return blob;
+		})();
+		png.catch(() => {}); // reported through the write below
+		try {
+			await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
 			setCopied(true);
 			setTimeout(() => setCopied(false), 1600);
 		} catch (e) {
@@ -378,7 +384,7 @@ export function ExportImageModal() {
 
 	return (
 		<Modal
-			isOpen={isOpen}
+			open={isOpen}
 			onOpenChange={(open) => {
 				if (!open && !busy) close();
 			}}
@@ -392,7 +398,7 @@ export function ExportImageModal() {
 					    infinite, so it gets the space. Checkerboard shows through a transparent export. */}
 					<div className="flex min-w-0 flex-col gap-2 md:flex-1">
 						<div
-							className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-md border border-line bg-surface-raised/60 md:min-h-[340px]"
+							className="ta-well relative flex min-h-[260px] items-center justify-center overflow-hidden md:min-h-[340px]"
 							style={
 								opaque
 									? undefined
@@ -407,10 +413,10 @@ export function ExportImageModal() {
 								// eslint-disable-next-line @next/next/no-img-element
 								<img src={preview} alt="Export preview" className="max-h-[340px] max-w-full object-contain" />
 							) : (
-								<Loader2 size={28} className="animate-spin text-fg-muted" />
+								<Spinner size={28} />
 							)}
 						</div>
-						<p className="text-xs text-fg-muted tabular-nums">
+						<p className="text-small text-fg-muted tabular-nums">
 							{out.w} × {out.h} · {format.toUpperCase()}
 						</p>
 					</div>
@@ -418,7 +424,7 @@ export function ExportImageModal() {
 					<div className="flex shrink-0 flex-col gap-5 md:w-72">
 						<div className="flex flex-col gap-2">
 							<SectionHeading>Frame</SectionHeading>
-							<ButtonGroup
+							<OptionWall
 								options={ASPECTS.map((a) => ({ value: a.value, label: a.label }))}
 								selected={aspect}
 								onChange={(v) => setAspect(v)}
@@ -437,14 +443,14 @@ export function ExportImageModal() {
 									<button
 										type="button"
 										onClick={() => setZoom(useConfiguration.getState().controls.zoom)}
-										className="inline-flex items-center gap-1 self-start text-xs text-fg-muted transition-colors hover:text-fg"
+										className="inline-flex items-center gap-1 self-start text-small text-fg-muted transition-colors hover:text-fg"
 									>
-										<RotateCcw size={12} />
+										<RotateCcw className="size-icon-xs" />
 										Match current view
 									</button>
 								</div>
 							) : (
-								<p className="text-xs text-fg-muted">
+								<p className="text-small text-fg-muted">
 									This view owns its own camera; the export uses the zoom on screen.
 								</p>
 							)}
@@ -453,7 +459,7 @@ export function ExportImageModal() {
 						<div className="flex flex-col gap-2">
 							<SectionHeading>Size</SectionHeading>
 							<div className="flex items-center gap-2">
-								<ButtonGroup
+								<OptionWall
 									options={[1, 2, 4].map((n) => ({ value: n, label: `${n}×` }))}
 									selected={scaleChip}
 									onChange={(n) => setScaleChip(n)}
@@ -475,12 +481,12 @@ export function ExportImageModal() {
 									/>
 								</div>
 							</div>
-							<p className="text-xs text-fg-muted">Long edge in pixels, up to {MAX_CAPTURE_EDGE}.</p>
+							<p className="text-small text-fg-muted">Long edge in pixels, up to {MAX_CAPTURE_EDGE}.</p>
 						</div>
 
 						<div className="flex flex-col gap-2">
 							<SectionHeading>Background</SectionHeading>
-							<ButtonGroup
+							<OptionWall
 								options={[
 									{ value: true, label: "Theme" },
 									{ value: false, label: "Transparent" },
@@ -492,17 +498,13 @@ export function ExportImageModal() {
 					</div>
 				</div>
 
-				{error ? (
-					<p className="mt-4 rounded-md border border-danger/30 bg-danger-subtle px-3 py-2 text-sm text-danger">
-						{error}
-					</p>
-				) : null}
+				{error ? <Notice className="mt-4">{error}</Notice> : null}
 
 				{/* On a phone the dialog is a bottom sheet whose body scrolls, so this bar sticks to its foot:
 				    Download stays in reach under a preview that fills most of the screen. */}
 				<div className="mt-5 flex flex-col gap-3 border-t border-line pt-4 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-surface-raised max-md:px-4 max-md:pb-4 sm:flex-row sm:items-center">
 					<div className="flex items-center gap-3">
-						<ButtonGroup
+						<OptionWall
 							options={[
 								{ value: "png" as const, label: "PNG" },
 								{ value: "svg" as const, label: "SVG", disabled: !canSvg },
@@ -511,9 +513,9 @@ export function ExportImageModal() {
 							onChange={(v) => setFormat(v)}
 						/>
 						{svgBlockedBy ? (
-							<p className="max-w-[24rem] text-xs text-fg-muted">SVG is unavailable with {svgBlockedBy}.</p>
+							<p className="max-w-[24rem] text-small text-fg-muted">SVG is unavailable with {svgBlockedBy}.</p>
 						) : format === "svg" ? (
-							<p className="max-w-[24rem] text-xs text-fg-muted">
+							<p className="max-w-[24rem] text-small text-fg-muted">
 								SVG carries the tiling, its colours, the framing and the rotation. Overlays — points, symmetry elements,
 								orbits — are PNG only.
 							</p>

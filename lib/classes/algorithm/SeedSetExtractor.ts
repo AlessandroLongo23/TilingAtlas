@@ -1,4 +1,4 @@
-import type { CompatibilityGraph } from "@/classes";
+import type { CompatibilityGraph } from "@/classes/algorithm/CompatibilityGraph";
 
 export class SeedSetExtractor {
 	compatibilityGraph: CompatibilityGraph;

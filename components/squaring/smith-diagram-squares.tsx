@@ -138,7 +138,7 @@ export function SquaresSmithDiagram({ squares, fills, hovered, onHover, caps = f
 						cy={p[1]}
 						r={nodes.length > 120 ? 4 : 8}
 						fill="var(--color-fg)"
-						stroke="var(--color-bg)"
+						stroke="var(--color-surface-base)"
 						strokeWidth={2}
 					/>
 				);

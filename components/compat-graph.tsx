@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
+import { cssMotion } from "@/design-system/motion";
+import { Kbd } from "@/design-system/components/kbd";
 import { COMPAT_EDGES, COMPAT_NODES } from "@/lib/defense/vcCompatibility";
 import { COMPAT_TILINGS } from "@/lib/defense/vcTilings";
 import { INK, SOFT } from "@/lib/render/figureGlyphs";
@@ -92,12 +94,11 @@ const LONELY_PULL = 2.4;
 const MAX_SETTLE_STEPS = 4000;
 /** Below this the picture has stopped moving, and running the loop is burning a laptop for nothing. */
 const ASLEEP = 1e-4;
-/** Paint changes ease; nothing that carries a position does, or the transition would fight the physics. */
-const EDGE_EASE = { transition: "stroke 220ms ease, stroke-width 220ms ease, opacity 220ms ease" } as const;
+/** Paint changes glide; nothing that carries a position does, or the transition would fight the physics. */
+const GLIDE = cssMotion("glide");
+const EDGE_EASE = { transition: `stroke ${GLIDE}, stroke-width ${GLIDE}, opacity ${GLIDE}` } as const;
 /** A node's ring also moves its own radius, to keep the growth on the outside. */
-const RING_EASE = {
-	transition: "stroke 220ms ease, stroke-width 220ms ease, r 220ms ease, opacity 220ms ease",
-} as const;
+const RING_EASE = { transition: `stroke ${GLIDE}, stroke-width ${GLIDE}, r ${GLIDE}, opacity ${GLIDE}` } as const;
 
 interface Node {
 	word: string;
@@ -559,7 +560,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 									transform: orbit ? "scale(1.18)" : marked ? "scale(1.12)" : "scale(1)",
 									transformOrigin: "0 0",
 									opacity: on ? 1 : 0.18,
-									transition: "transform 220ms cubic-bezier(.2,.8,.3,1), opacity 220ms ease",
+									transition: `transform ${GLIDE}, opacity ${GLIDE}`,
 								}}
 							>
 								{/* An SVG stroke straddles its path, so a ring that thickens eats half its
@@ -629,10 +630,11 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 					<button
 						type="button"
 						onClick={nextTiling}
-						className="flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.9em] py-[0.3em] text-[clamp(0.68rem,1.05vh+0.29vw,1.05rem)] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:text-sm"
+						className="flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.9em] py-[0.3em] text-[clamp(0.68rem,1.05vh+0.29vw,1.05rem)] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:text-body"
 					>
 						another tiling
-						<kbd className="border border-line px-[0.4em] font-mono text-[0.85em] text-fg-muted max-md:hidden">R</kbd>
+						{/* Sized in em, so the cap scales with the slide's type. */}
+						<Kbd className="h-[1.45em] min-w-[1.45em] px-[0.4em] text-[0.85em]">R</Kbd>
 					</button>
 					<span className="text-center text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)] text-fg-muted">
 						k = {tiling.k}, {tiling.words.length} {tiling.words.length === 1 ? "configuration" : "configurations"}

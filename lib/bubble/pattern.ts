@@ -106,19 +106,19 @@ export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 /** One shard per (board, k). Loaded together on the Edge patterns chip, the way the colouring
  *  catalogues load on Colorings. ~37 MB in total, of which sq-k5 alone is 27. */
 export const BUBBLE_FILES = [
-	...[1, 2, 3, 4].map((k) => `/bubble/tri-k${k}.json.gz`),
-	...[1, 2, 3, 4, 5].map((k) => `/bubble/sq-k${k}.json.gz`),
-	...[1, 2, 3, 4, 5].map((k) => `/bubble/hex-k${k}.json.gz`),
-	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json.gz`),
-	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json.gz`),
-	...[1, 2].map((k) => `/bubble/tsh-k${k}.json.gz`),
-	...[1, 2, 3].map((k) => `/bubble/rh-k${k}.json.gz`),
+	...[1, 2, 3, 4].map((k) => `/bubble/tri-k${k}.json.br`),
+	...[1, 2, 3, 4, 5].map((k) => `/bubble/sq-k${k}.json.br`),
+	...[1, 2, 3, 4, 5].map((k) => `/bubble/hex-k${k}.json.br`),
+	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json.br`),
+	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json.br`),
+	...[1, 2].map((k) => `/bubble/tsh-k${k}.json.br`),
+	...[1, 2, 3].map((k) => `/bubble/rh-k${k}.json.br`),
 	// The rhombic mixtures. Each starts where it has something to show: the two-family boards are
 	// EMPTY at k=1 (one vertex orbit cannot hold a rhombus with a triangle, nor with a hexagon), and
 	// listing a k=1 shard for them would be an empty folder in the tree. The three-family board has 4.
-	`/bubble/rt-k2.json.gz`,
-	...[2, 3].map((k) => `/bubble/rhx-k${k}.json.gz`),
-	...[1, 2].map((k) => `/bubble/rth-k${k}.json.gz`),
+	`/bubble/rt-k2.json.br`,
+	...[2, 3].map((k) => `/bubble/rhx-k${k}.json.br`),
+	...[1, 2].map((k) => `/bubble/rth-k${k}.json.br`),
 ];
 
 /**
@@ -210,11 +210,17 @@ function alignedTile(pts: [number, number][], bites: number[]): { word: number[]
 	// Anchor at the rotation whose (corner, bite) sequence is least. The angle dominates each pair, so
 	// index 0 lands on the same corner of every copy of the tile; the bites break the remaining tie,
 	// which is exactly the freedom `step` describes.
-	const rot = ang.map((_, s) =>
-		ang.map((_, i) => `${String(ang[(i + s) % n]).padStart(3, "0")}${word[(i + s) % n]}`).join(""),
-	);
+	// Compared pair by pair (angle, then bite) instead of as padded strings: the same order, without building
+	// n strings per tile for each of the shelf's 52,800 faces.
+	const before = (s: number, t: number) => {
+		for (let i = 0; i < n; i++) {
+			const a = ang[(i + s) % n] - ang[(i + t) % n] || word[(i + s) % n] - word[(i + t) % n];
+			if (a) return a < 0;
+		}
+		return false;
+	};
 	let best = 0;
-	for (let s = 1; s < n; s++) if (rot[s] < rot[best]) best = s;
+	for (let s = 1; s < n; s++) if (before(s, best)) best = s;
 	return { word: word.map((_, i) => word[(i + best) % n]), step, ccw };
 }
 
@@ -252,13 +258,21 @@ export const FAMILY_LETTER: Record<number, string> = { 3: "T", 4: "S", 6: "H" };
  *  The two are never on the same board, so the board decides: only the rhombic board carries R. */
 export const rhombicLetter = (grid: BubbleGrid) => (grid === "rhombus" ? "R" : null);
 
+const TILE_NAMES = new Map<string, string>();
 export function tileNameOf(biteWord: number[], step = 1): string {
 	const n = biteWord.length;
 	const key = tileKeyOf(biteWord, step);
+	// One name per (length, symmetry, necklace): the shelf asks once per face, and the answer below sorts
+	// every necklace of that length to find it.
+	const memo = `${n}:${step}:${key}`;
+	const known = TILE_NAMES.get(memo);
+	if (known) return known;
 	const weight = (k: string) => [...k].filter((c) => c === "1").length;
 	const sameWeight = [...necklaceOrder(n, step).keys()].filter((k) => weight(k) === weight(key)).sort();
 	const w = String(weight(key));
-	return sameWeight.length === 1 ? w : w + String.fromCharCode(65 + sameWeight.indexOf(key));
+	const name = sameWeight.length === 1 ? w : w + String.fromCharCode(65 + sameWeight.indexOf(key));
+	TILE_NAMES.set(memo, name);
+	return name;
 }
 
 /**

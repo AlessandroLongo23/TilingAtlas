@@ -152,7 +152,7 @@ def main():
     for s in built:
         print("   %s" % s)
 
-    atlas_path = os.path.join(ROOT, "public", "reference-atlas-spherical.json.gz")
+    atlas_path = os.path.join(ROOT, "public", "reference-atlas-spherical.json.br")
     atlas = read_json(atlas_path)
     missing, changed = [], 0
     for rec in atlas["records"]:
@@ -177,7 +177,7 @@ def main():
         return
     write_json(atlas_path, atlas, separators=(",", ":"), ensure_ascii=False)
     json.dump(derivation, open(os.path.join(HERE, "derivation.json"), "w"), indent=1, sort_keys=True)
-    print("wrote public/reference-atlas-spherical.json.gz and derivation.json")
+    print("wrote public/reference-atlas-spherical.json.br and derivation.json")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ import { AutomataTransport } from "@/components/automata/automata-transport";
 import { SurfaceView } from "@/components/automata/surface-view";
 import { PeekTitle, showPickOnCanvas } from "@/components/dock-peek";
 import { PageSidebar } from "@/components/page-sidebar";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { useAutomatonEngine } from "@/lib/automata/useAutomatonEngine";
 import { buildPeriodicAdjacency } from "@/lib/automata/adjacency";
 import { planBoard } from "@/lib/automata/board";
@@ -245,7 +245,7 @@ export function AutomataClient() {
 				/>
 				{!cell && !loading && (
 					<div className="pointer-events-none absolute inset-0 grid place-items-center">
-						<p className="text-sm text-fg-muted">Pick a tiling to start.</p>
+						<p className="text-body text-fg-muted">Pick a tiling to start.</p>
 					</div>
 				)}
 			</div>

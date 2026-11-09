@@ -1,4 +1,6 @@
-import { StarPolygon, Vector, StarVertexTypes, PolygonType } from "@/classes";
+import { StarPolygon, StarVertexTypes } from "@/classes/polygons/StarPolygon";
+import { Vector } from "@/classes/Vector";
+import { PolygonType } from "@/classes/polygons/PolygonType";
 
 export class StarRegularPolygon extends StarPolygon {
 	d: number;

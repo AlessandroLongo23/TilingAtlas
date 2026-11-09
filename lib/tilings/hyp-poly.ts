@@ -67,6 +67,9 @@ export interface HypPolyBoard {
 	/** Tiles at SEVERAL edge lengths (1247_1_0612): the sidebar files the board under "Different edge
 	 *  lengths", the rule the Euclidean shelves already follow (tileClassOf). */
 	multiLength?: true;
+	/** An isotoxal star among the tiles (experiments/star-hybrid): the sidebar files the board under "Star
+	 *  polygons", and `stats.sizes` holds the star as -n (`hypPolyTileSet` prints it "n*"). */
+	star?: true;
 	/** k slices stored in several shard files, `-k2-p0` … `-k2-p4`, and how many: a slice of a million
 	 *  records is too big to pack or fetch as one file. Absent k is one file. */
 	parts?: Record<number, number>;
@@ -87,6 +90,8 @@ export interface HypPolyPattern {
 	family: string;
 	/** The forced edge length ℓ — a coordinate, since H² has no similarity. */
 	edge: number;
+	/** A star board's point angle (radians): with `darts.starKind` it gives every turn (`starTurns`). */
+	point?: number;
 	/** A chiral solution (from an `_o_` certificate); its mirror is implied, not listed. */
 	chiral?: boolean;
 	/** Reference-development face count — a size hint, not geometry. */
@@ -1548,7 +1553,9 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 	{ id: "aaaa", n: 0, label: "10,10,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
 	// Marek's hybrid systems, by edge length. The label is the edge the system is named for and its
 	// polygons; the "af" systems carry no number, so theirs is solved from their figures.
-	// a1 has no census file: k = 1, 2 and 4 carry no certificates, and whether those are zeros is Marek's to say.
+	// a1 has no census file, and no certificates at k = 1, 2 and 4. k = 1 and 2 are zeros: a complete search of
+	// the whole system, every vertex proven to close, finds none (experiments/hybrid-exact, triage 2026-11-04).
+	// k = 4 is unknown.
 	{
 		id: "ya1",
 		n: 0,
@@ -1627,6 +1634,24 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8],
 		dropped: [],
 		counts: { 1: 4, 2: 12, 3: 45, 4: 227, 5: 1014, 6: 4261, 7: 19356, 8: 86934 },
+	},
+	// Tilings with long sides, one board per system (2026-11-05): the Searcher on the system's whole proven
+	// board (experiments/hybrid-exact triage, k <= 3, 5 minutes a k), developed by develop_ai1.py --multi and
+	// cut to the tilings with a tile at a multiple of the edge. The others are the system's own board, with
+	// equal counts. The Searcher's k leaves out (Pi, Pi) midpoints, as the atlas's does, so every slice is
+	// complete except af2's k = 2, whose run timed out. No higher k searched yet. "Whole board" and
+	// "complete" hold within docs/HYBRID_SEARCH_LIMITS.md: each board has every face and vertex the face audit
+	// finds at its edge.
+	{
+		id: "yaf2long",
+		n: 0,
+		multiLength: true,
+		label: "af2, edge 0.9624, tilings with long sides (3, 3₂, 4, 4₃, 6, 6₂, ∞, ∞₂, ∞₃, ∞₅, ∞₆), k = 2 partial",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 622, 2: 14557 },
 	},
 	{
 		id: "y10377",
@@ -1722,6 +1747,17 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		counts: { 1: 3, 2: 3, 3: 47, 4: 109, 5: 578, 6: 4018, 7: 11414, 8: 82029 },
 	},
 	{
+		id: "yaf3long",
+		n: 0,
+		multiLength: true,
+		label: "af3, edge 1.1989, tilings with long sides (4, 5, 5₂, 6, 10, 10₂)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3],
+		dropped: [],
+		counts: { 1: 2, 2: 45, 3: 30695 },
+	},
+	{
 		id: "y12537",
 		n: 0,
 		label: "edge 1.2537 (4, 10, 30)",
@@ -1740,6 +1776,17 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		lazyKs: [1, 2, 3, 4, 5],
 		dropped: [],
 		counts: { 1: 5, 2: 34, 3: 351, 4: 3630, 5: 37421 },
+	},
+	{
+		id: "yaf4long",
+		n: 0,
+		multiLength: true,
+		label: "af4, edge 1.3170, tilings with long sides (4, 6, ∞, ∞₂, ∞₃)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 5, 2: 2489 },
 	},
 	{
 		id: "yaf5",
@@ -1762,6 +1809,17 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		counts: { 1: 5, 2: 25, 3: 517, 4: 6424, 5: 101921 },
 	},
 	{
+		id: "y16628long",
+		n: 0,
+		multiLength: true,
+		label: "edge 1.6628, tilings with long sides (3, 4₂, 12, ∞, ∞₂, ∞₄)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1],
+		dropped: [],
+		counts: { 1: 66 },
+	},
+	{
 		id: "y17191",
 		n: 0,
 		label: "edge 1.7191 (3, 4, 6, 18)",
@@ -1770,6 +1828,17 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		lazyKs: [1, 2, 3, 4, 5],
 		dropped: [],
 		counts: { 1: 2, 2: 76, 3: 1072, 4: 6671, 5: 126518 },
+	},
+	{
+		id: "y17191long",
+		n: 0,
+		multiLength: true,
+		label: "edge 1.7191, tilings with long sides (3₂, 18₂)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1],
+		dropped: [],
+		counts: { 1: 10145 },
 	},
 	{
 		id: "y17627",
@@ -1805,6 +1874,20 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		counts: { 1: 47, 2: 4226, 3: 350739 },
 		parts: { 3: 4 },
 	},
+	// The whole proven system at 2.1226 adds Boo (the face audit, 2026-11-05). Its board, run to the end at
+	// k <= 3 (experiments/hybrid-exact/runs/2026-11-05-gaps/ai23), gives ai2+3's counts above for the tilings
+	// without Boo; these are the ones with it.
+	{
+		id: "yai23long",
+		n: 0,
+		multiLength: true,
+		label: "ai2+3, edge 2.1226, tilings with long sides (3, 4, 5, 10, ∞, ∞₂)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3],
+		dropped: [],
+		counts: { 1: 3, 2: 125, 3: 6958 },
+	},
 	{
 		id: "yai31",
 		n: 0,
@@ -1836,15 +1919,18 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		dropped: [],
 		counts: { 1: 74, 2: 27075 },
 	},
+	// k = 3 added 2026-11-05 from the Searcher on the system's whole proven board (the same three vertex
+	// figures; it gives his 84 and 10,471 at k = 1 and 2), run to the end in the hybrid triage.
 	{
 		id: "y24578",
 		n: 0,
 		label: "edge 2.4578 (3, 4, 6, ∞)",
 		family: "hybrid",
 		eagerKs: [],
-		lazyKs: [1, 2],
+		lazyKs: [1, 2, 3],
 		dropped: [],
-		counts: { 1: 84, 2: 10471 },
+		counts: { 1: 84, 2: 10471, 3: 2495842 },
+		parts: { 3: 10 },
 	},
 	{
 		id: "y26212",
@@ -1870,21 +1956,37 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		counts: { 1: 521, 2: 870792 },
 		parts: { 2: 4 },
 	},
+	// Re-shipped 2026-11-05 from his board run to the end in the Searcher (tools/searcher/solver_hybrid_2_9830,
+	// census MAX); hybrid.zip's 2_9830 was a stopped run (682 and 1,134,119). His solver calls the 24-gon A30:
+	// develop_ai1.py now takes face sizes from the run's board.txt.
 	{
 		id: "y29830",
 		n: 0,
-		label: "edge 2.9830 (3, 4)",
+		label: "edge 2.9830 (3, 4, 24)",
 		family: "hybrid",
 		eagerKs: [],
 		lazyKs: [1, 2],
 		dropped: [],
-		counts: { 1: 682, 2: 1134119 },
-		parts: { 2: 5 },
+		counts: { 1: 1094, 2: 2672268 },
+		parts: { 2: 11 },
 	},
+	{
+		id: "y29830long",
+		n: 0,
+		multiLength: true,
+		label: "edge 2.9830, tilings with long sides (3₂, 6)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1],
+		dropped: [],
+		counts: { 1: 15 },
+	},
+	// ⚑ k = 2 is partial: hybrid.zip's 3_3086 was a stopped run. Run to the end, k = 2 holds about 470 million
+	// tilings (tileestimate, standard error 205 million, about 6 CPU-hours), too many to ship as records.
 	{
 		id: "y33086",
 		n: 0,
-		label: "edge 3.3086 (4, 5, 6, 12)",
+		label: "edge 3.3086 (4, 5, 6, 12), k = 2 partial",
 		family: "hybrid",
 		eagerKs: [],
 		lazyKs: [1, 2],
@@ -1901,6 +2003,369 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		dropped: [],
 		counts: { 1: 1293425, 2: 931120 },
 		parts: { 1: 13, 2: 10 },
+	},
+	// Star hybrids (experiments/star-hybrid, 2026-11-09): an edge where a vertex of regular polygons closes
+	// and two vertices of one isotoxal star fix its point and its dent, three closures for two unknowns. One
+	// board per Searcher study (the star required, k to 5), developed by develop_ai1.py --study; stars sit
+	// in sizes as -n. Within the limits in experiments/star-hybrid/README.md, not HYBRID_SEARCH_LIMITS.md.
+	{
+		id: "ys0383572n6p7392",
+		n: 0,
+		label: "edge 0.3836 (3, 12, ∞, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1],
+		dropped: [],
+		counts: { 1: 1 },
+	},
+	{
+		id: "ys05942407n6p6711",
+		n: 0,
+		label: "edge 0.5942 (5, 6, ∞, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1],
+		dropped: [],
+		counts: { 1: 1 },
+	},
+	{
+		id: "ys063029n12p7694",
+		n: 0,
+		label: "edge 0.6303 (3, 4, 12, 24, 12*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 2: 1, 4: 2, 5: 5 },
+	},
+	{
+		id: "ys06565886n3p1031",
+		n: 0,
+		label: "edge 0.6566 (4, 12, ∞, 3*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 4: 2, 5: 2 },
+	},
+	{
+		id: "ys06931472n4p3894",
+		n: 0,
+		label: "edge 0.6931 (6, ∞, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1],
+		dropped: [],
+		counts: { 1: 1 },
+	},
+	{
+		id: "ys07270398n4p6410",
+		n: 0,
+		label: "edge 0.7270 (3, 8, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 2: 1, 3: 1, 4: 2, 5: 4 },
+	},
+	{
+		id: "ys08072799n4p1941",
+		n: 0,
+		label: "edge 0.8073 (3, 4, 6, 8, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [4],
+		dropped: [],
+		counts: { 4: 1 },
+	},
+	{
+		id: "ys08640631n6p3830",
+		n: 0,
+		label: "edge 0.8641 (3, 4, 6, 10, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [5],
+		dropped: [],
+		counts: { 5: 1 },
+	},
+	{
+		id: "ys08791793n5p6583",
+		n: 0,
+		label: "edge 0.8792 (3, 10, 5*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 4: 1, 5: 11 },
+	},
+	{
+		id: "ys08813736n4p1659",
+		n: 0,
+		label: "edge 0.8814 (8, ∞, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 2, 2: 4, 3: 9, 4: 50, 5: 155 },
+	},
+	{
+		id: "ys09144011n6p3727",
+		n: 0,
+		label: "edge 0.9144 (4, 12, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 2: 2, 3: 2, 4: 21, 5: 68 },
+	},
+	{
+		id: "ys09167731n5p2917",
+		n: 0,
+		label: "edge 0.9168 (3, 5, 10, 5*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [2, 3],
+		dropped: [],
+		counts: { 2: 1, 3: 1 },
+	},
+	{
+		id: "ys09271974n6p2605",
+		n: 0,
+		label: "edge 0.9272 (6, ∞, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 2, 2: 2, 3: 15, 4: 69, 5: 416 },
+	},
+	{
+		id: "ys09516431n6p6673",
+		n: 0,
+		label: "edge 0.9516 (3, 12, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 2: 2, 3: 6, 4: 15, 5: 45 },
+	},
+	{
+		id: "ys0982202n4p2517",
+		n: 0,
+		label: "edge 0.9822 (3, 4, ∞, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 2: 1, 4: 1, 5: 2 },
+	},
+	{
+		id: "ys10027441n4p1533",
+		n: 0,
+		label: "edge 1.0027 (3, 4, 10, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [3, 4, 5],
+		dropped: [],
+		counts: { 3: 4, 4: 27, 5: 162 },
+	},
+	{
+		id: "ys11016162n4p1332",
+		n: 0,
+		label: "edge 1.1016 (3, 4, 12, ∞, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 4: 1, 5: 5 },
+	},
+	{
+		id: "ys11428302n6p2862",
+		n: 0,
+		label: "edge 1.1428 (3, 6, ∞, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 2: 3, 3: 23, 4: 175, 5: 1755 },
+	},
+	{
+		id: "ys12537393n5p2288",
+		n: 0,
+		label: "edge 1.2537 (3, 4, 5*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 4: 1, 5: 13 },
+	},
+	{
+		id: "ys12764637n4p3438",
+		n: 0,
+		label: "edge 1.2765 (4, 6, 12, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [2, 3, 4, 5],
+		dropped: [],
+		counts: { 2: 4, 3: 6, 4: 51, 5: 188 },
+	},
+	{
+		id: "ys1296715n6p4218",
+		n: 0,
+		label: "edge 1.2967 (3, 6, ∞, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [2, 3, 4, 5],
+		dropped: [],
+		counts: { 2: 4, 3: 2, 4: 25, 5: 186 },
+	},
+	{
+		id: "ys16169217n3p1605",
+		n: 0,
+		label: "edge 1.6169 (5, 10, 3*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 3: 11, 4: 12, 5: 97 },
+	},
+	{
+		id: "ys16169217n5p2657",
+		n: 0,
+		label: "edge 1.6169 (4, 10, 5*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 3, 2: 2, 3: 19, 4: 427, 5: 3148 },
+	},
+	{
+		id: "ys18550771n9p2215",
+		n: 0,
+		label: "edge 1.8551 (3, 4, 9, 9*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 3, 2: 18, 3: 173, 4: 4459, 5: 133861 },
+	},
+	{
+		id: "ys18764292n3p539",
+		n: 0,
+		label: "edge 1.8764 (5, 6, 3*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 3: 11, 4: 30, 5: 495 },
+	},
+	{
+		id: "ys18764292n5p1464",
+		n: 0,
+		label: "edge 1.8764 (4, 6, 5*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 3, 2: 6, 3: 120, 4: 2071, 5: 36593 },
+	},
+	{
+		id: "ys20481074n4p1004",
+		n: 0,
+		label: "edge 2.0481 (5, 8, 4*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 3: 4, 4: 7, 5: 483 },
+	},
+	// ⚑ k = 5 is partial: rows A3,A5 and A3,A5,A10 stopped at the Searcher's limit; about 950,000 more (tileestimate, s.e. 0.4 million).
+	{
+		id: "ys21225501n5p1200",
+		n: 0,
+		label: "edge 2.1226 (3, 5, 10, 5*), k = 5 partial",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 2: 39, 3: 1628, 4: 94085, 5: 92348 },
+	},
+	// ⚑ k = 5 is partial: rows A4,Aoo, A3,A4,A10,Aoo and A3,A4,A5,A10,Aoo stopped at the limit; about 2.6 million more.
+	{
+		id: "ys21225501n5p817",
+		n: 0,
+		label: "edge 2.1226 (3, 4, 5, 10, ∞, 5*), k = 5 partial",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 3, 2: 21, 3: 563, 4: 35575, 5: 606235 },
+		parts: { 5: 3 },
+	},
+	{
+		id: "ys21618317n6p1302",
+		n: 0,
+		label: "edge 2.1618 (5, 12, 6*)",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 1, 3: 15, 4: 70, 5: 3839 },
+	},
+	// ⚑ k = 5 is partial: row A10,Aoo stopped at the limit; it alone holds about 286 million (s.e. 30 million).
+	{
+		id: "ys22483544n3p402",
+		n: 0,
+		label: "edge 2.2484 (10, ∞, 3*), k = 5 partial",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 2, 2: 22, 3: 2860, 4: 827769, 5: 294 },
+		parts: { 4: 4 },
+	},
+	// ⚑ k = 5 is partial: row A6,Aoo stopped at the limit; it alone holds about 143 million (s.e. 41 million).
+	{
+		id: "ys22483544n5p1080",
+		n: 0,
+		label: "edge 2.2484 (6, ∞, 5*), k = 5 partial",
+		family: "hybrid",
+		star: true,
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 2, 2: 22, 3: 2856, 4: 827622, 5: 508 },
+		parts: { 4: 4 },
 	},
 ];
 
@@ -1934,10 +2399,9 @@ export function hypPolyLazyShardsForK(k: number): HypPolyBoard[] {
 	return HYP_POLY_BOARDS.filter((b) => b.lazyKs.includes(k));
 }
 
-/** A board's shard URLs for one k. EVERY shard on this shelf is stored GZIPPED. `public/` is tracked in
- *  git, and the shelf now carries every k Marek enumerated — 295 boards, 8,761,447 tilings, 292 MB
- *  compressed. Dart arrays are thousands of small repeated integers, so the ratio is 10-15x, and the WIRE is identical either way because the server gzips a plain .json on the fly
- *  anyway. atlasCodec's `shardBody` reads either form, sniffing the gzip magic. */
+/** A board's shard URLs for one k. EVERY shard on this shelf is stored compressed (brotli, `.json.br`):
+ *  the shelf carries every k Marek enumerated, and dart arrays are thousands of small repeated integers.
+ *  atlasCodec's `shardBody` decompresses them. */
 export const hypPolyShardUrls = (n: string, k: number): string[] => {
 	// The abcd stems carry a "q" so a 4-digit board id can never collide with an ai1 one, and the ai2 ids
 	// already carry their own "t". The developer prefixes record ids the same way, which is what keeps a
@@ -1945,7 +2409,7 @@ export const hypPolyShardUrls = (n: string, k: number): string[] => {
 	const board = HYP_POLY_BOARD_BY_ID.get(n);
 	const stem = `/hyperbolic-poly/hp${board?.family === "abcd" ? "q" : ""}${n}-k${k}`;
 	const parts = board?.parts?.[k];
-	return parts ? Array.from({ length: parts }, (_, i) => `${stem}-p${i}.json.gz`) : [`${stem}.json.gz`];
+	return parts ? Array.from({ length: parts }, (_, i) => `${stem}-p${i}.json.br`) : [`${stem}.json.br`];
 };
 
 /** The /play sub-axis key — namespaced against the "hyp-" edge bases and the "hyc-" colourings, and
@@ -1993,7 +2457,7 @@ const canonicalFigure = (fig: string): string => {
  *  filtered by `sizeCensus`, since a (3, 4, ∞) board also holds tilings by triangles and squares alone.
  *  Library's polygon facet, /play's polygon-set rows and the manifest's per-tier counts all read this. */
 export const hypPolyTileSet = (p: Pick<HypPolyPattern, "stats">): string[] =>
-	p.stats.sizes.filter((_, i) => p.stats.sizeCensus[i] > 0).map((n) => (n === 0 ? "∞" : String(n)));
+	p.stats.sizes.filter((_, i) => p.stats.sizeCensus[i] > 0).map((n) => (n === 0 ? "∞" : n < 0 ? `${-n}*` : String(n)));
 
 /** The /play tree's polygon-set key: `hypPolyTileSet`, except on a multi-length board, where a size alone
  *  merges tiles that are not alike (1247 has triangles at ×1, ×2 and ×7). There the set is read off the

@@ -2,16 +2,20 @@
 // The engine checks run where tilesearch is built; Marek's 1.061275 census is the end-to-end case: the checks
 // must rule out exactly the combinations his hand-written rules drop, and more (2026-11-03).
 import { execFile, execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
+import { RunFolder } from "../electron/runs";
+import { Study } from "../electron/studies";
+import type { RowState } from "./bridge";
 import { cyclicKey, evaluate, minpolyAt, over, parse, polyText, removeVertices, serialize, times, withPermutations, withRequiredFaces } from "./board";
 import {
 	aliveKeys,
 	cyclicOrders,
 	faceLabels,
+	faceTally,
 	MAX_ORDERS,
 	freeParam,
 	paramText,
@@ -28,7 +32,9 @@ import {
 	rowText,
 	wholeBoards,
 	withoutK,
+	withoutOptionalFace,
 	withParam,
+	withSubsets,
 	type RowPlan,
 	type StudyPlan,
 } from "./study";
@@ -213,6 +219,40 @@ describe("rows", () => {
 		const only = parse("name t\nk 1 2\nangle A4\noptional A4 x 4\nvertex A4 A4 A4 A4\nsubsets 0 1\n").board;
 		expect(rowBoard(only, [], "base")).toEqual({ none: "No face is left on this row's board." });
 	});
+	it("cuts a require-any line to the row's faces, and drops it when one of the row's own faces meets it", () => {
+		const b = parse(serialize(base()) + "require face A4 x 4 | face A6 x 6\nrequire face A3 x 3 | face A6 x 6\n").board;
+		const o = rowBoard(b, [1], "A4");
+		if (!("board" in o)) throw new Error(o.none);
+		expect(o.board.require.map((r) => r.faces)).toEqual([[["A3", "A3", "A3"]], [["A4", "A4", "A4", "A4"]]]);
+		expect(dump(serialize(o.board))).toBeTruthy(); // no face the row left out, so no corner without an angle
+		const both = parse(serialize(base()) + "subsets 0 2\nrequire face A4 x 4 | face A6 x 6\n").board;
+		expect(rowBoard(both, [], "base")).toEqual({ none: "No face of required set 1 is on this row's board." });
+	});
+	it("makes no row of a subset with no face of a required set, and counts the others as it lists them", () => {
+		const any = "subsets 0 2\nrequire face A4 x 4 | face A6 x 6\n";
+		expect(planOf(serialize(base()) + any).list!.map((r) => r.name)).toEqual(["A4", "A6", "A4,A6"]);
+		// a set naming a face always on the board, every row meets; a set holding another's faces goes with it
+		const plan = planOf(serialize(base()) + any + "require face A3 x 3 | face A6 x 6\nrequire face A6 x 6\n");
+		expect([plan.required, plan.rows, plan.list!.map((r) => r.name)]).toEqual([1, 2, ["A6", "A4,A6"]]);
+		// nine faces in three overlapping sets: the count matches every subset tried by hand
+		const F = Array.from({ length: 9 }, (_, i) => `F${i}`);
+		const sets = [[0, 1, 2], [2, 3, 4], [5, 6, 0]];
+		const t = [
+			"name t\nk 1 2",
+			...F.map((f) => `angle ${f} 60`),
+			...F.map((f) => `optional ${f} x 3`),
+			...F.map((f) => `vertex ${f}^6`),
+			"subsets 1 5",
+			...sets.map((s) => `require ${s.map((i) => `face ${F[i]} x 3`).join(" | ")}`),
+		].join("\n");
+		let hand = 0;
+		for (let m = 0; m < 1 << 9; m++) {
+			const size = F.filter((_, i) => m & (1 << i)).length;
+			if (size >= 1 && size <= 5 && sets.every((s) => s.some((i) => m & (1 << i)))) hand++;
+		}
+		const big = planOf(t);
+		expect([big.problems, big.rows, big.list!.length]).toEqual([[], hand, hand]);
+	});
 	it("requires an optional apeirogon with x inf, which the engine reads", () => {
 		const b = parse(
 			"name t\nk 1 2\nangle A3\nangle Boo\nedge Pi\nface A3 x 3\noptional Boo Pi x inf\nvertex A3 A3 Boo Boo\nvertex Pi Pi\nvertex A3 A3 A3 Boo Pi\npermutations yes\n",
@@ -262,6 +302,98 @@ describe("rows", () => {
 		const b = parse(t);
 		expect(b.problems.filter((p) => p.severity === "error")).toEqual([]);
 		expect(serialize(b.board)).toBe(t);
+	});
+});
+
+describe("a study on disk, changed while it goes", () => {
+	// four optional faces, one a row. F0's search stopped at its time ceiling, F1's at its disk ceiling; F3's first
+	// search found 3 tilings at k = 2, and its raised search (to k = 3) has not run yet
+	const setUp = () => {
+		const dir = mkdtempSync(join(tmpdir(), "tilesearch-study-"));
+		const F = ["F0", "F1", "F2", "F3"];
+		const board = ["name s\nk 1 2", ...F.map((f) => `angle ${f} 60`), ...F.map((f) => `optional ${f} x 3`), ...F.map((f) => `vertex ${f}^6`), "subsets 1 1 # one a row", ""].join("\n");
+		writeFileSync(join(dir, "study.board"), board);
+		const run = (name: string, census: string, capped?: string, k = 2) => {
+			const d = join(dir, name);
+			mkdirSync(join(d, "solver_s"), { recursive: true }); // named after the board, as the engine names it
+			writeFileSync(join(d, "input.board"), board.replace(/^optional/gm, "face"));
+			writeFileSync(join(d, "run.json"), JSON.stringify({ threads: 1, nice: 10, k: [1, k], raise: { minutes: 1, upTo: 3 } }));
+			writeFileSync(join(d, "solver_s", "census.txt"), census);
+			// a stopped run counts what its finished roots found: one root here, with the census's counts
+			const kn = [...census.matchAll(/k=(\d+) -- (\d+)/g)].map((m) => `${m[1]}:${m[2]}`);
+			if (!census.includes("MAX")) writeFileSync(join(d, "solver_s", "roots.done"), `0 ${kn.join(" ")}\n`);
+			if (capped) writeFileSync(join(d, "capped.txt"), capped);
+			return RunFolder.open(d)!;
+		};
+		const runs = [
+			run("F0-run", "k=1 -- 1\n", "Stopped by its rule at k ≤ 2: it ran over 1 min."),
+			run("F1-run", "k=1 -- 1\n", "Stopped by its rule at k ≤ 2: it wrote over 1 GB."),
+			run("F3-run", "k=1 -- 0\nk=2 -- 3\nMAX\n"),
+			run("F3-new", "k=1 -- 0\n", undefined, 3),
+		];
+		const options = { mode: "enumerate", seconds: 60, limit: 0, parallel: 1, threads: 1, nice: 10, raise: { minutes: 1, upTo: 3 } };
+		const rows = [
+			{ name: "F0", check: "open", run: "F0-run" },
+			{ name: "F1", check: "open", run: "F1-run" },
+			{ name: "F2", check: "static", reason: "No vertex is left." },
+			{ name: "F3", check: "open", run: "F3-new", was: "F3-run" },
+		];
+		writeFileSync(join(dir, "study.json"), JSON.stringify({ version: 1, created: "2026-11-08T00:00:00Z", state: "done", note: "", options, rows }));
+		const study = Study.open(dir)!;
+		const byDir = new Map(runs.map((r) => [r.dir, r]));
+		const edit = (text: string, apply = false) => study.edit(text, apply, byDir, () => false);
+		const row = (name: string) => study.detail(byDir, () => false).rows.find((r) => r.name === name)!;
+		return { dir, study, byDir, edit, row };
+	};
+	it("finishes the searches a time ceiling stopped, raising k no further, and leaves a disk ceiling alone", () => {
+		const { study, byDir, row } = setUp();
+		expect([row("F0").state, row("F1").state]).toEqual(["limit", "limit"]);
+		expect(study.finish(byDir)).toBe(1);
+		const [f0, f1] = [...byDir.values()];
+		expect([f0.capped, f0.options?.raise, !!f1.capped]).toEqual([null, undefined, true]);
+		expect([row("F0").state, row("F1").state, study.state]).toEqual(["stopped", "limit", "running"]);
+	});
+	it("shows what a raised row found until its new search finishes", () => {
+		const { study, byDir } = setUp();
+		const f3 = study.detail(byDir, (id) => id.endsWith("F3-new")).rows.find((r) => r.name === "F3")!;
+		expect([f3.state, f3.first, f3.total, f3.raising]).toEqual(["found", 2, 3, { state: "queued", k: 3 }]);
+		expect(study.summary(byDir, () => false).raising).toBe(1);
+	});
+	it("takes more faces per row as an edit: the old rows keep their checks and runs, the new join unchecked", async () => {
+		const { dir, study, edit, row } = setUp();
+		const wider = withSubsets(study.template, [1, 2]);
+		expect(await edit(wider)).toMatchObject({ rows: 10, kept: 4, changed: 0, added: 6, dropped: 0, lost: [], removed: [] });
+		expect(readFileSync(join(dir, "study.board"), "utf8")).toContain("\nsubsets 1 1 # one a row\n"); // a preview writes nothing
+		await edit(wider, true);
+		expect(readFileSync(join(dir, "study.board"), "utf8")).toContain("\nsubsets 1 2 # one a row\n");
+		expect([study.detail(new Map(), () => false).rowCount, study.state]).toEqual([10, "checking"]);
+		expect([row("F2").state, row("F3").state, row("F0,F1").state]).toEqual(["ruled-out", "found", "checking"]);
+		// a vertex line of F0 and F1 together changes the board of the one row that holds both
+		expect(await edit(`${wider}vertex F0^3 F1^3\n`)).toMatchObject({ kept: 9, changed: 1, added: 0, dropped: 0 });
+	});
+	it("takes a face out: its rows leave, their tilings asked about first, and the census records it", async () => {
+		const { dir, study, edit } = setUp();
+		const text = withoutOptionalFace(study.template, "F0")!;
+		expect(text).not.toMatch(/F0/); // its face, vertex and angle lines
+		const res = await edit(text, true);
+		expect(res).toMatchObject({
+			rows: 3,
+			kept: 3,
+			dropped: 1,
+			lost: [{ name: "F0", tilings: 1 }],
+			removed: [{ face: "F0", rows: 1, found: 1, tilings: 1, left: 0, proven: false }],
+		});
+		expect("stop" in res && res.stop.map((d) => basename(d))).toEqual(["F0-run"]);
+		expect(JSON.parse(readFileSync(join(dir, "study.json"), "utf8")).removed.map((r: { face: string }) => r.face)).toEqual(["F0"]);
+		expect(withoutOptionalFace("name t\nvary n 3 4\noptional A{n} x {n}\n", "A{n}")).toBeNull();
+	});
+	it("tallies a face: its tilings, how far its other rows were searched, or ruled out at every k", () => {
+		const r = (faces: string[], state: RowState, total = 0, through?: number) => ({ faces, state, total, through });
+		const rows = [r(["A"], "none", 0, 12), r(["A", "B"], "none", 0, 9), r(["B"], "found", 5), r(["C"], "ruled-out"), r(["D"], "none", 0, 4), r(["D", "E"], "waiting")];
+		expect(faceTally(rows, "A")).toEqual({ rows: 2, found: 0, tilings: 0, left: 0, through: 9, proven: false });
+		expect(faceTally(rows, "B")).toMatchObject({ found: 1, tilings: 5 });
+		expect(faceTally(rows, "C")).toMatchObject({ proven: true, left: 0 });
+		expect(faceTally(rows, "D")).toEqual({ rows: 2, found: 0, tilings: 0, left: 1, proven: false });
 	});
 });
 

@@ -8,8 +8,9 @@ import path from "node:path";
 import zlib from "node:zlib";
 import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain, nativeTheme, net, shell } from "electron";
 import { raiseCeiling, raiseStop, type RaiseRule, type Check, type Estimate, type Hook, type Rule, type RunOptions, type Settings, type Status, type StatusPush, type StudyOptions, type Update } from "../src/bridge";
-import { MIN_FREE_BYTES, ruleEnv, runEstimator, Runs, STAMP, type RunFolder } from "./runs";
+import { eachCertificate, MIN_FREE_BYTES, ruleEnv, runEstimator, Runs, STAMP, type RunFolder } from "./runs";
 import { Studies, Study, type Context } from "./studies";
+import { engineText, parse, searchesFaces } from "../src/board";
 
 const exe = (name: string) => (process.platform === "win32" ? `${name}.exe` : name);
 // packaged: Contents/Resources (mac) or resources\ (Windows); from source: tools/searcher/
@@ -168,11 +169,19 @@ function status(): Status {
 
 function checkBoard(text: string): Promise<Check> {
 	const f = path.join(os.tmpdir(), `tilesearch-check-${process.pid}.board`);
-	fs.writeFileSync(f, text);
+	// a tile-orbit search is checked as the engine will run it, swapped: its line numbers are not the board's
+	let input: string;
+	try {
+		input = engineText(text);
+	} catch (e) {
+		return Promise.resolve({ ok: false, line: null, message: (e as Error).message });
+	}
+	const swapped = input !== text;
+	fs.writeFileSync(f, input);
 	return new Promise((resolve) =>
 		execFile(ENGINE, [f, "--dump"], { timeout: 10_000 }, (err, stdout, stderr) => {
 			if (!err) return resolve({ ok: true, dump: stdout });
-			const m = /board line (\d+): (.*)/.exec(stderr);
+			const m = swapped ? null : /board line (\d+): (.*)/.exec(stderr);
 			resolve(
 				m
 					? { ok: false, line: Number(m[1]), message: m[2] }
@@ -195,6 +204,14 @@ function launch(id: string, options: RunOptions, estimate = true): { error?: str
 	if (!queue().some((e) => e.id === id)) queue().push({ id, options });
 	saveSettings();
 	return { queued: queue().findIndex((e) => e.id === id) + 1 };
+}
+/** A queued run leaves the queue; a running one stops. */
+function stopRun(id: string) {
+	const q = queue().findIndex((e) => e.id === id);
+	if (q >= 0) {
+		queue().splice(q, 1);
+		saveSettings();
+	} else runs.get(id)?.stop();
 }
 /** Start queued runs while there is room: each tick, and after a change to the limit. */
 function drain() {
@@ -233,6 +250,8 @@ function start(id: string, options: RunOptions, estimate = true): string | null 
 let balancing: ChildProcess | null = null;
 function balanceBoard(text: string): Promise<{ dead: number[] } | { error: string } | null> {
 	balancing?.kill();
+	// its dead vertices would be the swapped board's (the faces): a tile-orbit search shows none
+	if (searchesFaces(parse(text).board)) return Promise.resolve(null);
 	const f = path.join(os.tmpdir(), `tilesearch-balance-${process.pid}.board`);
 	fs.writeFileSync(f, text);
 	return new Promise((resolve) => {
@@ -262,8 +281,14 @@ function handlers() {
 	// a board's size before it runs: a few seconds of tileestimate on all but one core
 	ipcMain.handle("estimate", (_, text: string, k?: [number, number], rule?: Rule) => {
 		if (!fs.existsSync(ESTIMATOR)) return { error: "tileestimate is missing from the app." };
+		let input: string;
+		try {
+			input = engineText(text);
+		} catch (e) {
+			return { error: (e as Error).message };
+		}
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tileestimate-"));
-		fs.writeFileSync(path.join(dir, "input.board"), text);
+		fs.writeFileSync(path.join(dir, "input.board"), input);
 		const args = ["input.board", "--seconds", "8", "--threads", String(Math.max(1, os.availableParallelism() - 1))];
 		if (k) args.push("--k", String(k[0]), String(k[1]));
 		return new Promise<Estimate | { error: string }>((resolve) => {
@@ -357,45 +382,46 @@ function handlers() {
 		return { id: s.dir };
 	});
 	ipcMain.handle("study", (_, id: string) => studies.get(id)?.detail(byDir(), isQueued) ?? null);
-	ipcMain.handle("studyAction", (_, id: string, action: "pause" | "resume" | "unraise") => {
+	// a change to a study: made, then the study's tick at once, and the window told
+	const onStudy = <T extends object>(id: string, change: (s: Study) => T): T | { error: string } => {
 		const s = studies.get(id);
 		if (!s) return { error: "That study no longer exists." };
-		if (action === "pause") s.pause(byDir());
-		else if (action === "resume") s.resume();
-		else s.unraise(byDir());
+		const out = change(s);
 		s.tick(studyContext(), byDir());
 		push();
-		return {};
-	});
-	ipcMain.handle("studyRaise", (_, id: string, rule: RaiseRule) => {
+		return out;
+	};
+	ipcMain.handle("studyAction", (_, id: string, action: "pause" | "resume" | "unraise" | "finish") =>
+		onStudy(id, (s) => {
+			if (action === "pause") s.pause(byDir());
+			else if (action === "resume") s.resume();
+			else if (action === "unraise") s.unraise(byDir());
+			else return { on: s.finish(byDir()) };
+			return {};
+		}),
+	);
+	ipcMain.handle("studyRaise", (_, id: string, rule: RaiseRule) => onStudy(id, (s) => ({ on: s.raise(rule, byDir()) })));
+	ipcMain.handle("studyLimit", (_, id: string, minutes: number | null) =>
+		onStudy(id, (s) => ({ on: s.setLimit(minutes, byDir()) })),
+	);
+	ipcMain.handle("studyResources", (_, id: string, o: Pick<StudyOptions, "parallel" | "threads" | "nice">, restart: boolean) =>
+		onStudy(id, (s) => (s.setResources(o, restart, byDir()), {})),
+	);
+	ipcMain.handle("studyEdit", async (_, id: string, text: string, apply: boolean) => {
 		const s = studies.get(id);
 		if (!s) return { error: "That study no longer exists." };
-		const on = s.raise(rule, byDir());
+		const res = await s.edit(text, apply, byDir(), isQueued);
+		if (!apply || "error" in res) return res;
+		for (const run of res.stop) stopRun(run);
 		s.tick(studyContext(), byDir());
 		push();
-		return { on };
-	});
-	ipcMain.handle("studyLimit", (_, id: string, minutes: number | null) => {
-		const s = studies.get(id);
-		if (!s) return { error: "That study no longer exists." };
-		const on = s.setLimit(minutes, byDir());
-		s.tick(studyContext(), byDir());
-		push();
-		return { on };
+		return res;
 	});
 	ipcMain.handle("setRaise", (_, id: string, rule: RaiseRule | null) => {
 		runs.get(id)?.setRaise(rule);
 		push();
 	});
-	ipcMain.handle("stop", (_, id: string) => {
-		// a queued run leaves the queue; a running one stops
-		const q = queue().findIndex((e) => e.id === id);
-		if (q >= 0) {
-			queue().splice(q, 1);
-			saveSettings();
-			push();
-		} else runs.get(id)?.stop();
-	});
+	ipcMain.handle("stop", (_, id: string) => (stopRun(id), push()));
 	// runs and folders: each answers with the new path or an error the window shows as it is
 	const changed = <T>(r: T) => (push(), r);
 	const moved = (p: string, r: { path: string } | { error: string }) => (
@@ -406,10 +432,24 @@ function handlers() {
 	ipcMain.handle("remove", (_, p: string) => changed(runs.remove(p)));
 	ipcMain.handle("mkdir", (_, parent: string, name: string) => changed(runs.mkdir(parent, name)));
 	ipcMain.handle("reveal", (_, p: string) => shell.showItemInFolder(p));
-	ipcMain.handle("readFile", (_, p: string, max: number) => {
+	// a finished run's colour order for its tile shapes (tilings.tsx useShapeRanks), beside its certificates
+	ipcMain.handle("saveShapes", (_, dir: string, text: string) => {
+		const rel = path.relative(saved.root, dir);
+		if (rel.startsWith("..") || path.isAbsolute(rel) || !fs.existsSync(dir)) return;
+		fs.writeFileSync(path.join(dir, "shapes.json"), text);
+	});
+	ipcMain.handle("readFile", async (_, p: string, max: number, faces?: number) => {
 		// only files inside the output folder: the window names paths, so it must not name any path
 		const rel = path.relative(saved.root, p);
 		if (rel.startsWith("..") || path.isAbsolute(rel)) return "";
+		if (faces !== undefined) {
+			let text = "";
+			await eachCertificate(p, 0, (f, cert) => {
+				if (f === faces) text += cert() + "---\n\n";
+				return max <= 0 || text.length < max;
+			}).catch(() => {}); // a gzipped file cut short: what it held up to there
+			return text.replace(/\r/g, "");
+		}
 		// certificates written on Windows end their lines with \r\n: the window reads \n
 		if (p.endsWith(".gz")) return gunzipHead(p, max).then((t) => t.replace(/\r/g, ""));
 		if (max <= 0) return fs.readFileSync(p, "utf8").replace(/\r/g, ""); // the whole file

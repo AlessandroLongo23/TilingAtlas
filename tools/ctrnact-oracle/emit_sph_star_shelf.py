@@ -354,7 +354,7 @@ def main():
                 "chiral": all(d > 0 for d in dets),
             },
         }
-        write_json(os.path.join(args.out, sid + ".json.gz"), rec)
+        write_json(os.path.join(args.out, sid + ".json.br"), rec)
         index.append({k: rec[k] for k in ("id", "config", "k", "density", "solid")}
                      | {"stats": rec["stats"]})
     index.sort(key=lambda e: (e["k"], e["density"], e["stats"]["verts"], e["stats"]["faces"]))

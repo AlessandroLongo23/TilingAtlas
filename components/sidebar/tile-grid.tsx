@@ -3,6 +3,8 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
+import { Badge } from "@/design-system/components/badge";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
@@ -22,6 +24,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { paramGlyphs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 import { GEOMETRIES } from "@/lib/vocabulary";
+import { cssEase, MOTION } from "@/design-system/motion";
 
 // The /play picker's tile wall for one k-bucket: two columns of thumbnails (three on a phone, where the
 // sheet is short and a wide column would leave room for barely one row) on the wall grid, with a
@@ -90,7 +93,7 @@ function pulse(el: HTMLElement) {
 				outlineOffset: "2px",
 			},
 		],
-		{ duration: 650, easing: "ease-out" },
+		{ duration: MOTION.settle.ms, easing: cssEase(MOTION.settle.ease) },
 	);
 }
 
@@ -282,91 +285,94 @@ function Tile({
 	if (!t) return <div className="ta-wall-cell bg-surface-chrome" />;
 	const selected = t.canonicalKey === selectedKey;
 	return (
-		<button
-			data-tiling-key={t.canonicalKey}
-			type="button"
-			onClick={() => onSelect?.(t)}
-			title={`${t.canonicalKey} · {${t.family}}`}
-			// A finger gets the press it cannot hover: the tile sinks a little while it is held.
-			className="group relative flex cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-raised ring-1 ring-line-subtle max-md:transition-transform max-md:active:scale-[0.96]"
-		>
-			<div className="relative aspect-square bg-surface-raised">
-				{t.hollow ? (
-					<HollowThumbnail patch={t.hollow.patch} />
-				) : t.sphPoly ? (
-					<SphPolyThumbnail pattern={t.sphPoly} />
-				) : t.sphStar ? (
-					<SphStarThumbnail pattern={t.sphStar} />
-				) : t.pentEdges ? (
-					<PentagonEdgesThumbnail pattern={t.pentEdges} />
-				) : t.ihEdges ? (
-					<IsohedralEdgesThumbnail pattern={t.ihEdges} />
-				) : t.sphEdges ? (
-					<SphSchwarzThumbnail pattern={t.sphEdges} />
-				) : t.hypPoly ? (
-					<HyperbolicThumbnail tiling={t.hypPoly} mode="tiling" />
-				) : t.schwarz ? (
-					t.schwarz.geometry === GEOMETRIES.SPHERICAL ? (
-						<SphSchwarzThumbnail pattern={t.schwarz} />
-					) : (
-						<HyperbolicThumbnail tiling={hypSchwarzMeta(t.schwarz)} mode="edges" />
-					)
-				) : t.sphBubble ? (
-					// A spherical bubble decoration draws through the same thumbnail, which swaps the flat
-					// solid for the meshed bubble surface when it is handed the bite words.
-					<SphericalThumbnail solidId={t.sphBubble.solid} bubbleBites={t.sphBubble.bites} />
-				) : t.spherical ? (
-					<SphericalThumbnail solidId={t.spherical.solid} />
-				) : t.sphColors ? (
-					<SphericalColorsThumbnail pattern={t.sphColors.pattern} mode="polyhedron" />
-				) : t.hypColors ? (
-					<HyperbolicThumbnail tiling={t.hypColors} mode="colors" />
-				) : t.hypEdges ? (
-					<HyperbolicThumbnail tiling={t.hypEdges} mode="edges" />
-				) : t.sphericalFreedraw ? (
-					<SphereFreedrawThumbnail
-						pattern={t.sphericalFreedraw.pattern}
-						solidId={t.sphericalFreedraw.solid}
-						mode="polyhedron"
-						showGrid={false}
-					/>
-				) : t.freedraw ? (
-					<FreedrawThumbnail pattern={t.freedraw} />
-				) : t.colors ? (
-					<ColorsThumbnail pattern={t.colors} live />
-				) : t.developed ? (
-					<HyperbolicThumbnail tiling={t.developed.patch} mode="tiling" />
-				) : t.renderCell ? (
-					<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
-				) : null}
-				{t.paramCell ? <ParamBadge paramCell={t.paramCell} /> : null}
-			</div>
-			<span
-				className="flex items-center gap-1.5 border-t border-line-subtle px-2 font-mono text-[10.5px] text-fg-secondary max-md:text-xs"
-				style={{ height: CAPTION }}
+		// A late tooltip: a pointer sweeping the wall should not raise one over every tile it crosses.
+		<Tooltip label={`${t.canonicalKey} · {${t.family}}`} delay="late">
+			<button
+				data-tiling-key={t.canonicalKey}
+				type="button"
+				onClick={() => onSelect?.(t)}
+				// A finger gets the press it cannot hover: the tile sinks a little while it is held.
+				className="group relative flex cursor-pointer flex-col overflow-hidden rounded-surface bg-surface-raised ring-1 ring-line-subtle max-md:transition-transform max-md:active:scale-[0.96]"
 			>
-				<span className="min-w-0 truncate">{compactVertexConfig(t.family)}</span>
-				{/* A k bucket often holds one configuration many times over, so the key's tail is what tells
-				    two neighbours apart; the full key and config stay in the title. */}
-				<span className="ml-auto shrink-0 text-[11px] text-fg-muted max-md:text-xs">{keyTail(t.canonicalKey)}</span>
-			</span>
-			{/* The selection ring lives on its own overlay, not on the button: both an inset ring
+				<div className="relative aspect-square bg-surface-raised">
+					{t.hollow ? (
+						<HollowThumbnail patch={t.hollow.patch} />
+					) : t.sphPoly ? (
+						<SphPolyThumbnail pattern={t.sphPoly} />
+					) : t.sphStar ? (
+						<SphStarThumbnail pattern={t.sphStar} />
+					) : t.pentEdges ? (
+						<PentagonEdgesThumbnail pattern={t.pentEdges} />
+					) : t.ihEdges ? (
+						<IsohedralEdgesThumbnail pattern={t.ihEdges} />
+					) : t.sphEdges ? (
+						<SphSchwarzThumbnail pattern={t.sphEdges} />
+					) : t.hypPoly ? (
+						<HyperbolicThumbnail tiling={t.hypPoly} mode="tiling" />
+					) : t.schwarz ? (
+						t.schwarz.geometry === GEOMETRIES.SPHERICAL ? (
+							<SphSchwarzThumbnail pattern={t.schwarz} />
+						) : (
+							<HyperbolicThumbnail tiling={hypSchwarzMeta(t.schwarz)} mode="edges" />
+						)
+					) : t.sphBubble ? (
+						// A spherical bubble decoration draws through the same thumbnail, which swaps the flat
+						// solid for the meshed bubble surface when it is handed the bite words.
+						<SphericalThumbnail solidId={t.sphBubble.solid} bubbleBites={t.sphBubble.bites} />
+					) : t.spherical ? (
+						<SphericalThumbnail solidId={t.spherical.solid} />
+					) : t.sphColors ? (
+						<SphericalColorsThumbnail pattern={t.sphColors.pattern} mode="polyhedron" />
+					) : t.hypColors ? (
+						<HyperbolicThumbnail tiling={t.hypColors} mode="colors" />
+					) : t.hypEdges ? (
+						<HyperbolicThumbnail tiling={t.hypEdges} mode="edges" />
+					) : t.sphericalFreedraw ? (
+						<SphereFreedrawThumbnail
+							pattern={t.sphericalFreedraw.pattern}
+							solidId={t.sphericalFreedraw.solid}
+							mode="polyhedron"
+							showGrid={false}
+						/>
+					) : t.freedraw ? (
+						<FreedrawThumbnail pattern={t.freedraw} />
+					) : t.colors ? (
+						<ColorsThumbnail pattern={t.colors} live />
+					) : t.developed ? (
+						<HyperbolicThumbnail tiling={t.developed.patch} mode="tiling" />
+					) : t.renderCell ? (
+						<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
+					) : null}
+					{t.paramCell ? <ParamBadge paramCell={t.paramCell} /> : null}
+				</div>
+				<span
+					className="flex items-center gap-1.5 border-t border-line-subtle px-2 font-mono text-micro text-fg-secondary"
+					style={{ height: CAPTION }}
+				>
+					<span className="min-w-0 truncate">{compactVertexConfig(t.family)}</span>
+					{/* A k bucket often holds one configuration many times over, so the key's tail is what tells
+				    two neighbours apart; the full key and config stay in the tooltip. */}
+					<span className="ml-auto shrink-0 text-caption text-fg-muted">{keyTail(t.canonicalKey)}</span>
+				</span>
+				{/* The selection ring lives on its own overlay, not on the button: both an inset ring
 			    (a box-shadow) and a negatively-offset outline paint UNDER the button's children in
 			    Chromium, and the thumbnail fills the cell edge to edge — it swallowed the ring whole.
 			    An absolutely positioned sibling after the thumbnail always paints on top. */}
-			<span
-				data-ring
-				aria-hidden="true"
-				className={cn(
-					"pointer-events-none absolute inset-0 z-10 rounded-lg",
-					// Selected: a 1.5px ink edge with a 2px panel-colour gap inside it, so the ring separates
-					// from the preview without shouting over it.
-					selected
-						? "shadow-[inset_0_0_0_1.5px_var(--color-text-primary),inset_0_0_0_3.5px_var(--color-surface-raised)]"
-						: "group-hover:ring-1 group-hover:ring-line-strong group-hover:ring-inset",
-				)}
-			/>
-		</button>
+				<span
+					data-ring
+					aria-hidden="true"
+					className={cn(
+						"pointer-events-none absolute inset-0 z-10 rounded-surface",
+						// Selected: a 1.5px ink edge with a 2px panel-colour gap inside it, so the ring separates
+						// from the preview without shouting over it.
+						selected
+							? // ds-check: keep (a two-ring selection outline drawn inside the tile, from tokens)
+								"shadow-[inset_0_0_0_1.5px_var(--color-text-primary),inset_0_0_0_3.5px_var(--color-surface-raised)]"
+							: "group-hover:ring-1 group-hover:ring-line-strong group-hover:ring-inset",
+					)}
+				/>
+			</button>
+		</Tooltip>
 	);
 }
 
@@ -382,7 +388,8 @@ function ParamBadge({ paramCell }: { paramCell: ParametricCellData }) {
 	const glyphs = all.length > 3 ? [`${all.length}×`] : all;
 	if (!glyphs.length) return null;
 	return (
-		<span
+		<Badge
+			tone="ink"
 			title={
 				all.length > 1
 					? `${all.length}-parameter family — ${all.join(", ")} vary independently (${all.length} sliders in Play)`
@@ -390,9 +397,9 @@ function ParamBadge({ paramCell }: { paramCell: ParametricCellData }) {
 			}
 			// min-w-4 + px-1 keeps the single-glyph badge the square it has always been and lets the
 			// two-glyph one grow sideways instead of squeezing the pair into 16px.
-			className="absolute top-1.5 left-1.5 inline-flex h-4 min-w-4 items-center justify-center gap-0.5 rounded bg-fg/85 px-1 text-[10px] leading-none font-semibold text-fg-inverse"
+			className="absolute top-1.5 left-1.5 h-4 min-w-4 justify-center gap-0.5 px-1 py-0 text-micro font-semibold"
 		>
 			{glyphs.join(" ")}
-		</span>
+		</Badge>
 	);
 }

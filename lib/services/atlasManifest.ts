@@ -16,7 +16,7 @@
  */
 
 import type { Decoration, Geometry, TileClass } from "@/lib/services/referenceAtlas";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 /** Which loader reaches a tier. `"ctrnact"` is loadReferenceAtlasShard, `"hyppoly"` is
  *  loadHyperbolicPolyShard (the only one that needs a board as well as a k); the rest are
@@ -56,6 +56,12 @@ export interface ManifestTier {
 	 * level map less the records the ladder cannot name.
 	 */
 	facets?: { polygons: Record<string, number>; levels: Record<string, number> };
+	/**
+	 * Edge-orbit count → tilings, for the tiers whose records carry `edgeOrbits` (2026-11-06). /library's
+	 * edge-orbit axis reads it to offer e chips for shards it has not loaded, and to fetch only the shards
+	 * that hold the e picked.
+	 */
+	edgeOrbits?: Record<string, number>;
 }
 
 export interface AtlasManifest {
@@ -79,7 +85,7 @@ let cache: Promise<AtlasManifest | null> | null = null;
  */
 export function loadAtlasManifest(): Promise<AtlasManifest | null> {
 	if (cache) return cache;
-	cache = fetch("/atlas-manifest.json.gz")
+	cache = fetchData("/atlas-manifest.json.br")
 		.then((res) => (res.ok ? shardBody<AtlasManifest | null>(res) : null))
 		.then((raw: AtlasManifest | null) => (raw && raw.manifest === 1 ? raw : null))
 		.catch(() => null);

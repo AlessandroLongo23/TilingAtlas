@@ -119,6 +119,6 @@ That uniqueness carries real weight: for each of the 11 configurations there is 
 
 ## Beyond one orbit
 
-Relax vertex-transitivity to $k$ orbits of vertices and the count explodes: 20 tilings for $k = 2$, then 61, 151, 332, and 673 for $k = 3$ through $6$, and 103,082 at $k = 13$ (OEIS A068599). The catalogue holds every term up to $k = 10$; the page on [k-uniform tilings](/catalogue/about/k-uniform) explains vertex orbits, the counts and who found them. The eleven tilings on this page are the $k = 1$ floor of that hierarchy, the only cases simple enough to settle by hand, and the fixed points every larger search is checked against.
+Relax vertex-transitivity to $k$ orbits of vertices and the count explodes: 20 tilings for $k = 2$, then 61, 151, 332, and 673 for $k = 3$ through $6$, 103,082 at $k = 13$, where OEIS A068599 ends, and 933,637 at $k = 16$. The catalogue holds every term up to $k = 16$; the page on [k-uniform tilings](/catalogue/about/k-uniform) explains vertex orbits, the counts and who found them. The eleven tilings on this page are the $k = 1$ floor of that hierarchy, the only cases simple enough to settle by hand, and the fixed points every larger search is checked against.
 
 These same regular polygons are also the base of one Islamic design system. For the tessellations behind Islamic geometric patterns, and the strapwork construction they carry, see [Islamic geometric patterns](/catalogue/about/islamic).

@@ -206,7 +206,12 @@ export function nobleSolid(id: string): Polyhedron | null {
 	const had = BUILT.get(id);
 	if (had) return had;
 	const rec = BY_ID.get(id);
-	if (!rec) return nobleFamilySolid(id, NOBLE_FAMILY_DEFAULTS);
+	if (!rec) {
+		// A family's default member, kept like every other solid so a lookup returns the same object each time.
+		const member = nobleFamilySolid(id, NOBLE_FAMILY_DEFAULTS);
+		if (member) BUILT.set(id, member);
+		return member;
+	}
 	const { vertices, faces } = nobleOrbit(rec[1], nobleSeed(rec[0]), rec[2]);
 	const built = solid(id, rec[0], vertices, faces);
 	BUILT.set(id, built);

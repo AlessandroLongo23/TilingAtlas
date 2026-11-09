@@ -3,6 +3,7 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { useReducedMotion } from "motion/react";
 import { CURVE_PRESETS, easeCurve, type Curve } from "@/lib/render/viewPath";
+import { HoverPill } from "@/design-system/components/hover-pill";
 import { cn } from "@/lib/utils/cn";
 
 // A segment's speed curve, edited like a curves adjustment in a photo editor: time across, progress up,
@@ -119,24 +120,27 @@ export function SpeedCurveEditor({
 				{handle(0)}
 				{handle(1)}
 			</svg>
-			<div className="flex flex-col gap-1">
+			<div className="relative flex flex-col gap-1">
+				<HoverPill />
 				{CURVE_PRESETS.map((p) => (
 					<button
 						key={p.name}
 						type="button"
 						onClick={() => morphTo(p.curve)}
 						className={cn(
-							"rounded px-1.5 py-0.5 text-left text-[11px] whitespace-nowrap transition-colors hover:bg-surface-overlay",
+							"rounded-tag px-1.5 py-0.5 text-left text-caption whitespace-nowrap transition-colors",
 							same(p.curve, curve) ? "bg-surface-sunken text-fg" : "text-fg-muted",
 						)}
 					>
 						{p.name}
 					</button>
 				))}
+				{/* A link-styled action under the presets: the pill passes it by. */}
 				<button
 					type="button"
+					data-pill-skip
 					onClick={onApplyAll}
-					className="mt-1 rounded px-1.5 py-0.5 text-left text-[11px] whitespace-nowrap text-fg-muted underline-offset-2 hover:text-fg hover:underline"
+					className="ta-link-quiet mt-1 px-1.5 py-0.5 text-left text-caption whitespace-nowrap"
 				>
 					Apply to all moves
 				</button>

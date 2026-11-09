@@ -9,7 +9,7 @@
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/design-system/components/slider";
 import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
 import { buildMultigrid, canonicalOffsets, directions, MULTIGRID_SYMMETRIES } from "@/lib/multigrid/engine";
 import { buildRule, seedSingle, seedStar, substituteOnce, SUPPORTED_SYMMETRIES } from "@/lib/subrosa/engine";
@@ -133,7 +133,7 @@ export function MultigridFigure({ n: n0, preset, caption }: { n?: string; preset
 						})}
 						{t && <circle cx={t.site.x} cy={t.site.y} r={R / 28} fill="#000" />}
 					</Stage>
-					<p className="mt-1 text-center font-mono text-xs text-fg-muted">{n} grid families</p>
+					<p className="mt-1 text-center font-mono text-small text-fg-muted">{n} grid families</p>
 				</div>
 				<div>
 					<LivePatch
@@ -144,7 +144,7 @@ export function MultigridFigure({ n: n0, preset, caption }: { n?: string; preset
 						onHover={(at) => setHot(at ? tileAt(polys, at.x, at.y) : -1)}
 						className="aspect-square"
 					/>
-					<p className="mt-1 text-center font-mono text-xs text-fg-muted">{tiles.length.toLocaleString()} rhombi</p>
+					<p className="mt-1 text-center font-mono text-small text-fg-muted">{tiles.length.toLocaleString()} rhombi</p>
 				</div>
 			</div>
 			<div className="mx-auto mt-3 grid max-w-md gap-3">
@@ -172,7 +172,7 @@ export function MultigridFigure({ n: n0, preset, caption }: { n?: string; preset
 					}}
 				/>
 				{n === 5 && (
-					<p className="text-center font-mono text-xs text-fg-muted tabular-nums">
+					<p className="text-center font-mono text-small text-fg-muted tabular-nums">
 						Σγ ≡ {sum.toFixed(2)} (mod 1) · vertex index takes {indices} values ·{" "}
 						{penrose ? "Penrose" : "generalised Penrose"}
 					</p>
@@ -237,7 +237,7 @@ export function SubRosaFigure({ n: n0, caption }: { n?: string; caption?: string
 						cols={protos.length}
 					/>
 				)}
-				<p className="text-center font-mono text-xs text-fg-muted tabular-nums">
+				<p className="text-center font-mono text-small text-fg-muted tabular-nums">
 					Σ({n}) = {sigma(n).join(" ")} · {polys.length.toLocaleString()} rhombi · inflation {rule?.scaling.toFixed(3)}
 				</p>
 			</div>

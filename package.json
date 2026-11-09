@@ -4,7 +4,9 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
-		"build": "tsx scripts/gen-landing-data.ts && tsx scripts/gen-updates-data.ts && NODE_OPTIONS=--max-old-space-size=8192 next build",
+		"build": "node --env-file-if-exists=.env.local scripts/data-sync.mjs --pull && tsx scripts/gen-landing-data.ts && tsx scripts/gen-updates-data.ts && NODE_OPTIONS=--max-old-space-size=8192 next build && node scripts/data-sync.mjs --vercel",
+		"data:sync": "node --env-file-if-exists=.env.local scripts/data-sync.mjs",
+		"data:pull": "node --env-file-if-exists=.env.local scripts/data-sync.mjs --pull",
 		"landing:data": "tsx scripts/gen-landing-data.ts",
 		"updates:data": "tsx scripts/gen-updates-data.ts",
 		"updates:draft": "node scripts/draft-update.mjs",
@@ -23,6 +25,8 @@
 		"figures:preview": "tsx figures/contact-sheet.ts",
 		"status": "node scripts/status.mjs",
 		"docs:check": "node scripts/docs-check.mjs",
+		"ds:check": "node design-system/check.mjs",
+		"a11y": "node scripts/a11y-check.mjs",
 		"hooks:install": "git config core.hooksPath scripts/hooks"
 	},
 	"dependencies": {
@@ -36,6 +40,7 @@
 		"@supabase/supabase-js": "^2.103.0",
 		"@types/mdx": "^2.0.13",
 		"@vercel/analytics": "^2.0.1",
+		"brotli-dec-wasm": "2.3.2",
 		"chart.js": "^4.5.1",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
@@ -73,6 +78,8 @@
 		"@types/react-dom": "^19",
 		"@types/three": "^0.185.1",
 		"@vitest/ui": "^4.1.4",
+		"aws4fetch": "1.0.20",
+		"axe-core": "^4.14.0",
 		"eslint": "^9",
 		"eslint-config-next": "16.2.3",
 		"jsdom": "^29.0.2",

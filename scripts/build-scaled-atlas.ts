@@ -271,7 +271,7 @@ function defaultInputs(): string[] {
 	return [...best.values()].map((x) => x.p);
 }
 const INPUTS = process.argv.length > 2 ? process.argv.slice(2) : defaultInputs();
-const OUT = path.join(ROOT, "public", "reference-atlas-scaled.json.gz");
+const OUT = path.join(ROOT, "public", "reference-atlas-scaled.json.br");
 const LOG = path.join(ROOT, "experiments", "results", "scaled-atlas-build.log");
 const NOTE =
 	"Regular {3,4,6,12} tiles at side lengths 1, 2 AND 3 together (side-s = degenerate sN-gon, unit edges, " +
@@ -440,7 +440,7 @@ function main(): void {
 	writeDataFile(OUT, JSON.stringify(main_, null, 0) + "\n");
 	const kb = (fs.statSync(OUT).size / 1024).toFixed(1);
 	for (const k of shardKs) {
-		const p = OUT.replace(/\.json\.gz$/, `-k${k}.json.gz`);
+		const p = OUT.replace(/\.json\.br$/, `-k${k}.json.br`);
 		const slice = out.filter((t) => t.k === k);
 		writeDataFile(p, JSON.stringify(slice, null, 0) + "\n");
 		log(
@@ -449,7 +449,7 @@ function main(): void {
 	}
 	// Drop a stale shard whose k no longer has entries; leaving it would serve tilings this build removed.
 	for (const f of fs.readdirSync(path.dirname(OUT))) {
-		const m = /^reference-atlas-scaled-k(\d+)\.json(\.gz)?$/.exec(f);
+		const m = /^reference-atlas-scaled-k(\d+)\.json(\.br)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) fs.unlinkSync(path.join(path.dirname(OUT), f));
 	}
 	log(`  eager k≤${MAIN_MAX_K}: ${main_.length} tilings; lazy shards: k=${shardKs.join(", k=") || "(none)"}`);

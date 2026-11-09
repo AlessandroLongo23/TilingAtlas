@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { prepare, screenMapper } from "@/lib/render/figureCanvas";
 import { colourOf, drawZetaWheel } from "@/lib/render/zetaWheel";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // The bounded-weight theorem as one case you can read off the plane.
 //
@@ -61,7 +61,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 
 	useEffect(() => {
 		let alive = true;
-		fetch("/defense/period-figure.json.gz")
+		fetchData("/defense/period-figure.json.br")
 			.then((r) => shardBody<FigureData>(r))
 			.then((d: FigureData) => {
 				if (alive) setData(d);
@@ -371,7 +371,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 					<figure className="m-0 flex flex-col items-center gap-1">
 						<div
 							ref={wheelHost}
-							className={`relative aspect-square ${solo ? (compact ? "h-[27vh]" : "h-[44vh]") : "h-[34vh]"} bg-surface-base rounded-2xl border border-line`}
+							className={`relative aspect-square ${solo ? (compact ? "h-[27vh]" : "h-[44vh]") : "h-[34vh]"} rounded-sheet border border-line bg-surface`}
 						>
 							<canvas ref={wheelCanvas} className="absolute inset-0 h-full w-full" />
 						</div>
@@ -385,7 +385,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 						<figure className="m-0 flex flex-col items-center gap-1">
 							<div
 								ref={exHost}
-								className={`relative aspect-[4/3] ${panelH} bg-surface-base rounded-2xl border border-line`}
+								className={`relative aspect-[4/3] ${panelH} rounded-sheet border border-line bg-surface`}
 							>
 								<canvas ref={exCanvas} className="absolute inset-0 h-full w-full" />
 							</div>
@@ -412,7 +412,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 						<figure className="m-0 flex flex-col items-center gap-1">
 							<div
 								ref={cellHost}
-								className={`relative aspect-[4/3] ${panelH} bg-surface-base rounded-2xl border border-line`}
+								className={`relative aspect-[4/3] ${panelH} rounded-sheet border border-line bg-surface`}
 							>
 								<canvas ref={cellCanvas} className="absolute inset-0 h-full w-full" />
 							</div>

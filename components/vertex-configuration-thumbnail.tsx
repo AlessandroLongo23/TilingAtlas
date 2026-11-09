@@ -25,10 +25,10 @@ export function VertexConfigurationThumbnail({
 	});
 
 	return (
-		<div className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface-overlay/40">
+		<div className="ta-well flex flex-col overflow-hidden">
 			<canvas ref={canvasRef} className="block aspect-square w-full" style={{ minWidth: size, minHeight: size }} />
 			{(showName || showOccurrences) && vc ? (
-				<div className="flex min-w-0 items-center justify-between gap-2 border-t border-line bg-surface-overlay/60 px-2 py-1.5 font-mono text-sm text-fg-secondary">
+				<div className="flex min-w-0 items-center justify-between gap-2 border-t border-line bg-surface-overlay/60 px-2 py-1.5 font-mono text-body text-fg-secondary">
 					{showName ? (
 						<span className="truncate" title={vc.name}>
 							{vc.name}

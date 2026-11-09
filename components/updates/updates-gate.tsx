@@ -1,8 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { UpdatesModal } from "@/components/updates/updates-modal";
 import { useUpdates } from "@/stores/updates";
 import { UPDATES } from "@/lib/updates/entries";
 import { shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
@@ -21,6 +21,12 @@ import { shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
 //
 // ?updates=force opens it against the newest release whatever the stored marker says, so the modal
 // can be looked at without clearing localStorage.
+
+// The modal draws tiling thumbnails, and with them the whole thumbnail renderer: fetched when it opens, so
+// a page that shows no release notes does not download them.
+const UpdatesModal = dynamic(() => import("@/components/updates/updates-modal").then((m) => m.UpdatesModal), {
+	ssr: false,
+});
 
 // useSearchParams suspends, and this mounts inside layouts that serve statically-rendered pages
 // (/theory and friends are force-static). Without the boundary those builds fail outright.

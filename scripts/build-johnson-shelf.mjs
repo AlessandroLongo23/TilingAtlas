@@ -19,7 +19,7 @@ import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const TS = path.join(ROOT, "lib", "render", "johnsonSolids.ts");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.br");
 const RENDER_CELL = {
 	b: [
 		[1, 0],

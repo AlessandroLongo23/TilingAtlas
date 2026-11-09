@@ -1,4 +1,4 @@
-import { StarParametricPolygon } from "@/classes";
+import { StarParametricPolygon } from "@/classes/polygons/StarParametricPolygon";
 import { regularVertices } from "@/lib/tiles/prototiles";
 import { parseSpecies } from "@/lib/services/polygonSpecies";
 import type { RawPolygon } from "@/lib/utils/renderTiling";

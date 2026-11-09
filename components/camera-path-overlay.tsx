@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { useAnimation, type TimelineKey } from "@/stores/animation";
 import type { CameraDriver, Pose, Projected } from "@/lib/render/cameraPose";
+import { fmMotion } from "@/design-system/motion";
 
 // The animation's camera path, drawn over the /play canvas while the timeline is open. Each keyframe is
 // a diamond at the centre of its frame, numbered, and the line between two diamonds is the path the frame
@@ -247,11 +248,11 @@ export function CameraPathOverlay({
 		<motion.svg
 			ref={svgRef}
 			data-camera-path
-			className="pointer-events-none absolute inset-0 z-[12] h-full w-full"
+			className="pointer-events-none absolute inset-0 z-12 h-full w-full"
 			aria-hidden
 			initial={{ opacity: 0 }}
 			animate={{ opacity: visible ? 1 : 0 }}
-			transition={{ duration: reduce ? 0 : 0.3, ease: [0.2, 0, 0, 1] }}
+			transition={reduce ? { duration: 0 } : fmMotion("floating")}
 		>
 			{frame ? (
 				<polygon
@@ -376,7 +377,7 @@ export function CameraPathOverlay({
 							x={c.x}
 							y={c.y + 4}
 							textAnchor="middle"
-							className="pointer-events-none fill-white text-[11px] font-semibold"
+							className="pointer-events-none fill-white text-caption font-semibold"
 						>
 							{i + 1}
 						</text>

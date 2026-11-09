@@ -401,7 +401,7 @@ describe("sheetCount", () => {
 	});
 
 	it("bounds the mean from above on every record of the shelf", () => {
-		for (const f of readdirSync("public/spherical-star").filter((x) => /\.json(\.gz)?$/.test(x))) {
+		for (const f of readdirSync("public/spherical-star").filter((x) => /\.json(\.br)?$/.test(x))) {
 			const p: SphStarPattern = JSON.parse(readDataText(`public/spherical-star/${f}`));
 			expect(sheetCount(p)).toBeGreaterThanOrEqual(meanSheets(p) - 1e-6);
 		}
@@ -410,7 +410,7 @@ describe("sheetCount", () => {
 
 describe("a partial fill on the star shelf", () => {
 	it("fills only the chosen faces and keeps every edge of the solid", () => {
-		for (const f of readdirSync("public/spherical-star").filter((n) => /\.json(\.gz)?$/.test(n))) {
+		for (const f of readdirSync("public/spherical-star").filter((n) => /\.json(\.br)?$/.test(n))) {
 			const p: SphStarPattern = JSON.parse(readDataText(`public/spherical-star/${f}`));
 			const whole = sphStarScene(p);
 			const round = partialFill(p.vertices, p.faces, "vertex", 0)!;

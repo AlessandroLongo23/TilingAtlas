@@ -18,8 +18,8 @@ import { useConfiguration } from "@/stores/configuration";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataText } from "../../scripts/atlas/io.mjs";
 
-const K2 = "public/pentagon-edges/pe1-k2.json.gz";
-const K4 = "public/pentagon-edges/pe1-k4.json.gz";
+const K2 = "public/pentagon-edges/pe1-k2.json.br";
+const K4 = "public/pentagon-edges/pe1-k4.json.br";
 const anyShard = existsSync(K2);
 const read = (p: string): PentEdgeRecord[] => decodeAtlas<PentEdgeRecord>(JSON.parse(readDataText(p)));
 

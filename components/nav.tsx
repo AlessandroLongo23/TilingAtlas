@@ -4,22 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Menu, Search } from "lucide-react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
-import Link from "next/link";
+import { IntentLink } from "@/components/intent-link";
 import { usePathname, useRouter } from "next/navigation";
 import { DiscordIcon } from "@/components/icons/discord";
 import { DownloadSearcher } from "@/components/download-searcher";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
-import { HoverPill } from "@/components/ui/hover-pill";
-import { Kbd } from "@/components/ui/kbd";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Button } from "@/design-system/components/button";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { Kbd } from "@/design-system/components/kbd";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { UpdatesButton } from "@/components/updates/updates-button";
 import { CURRENT_VERSION } from "@/lib/updates/entries";
 import { DISCORD_INVITE } from "@/lib/constants";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { useGamepad } from "@/lib/hooks/useGamepad";
 import { usePadGlyph } from "@/lib/stores/gamepad";
-import { SheetBackdrop, SheetHeader, useSheet } from "@/components/ui/bottom-sheet";
+import { SheetBackdrop, SheetHeader, useSheet } from "@/design-system/components/bottom-sheet";
 import { ThemeToggle } from "./ThemeToggle";
 import { Mark, NAV_BAR, NAV_LABEL, NavActivePill, NavBrand, NavDivider, navLinkClass } from "./nav-bar";
 
@@ -95,7 +96,7 @@ export function Nav() {
 		<nav
 			className={cn(
 				NAV_BAR,
-				"transition-all duration-300 ease-in-out",
+				"transition-all motion-glide",
 				immersive
 					? "pointer-events-none h-0 border-b-0 opacity-0"
 					: // On a phone the bar sits under the status bar (viewport-fit=cover), so it grows by that inset.
@@ -104,28 +105,32 @@ export function Nav() {
 			)}
 		>
 			{/* Phone bar: the mark, where you are, and the menu that holds everything else. */}
-			<Link href="/" aria-label="The Tiling Atlas, home" className="hidden h-11 shrink-0 items-center pr-3 max-md:flex">
+			<IntentLink
+				href="/"
+				aria-label="The Tiling Atlas, home"
+				className="hidden h-11 shrink-0 items-center pr-3 max-md:flex"
+			>
 				<Mark />
-			</Link>
-			<span className="hidden min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.01em] text-fg max-md:block">
+			</IntentLink>
+			<span className="hidden min-w-0 flex-1 truncate text-title font-semibold tracking-tight text-fg max-md:block">
 				{section?.label ?? "The Tiling Atlas"}
 			</span>
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="bar"
+				icon={Menu}
 				onClick={() => setMenuPath(pathname)}
 				aria-label="Open menu"
 				aria-expanded={menuOpen}
 				aria-haspopup="dialog"
-				className="hidden size-11 shrink-0 items-center justify-center rounded-control text-fg-secondary hover:bg-surface-overlay hover:text-fg max-md:flex"
-			>
-				<Menu size={20} />
-			</button>
+				className="hidden max-md:inline-flex"
+			/>
 			{menuOpen ? <PhoneMenu pathname={pathname} onClose={() => setMenuPath(null)} /> : null}
 
-			<Link href="/" className="mr-4 flex shrink-0 items-center gap-2 max-md:hidden">
+			<IntentLink href="/" className="mr-4 flex shrink-0 items-center gap-2 max-md:hidden">
 				{/* The release is the same number the footer and the updates modal show. */}
 				<NavBrand name="The Tiling Atlas" version={CURRENT_VERSION} />
-			</Link>
+			</IntentLink>
 
 			<NavDivider />
 
@@ -143,17 +148,17 @@ export function Nav() {
 					const isActive = isActiveLink(pathname, link.href);
 					const key = navKey(i);
 					return (
-						<Link
-							key={link.href}
-							href={link.href}
-							title={key ? `${link.label} (${key})` : link.label}
-							aria-current={isActive ? "page" : undefined}
-							className={navLinkClass(isActive)}
-						>
-							{isActive ? <NavActivePill /> : null}
-							<span className={NAV_LABEL}>{link.label}</span>
-							{key ? <Kbd className="relative hidden 2xl:inline-flex">{key}</Kbd> : null}
-						</Link>
+						<Tooltip key={link.href} label={link.label} shortcut={key || undefined} side="bottom">
+							<IntentLink
+								href={link.href}
+								aria-current={isActive ? "page" : undefined}
+								className={navLinkClass(isActive)}
+							>
+								{isActive ? <NavActivePill /> : null}
+								<span className={NAV_LABEL}>{link.label}</span>
+								{key ? <Kbd className="relative hidden 2xl:inline-flex">{key}</Kbd> : null}
+							</IntentLink>
+						</Tooltip>
 					);
 				})}
 				{padNext ? (
@@ -163,28 +168,28 @@ export function Nav() {
 				) : null}
 			</div>
 
-			<div className="flex items-center gap-0.5 max-md:hidden">
+			<div className="relative flex items-center gap-0.5 max-md:hidden">
+				<HoverPill />
 				<DownloadSearcher variant="nav" />
-				<Tooltip label="Search and jump" shortcut="⌘ K" side="left" delay={0}>
-					<button
-						type="button"
+				<Tooltip label="Search and jump" shortcut="⌘ K" side="left" delay="instant">
+					<Button
+						variant="ghost"
+						size="icon"
+						icon={Search}
 						onClick={() => window.dispatchEvent(new Event("ta:command-palette"))}
 						aria-label="Open the command palette"
-						className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-					>
-						<Search size={15} />
-					</button>
+					/>
 				</Tooltip>
-				<Tooltip label="Join the Discord" side="left" delay={0}>
-					<a
+				<Tooltip label="Join the Discord" side="left" delay="instant">
+					<Button
+						variant="ghost"
+						size="icon"
+						icon={DiscordIcon}
 						href={DISCORD_INVITE}
 						target="_blank"
 						rel="noreferrer"
 						aria-label="Join the Tiling Atlas Discord"
-						className="flex h-8 w-8 items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none"
-					>
-						<DiscordIcon size={15} />
-					</a>
+					/>
 				</Tooltip>
 				<UpdatesButton />
 				<ThemeToggle />
@@ -203,10 +208,11 @@ export function Nav() {
 function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => void }) {
 	const panelRef = useRef<HTMLDivElement>(null);
 	const { swipe, dialogProps } = useSheet(panelRef, true, onClose, "Menu", "right");
-	const row = "flex min-h-12 items-center gap-3 rounded-control px-3 py-1.5 transition-colors hover:bg-surface-overlay";
+	const row = "flex min-h-12 items-center gap-3 rounded-control px-3 py-1.5";
 
 	return createPortal(
-		<div className="fixed inset-0 z-[60] md:hidden">
+		// ds-check: keep (a drawer from the right edge, built from the sheet pieces; this box only places it)
+		<div className="fixed inset-0 z-menu md:hidden">
 			<SheetBackdrop onClose={onClose} className="z-0" />
 			{/* A swipe to the right anywhere on the panel closes it. touch-pan-y, on the scroller too (where
 			    the browser decides), leaves sideways moves to the swipe. */}
@@ -214,50 +220,51 @@ function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => voi
 				ref={panelRef}
 				{...dialogProps}
 				{...swipe}
-				className="ta-panel-in absolute inset-y-0 right-0 flex w-[min(340px,88vw)] flex-col bg-surface-chrome pt-[env(safe-area-inset-top)] shadow-xl focus:outline-none"
+				className="ta-panel-in absolute inset-y-0 right-0 flex w-[min(340px,88vw)] flex-col bg-surface-chrome pt-[env(safe-area-inset-top)] shadow-modal focus:outline-none"
 			>
 				<SheetHeader
 					title="The Tiling Atlas"
 					onClose={onClose}
 					closeLabel="Close menu"
 					grabBar={false}
-					className="h-12 pr-1 [&_h2]:text-[15px]"
+					className="h-12 pr-1 [&_h2]:text-reading"
 				/>
 				{/* The version scrolls with the rows, so on a short screen it never covers the last one. */}
 				<nav
 					aria-label="Sections"
-					className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-2 pt-2 pb-[env(safe-area-inset-bottom)]"
+					className="relative min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-2 pt-2 pb-[env(safe-area-inset-bottom)]"
 				>
-					<Link href="/" onClick={onClose} className={cn(row, "text-[15px] font-medium text-fg")}>
+					<HoverPill />
+					<IntentLink href="/" onClick={onClose} className={cn(row, "text-title font-medium text-fg")}>
 						<Mark />
 						Home
-					</Link>
+					</IntentLink>
 					<div className="my-1 h-px bg-line-subtle" />
 					{LINKS.map((link) => {
 						const active = isActiveLink(pathname, link.href);
 						return (
-							<Link
+							<IntentLink
 								key={link.href}
 								href={link.href}
 								onClick={onClose}
 								aria-current={active ? "page" : undefined}
 								className={cn(row, "flex-col items-start justify-center gap-0", active && "bg-surface-overlay")}
 							>
-								<span className={cn("text-[15px] font-medium", active ? "text-fg" : "text-fg-secondary")}>
+								<span className={cn("text-title font-medium", active ? "text-fg" : "text-fg-secondary")}>
 									{link.label}
 								</span>
-								<span className="text-[13px] leading-snug text-fg-muted">{link.blurb}</span>
-							</Link>
+								<span className="text-ui leading-tight text-fg-muted">{link.blurb}</span>
+							</IntentLink>
 						);
 					})}
 					<div className="my-1 h-px bg-line-subtle" />
 					<UpdatesButton variant="row" onOpen={onClose} />
-					<a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className={cn(row, "text-[15px] text-fg")}>
+					<a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className={cn(row, "text-reading text-fg")}>
 						<DiscordIcon size={18} />
 						Join the Discord
 					</a>
 					<ThemeToggle variant="row" />
-					<p className="mt-2 border-t border-line-subtle px-3 py-3 font-mono text-xs text-fg-muted tabular-nums">
+					<p className="mt-2 border-t border-line-subtle px-3 py-3 font-mono text-small text-fg-muted tabular-nums">
 						v{CURRENT_VERSION}
 					</p>
 				</nav>

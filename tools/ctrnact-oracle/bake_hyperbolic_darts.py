@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enrich public/hyperbolic-developed.json.gz IN PLACE with the quotient darts {rneig, glue, lvert, seed}
+"""Enrich public/hyperbolic-developed.json.br IN PLACE with the quotient darts {rneig, glue, lvert, seed}
 for each already-shipped patch, so the TS client can re-develop the tiling on the fly (fill-to-rim,
 re-centred on the view). This does NOT re-select or change any geometry — it only ADDS the `darts` field.
 
@@ -11,7 +11,7 @@ It matches each shipped patch to a freshly-developed cell (develop_hyperbolic.py
 Any patch that fails to match is reported and left without darts (the renderer falls back to the baked
 finite patch for it), so a miss is loud, never silent.
 
-Usage: python3 bake_hyperbolic_darts.py --developed ../../public/hyperbolic-developed.json.gz \
+Usage: python3 bake_hyperbolic_darts.py --developed ../../public/hyperbolic-developed.json.br \
           --cells scratch-hyp-p7/cells.json scratch-hyp-r3/cells.json scratch-hyp-k2/cells.json [--write]
 """
 import argparse

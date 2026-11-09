@@ -1,10 +1,13 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { resolve } from "node:path";
 
 export default defineConfig({
 	test: {
 		environment: "jsdom",
 		setupFiles: ["./vitest.setup.ts"],
+		// Agent worktrees under .claude/ hold whole copies of tests/: without this every suite ran once per
+		// worktree (nine times on 2026-11-09), mostly against stale code.
+		exclude: [...configDefaults.exclude, "**/.claude/**"],
 		globals: true,
 		// Several suites are CPU-bound exact-arithmetic / enumeration tests (fuzz, hyperbolic develop over
 		// all shipped patches, freedraw combined-grid, oracle classification, the k=2 star solve) that

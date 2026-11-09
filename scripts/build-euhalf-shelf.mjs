@@ -536,12 +536,12 @@ for (const B of BOARDS) {
 	}
 }
 
-writeDataFile(path.join(OUT, "manifest.json.gz"), JSON.stringify(manifest, null, 2));
-writeDataFile(path.join(PUB, "reference-atlas-euhalf.json.gz"), stringifyAtlas(eager));
+writeDataFile(path.join(OUT, "manifest.json.br"), JSON.stringify(manifest, null, 2));
+writeDataFile(path.join(PUB, "reference-atlas-euhalf.json.br"), stringifyAtlas(eager));
 console.log(`\n  ${grandRaw} solver solutions -> ${grandTotal} distinct tilings on the shelf`);
-console.log(`  atlas: ${eager.length} entries (k<=${EAGER_MAX}, eager) -> public/reference-atlas-euhalf.json.gz`);
+console.log(`  atlas: ${eager.length} entries (k<=${EAGER_MAX}, eager) -> public/reference-atlas-euhalf.json.br`);
 for (const k of [...lazy.keys()].sort((a, b) => a - b)) {
-	writeDataFile(path.join(PUB, `reference-atlas-euhalf-k${k}.json.gz`), stringifyAtlas(lazy.get(k)));
-	console.log(`         ${lazy.get(k).length} entries -> public/reference-atlas-euhalf-k${k}.json.gz (lazy)`);
+	writeDataFile(path.join(PUB, `reference-atlas-euhalf-k${k}.json.br`), stringifyAtlas(lazy.get(k)));
+	console.log(`         ${lazy.get(k).length} entries -> public/reference-atlas-euhalf-k${k}.json.br (lazy)`);
 }
 console.log(`  lazy k slices: [${[...lazy.keys()].sort((a, b) => a - b).join(", ")}]`);

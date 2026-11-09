@@ -1,4 +1,5 @@
-import { Polygon, PolygonType } from "@/classes";
+import { Polygon } from "@/classes/polygons/Polygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
 import { Cyclotomic } from "../Cyclotomic";
 
 /**

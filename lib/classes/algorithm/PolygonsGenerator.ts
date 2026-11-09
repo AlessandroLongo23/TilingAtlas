@@ -1,14 +1,13 @@
-import {
-	type GeneratorParameters,
-	PolygonType,
-	StarVertexTypes,
-	Vector,
-	PolygonSignature,
-	VCGenerator,
-	GenericPolygon,
-	CyclotomicRing,
-} from "@/classes";
-import { coprime, gcd, isWithinTolerance, segmentsIntersect } from "@/utils";
+import { type GeneratorParameters } from "@/classes/algorithm/types";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { StarVertexTypes } from "@/classes/polygons/PolygonType";
+import { Vector } from "@/classes/Vector";
+import { PolygonSignature } from "@/classes/algorithm/PolygonSignature";
+import { VCGenerator } from "@/classes/algorithm/VCGenerator";
+import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
+import { CyclotomicRing } from "@/classes/Cyclotomic";
+import { coprime, gcd, isWithinTolerance } from "@/utils/math";
+import { segmentsIntersect } from "@/utils/geometry";
 import { tolerance } from "@/utils/tolerance";
 
 /** The explicit set of regular polygon orders for a run (honors `ns`, else 3..n_max). */

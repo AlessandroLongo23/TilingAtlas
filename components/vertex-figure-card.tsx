@@ -39,7 +39,7 @@ export function VertexFigureCard({ word, tiles = true }: VertexFigureCardProps) 
 
 	if (!config) {
 		return (
-			<div className="not-prose mx-auto flex aspect-square w-full items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-2 text-center text-[0.6rem] text-fg-muted">
+			<div className="ta-well not-prose mx-auto flex aspect-square w-full items-center justify-center p-2 text-center text-micro text-fg-muted">
 				{word} does not close
 			</div>
 		);
@@ -49,8 +49,8 @@ export function VertexFigureCard({ word, tiles = true }: VertexFigureCardProps) 
 		<figure className={cn("not-prose m-0 mx-auto w-full", !tiles && "opacity-70")}>
 			<div
 				className={cn(
-					"bg-surface-base relative aspect-square w-full overflow-hidden rounded-xl",
-					tiles ? "border border-line" : "border border-dashed border-line-strong",
+					"ta-well relative aspect-square w-full overflow-hidden",
+					!tiles && "border-dashed border-line-strong",
 				)}
 			>
 				<VertexConfigCard config={config} />

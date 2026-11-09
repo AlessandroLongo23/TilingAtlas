@@ -1,5 +1,7 @@
-import { PolygonType, StarVertexTypes, Vector } from "@/classes";
-import { toDegrees } from "@/utils";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { StarVertexTypes } from "@/classes/polygons/PolygonType";
+import { Vector } from "@/classes/Vector";
+import { toDegrees } from "@/utils/geometry";
 
 interface SignatureFields {
 	n: number;

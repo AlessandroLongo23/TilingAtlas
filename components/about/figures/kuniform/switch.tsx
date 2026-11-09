@@ -76,7 +76,7 @@ export function KuSwitch({ caption, orbits, children }: { caption?: string; orbi
 					initialOverlays={withOrbits ? ORBITS_ON : undefined}
 				/>
 			) : (
-				<div className="flex h-48 items-center justify-center text-sm text-fg-muted">
+				<div className="flex h-48 items-center justify-center text-body text-fg-muted">
 					No cell for {current?.id ?? "(none)"}.
 				</div>
 			)}
@@ -92,7 +92,7 @@ export function KuSwitch({ caption, orbits, children }: { caption?: string; orbi
 				/>
 			</div>
 			{(current?.note || withOrbits) && (
-				<p className="mt-2 text-center text-xs text-fg-muted">
+				<p className="mt-2 text-center text-small text-fg-muted">
 					{withOrbits && orbitData
 						? hover >= 0
 							? `Orbit ${hover + 1} of ${orbitData.k}: every dot of this colour is carried onto every other by a symmetry of the tiling.`

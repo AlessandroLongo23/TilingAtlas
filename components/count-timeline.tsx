@@ -164,7 +164,7 @@ function Portrait({ person }: { person: Person }) {
 		<div
 			aria-hidden
 			title="No photograph of this person is on public record"
-			className="flex items-center justify-center rounded-full border border-dashed border-line bg-surface-overlay text-[clamp(0.62rem,1.35vh,1.05rem)] font-medium tracking-[0.08em] text-fg-muted"
+			className="flex items-center justify-center rounded-full border border-dashed border-line bg-surface-overlay text-[clamp(0.62rem,1.35vh,1.05rem)] font-medium tracking-caps text-fg-muted"
 			style={{ width: size, height: size }}
 		>
 			{initials}
@@ -200,7 +200,7 @@ export function CountTimeline() {
 						<KLabel k={stop.k} sweep={stop.sweep} />
 						{/* 4px rounded data-end, square where it meets the baseline. */}
 						<div
-							className="shrink-0 rounded-t-[4px] bg-accent"
+							className="shrink-0 rounded-t-tag bg-accent"
 							style={{
 								// The spaces around the `+` are load-bearing: `1vh+0.3vw` tokenises as a length
 								// followed by a signed length, the declaration is dropped, and the bar renders

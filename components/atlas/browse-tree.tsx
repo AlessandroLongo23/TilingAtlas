@@ -1,17 +1,22 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ChevronRight, ChevronsDownUp, Layers, LayoutGrid, Rows3, Search, Shapes, X } from "lucide-react";
-import { HoverPill } from "@/components/ui/hover-pill";
+import { ChevronsDownUp, Layers, LayoutGrid, ListChecks, Rows3, Shapes } from "lucide-react";
+import { Badge } from "@/design-system/components/badge";
+import { Button } from "@/design-system/components/button";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { SearchInput } from "@/design-system/components/search-input";
+import { FoldChevron } from "@/design-system/components/disclosure";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { cn } from "@/lib/utils/cn";
 import { pathTo, type BrowseNode } from "@/lib/atlas/browse";
+import { STEP_MS } from "@/design-system/motion";
 
 // The browse tree, drawn the way the Tiling Searcher draws its run tree (tools/searcher/app/src/runs.tsx):
 // a folder's contents hang off a rail, the path to where you are is drawn over it in the text colour one
-// piece every RAIL_STEP ms (only the part that changed), and one hover pill glides between the rows. It
+// piece every STEP_MS (only the part that changed), and one hover pill glides between the rows. It
 // lists NO tilings: its leaves are boards and a hybrid board's rows, and each opens in the grid lens.
 
-const RAIL_STEP = 70;
 const OPEN_KEY = "atlas:open-nodes";
 
 const loadOpen = (): Set<string> => {
@@ -28,7 +33,15 @@ const n = (x: number) => x.toLocaleString("en-US");
 const compact = (x: number) =>
 	x >= 1e6 ? `${(x / 1e6).toFixed(x >= 1e7 ? 1 : 2)}M` : x >= 1e4 ? `${Math.round(x / 1e3)}k` : n(x);
 
-const KIND_ICON = { class: Shapes, family: Layers, grid: LayoutGrid, sub: Rows3, row: null } as const;
+// A classification wears a checklist: a list someone proved complete, gathered from the shelves above it.
+const KIND_ICON = {
+	class: Shapes,
+	family: Layers,
+	grid: LayoutGrid,
+	sub: Rows3,
+	row: null,
+	classification: ListChecks,
+} as const;
 
 /** Keep a node when it or anything under it matches; a match keeps its whole subtree. */
 function filterTree(nodes: readonly BrowseNode[], q: string): BrowseNode[] {
@@ -133,7 +146,7 @@ export const BrowseTree = memo(function BrowseTree({
 			if (i !== undefined)
 				return {
 					[`data-rail-${role}`]: "",
-					style: { "--rail-delay": `${Math.max(0, i - from) * RAIL_STEP}ms` } as CSSProperties,
+					style: { "--rail-delay": `${Math.max(0, i - from) * STEP_MS}ms` } as CSSProperties,
 				};
 		}
 		return {};
@@ -173,15 +186,15 @@ export const BrowseTree = memo(function BrowseTree({
 								// A row is the tiles its tilings use, as chips: "3", "4₂", "∞".
 								<span className="flex flex-wrap gap-1" aria-label={node.label}>
 									{node.scope.polySet!.split(",").map((tile) => (
-										<span key={tile} className="rounded-sm bg-surface-sunken px-1.5 font-mono text-[11px] text-fg">
+										<Badge key={tile} mono className="text-caption text-fg">
 											{tile}
-										</span>
+										</Badge>
 									))}
 								</span>
 							) : (
 								<span
 									className={cn(
-										"block truncate text-[13px] text-fg",
+										"block truncate text-ui text-fg",
 										node.kind === "class" || node.kind === "family" ? "font-medium" : "",
 									)}
 								>
@@ -189,7 +202,8 @@ export const BrowseTree = memo(function BrowseTree({
 								</span>
 							)}
 							{folder ? null : (
-								<span className="block truncate text-[11px] text-fg-muted">
+								<span className="block truncate text-caption text-fg-muted">
+									{node.note ?? ""}
 									{node.kRange
 										? node.kRange[0] === node.kRange[1]
 											? `k = ${node.kRange[0]}`
@@ -199,13 +213,7 @@ export const BrowseTree = memo(function BrowseTree({
 								</span>
 							)}
 						</span>
-						<span
-							className={cn(
-								"shrink-0 font-mono text-[11px] text-fg-muted tabular-nums",
-								folder && "opacity-60 transition-opacity group-hover:opacity-100",
-							)}
-							title={n(node.count)}
-						>
+						<span className="shrink-0 font-mono text-caption text-fg-muted tabular-nums" title={n(node.count)}>
 							{compact(node.count)}
 						</span>
 						{folder ? (
@@ -214,13 +222,7 @@ export const BrowseTree = memo(function BrowseTree({
 								title={open ? "Fold" : "Unfold"}
 								className="flex h-7 w-6 shrink-0 items-center justify-center text-fg-muted transition-colors hover:text-fg"
 							>
-								<ChevronRight
-									size={14}
-									className={cn(
-										"transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] motion-reduce:transition-none",
-										open && "rotate-90",
-									)}
-								/>
+								<FoldChevron open={open} size={14} className="text-current" />
 							</span>
 						) : null}
 					</button>
@@ -233,36 +235,27 @@ export const BrowseTree = memo(function BrowseTree({
 	return (
 		<div className="flex flex-col">
 			<div className="flex items-center gap-1.5 px-3 pt-1 pb-2">
-				<label className="flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-control bg-surface-sunken px-2 text-fg-muted focus-within:ring-2 focus-within:ring-accent/50">
-					<Search size={13} className="shrink-0" aria-hidden />
-					<input
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Find a board, family or edge"
+				<div className="min-w-0 flex-1">
+					<SearchInput
+						size="sm"
+						label={null}
 						aria-label="Find in the tree"
-						className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-muted"
+						placeholder="Find a board, family or edge"
+						value={query}
+						onChange={setQuery}
 					/>
-					{query ? (
-						<button
-							type="button"
-							onClick={() => setQuery("")}
-							aria-label="Clear the search"
-							className="cursor-pointer rounded-sm text-fg-muted hover:text-fg"
-						>
-							<X size={13} />
-						</button>
-					) : null}
-				</label>
-				<button
-					type="button"
-					onClick={() => setOpened(new Set())}
-					disabled={!openCount}
-					aria-label="Close every folder"
-					title="Close every folder"
-					className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:text-fg disabled:pointer-events-none disabled:opacity-40"
-				>
-					<ChevronsDownUp size={14} />
-				</button>
+				</div>
+				<Tooltip label="Close every folder">
+					<Button
+						variant="ghost"
+						size="icon"
+						icon={ChevronsDownUp}
+						onClick={() => setOpened(new Set())}
+						disabled={!openCount}
+						aria-label="Close every folder"
+						className="shrink-0"
+					/>
+				</Tooltip>
 			</div>
 			<ul className="relative mx-2 space-y-0.5 pb-6">
 				<HoverPill />
@@ -277,13 +270,21 @@ export const BrowseTree = memo(function BrowseTree({
 						)}
 					>
 						<span className="ta-label flex-1">{rootLabel}</span>
-						<span className="font-mono text-[11px] text-fg-muted tabular-nums" title={n(total)}>
+						<span className="font-mono text-caption text-fg-muted tabular-nums" title={n(total)}>
 							{compact(total)}
 						</span>
 					</button>
 				</li>
-				{level(shown)}
-				{q && !shown.length ? <li className="px-2 py-3 text-[13px] text-fg-muted">Nothing here matches.</li> : null}
+				{level(shown.filter((x) => x.kind !== "classification"))}
+				{shown.some((x) => x.kind === "classification") ? (
+					<>
+						<li className="ta-label px-2 pt-4 pb-1" title="Lists proved complete, gathered from the shelves above">
+							Classifications
+						</li>
+						{level(shown.filter((x) => x.kind === "classification"))}
+					</>
+				) : null}
+				{q && !shown.length ? <li className="px-2 py-3 text-ui text-fg-muted">Nothing here matches.</li> : null}
 			</ul>
 		</div>
 	);

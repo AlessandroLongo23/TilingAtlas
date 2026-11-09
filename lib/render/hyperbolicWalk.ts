@@ -57,13 +57,75 @@ import {
 	su11Translation,
 } from "@/lib/render/hyperbolic";
 import { type Darts, interiorAngle, medge } from "@/lib/render/hyperbolicDevelopClient";
-import { flatCornerHue } from "@/lib/utils/renderTiling";
+import { flatCornerHue, starHue } from "@/lib/utils/renderTiling";
+import { dartShapeIds, shapeClasses, shapeClassHue, type ShapeRanks } from "@/lib/render/tileShapes";
 import { bestCentre, dartSymmetry } from "@/lib/render/hyperbolicSymmetry";
 
 export const WALK_REGULAR = 0;
 export const WALK_APEIROGON = 1;
 export const WALK_IRREGULAR = 2;
 export const WALK_STAR = 3;
+/** A face with a reflex corner that is no star about any centre the table could use: a {3,7} octiamond. Its frame
+ *  is centred inside it and each slot holds its first vertex, so a point is placed by counting crossings. */
+export const WALK_POLYGON = 4;
+
+/** A point of the Poincaré disk in the Klein model, where geodesics are straight. */
+const klein = (p: Complex): Complex => {
+	const d = 1 + p.x * p.x + p.y * p.y;
+	return { x: (2 * p.x) / d, y: (2 * p.y) / d };
+};
+/** Where the chord from the origin to k meets the chord a → b: t along the first, u along the second (null when
+ *  parallel). */
+function chords(k: Complex, a: Complex, b: Complex): { t: number; u: number } | null {
+	const e = { x: b.x - a.x, y: b.y - a.y };
+	const den = k.x * e.y - k.y * e.x;
+	if (Math.abs(den) < 1e-15) return null;
+	return { t: (a.x * e.y - a.y * e.x) / den, u: (a.x * k.y - a.y * k.x) / den };
+}
+
+/** Whether the polygon `v` (a frame's Poincaré points, in ring order) is a star about the origin: each side seen
+ *  from it turning the same way, once round. Then the wedge a point is in names the side behind it (WALK_STAR). */
+function starAboutOrigin(v: Complex[]): boolean {
+	const th = v.map((p) => Math.atan2(p.y, p.x));
+	const d = th.map((t, i) => wrapPi(th[(i + 1) % th.length] - t));
+	const sum = d.reduce((s, x) => s + x, 0);
+	return Math.abs(Math.abs(sum) - 2 * Math.PI) < 1e-6 && d.every((x) => x * sum > 0);
+}
+
+/** Whether a face's turns (one per corner, flat ones 180°) are an isotoxal star's: the corners that are not flat
+ *  evenly spaced, alternating two angles. */
+function isotoxalRing(a: number[]): boolean {
+	const tips = a.flatMap((x, i) => (Math.abs(x - Math.PI) > 1e-9 ? [i] : []));
+	const n = tips.length;
+	if (n < 4 || n % 2 || a.length % n) return false;
+	return tips.every((t, i) => t - tips[0] === (i * a.length) / n && Math.abs(a[t] - a[tips[i % 2]]) < 1e-9);
+}
+
+/** A point inside the simple polygon `v` (Poincaré points in ring order): the Klein centroid of an ear, a corner
+ *  whose triangle with its two neighbours holds no other corner. Every simple polygon has two. */
+function insidePoint(v: Complex[]): Complex {
+	const k = v.map(klein);
+	const n = k.length;
+	const cross = (o: Complex, a: Complex, b: Complex) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+	const area = k.reduce((s, p, i) => s + p.x * k[(i + 1) % n].y - k[(i + 1) % n].x * p.y, 0);
+	let best: Complex | null = null;
+	let room = -1;
+	for (let i = 0; i < n; i++) {
+		const [a, b, c] = [k[(i + n - 1) % n], k[i], k[(i + 1) % n]];
+		if (cross(a, b, c) * area <= 0) continue; // reflex
+		const hit = k.some((p, j) => {
+			if (j === i || j === (i + n - 1) % n || j === (i + 1) % n) return false;
+			const [x, y, z] = [cross(a, b, p), cross(b, c, p), cross(c, a, p)];
+			return (x >= 0 && y >= 0 && z >= 0) || (x <= 0 && y <= 0 && z <= 0);
+		});
+		// the fattest ear, so the centre sits well inside
+		const fat = Math.abs(cross(a, b, c));
+		if (!hit && fat > room) [best, room] = [{ x: (a.x + b.x + c.x) / 3, y: (a.y + b.y + c.y) / 3 }, fat];
+	}
+	const q = best ?? k[0];
+	const s = 1 + Math.sqrt(Math.max(0, 1 - q.x * q.x - q.y * q.y));
+	return { x: q.x / s, y: q.y / s };
+}
 
 /** x wrapped into (−π, π]. */
 const wrapPi = (x: number) => x - 2 * Math.PI * Math.ceil((x - Math.PI) / (2 * Math.PI));
@@ -207,7 +269,11 @@ function perpNormal(n: [number, number, number], v: Complex, back: Complex): [nu
  * scalene board, a digon on the edge between the two faces on a regular one. Digons never get a row,
  * since a point cannot lie in one, and a side that opens on a digon leads to the face behind it.
  */
-export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean } = {}): WalkTiling {
+export function buildWalk(
+	darts: Darts,
+	edge: number,
+	opts: { allDrawn?: boolean; shapeRanks?: ShapeRanks } = {},
+): WalkTiling {
 	const { rneig, glue, lvert } = darts;
 	const n = rneig.length;
 	const alpha = (h: number) => (darts.alpha ? darts.alpha[h] : interiorAngle(lvert[rneig[h]], edge));
@@ -223,6 +289,8 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	const phi = (h: number) => glue[rneig[h]];
 	const marked = !opts.allDrawn && (!!darts.drawn || lvert.includes(2));
 	const flat = (h: number) => alpha(h) > Math.PI - 1e-9;
+	// an edge system's faces take the hue of their tile's shape, as the plane's freedraw fills on Shape
+	const slot = marked ? shapeClasses(dartShapeIds(darts, edge), opts.shapeRanks).map(shapeClassHue) : darts.faceColor;
 
 	// Rings. A ring is a quotient face; a digon's ring is kept (face −1) only to be walked through.
 	const faceOf = new Int32Array(n).fill(-2);
@@ -251,6 +319,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	// Each face developed from its first corner, then moved into its own frame: K[f][i] is corner i.
 	const F = rings.length;
 	const kind = new Int32Array(F);
+	const reflex = new Uint8Array(F); // a face with a reflex corner takes the star hue, whichever way it is read
 	const slots = new Int32Array(F);
 	const K: Su11[][] = [];
 	const side: Int32Array[] = []; // slot → ring side
@@ -275,13 +344,23 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			step[f] = toHalf(su11Apply(mul(C, G[run[f]]), { x: 0, y: 0 })).x;
 		} else {
 			const v = G.slice(0, S).map((g) => su11Apply(g, { x: 0, y: 0 }));
-			const c = hypBarycenter(v.map((q) => [q.x, q.y] as [number, number]));
+			let c = hypBarycenter(v.map((q) => [q.x, q.y] as [number, number]));
+			// a face with a reflex corner: an isotoxal star is read by wedges about its centre, any other (a {3,7}
+			// octiamond) by crossings, from a centre inside it. Wedges about some point would place an octiamond, but
+			// sent points round in circles when there is none, and stroke only the side of the wedge, which in a
+			// shape with no symmetry is not always the nearest
+			reflex[f] = darts.alpha && ring.some((h) => alpha(h) > Math.PI + 1e-9) ? 1 : 0;
+			if (reflex[f]) {
+				const T = su11Inverse(su11Translation(c));
+				const turns = Array.from({ length: S }, (_, i) => alpha(ring[i % ring.length]));
+				if (isotoxalRing(turns) && starAboutOrigin(v.map((q) => su11Apply(T, q)))) kind[f] = WALK_STAR;
+				else [kind[f], c] = [WALK_POLYGON, insidePoint(v)];
+			} else if (darts.alpha) kind[f] = WALK_IRREGULAR;
 			const C0 = su11Inverse(su11Translation(c));
 			const mid = (i: number) => hypMidpoint(su11Apply(C0, v[i]), su11Apply(C0, v[(i + 1) % S]));
 			const m0 = mid(0);
 			C = mul(su11Rotation(-Math.atan2(m0.y, m0.x)), C0);
-			if (darts.alpha) kind[f] = ring.some((h) => alpha(h) > Math.PI + 1e-9) ? WALK_STAR : WALK_IRREGULAR;
-			else {
+			if (!darts.alpha) {
 				const m1 = su11Apply(su11Rotation(-Math.atan2(m0.y, m0.x)), mid(1));
 				if (m1.y < 0) for (let s = 1; s < S; s++) order[s] = S - s; // the ring runs clockwise
 			}
@@ -296,6 +375,11 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			for (let s = 0; s <= S; s++) verts[f][s] = at((order[s % S] + 1) % S);
 		}
 	}
+	// a point read by crossings in one face and by wedges or sides in the next can be sent back and forth between
+	// them: when one face needs the straight walk, every face with turns of its own takes it (each is centred
+	// inside: a convex face or a star about its barycentre)
+	if (kind.includes(WALK_POLYGON))
+		for (let f = 0; f < F; f++) if (kind[f] === WALK_STAR || kind[f] === WALK_IRREGULAR) kind[f] = WALK_POLYGON;
 
 	const sizes = [
 		...new Set(rings.flatMap((ring, f) => (kind[f] >= WALK_IRREGULAR ? [] : [lvert[rneig[ring[0]]]]))),
@@ -338,16 +422,23 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		// drifted off regular (flatCornerHue), so a triangle whose sides are cut into two edges (M3 Pi M3 Pi
 		// M3 Pi: p = 6 unit sides, three corners) is neither the triangle nor the hexagon; the key is that
 		// hue's place on the ramp (polygonHue inverted). The flat corners are spread evenly round the face, so the share of them
-		// in the ring holds even when the ring is one period of a symmetric face.
-		const corners = p === 0 ? 0 : Math.round((p * ring.filter((h) => !flat(h)).length) / ring.length);
+		// in the ring holds even when the ring is one period of a symmetric face. A star's dents pass `flat`
+		// too, so its corners are its points, and it takes the plane's star hue for its points and point angle:
+		// on the polygon ramp a six-pointed star was the hexagon's colour.
+		const tips = ring.filter((h) => !flat(h));
+		const corners = p === 0 ? 0 : Math.round((p * tips.length) / ring.length);
+		const onRamp = (hue: number) => 3 * 10 ** (hue / 360);
 		data.set(
 			[
 				kind[f],
 				S,
 				step[f],
-				// a star's dents pass `flat` too, and it keeps its point count
-				corners === p || kind[f] === WALK_STAR ? corners : 3 * 10 ** (flatCornerHue(corners, p) / 360),
-				darts.faceColor ? darts.faceColor[ring[0]] : 0,
+				reflex[f]
+					? onRamp(starHue(corners, (Math.min(...tips.map(alpha)) * 180) / Math.PI))
+					: corners === p
+						? corners
+						: onRamp(flatCornerHue(corners, p)),
+				slot ? slot[ring[0]] : 0,
 				layer,
 				...(p === 0 ? [0, run[f]] : layer < 0 ? [0, 0] : islamicWedgeBox(p, edge)),
 			],
@@ -394,6 +485,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 				const nrm = sideNormal(verts[f][s], verts[f][s + 1]);
 				data.set(nrm, o + 8);
 				if (kind[f] === WALK_STAR) data[o + 6] = Math.atan2(verts[f][s].y, verts[f][s].x);
+				else if (kind[f] === WALK_POLYGON) data.set([verts[f][s].x, verts[f][s].y], o + 6);
 				else if (kind[f] === WALK_IRREGULAR && flat(ring[(i + 1) % ring.length])) {
 					const q = perpNormal(nrm, verts[f][s + 1], verts[f][s]);
 					data.set([q[0], q[1]], o + 6);
@@ -464,7 +556,12 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 /** Where a point of face f's frame stands against the face: the side it faces, sinh of its signed
  *  distance past that side (≤ 0 inside), and for an apeirogon the shift that brings that side into the
  *  one period the row holds. */
-function locate(t: WalkTiling, f: number, w: Complex): { j: number; s: number; pre: Su11 | null } {
+function locate(
+	t: WalkTiling,
+	f: number,
+	w: Complex,
+	from: Complex | null = null,
+): { j: number; s: number; pre: Su11 | null; at?: Complex } {
 	const d = t.data;
 	const row = f * t.width * 4;
 	const S = d[row + 1];
@@ -502,6 +599,32 @@ function locate(t: WalkTiling, f: number, w: Complex): { j: number; s: number; p
 			}
 		}
 		return { j, s: out(j), pre: null };
+	}
+	if (d[row] === WALK_POLYGON) {
+		// a straight walk: along the chord from `from` (where the walk came in, else the frame's centre, which is
+		// inside) to w, the first side it meets is the one to cross, and none means w is in the face. Following one
+		// geodesic it always gets further; leaving by the last side met went round in circles between two copies of
+		// a face glued to itself, from a point in the pocket beside both.
+		const vert = (i: number) => {
+			const o = row + (3 + 3 * (i % S)) * 4;
+			return klein({ x: d[o + 2], y: d[o + 3] });
+		};
+		const p = klein(from ?? { x: 0, y: 0 });
+		const k = { x: klein(w).x - p.x, y: klein(w).y - p.y };
+		// a side is crossed when its ends lie on either side of the chord's line, each corner judged once, so a
+		// chord through a corner crosses exactly one of the two sides there (as the shader does, in float32)
+		const rel = Array.from({ length: S }, (_, i) => ({ x: vert(i).x - p.x, y: vert(i).y - p.y }));
+		const left = rel.map((a) => k.x * a.y - k.y * a.x >= 0);
+		let [j, first] = [-1, Infinity];
+		for (let i = 0; i < S; i++) {
+			if (left[i] === left[(i + 1) % S]) continue;
+			const t = chords(k, rel[i], rel[(i + 1) % S])?.t;
+			if (t !== undefined && t > 1e-9 && t <= 1 && t < first) [first, j] = [t, i];
+		}
+		if (j < 0) return { j: 0, s: -1, pre: null };
+		const q = { x: p.x + first * k.x, y: p.y + first * k.y };
+		const r = 1 + Math.sqrt(Math.max(0, 1 - q.x * q.x - q.y * q.y));
+		return { j, s: Math.max(out(j), 1e-12), pre: null, at: { x: q.x / r, y: q.y / r } };
 	}
 	let j = 0;
 	let s = -Infinity;
@@ -552,14 +675,16 @@ export function walkPoint(
 ): { f: number; w: Complex; W: Su11; Wref: Su11; ok: boolean } {
 	let W = su11Identity();
 	let Wref = su11Identity();
+	let from: Complex | null = null; // where a straight walk through WALK_POLYGON faces came in
 	for (let it = 0; it < maxSteps; it++) {
-		const { j, s, pre } = locate(t, f, w);
+		const { j, s, pre, at } = locate(t, f, w, from);
 		if (s <= 0) return pre ? { f, w: su11Apply(pre, w), W: mul(pre, W), Wref, ok: true } : { f, w, W, Wref, ok: true };
 		const side = sideMapOf(t, f, j);
 		let M = side.M;
 		if (pre) M = su11Mul(M, pre);
 		if (ref) Wref = mul(sideMapOf(ref, f, j).M, Wref);
 		w = su11Apply(M, w);
+		from = at ? su11Apply(M, at) : null;
 		W = mul(M, W);
 		f = side.next;
 	}

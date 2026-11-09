@@ -1,4 +1,4 @@
-// Emit public/atlas-manifest.json.gz: how many tilings sit behind each lazy tier, so the browse tree
+// Emit public/atlas-manifest.json.br: how many tilings sit behind each lazy tier, so the browse tree
 // can offer a row before its data exists.
 //
 //   pnpm tsx scripts/gen-atlas-manifest.ts            # dry run, prints the table
@@ -16,7 +16,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
-import { tileClassOf, subOf, geometryOf, decorationOf, type ReferenceTiling } from "@/lib/services/referenceAtlas";
+import {
+	tileClassOf,
+	subOf,
+	geometryOf,
+	decorationOf,
+	REGULAR_SHARD_KS,
+	REGULAR_SHARD_PARTS,
+	type ReferenceTiling,
+} from "@/lib/services/referenceAtlas";
 import type { AtlasManifest, ManifestTier, TierShelf } from "@/lib/services/atlasManifest";
 import {
 	HYP_POLY_BOARDS,
@@ -31,14 +39,20 @@ import { dataPath, readDataJson, writeDataFile } from "./atlas/io.mjs";
 const write = process.argv.includes("--write");
 const PUB = path.resolve("public");
 
-/** (shelf, k) -> the file that holds it. Mirrors loadShelfShard / loadReferenceAtlasShard. */
-const TIERS: { shelf: TierShelf; ks: number[]; file: (k: number) => string }[] = [
-	// The regular catalogue's k8/9/10, HIGHER_K in reference-shelf.tsx.
-	{ shelf: "ctrnact", ks: [8, 9, 10], file: (k) => `reference-atlas-k${k}.json` },
+/** (shelf, k) -> the files that hold it. Mirrors loadShelfShard / loadReferenceAtlasShard. */
+const TIERS: { shelf: TierShelf; ks: number[]; files: (k: number) => string[] }[] = [
+	// The regular catalogue's lazy shards: complete to REGULAR_COMPLETE_K (the big ks in parts), then the
+	// partial tiers above.
+	{
+		shelf: "ctrnact",
+		ks: REGULAR_SHARD_KS,
+		files: (k) =>
+			REGULAR_SHARD_PARTS[k]?.map((_, i) => `reference-atlas-k${k}-p${i}.json`) ?? [`reference-atlas-k${k}.json`],
+	},
 	// SCALED_SHARD_KS, EUHALF_SHARD_KS, MIXED_SHARD_KS in referenceAtlas.ts.
-	{ shelf: "scaled", ks: [3, 4, 5, 6, 7], file: (k) => `reference-atlas-scaled-k${k}.json` },
-	{ shelf: "euhalf", ks: [5, 6, 7, 8, 9], file: (k) => `reference-atlas-euhalf-k${k}.json` },
-	{ shelf: "mixed", ks: [3, 4], file: (k) => `reference-atlas-mixed-k${k}.json` },
+	{ shelf: "scaled", ks: [3, 4, 5, 6, 7], files: (k) => [`reference-atlas-scaled-k${k}.json`] },
+	{ shelf: "euhalf", ks: [5, 6, 7, 8, 9], files: (k) => [`reference-atlas-euhalf-k${k}.json`] },
+	{ shelf: "mixed", ks: [3, 4], files: (k) => [`reference-atlas-mixed-k${k}.json`] },
 ];
 
 const tiers: ManifestTier[] = [];
@@ -47,12 +61,13 @@ const missing: string[] = [];
 
 for (const t of TIERS) {
 	for (const k of t.ks) {
-		const file = dataPath(path.join(PUB, t.file(k)));
-		if (!fs.existsSync(file)) {
-			missing.push(t.file(k));
+		const files = t.files(k).map((f) => dataPath(path.join(PUB, f)));
+		const absent = files.filter((f) => !fs.existsSync(f));
+		if (absent.length) {
+			missing.push(...absent.map((f) => path.relative(PUB, f)));
 			continue;
 		}
-		const records = decodeAtlas<ReferenceTiling>(readDataJson(file));
+		const records = files.flatMap((f) => decodeAtlas<ReferenceTiling>(readDataJson(f)));
 		// Group by exactly what the tree groups by, so a manifest row and a loaded row collide on the
 		// same key and the set difference in unloadedTiers() actually cancels. Geometry and decoration
 		// are measured off the records and grouped on too, never assumed: the tree filters to one
@@ -62,16 +77,25 @@ for (const t of TIERS) {
 		//
 		// The separator is an escaped \0, not a raw NUL byte. It was a raw one until 2026-08-19, which
 		// made git classify this file as binary and print "Bin 0 -> 3749 bytes" instead of a diff.
-		const by = new Map<string, { cls: string; sub: string; geometry: string; decoration: string; n: number }>();
+		type Group = {
+			cls: string;
+			sub: string;
+			geometry: string;
+			decoration: string;
+			n: number;
+			edges: Record<string, number>;
+		};
+		const by = new Map<string, Group>();
 		for (const r of records) {
 			const cls = tileClassOf(r);
 			const sub = subOf(r);
 			const geometry = geometryOf(r);
 			const decoration = decorationOf(r);
 			const key = `${cls}\0${sub}\0${geometry}\0${decoration}`;
-			const hit = by.get(key);
-			if (hit) hit.n++;
-			else by.set(key, { cls, sub, geometry, decoration, n: 1 });
+			let g = by.get(key);
+			if (!g) by.set(key, (g = { cls, sub, geometry, decoration, n: 0, edges: {} }));
+			g.n++;
+			if (r.edgeOrbits != null) g.edges[r.edgeOrbits] = (g.edges[r.edgeOrbits] ?? 0) + 1;
 		}
 		for (const g of by.values()) {
 			tiers.push({
@@ -82,6 +106,7 @@ for (const t of TIERS) {
 				shelf: t.shelf,
 				geometry: g.geometry as ManifestTier["geometry"],
 				decoration: g.decoration as ManifestTier["decoration"],
+				...(Object.keys(g.edges).length ? { edgeOrbits: g.edges } : {}),
 			});
 			total += g.n;
 		}
@@ -128,7 +153,7 @@ for (const b of HYP_POLY_BOARDS) {
 		tiers.push({
 			// The class tileClassOf gives these records, and it has to match: `unloadedTiers` cancels on
 			// (cls, sub, k), so a wrong cls adds a second class row beside the real one instead of merging.
-			cls: b.multiLength ? "edgelen" : "regular",
+			cls: b.star ? "star" : b.multiLength ? "edgelen" : "regular",
 			sub: hypPolySubOfBoard(b),
 			k,
 			count,
@@ -157,7 +182,7 @@ console.log(`${tiers.length} tiers, ${total.toLocaleString()} tilings currently 
 if (missing.length) console.log(`missing shards (skipped): ${missing.join(", ")}`);
 
 const manifest: AtlasManifest = { manifest: 1, tiers };
-const out = path.join(PUB, "atlas-manifest.json.gz");
+const out = path.join(PUB, "atlas-manifest.json.br");
 if (write) {
 	writeDataFile(out, JSON.stringify(manifest) + "\n");
 	console.log(`wrote ${out} (${(JSON.stringify(manifest).length / 1024).toFixed(1)} KB)`);

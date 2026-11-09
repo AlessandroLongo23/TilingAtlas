@@ -19,11 +19,6 @@ import { sphEdgesFamilyLabel } from "@/lib/freedraw/sph-edges";
 import { schwarzFamilyLabel } from "@/lib/freedraw/schwarz";
 import { GEOMETRIES } from "@/lib/vocabulary";
 
-// Edge- and tile-orbit extraction does not exist yet (AL owns that logic). Until it does, buildTilingSpec
-// leaves both fields null and the card renders a muted "not computed" row. When the extractor lands, fill
-// the two fields in buildTilingSpec and flip this to true — one boolean plus one function, no layout change.
-export const EDGE_FACE_ORBITS_ENABLED = false;
-
 export interface OrbitCounts {
 	/** Vertex orbits (= k for a k-uniform tiling). */
 	k: number | null;
@@ -31,9 +26,9 @@ export interface OrbitCounts {
 	m: number | null;
 	/** Multiplicities of the m types, descending, summing to k (e.g. [5,1,1] at k=7, m=3). */
 	partition: number[] | null;
-	/** Edge orbits — null until EDGE_FACE_ORBITS_ENABLED and the extractor land. */
+	/** Edge orbits under the full symmetry group; null when not computed. */
 	edgeOrbits: number | null;
-	/** Tile/face orbits — null until the extractor lands. */
+	/** Tile/face orbits under the full symmetry group; null when not computed. */
 	faceOrbits: number | null;
 }
 
@@ -278,8 +273,9 @@ export function buildTilingSpec(
 		k: orbitData?.k ?? selected.k ?? null,
 		m: selected.m ?? null,
 		partition: selected.partition ?? null,
-		edgeOrbits: null, // flagged — see EDGE_FACE_ORBITS_ENABLED
-		faceOrbits: null,
+		// the live computation (orbitsFromExactSource) wins, as for k; the shipped counts cover the rest
+		edgeOrbits: orbitData?.edges?.count ?? selected.edgeOrbits ?? null,
+		faceOrbits: orbitData?.faces?.count ?? selected.faceOrbits ?? null,
 		level: tilingLevel(selected),
 	};
 

@@ -2,6 +2,7 @@
 // atlas's Nav (components/nav.tsx) and the Tiling Searcher's header (tools/searcher/app) both draw with these, so
 // the two bars cannot drift. Nothing here touches the router, so an app without Next can import it.
 import { motion } from "motion/react";
+import { SPRING } from "@/design-system/motion";
 import { cn } from "@/lib/utils/cn";
 
 /** The hexagon mark: one hexagon in the tile palette's own hexagon colour (tileFill(polygonHue(6))). */
@@ -26,7 +27,7 @@ export const navLinkClass = (active: boolean) =>
 		// Text only, and the active link in ink, not accent: the accent marks actions.
 		active ? "text-fg" : "text-fg-muted hover:bg-surface-overlay hover:text-fg",
 	);
-export const NAV_LABEL = "relative text-[13px] font-medium whitespace-nowrap";
+export const NAV_LABEL = "relative text-ui font-medium whitespace-nowrap";
 
 /** The active link's fill: one shared element, so changing section slides it to the new link. `className`
  *  restyles it where another list uses the same glide (the Tiling Searcher's run list). */
@@ -42,7 +43,7 @@ export function NavActivePill({
 			layoutId={id}
 			aria-hidden="true"
 			className={cn("absolute inset-0 rounded-control", className)}
-			transition={{ type: "spring", duration: 0.4, bounce: 0.12 }}
+			transition={SPRING.pill}
 		/>
 	);
 }
@@ -52,10 +53,8 @@ export function NavBrand({ name, version }: { name: string; version: string }) {
 	return (
 		<>
 			<Mark />
-			<span className="text-[15px] leading-none font-semibold tracking-[-0.01em] whitespace-nowrap text-fg">
-				{name}
-			</span>
-			<span className="font-mono text-[10.5px] leading-none text-fg-muted tabular-nums">v{version}</span>
+			<span className="text-title leading-none font-semibold tracking-tight whitespace-nowrap text-fg">{name}</span>
+			<span className="font-mono text-micro leading-none text-fg-muted tabular-nums">v{version}</span>
 		</>
 	);
 }

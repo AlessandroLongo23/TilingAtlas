@@ -15,6 +15,8 @@ export interface OutFile {
 	bytes: number;
 	/** Certificates in the file, null until counted. */
 	tilings: number | null;
+	/** Of those, how many have each number of face orbits; null until counted. */
+	faces: Record<number, number> | null;
 	/** Its run's symbols.txt, where a view reads the files of several runs (a study's whole board). */
 	symbols?: Record<string, string>;
 }
@@ -314,6 +316,8 @@ export interface StudyRow {
 	reached?: number;
 	elapsed: number;
 	roots?: { done: number; all: number };
+	/** Raised (Raise k): its new search, unfinished, to k; the row shows what the search before it found. */
+	raising?: { state: "running" | "queued" | "stopped"; k: number };
 }
 
 /** A status as pushed: a run unchanged since the push before comes as its id. */
@@ -334,18 +338,59 @@ export interface StudySummary {
 	/** The optional faces, by name, and how many a row holds. */
 	optional: string[];
 	sizes: [number, number];
+	/** Required groups a row's optional faces each meet: a subset that misses one is no row. */
+	required: number;
 	rowCount: number;
 	/** Rows checked before any search, of rowCount. */
 	checked: number;
 	tally: Partial<Record<RowState, number>>;
 	/** Search time of the study's own rows. */
 	elapsed: number;
+	/** Rows whose raised search has not finished (StudyRow.raising). */
+	raising: number;
 }
 
 export interface StudyDetail extends StudySummary {
 	rows: StudyRow[];
 	/** The study board, as written. */
 	template: string;
+	/** Optional faces an edit of the board took out, oldest first. */
+	removed: RemovedFace[];
+}
+
+/** What a study's rows found for one optional face (faceTally in study.ts). */
+export interface FaceTally {
+	rows: number;
+	/** Rows with tilings, and their tilings. */
+	found: number;
+	tilings: number;
+	/** Rows without tilings that are not searched to the end yet. */
+	left: number;
+	/** The least k every other row without tilings was searched to, when none is left. */
+	through?: number;
+	/** Every row was ruled out before any search: no tiling at any k. */
+	proven: boolean;
+}
+
+/** An optional face an edit took out of a study, with what its rows had found then. */
+export interface RemovedFace extends FaceTally {
+	face: string;
+	/** When, as an ISO date. */
+	at: string;
+}
+
+/** What an edit of a study's board does to its rows (Study.edit). */
+export interface StudyEdit {
+	rows: number;
+	/** Rows whose board is the same: they keep their checks and searches. */
+	kept: number;
+	/** Rows whose board changed: checked and searched again. */
+	changed: number;
+	added: number;
+	dropped: number;
+	/** Dropped or changed rows that have tilings: what the study stops holding. */
+	lost: { name: string; tilings: number }[];
+	removed: RemovedFace[];
 }
 
 export type Check = { ok: true; dump: string } | { ok: false; line: number | null; message: string };
@@ -383,8 +428,17 @@ export interface Api {
 	createStudy(board: string, name: string, options: StudyOptions, folder?: string): Promise<{ id: string; error?: string }>;
 	/** A study with its rows; null when it no longer exists. */
 	study(id: string): Promise<StudyDetail | null>;
-	/** Pause a study (its running rows stop, and go on when it resumes), resume it, or stop raising k. */
-	studyAction(id: string, action: "pause" | "resume" | "unraise"): Promise<{ error?: string }>;
+	/** Pause a study (its running rows stop, and go on when it resumes), resume it, stop raising k, or finish the
+	 *  searches a time limit stopped (studies.ts finish: how many go on). */
+	studyAction(id: string, action: "pause" | "resume" | "unraise" | "finish"): Promise<{ error?: string; on?: number }>;
+	/** Rows at once, threads per row and priority for a study; `restart` restarts the searches going now. */
+	studyResources(
+		id: string,
+		o: Pick<StudyOptions, "parallel" | "threads" | "nice">,
+		restart: boolean,
+	): Promise<{ error?: string }>;
+	/** What an edited study board does to the study's rows (studies.ts edit); with `apply`, the study takes it. */
+	studyEdit(id: string, text: string, apply: boolean): Promise<StudyEdit | { error: string }>;
 	/** A new time limit on each search, in minutes, or none (studies.ts setLimit): how many rows go on. */
 	studyLimit(id: string, minutes: number | null): Promise<{ error?: string; on?: number }>;
 	/** A new raise rule for a whole study, and the rows it sends on (studies.ts raise): how many go on. */
@@ -400,8 +454,11 @@ export interface Api {
 	/** Delete a run or a folder and everything in it, permanently. */
 	remove(path: string): Promise<{ error?: string }>;
 	mkdir(parent: string, name: string): Promise<{ path: string } | { error: string }>;
-	/** The start of a file, up to `max` bytes (of its text, for a gzipped file); the whole file for 0. */
-	readFile(path: string, max: number): Promise<string>;
+	/** The start of a file, up to `max` bytes (of its text, for a gzipped file); the whole file for 0. With `faces`,
+	 *  a certificate file's certificates of that many face orbits only, whole, until they pass `max` bytes. */
+	readFile(path: string, max: number, faces?: number): Promise<string>;
+	/** Writes a finished run's shape colour order, shapes.json, into its folder. */
+	saveShapes(dir: string, text: string): Promise<void>;
 	/** Count the tilings in a run's files (OutFile.tilings), for the Files tab. */
 	countFiles(id: string): Promise<void>;
 		/** Gzip a finished run's certificate files in place, or with `unpack` turn them back into plain text. */

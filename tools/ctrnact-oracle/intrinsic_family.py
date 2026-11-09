@@ -527,7 +527,7 @@ def from_cell(render_cell):
 # ── the gate ──────────────────────────────────────────────────────────────────────────────────────────
 def shelf_entries(shelf=None):
     root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-    shelf = shelf or os.path.join(root, "public", "reference-atlas-period.json.gz")
+    shelf = shelf or os.path.join(root, "public", "reference-atlas-period.json.br")
     files = [shelf] + sorted(glob.glob(shelf.replace(".json", "-k*.json")))
     return [e for f in files for e in read_json(f)]
 

@@ -37,7 +37,7 @@ describe("bubble shards", () => {
 
 	it("names each shard's k in its filename", () => {
 		for (const { url, rows } of shards) {
-			const k = Number(url.match(/-k(\d+)\.json(\.gz)?$/)?.[1]);
+			const k = Number(url.match(/-k(\d+)\.json(\.br)?$/)?.[1]);
 			for (const r of rows) expect(r.k, url).toBe(k);
 		}
 	});

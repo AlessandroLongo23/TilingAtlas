@@ -8,12 +8,12 @@
 // family ("4" for the square grid) is the wrong title.
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import type { BoardPlan } from "@/lib/automata/board";
 import { UNIFORM_BY_ID } from "@/lib/automata/uniformTilings";
 import type { EngineReport } from "@/lib/automata/useAutomatonEngine";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { NavHeader } from "@/components/sidebar/nav-header";
+import { FoldChevron } from "@/design-system/components/disclosure";
 import { topologyDef } from "@/lib/automata/topology";
 import { cn } from "@/lib/utils/cn";
 
@@ -27,8 +27,8 @@ interface AutomataInfoProps {
 function Stat({ label, value, title }: { label: string; value: string; title?: string }) {
 	return (
 		<div className="flex h-[22px] min-w-0 items-center justify-between gap-2" title={title}>
-			<dt className="truncate text-[11px] text-fg-muted max-md:text-xs">{label}</dt>
-			<dd className="font-mono text-[11px] text-fg tabular-nums max-md:text-xs">{value}</dd>
+			<dt className="truncate text-caption text-fg-muted">{label}</dt>
+			<dd className="font-mono text-caption text-fg tabular-nums">{value}</dd>
 		</div>
 	);
 }
@@ -65,7 +65,7 @@ export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 	return (
 		<div className="flex-shrink-0 space-y-5 p-4 pb-3 max-md:space-y-3 max-md:pt-1">
 			{/* One step up from NavHeader's default so the title outranks the catalogue rows below it. */}
-			<div className="[&>div]:gap-1 [&>div>span:first-child]:text-base max-md:[&>div>span:first-child]:hidden">
+			<div className="[&>div]:gap-1 [&>div>span:first-child]:text-reading max-md:[&>div>span:first-child]:hidden">
 				<NavHeader selected={selected} title={automataTitle(selected)} />
 			</div>
 
@@ -75,10 +75,10 @@ export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 					type="button"
 					aria-expanded={statsOpen}
 					onClick={() => setStatsOpen((o) => !o)}
-					className="hidden h-11 w-full items-center justify-between border-t border-line-subtle text-sm text-fg-secondary max-md:flex"
+					className="hidden h-11 w-full items-center justify-between border-t border-line-subtle text-body text-fg-secondary max-md:flex"
 				>
 					Stats
-					<ChevronDown size={16} className={cn("text-fg-muted transition-transform", statsOpen && "rotate-180")} />
+					<FoldChevron open={statsOpen} size={16} />
 				</button>
 				<dl
 					className={cn(
@@ -118,7 +118,7 @@ export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 					<Stat label="Rate" value={report.rate ? `${report.rate.toFixed(0)}/s` : "—"} />
 				</dl>
 				{extinct && (
-					<p className="mt-1.5 text-[11px] leading-relaxed text-fg-muted max-md:text-xs">
+					<p className="mt-1.5 text-caption leading-relaxed text-fg-muted">
 						Extinct. Try a new soup, or a rule that births on fewer neighbours.
 					</p>
 				)}

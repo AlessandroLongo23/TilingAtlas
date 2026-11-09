@@ -47,6 +47,7 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	def: { field: "deform", kind: "mat2" },
 	pts: { field: "showPolygonPoints", kind: "bool" },
 	orb: { field: "showVertexOrbits", kind: "bool" },
+	orbm: { field: "orbitMode", kind: "enum", values: ["vertex", "edge", "face"] },
 	trans: { field: "tilingTransition", kind: "bool" },
 	sym: { field: "showSymmetryElements", kind: "bool" },
 	dom: { field: "showFundamentalDomain", kind: "bool" },

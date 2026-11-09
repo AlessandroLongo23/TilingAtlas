@@ -3,8 +3,10 @@
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { Check, Layers, Maximize, Minimize, ExternalLink, Play, X } from "lucide-react";
+import { Layers, Maximize, Minimize, ExternalLink, Play, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
 import { CardDoneChip } from "@/components/card-done-chip";
 import { useFlatCellPreview } from "@/lib/hooks/useFlatCellPreview";
@@ -13,6 +15,7 @@ import { seedFromCell } from "@/lib/render/seedPatch";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { SPRING } from "@/design-system/motion";
 
 // A rounded-square interactive tiling preview — the /play canvas in miniature, one per tiling, for
 // embedding in prose (the /theory page). The live surface itself is useFlatCellPreview (the same GL
@@ -103,10 +106,9 @@ interface InteractiveTilingPreviewCardProps {
 // How many lattice periods should span the card at reset zoom.
 const HOME_PERIODS = 3;
 
-// The one spring every expansion-related animation shares: the card's FLIP, its siblings' FLIP (via
-// the grid's LayoutGroup), and the grid wrapper's real height (which pushes the prose below). One
-// curve everywhere is what makes the reflow read as a single movement instead of three.
-export const CARD_LAYOUT_SPRING = { type: "spring", stiffness: 260, damping: 30 } as const;
+// One spring (SPRING.layout) for every expansion-related animation: the card's FLIP, its siblings' FLIP (via
+// the grid's LayoutGroup), and the grid wrapper's real height (which pushes the prose below). One curve
+// everywhere is what makes the reflow read as a single movement instead of three.
 
 export function InteractiveTilingPreviewCard({
 	cell,
@@ -189,7 +191,8 @@ export function InteractiveTilingPreviewCard({
 					initial={reduceMotion ? false : { opacity: 0 }}
 					animate={{ opacity: 1 }}
 					onClick={() => setExpanded(false)}
-					className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
+					// ds-check: keep (the card lifts itself in place, live canvas and layout animation intact; a Modal would remount it in a portal)
+					className="fixed inset-0 z-modal bg-scrim backdrop-blur-scrim"
 					aria-hidden
 				/>
 			) : null}
@@ -202,7 +205,7 @@ export function InteractiveTilingPreviewCard({
 				// containing block for `position: fixed`, which would pin the lifted card to this box
 				// instead of the viewport.
 				layout={!reduceMotion && expandMode === "inline"}
-				transition={reduceMotion ? { duration: 0 } : { layout: CARD_LAYOUT_SPRING }}
+				transition={reduceMotion ? { duration: 0 } : { layout: SPRING.layout }}
 				className={cn(
 					"relative",
 					expanded && expandMode === "inline" ? "col-span-full aspect-[4/3]" : "aspect-square",
@@ -212,7 +215,7 @@ export function InteractiveTilingPreviewCard({
 				<motion.div
 					ref={hostRef}
 					layout={!reduceMotion}
-					transition={reduceMotion ? { duration: 0 } : { layout: CARD_LAYOUT_SPRING }}
+					transition={reduceMotion ? { duration: 0 } : { layout: SPRING.layout }}
 					role="application"
 					aria-label={title ? `Interactive tiling preview: ${title}` : "Interactive tiling preview"}
 					{...hostProps}
@@ -237,9 +240,9 @@ export function InteractiveTilingPreviewCard({
 						hostProps.onKeyDown(e);
 					}}
 					className={cn(
-						"group bg-surface-base overflow-hidden border outline-none select-none",
-						!square && "rounded-2xl",
-						lifted ? "fixed inset-[5vh_5vw] z-50 shadow-2xl" : "absolute inset-0",
+						"group overflow-hidden border bg-surface outline-none select-none",
+						!square && "rounded-sheet",
+						lifted ? "fixed inset-[5vh_5vw] z-modal shadow-modal" : "absolute inset-0",
 						// An inert card takes the default cursor: neither grab (nothing to drag) nor pointer
 						// (nothing happens on click).
 						!interactive ? "cursor-default" : live ? "cursor-grab" : "cursor-pointer",
@@ -253,7 +256,7 @@ export function InteractiveTilingPreviewCard({
 					{/* The WebGL canvas, and the 2-D symmetry layer over it, are created imperatively by
 					    useFlatCellPreview. */}
 					{failed ? (
-						<div className="absolute inset-0 flex items-center justify-center p-4 text-center text-xs text-fg-muted">
+						<div className="absolute inset-0 flex items-center justify-center p-4 text-center text-small text-fg-muted">
 							WebGL2 unavailable — interactive preview disabled.
 						</div>
 					) : null}
@@ -262,19 +265,14 @@ export function InteractiveTilingPreviewCard({
 					{live ? (
 						<div className="absolute bottom-2 left-2 z-10 hidden flex-col items-start gap-1.5 max-md:flex">
 							{layersOpen ? (
-								<div role="group" aria-label="Overlays" className="ta-float flex flex-col py-1">
+								<div
+									role="group"
+									aria-label="Overlays"
+									onPointerDown={stopDrag}
+									className="ta-float flex flex-col px-3 py-1"
+								>
 									{layers.map(([name, label]) => (
-										<button
-											key={name}
-											type="button"
-											aria-pressed={overlays[name]}
-											onPointerDown={stopDrag}
-											onClick={() => toggle(name)}
-											className="flex h-11 items-center gap-2 px-3 text-left text-sm text-fg"
-										>
-											<Check size={16} aria-hidden className={overlays[name] ? "" : "invisible"} />
-											{label}
-										</button>
+										<Checkbox key={name} label={label} checked={overlays[name]} onCheckedChange={() => toggle(name)} />
 									))}
 								</div>
 							) : null}
@@ -283,9 +281,9 @@ export function InteractiveTilingPreviewCard({
 								aria-expanded={layersOpen}
 								onPointerDown={stopDrag}
 								onClick={() => setLayersOpen((v) => !v)}
-								className="ta-float flex h-11 items-center gap-1.5 px-3 text-sm font-medium text-fg"
+								className="ta-float flex h-11 items-center gap-1.5 px-3 text-body font-medium text-fg"
 							>
-								<Layers size={16} aria-hidden />
+								<Layers className="size-icon-md" aria-hidden />
 								Layers
 							</button>
 						</div>
@@ -303,28 +301,41 @@ export function InteractiveTilingPreviewCard({
 						)}
 					>
 						{showExpand && interactive ? (
-							<button
-								type="button"
-								onPointerDown={stopDrag}
-								onClick={() => setExpanded((v) => !v)}
-								title={expanded ? "Close" : "Expand"}
-								aria-label={expanded ? "Close the expanded preview" : "Expand preview"}
-								aria-pressed={expanded}
-								className="ta-float flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
-							>
-								{lifted ? <X size={14} /> : expanded ? <Minimize size={14} /> : <Maximize size={14} />}
-							</button>
+							<Tooltip label={expanded ? "Close" : "Expand"}>
+								{/* ds-check: keep (the card's .ta-float corner stack, the canvas corner look, like the Link beside it; the glyph shows the state) */}
+								<button
+									type="button"
+									onPointerDown={stopDrag}
+									onClick={() => setExpanded((v) => !v)}
+									aria-label={expanded ? "Close the expanded preview" : "Expand preview"}
+									aria-pressed={expanded}
+									className="ta-float flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
+								>
+									{lifted ? (
+										<X className="size-icon-sm" />
+									) : expanded ? (
+										<Minimize className="size-icon-sm" />
+									) : (
+										<Maximize className="size-icon-sm" />
+									)}
+								</button>
+							</Tooltip>
 						) : null}
 						{showOpenInPlay && tilingId ? (
-							<Link
-								href={openHref ?? `/catalogue/view?source=reference&tiling=${encodeURIComponent(tilingId)}`}
-								onPointerDown={stopDrag}
-								title={openHref ? "Open" : "Open in Play"}
-								aria-label={openHref ? "Open this tiling on its page" : "Open this tiling in Play"}
-								className="ta-float flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
-							>
-								{openInPlayIcon === "play" ? <Play size={14} className="fill-current" /> : <ExternalLink size={14} />}
-							</Link>
+							<Tooltip label={openHref ? "Open" : "Open in Play"}>
+								<Link
+									href={openHref ?? `/catalogue/view?source=reference&tiling=${encodeURIComponent(tilingId)}`}
+									onPointerDown={stopDrag}
+									aria-label={openHref ? "Open this tiling on its page" : "Open this tiling in Play"}
+									className="ta-float flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
+								>
+									{openInPlayIcon === "play" ? (
+										<Play className="size-icon-sm fill-current" />
+									) : (
+										<ExternalLink className="size-icon-sm" />
+									)}
+								</Link>
+							</Tooltip>
 						) : null}
 					</div>
 				</motion.div>

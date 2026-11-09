@@ -13,7 +13,7 @@ import { useIsPhone } from "@/lib/hooks/useIsPhone";
 export function LandingPhoneNav() {
 	const isPhone = useIsPhone();
 	return (
-		<div className="sticky top-0 z-40 hidden h-[var(--topbar-h)] bg-surface-chrome max-md:block">
+		<div className="sticky top-0 z-sheet hidden h-[var(--topbar-h)] bg-surface-chrome max-md:block">
 			{isPhone ? <Nav /> : null}
 		</div>
 	);

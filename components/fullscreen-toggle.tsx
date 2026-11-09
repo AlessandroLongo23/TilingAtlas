@@ -12,7 +12,7 @@
 import { useEffect } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Maximize, Minimize } from "lucide-react";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 
@@ -55,19 +55,20 @@ export function FullscreenToggle({ className }: { className?: string }) {
 			label={immersive ? "Exit fullscreen" : "Fullscreen canvas"}
 			shortcut={immersive ? "F or Esc" : "F"}
 			side="left"
-			delay={0}
+			delay="instant"
 		>
+			{/* ds-check: keep (one of CornerControls' .ta-float corner buttons, like reset-view and about; the glyph shows the state) */}
 			<button
 				type="button"
 				onClick={() => useImmersive.getState().toggle()}
 				aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
 				aria-pressed={immersive}
 				className={cn(
-					"ta-float absolute top-4 right-4 z-30 flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:top-3 max-md:right-3 max-md:size-11 max-md:touch-pan-x max-md:touch-pan-y",
+					"ta-float absolute top-4 right-4 z-chrome flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:top-3 max-md:right-3 max-md:size-11 max-md:touch-pan-x max-md:touch-pan-y",
 					className,
 				)}
 			>
-				{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
+				{immersive ? <Minimize className="size-icon-md" /> : <Maximize className="size-icon-md" />}
 			</button>
 		</Tooltip>
 	);

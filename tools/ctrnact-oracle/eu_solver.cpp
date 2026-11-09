@@ -183,8 +183,8 @@ static long long branch_ctr = 0;   // root-level branch number; see shard_take_b
 // ticket from a counter in shared memory, claiming the next ticket when the branch is done. Tickets only
 // grow and every worker walks every number, so each branch is explored exactly once and idle workers take
 // the next one (Martin Olivier's solver gets this balance from work donation between threads). Nothing a
-// worker finds below depth D may change its walk above it: the transposition table probes only below D,
-// and closures met above D are written by worker 0 alone.
+// worker finds below depth D may change its walk above it: orderly pruning (EU_ORDERLY) reads only the
+// node itself, and closures met above D are written by worker 0 alone.
 static int split_depth = 0;            // D; 0 = off
 static long long* TICKET = nullptr;    // MAP_SHARED counter
 static long long my_ticket = -1;
@@ -988,6 +988,8 @@ int vertypesolvedadd(std::vector<int> const& vertype) {
 static int STAR_ROOTS = -1;
 static const bool star_roots = std::getenv("EU_STAR_ROOTS") != nullptr;
 
+static const bool orderly = std::getenv("EU_ORDERLY") != nullptr;
+static bool orderly_ok(configuration const& P, bool full);
 int initex() {
     long t_start = (long)time(nullptr), last_progress = t_start;
     const int root_end = (star_roots && STAR_ROOTS >= 0) ? STAR_ROOTS : symbolcount;
@@ -1019,6 +1021,7 @@ int initex() {
         newconf.kcnt = mainlist[i].counting;
         newconf.dfs_depth = 0;
         newconf.glue = std::vector<int>(newconf.lneig.size(), -1);
+        if (orderly) (void)orderly_ok(newconf, false);   // forms ALIVE[0]: the root's other frames
         extend(newconf);
     }
     return 0;
@@ -1242,7 +1245,7 @@ struct HashSet128 {
         return false;
     }
 };
-static bool tables_shared = false;   // EU_FORK: the TT and the leaf set live in shared memory
+static bool tables_shared = false;   // EU_FORK: the leaf set lives in shared memory
 
 // LEAF DEDUP (2026-11-06). simplify() leaves the canonical hash of a minimal closure in LEAF_H1/H2, under
 // isomorphisms that also preserve vertex type, so an equal hash is a duplicate the pruner would drop. It
@@ -1487,51 +1490,230 @@ bool simplify_inner(configuration const& conf) {
     return true;
 }
 
-// TRANSPOSITION TABLE (from Martin Olivier's solver, 2026-11-06; EU_TT_MB=<MB>, default 0 = off). The
-// tilings below a node depend only on its configuration up to isomorphisms preserving R, L, M, G (free
-// stays free) and each dart's vertex type, corner class and edge type: extend() reads nothing else, and
-// the root type is the minimum type present. So a node isomorphic to one already entered is skipped. Our
-// 2026-08 "zero repeats" test hashed LABELLED states, which never repeat; isomorphic states do. Probed
-// while kcnt <= maxnum - EU_TT_MARGIN (default 3) and only when refine() ends discrete.
+// ORDERLY GENERATION (EU_ORDERLY=1, 2026-11-06). Every closed configuration, minimal or covering, is built
+// exactly once, from its canonical root. A node P is built from root (vertex 0, identity frame) by a
+// sequence of branch moves, its CODE. Replaying the search from another root (v, frame a) of the minimal
+// type (same min-slack dart choice, same forced closures) reads that root's code off P's glues until it
+// meets a free dart. The canonical copy is the one whose root has the least code, so:
+//   - another root smaller at a position both have determined: no completion of P is canonical, prune P;
+//   - larger: that root never wins below P, drop it for the subtree;
+//   - at a closure every replay is complete, so exactly one copy survives (leaf_dups reads 0).
+// Frames are the vertex type's automorphisms (R, L, M, class and edge type kept: the generator's Aut). The
+// action is free, so the frame taking a dart to its orbit's rep is unique. A replay keeps its state between
+// nodes in a pool that follows the DFS, and is not rerun while the dart it stalled on is still free:
+// glues are only ever added below a node, so it would stall there again.
 //
-// ⚑ Same tilings, same representatives, same order: the earlier node is never an ancestor (descendants
-// carry more glues), so its subtree finished first. But skipped subtrees no longer count their raw
-// duplicates, so the serial n in "eu raw <sig> <n>.tes", and with it ctrnact-* ids, can change. Off by
-// default until ids stop depending on raw counts. Regular k<=12: 2.24M -> 1.39M nodes, 1.2x.
-static const long tt_mb = std::getenv("EU_TT_MB") ? atol(std::getenv("EU_TT_MB")) : 0;
-static const int tt_margin = std::getenv("EU_TT_MARGIN") ? atoi(std::getenv("EU_TT_MARGIN")) : 3;
-static HashSet128 TT;
-static long long tt_probes = 0, tt_hits = 0, tt_nondiscrete = 0;
-static std::vector<long long> TT_SEED;
-static bool tt_seen(configuration const& c) {
-    if (tt_mb <= 0 || c.kcnt > maxnum - tt_margin || c.dfs_depth < split_depth) return false;
-    if (!TT.slot) TT.init(tt_mb, false);
-    const int n = (int)c.glue.size();
-    TT_SEED.resize(n);
-    for (size_t v = 0, d = 0; v < c.vertype.size(); v++) {
-        const long long T = c.vertype[v];
-        for (size_t q = 0; q < mainlist[T].rneig.size(); q++, d++)
-            TT_SEED[d] = (T * NCLS + c.lvert[d]) * ETSPAN + (EDGE_TYPED ? c.etype[d] : 0);
+// Regular k<=12, one core: 2.24M -> 850K nodes, 1.10M -> 215K closures, 2.4x fewer instructions; the gain
+// grows with k. Same set of tilings on 9 palettes (raw outputs pruned together keep the same count). Little
+// to gain at k<=3 on large alphabets, where it costs up to 23%. ⚑ It emits a different labelled copy of
+// each tiling, so serials in "eu raw <sig> <n>.tes", and ctrnact-* ids, change: opt-in until ids stop
+// depending on the search. experiments/results/orderly-generation-2026-11-06.md.
+static std::vector<std::vector<std::vector<int> > > T_AUT, T_AUTINV;   // [type][frame][local dart]
+static std::vector<std::vector<int> > T_TOREP, T_REPOF;   // [type][dart]: frame taking it to its rep, the rep
+static std::vector<int> T_ID;                             // [type]: the identity frame
+static void type_auts(int t) {
+    if (T_AUT.empty()) { T_AUT.resize(symbolcount); T_AUTINV.resize(symbolcount); T_TOREP.resize(symbolcount);
+                         T_REPOF.resize(symbolcount); T_ID.assign(symbolcount, -1); }
+    if (!T_AUT[t].empty()) return;
+    const vertexdef& V = mainlist[t];
+    const int n = (int)V.rneig.size();
+    auto same = [&](int p, int q) { return V.lvert[p] == V.lvert[q] && (!EDGE_TYPED || V.etype[p] == V.etype[q]); };
+    for (int img0 = 0; img0 < n; img0++) {
+        if (!same(0, img0)) continue;
+        std::vector<int> phi(n, -1), st = { 0 };
+        phi[0] = img0;
+        bool ok = true;
+        while (!st.empty() && ok) {
+            const int x = st.back(); st.pop_back();
+            const int ys[3] = { V.rneig[x], V.lneig[x], V.mirro[x] };
+            const int fys[3] = { V.rneig[phi[x]], V.lneig[phi[x]], V.mirro[phi[x]] };
+            for (int u = 0; u < 3 && ok; u++) {
+                if (phi[ys[u]] >= 0) ok = phi[ys[u]] == fys[u];
+                else if ((ok = same(ys[u], fys[u]))) { phi[ys[u]] = fys[u]; st.push_back(ys[u]); }
+            }
+        }
+        if (ok) T_AUT[t].push_back(phi);
     }
-    unsigned long long h1, h2;
-    tt_probes++;
-    if (!refine(c, TT_SEED.data(), TT_SEED.data(), h1, h2)) { tt_nondiscrete++; return false; }
-    if (!TT.seen_or_insert(h1, h2)) return false;
-    tt_hits++;
+    std::vector<char> isrep(n, 0);
+    for (int r : V.reps) isrep[r] = 1;
+    T_TOREP[t].assign(n, -1); T_REPOF[t].assign(n, -1);
+    for (int a = 0; a < (int)T_AUT[t].size(); a++) {
+        std::vector<int> inv(n);
+        for (int q = 0; q < n; q++) {
+            const int r = T_AUT[t][a][q];
+            inv[r] = q;
+            if (r == q && q == 0) T_ID[t] = a;
+            if (isrep[r] && T_TOREP[t][q] < 0) { T_TOREP[t][q] = a; T_REPOF[t][q] = r; }
+        }
+        T_AUTINV[t].push_back(inv);
+    }
+    for (int q = 0; q < n; q++)
+        if (T_TOREP[t][q] < 0) { std::cerr << "orderly: type " << t << " dart " << q << " has no rep in its orbit\n"; std::abort(); }
+}
+// Any fixed order on moves is exact; this one exposes a wrong root soonest of the five measured: a fresh
+// vertex before a glue to a placed dart, higher types first. Regular k<=11: 373K nodes against 467K for
+// placed darts first, ascending types.
+static inline long long enc_exist(int i) { return (1LL << 50) + i; }
+static inline long long enc_new(int g, int r) { return ((1LL << 32) - g) * 4096 + r; }
+static std::vector<long long> MOVES;      // MOVES[d]: the branch move at code position d
+// A replay in progress: the copy Q built so far and the vertex map to P (Q's local dart = AUT[type][frame]
+// of P's).
+struct RState {
+    configuration Q;
+    std::vector<int> qvof, qoff;   // Q dart -> Q vertex; Q vertex -> first dart (nv + 1 entries)
+    std::vector<int> qv2p, qaut;   // Q vertex -> P vertex, frame
+    std::vector<int> pv2q;         // P vertex -> Q vertex, -1 = not reached
+    int s, nfree;
+};
+static std::deque<RState> RPOOL;          // stack slots: ALIVE[D]'s states live below POOL_END[D]
+static std::vector<int> POOL_END;
+static int pool_used = 0;
+static inline int pool_alloc() { if (pool_used == (int)RPOOL.size()) RPOOL.emplace_back(); return pool_used++; }
+struct AltRoot { int v, a, wait, st; };   // wait: the P dart its replay stalled on; st: its state slot
+static std::vector<std::vector<AltRoot> > ALIVE;   // ALIVE[D]: undecided roots at code length D
+static std::vector<int> ALIVE_NV;                  // P's vertex count when ALIVE[D] was formed
+static long long ord_pruned = 0, ord_rejected = 0, ord_replays = 0, ord_skips = 0;
+static std::vector<int> P_OFF, P_VOF, RWORK;
+enum { R_TIED, R_PRUNE, R_DROP };
+static int REPLAY_WAIT = -1;
+// Q carries only what writecycle and zero_slack read: no edge types, and labels only in a trace build.
+static std::ostream ORD_NULL(nullptr);   // writecycle's trace output for replays goes nowhere
+static void rs_add_vertex(RState& R, int g, int pv, int a) {
+    const vertexdef& VD = mainlist[g];
+    configuration& Q = R.Q;
+    const int l = (int)Q.rneig.size(), sl = (int)VD.rneig.size(), qv = (int)Q.vertype.size(), n = l + sl;
+    Q.rneig.resize(n); Q.lneig.resize(n); Q.mirro.resize(n); Q.lvert.resize(n); Q.glue.resize(n); R.qvof.resize(n);
+    if (eu_trace) Q.label.resize(n);
+    for (int j = 0; j < sl; j++) {
+        Q.rneig[l + j] = l + VD.rneig[j]; Q.lneig[l + j] = l + VD.lneig[j]; Q.mirro[l + j] = l + VD.mirro[j];
+        Q.lvert[l + j] = VD.lvert[j]; Q.glue[l + j] = -1; R.qvof[l + j] = qv;
+        if (eu_trace) Q.label[l + j] = label_code(LBASE_OF[g][j], Q.num);
+    }
+    Q.vertype.push_back(g); Q.num++; Q.kcnt += VD.counting;
+    R.qoff.push_back(l + sl); R.qv2p.push_back(pv); R.qaut.push_back(a);
+    R.pv2q[pv] = qv;
+    R.nfree += sl;
+}
+static void rs_init(RState& R, configuration const& P, int v, int a) {
+    configuration& Q = R.Q;
+    Q.label.clear(); Q.lneig.clear(); Q.rneig.clear(); Q.mirro.clear(); Q.lvert.clear(); Q.etype.clear();
+    Q.glue.clear(); Q.vertype.clear(); Q.num = 0; Q.kcnt = 0; Q.dfs_depth = 0;
+    R.qvof.clear(); R.qoff.assign(1, 0); R.qv2p.clear(); R.qaut.clear();
+    R.pv2q.assign(P.vertype.size(), -1);
+    R.s = 0; R.nfree = 0;
+    rs_add_vertex(R, P.vertype[v], v, a);
+}
+static inline void rs_glue(RState& R, int a, int b) {   // a dart glued to its mirror repeats a pair: count once
+    if (R.Q.glue[a] == -1) R.nfree--;
+    if (b != a && R.Q.glue[b] == -1) R.nfree--;
+    R.Q.glue[a] = b; R.Q.glue[b] = a;
+}
+static inline bool rs_star(RState const& R, int d) {   // label_star without the label
+    const int qv = R.qvof[d];
+    return LBASE_STAR[LBASE_OF[R.Q.vertype[qv]][d - R.qoff[qv]]] != 0;
+}
+static inline int rs_q2p(RState const& R, int d) {
+    const int qv = R.qvof[d];
+    return P_OFF[R.qv2p[qv]] + T_AUTINV[R.Q.vertype[qv]][R.qaut[qv]][d - R.qoff[qv]];
+}
+// Continue the replay in R on P, whose code has length D. full = P is closed.
+static int replay_from(configuration const& P, RState& R, int D, bool full) {
+    ord_replays++;
+    REPLAY_WAIT = -1;
+    R.pv2q.resize(P.vertype.size(), -1);
+    configuration& Q = R.Q;
+    for (;; R.s++) {
+        const int s = R.s;
+        if (R.nfree == 0) return full && s < D ? R_PRUNE : R_TIED;   // a strict prefix is smaller; equal = automorphism
+        writecycle(Q, ORD_NULL);
+        int ff = mincycle[0];
+        if (rs_star(R, ff)) ff = Q.mirro[ff];
+        const int x = rs_q2p(R, ff), y = P.glue[x];
+        if (y < 0) { REPLAY_WAIT = x; return R_TIED; }
+        const int pv = P_VOF[y], qv = R.pv2q[pv], g = P.vertype[pv], qy = y - P_OFF[pv];
+        int partner = -1;
+        long long code;
+        if (qv >= 0) { partner = R.qoff[qv] + T_AUT[g][R.qaut[qv]][qy]; code = enc_exist(partner); }
+        else { type_auts(g); code = enc_new(g, T_REPOF[g][qy]); }
+        if (s >= D) return full ? R_DROP : R_TIED;
+        if (code != MOVES[s]) return code < MOVES[s] ? R_PRUNE : R_DROP;
+        if (qv < 0) { const int nq = (int)Q.vertype.size(); rs_add_vertex(R, g, pv, T_TOREP[g][qy]); partner = R.qoff[nq] + T_REPOF[g][qy]; }
+        const bool mir = Q.mirro[ff] == ff;
+        rs_glue(R, ff, partner);
+        if (!mir) rs_glue(R, Q.mirro[ff], Q.mirro[partner]);
+        RWORK.assign({ ff, partner });
+        if (!mir) { RWORK.push_back(Q.mirro[ff]); RWORK.push_back(Q.mirro[partner]); }
+        while (!RWORK.empty()) {   // forced closure, as propagate_forced does it
+            const int z = RWORK.back(); RWORK.pop_back();
+            int s1, r1;
+            if (no_force || !zero_slack(Q, Q.lneig[z], s1, r1)) continue;
+            const bool ms = Q.mirro[s1] == s1;
+            // P passed these checks, so neither can fail; if one did, deciding nothing is safe.
+            if (ms != (Q.mirro[r1] == r1) || P.glue[rs_q2p(R, s1)] != rs_q2p(R, r1)) return R_TIED;
+            rs_glue(R, s1, r1);
+            if (!ms) {
+                const int a2 = Q.mirro[s1], b2 = Q.mirro[r1];
+                if (Q.glue[a2] != -1 || Q.glue[b2] != -1) { if (Q.glue[a2] != b2) return R_TIED; }
+                else rs_glue(R, a2, b2);
+            }
+            RWORK.push_back(s1); RWORK.push_back(r1);
+            if (!ms) { RWORK.push_back(Q.mirro[s1]); RWORK.push_back(Q.mirro[r1]); }
+        }
+    }
+}
+// False = prune P (full: reject the closure).
+static bool orderly_ok(configuration const& P, bool full) {
+    const int D = P.dfs_depth, nv = (int)P.vertype.size(), t0 = P.vertype[0];
+    type_auts(t0);
+    if ((int)ALIVE.size() <= D) { ALIVE.resize(D + 1); ALIVE_NV.resize(D + 1); POOL_END.resize(D + 1); }
+    pool_used = D == 0 ? 0 : POOL_END[D - 1];
+    std::vector<AltRoot>& out = ALIVE[D];
+    out.clear();
+    ALIVE_NV[D] = nv;
+    POOL_END[D] = pool_used;
+    static std::vector<AltRoot> cand;
+    cand.clear();
+    if (D == 0) { for (int a = 0; a < (int)T_AUT[t0].size(); a++) if (a != T_ID[t0]) cand.push_back({ 0, a, -1, -1 }); }
+    else {
+        cand = ALIVE[D - 1];
+        for (int v = ALIVE_NV[D - 1]; v < nv; v++)
+            if (P.vertype[v] == t0) for (int a = 0; a < (int)T_AUT[t0].size(); a++) cand.push_back({ v, a, -1, -1 });
+    }
+    bool maps = false;   // P's dart maps, built on the first replay: most nodes run none
+    for (const AltRoot& r : cand) {
+        if (!full && r.st >= 0 && r.wait >= 0 && P.glue[r.wait] == -1) { ord_skips++; out.push_back(r); continue; }
+        if (!maps) {
+            maps = true;
+            P_OFF.resize(nv + 1); P_VOF.resize(P.glue.size());
+            for (int v = 0, o = 0; v < nv; v++) {
+                P_OFF[v] = o;
+                const int sz = (int)mainlist[P.vertype[v]].rneig.size();
+                for (int j = 0; j < sz; j++) P_VOF[o + j] = v;
+                o += sz; P_OFF[v + 1] = o;
+            }
+        }
+        const int slot = pool_alloc();
+        if (r.st >= 0) RPOOL[slot] = RPOOL[r.st]; else rs_init(RPOOL[slot], P, r.v, r.a);
+        const int res = replay_from(P, RPOOL[slot], D, full);
+        if (res == R_PRUNE) { (full ? ord_rejected : ord_pruned)++; POOL_END[D] = pool_used; return false; }
+        if (res == R_DROP) { pool_used--; continue; }
+        out.push_back({ r.v, r.a, REPLAY_WAIT, slot });
+    }
+    POOL_END[D] = pool_used;
     return true;
 }
 
 // A branch glue has passed checkpart_inc: close the forced faces, then emit the configuration if it is
-// closed or recurse into it unless the TT has seen it. True when it recursed (the old `success`).
+// closed or recurse into it. True when it recursed (the old `success`).
 static bool visit_child(configuration& c, const int* chg) {
     const size_t fmark = FTRAIL.size();
     bool recursed = false;
     if (propagate_forced(c, chg, 4)) {
         if (std::find(c.glue.begin(), c.glue.end(), -1) == c.glue.end()) {
             if (split_depth > 0 && c.dfs_depth < split_depth && fork_index != 0) {}   // worker 0 writes these
-            else if (c.kcnt > seen) { if (simplify(c)) writesolution(c); }
+            else if (c.kcnt > seen) { if ((!orderly || orderly_ok(c, true)) && simplify(c)) writesolution(c); }
             else nckzero++;   // closed but zero counting vertices: not a tiling record
-        } else if (!tt_seen(c)) {
+        } else if (!orderly || orderly_ok(c, false)) {
             extend(c);
             recursed = true;
         }
@@ -1605,6 +1787,7 @@ int extend(configuration& slist) {
                                       mirrored ? -1 : newconf.mirro[firstfree],
                                       mirrored ? -1 : newconf.mirro[i] };
                 if (checkpart_inc(newconf, chg1, 4) && (!shard_here || shard_take_branch())) {
+                    if (orderly) { MOVES.resize(std::max<size_t>(MOVES.size(), slist.dfs_depth)); MOVES[slist.dfs_depth - 1] = enc_exist(i); }
                     if (visit_child(newconf, chg1)) {
                         success++;
                         if (eu_trace) potential.push_back(conwaysymbol(label_str(newconf.label[firstfree]), label_str(newconf.label[i])));
@@ -1754,6 +1937,7 @@ int extend(configuration& slist) {
                     // nothing is lost; see hyp_feas.h. Cached per type set, so the other reps are free.
                     if (checkpart_inc(newconf2, chg2, 4) && (!shard_here || shard_take_branch()) &&
                         (!hf::mode || hf::feasible_with(newconf2.vertype, gr))) {
+                        if (orderly) { MOVES.resize(std::max<size_t>(MOVES.size(), slist.dfs_depth)); MOVES[slist.dfs_depth - 1] = enc_new(gr, rrep); }
                         if (visit_child(newconf2, chg2)) {
                             success++;
                             if (eu_trace) potential.push_back(conwaysymbol(label_str(newconf2.label[firstfree]), label_str(newconf2.label[i])) + " " + mainlist[gr].symbol);
@@ -2130,6 +2314,9 @@ int main() {
                   << " (and not exceed it) — refusing to run an incomplete partition\n";
         return 2;
     }
+    if (orderly)
+        std::cerr << "EU_ORDERLY: same tilings, each written once from its canonical root, so the serials in "
+                     "ctrnact-* ids differ from a default run. Not for shipping until ids are canonical.\n";
     if (shard_d2 > 1)
         std::cerr << "shard " << shard_w << "/" << shard_n << ": roots " << shard_w1 << "/" << shard_n1
                   << ", root-branches " << shard_w2 << "/" << shard_d2 << "\n";
@@ -2315,10 +2502,10 @@ int main() {
                       << " — refusing to run an incomplete partition\n";
             return 2;
         }
-        // One TT and one leaf set for all workers: a TT hit skips a subtree another worker has entered
-        // and will finish, a leaf hit drops a closure another worker has written. EU_SHARED_TABLES=0: off.
+        // One leaf set for all workers: a hit drops a closure another worker has written.
+        // EU_SHARED_TABLES=0: one per worker.
         tables_shared = !std::getenv("EU_SHARED_TABLES") || atoi(std::getenv("EU_SHARED_TABLES")) != 0;
-        if (tables_shared) { if (tt_mb > 0) TT.init(tt_mb, true); if (leaf_mb > 0) LEAF_SET.init(leaf_mb, true); }
+        if (tables_shared && leaf_mb > 0) LEAF_SET.init(leaf_mb, true);
         std::cerr << "fork: " << nfork << " workers over " << shard_n
                   << " shards, sharing one alphabet\n";
         std::vector<pid_t> kids;
@@ -2374,8 +2561,10 @@ int main() {
               << "  simplify_calls: " << simplify_calls
               << "  simplify_true: " << simplify_true
               << "  forced: " << forced_glues << "  leaf_dups: " << leaf_dups
-              << "  tt: " << tt_hits << " hits / " << tt_probes << " probes (" << tt_nondiscrete << " not discrete)"
               << "\n";
+    if (orderly)
+        std::cerr << "orderly: pruned " << ord_pruned << " nodes, rejected " << ord_rejected << " closures, "
+                  << ord_replays << " replays (" << ord_skips << " skipped)\n";
     if (max_nc > 0)
         std::cerr << "note: up to " << max_nc << " dent-fill (noncounting) vertices per configuration; "
                   << "no cap is applied.\n";

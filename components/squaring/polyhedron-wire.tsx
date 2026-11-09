@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { PipelineRecord } from "@/lib/squaring/shelf";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { EdgeHitLine, FIGURE_BUTTON, FigureControls } from "./stage-board";
+import { Button } from "@/design-system/components/button";
+import { EdgeHitLine, FigureControls } from "./stage-board";
 import { edgeKey, project, voltageColor, ratio } from "./stage-shared";
 
 // Stage 1: the solid itself, as a rotatable wireframe.
@@ -179,31 +180,32 @@ export function PolyhedronWire({
 			</svg>
 			{compact ? null : (
 				<FigureControls>
-					<span className="truncate font-mono text-[10px] text-fg-muted max-md:text-xs max-md:whitespace-normal">
+					<span className="truncate font-mono text-micro text-fg-muted max-md:whitespace-normal">
 						<span className="max-md:hidden">drag to rotate · click an edge to make it the battery</span>
 						<span className="md:hidden">drag sideways to turn, tilt with the arrows · tap an edge to inspect it</span>
 					</span>
 					<span className="hidden shrink-0 max-md:flex">
-						<button
-							type="button"
-							onClick={() => tilt(-1)}
+						<Button
+							variant="ghost"
+							size="bar"
+							icon={ChevronUp}
 							aria-label="Tilt the solid up"
-							className="flex size-11 items-center justify-center text-fg-muted hover:text-fg"
-						>
-							<ChevronUp size={18} />
-						</button>
-						<button
-							type="button"
-							onClick={() => tilt(1)}
+							onClick={() => tilt(-1)}
+						/>
+						<Button
+							variant="ghost"
+							size="bar"
+							icon={ChevronDown}
 							aria-label="Tilt the solid down"
-							className="flex size-11 items-center justify-center text-fg-muted hover:text-fg"
-						>
-							<ChevronDown size={18} />
-						</button>
+							onClick={() => tilt(1)}
+						/>
 					</span>
-					<button type="button" onClick={() => setSpinning((s) => !s)} className={FIGURE_BUTTON}>
-						{spinning ? "pause" : "spin"}
-					</button>
+					<Button
+						size="xs"
+						className="shrink-0"
+						label={spinning ? "pause" : "spin"}
+						onClick={() => setSpinning((s) => !s)}
+					/>
 				</FigureControls>
 			)}
 		</div>

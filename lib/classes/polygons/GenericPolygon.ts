@@ -1,5 +1,8 @@
-import { Polygon, PolygonType, Vector } from "@/classes";
-import { getAngleAtVertex, isWithinTolerance, toDegrees } from "@/utils";
+import { Polygon } from "@/classes/polygons/Polygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { Vector } from "@/classes/Vector";
+import { getAngleAtVertex, toDegrees } from "@/utils/geometry";
+import { isWithinTolerance } from "@/utils/math";
 import { polygonFillHue } from "@/lib/utils/renderTiling";
 
 export class GenericPolygon extends Polygon {
@@ -92,6 +95,8 @@ export class GenericPolygon extends Polygon {
 		p.hue = this.hue;
 		p.isStar = this.isStar;
 		p.orbitOfCorner = this.orbitOfCorner;
+		p.edgeOrbitOfSide = this.edgeOrbitOfSide;
+		p.faceOrbit = this.faceOrbit;
 		p.dir = this.dir.copy();
 		p.vertices = this.vertices.map((v) => new Vector(v.x + dx, v.y + dy));
 		p.halfways = this.halfways.map((v) => new Vector(v.x + dx, v.y + dy));
@@ -108,7 +113,7 @@ export class GenericPolygon extends Polygon {
 	// slider position to the next, only the coordinates move.
 	//
 	// The caller must have checked that `n` and the vertex/halfway counts match (buildTilingFromCell does);
-	// sides/angles/orbitOfCorner are shared by reference exactly as translatedCopy shares them.
+	// sides/angles/orbitOfCorner (and the edge and tile orbits) are shared by reference exactly as translatedCopy shares them.
 	setToTranslated = (src: GenericPolygon, dx: number, dy: number): void => {
 		this.name = src.name;
 		this.sides = src.sides;
@@ -118,6 +123,8 @@ export class GenericPolygon extends Polygon {
 		this.hue = src.hue;
 		this.isStar = src.isStar;
 		this.orbitOfCorner = src.orbitOfCorner;
+		this.edgeOrbitOfSide = src.edgeOrbitOfSide;
+		this.faceOrbit = src.faceOrbit;
 		this.dir.x = src.dir.x;
 		this.dir.y = src.dir.y;
 		for (let i = 0; i < src.vertices.length; i++) {

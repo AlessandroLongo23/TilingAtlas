@@ -218,7 +218,7 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 		<div className="flex items-center gap-3">
 			{/* Fixed width, tabular figures: the number's own width must not change as it is dragged, or the
 			    panel (centred with -translate-x-1/2) shifts under the cursor and the drag fights itself. */}
-			<div className="flex w-[9rem] shrink-0 flex-col gap-1 text-xs font-medium text-fg">
+			<div className="flex w-[9rem] shrink-0 flex-col gap-1 text-small font-medium text-fg">
 				{params.map((p, j) => (
 					<span key={j} className="flex items-baseline gap-1">
 						<span className="w-2">{GREEK[j]}</span>
@@ -230,7 +230,7 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 						>
 							{alphas[j].toFixed(1)}°
 						</span>
-						<span className="truncate text-[10px] font-normal text-fg-muted">{p.tile ?? ""}</span>
+						<span className="truncate text-micro font-normal text-fg-muted">{p.tile ?? ""}</span>
 					</span>
 				))}
 			</div>
@@ -307,7 +307,7 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 				</g>
 
 				{/* Which axis is which angle. */}
-				<g className="fill-accent" style={{ fontSize: 9 }}>
+				<g className="fill-fg-accent" style={{ fontSize: 9 }}>
 					<text x={ox + drawW + 4} y={oyBottom + 2}>
 						{GREEK[0]}
 					</text>

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
 	compareCatalogueDisplayOrder,
 	sortCatalogueForDisplay,
+	mergeCatalogueForDisplay,
 	decorationOf,
 	tileClassOf,
 	DECORATION_ORDER,
@@ -187,6 +188,14 @@ describe("decorationOf", () => {
 			const viaComparator = [...pool].sort(compareCatalogueDisplayOrder).map((t) => t.canonicalKey);
 			const viaKeyedSort = sortCatalogueForDisplay(pool).map((t) => t.canonicalKey);
 			expect(viaKeyedSort).toEqual(viaComparator);
+			// /catalogue grows its cells by merging each sorted batch in; every split must give the same order.
+			for (let cut = 0; cut <= pool.length; cut++) {
+				const merged = mergeCatalogueForDisplay(
+					sortCatalogueForDisplay(pool.slice(0, cut)),
+					sortCatalogueForDisplay(pool.slice(cut)),
+				);
+				expect(merged.map((t) => t.canonicalKey)).toEqual(viaComparator);
+			}
 		}
 	});
 

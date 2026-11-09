@@ -12,12 +12,12 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
 import { Segmented } from "@/components/shelf";
-import { Button } from "@/components/ui/button";
-import { Figure, FigureLoading, LiveFigure, tidy, tileFill } from "@/components/about/figure";
+import { Button } from "@/design-system/components/button";
+import { Figure, FigureLoading, LiveFigure, tidy, tileFill, FigureSvg } from "@/components/about/figure";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
 import { DEFAULT_STYLE } from "@/lib/freedraw/render";
-import { readAtlas } from "@/lib/services/atlasCodec";
+import { fetchData, readAtlas } from "@/lib/services/atlasCodec";
 import { analyseFaces, classifyFaces, classifyPatchFaces, rankLabel, summarise } from "@/lib/freedraw/faces";
 import { degree, gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { ICO_SOLIDS, icoSolidKs } from "@/lib/render/icoSolids";
@@ -185,10 +185,9 @@ function PatternView({
 	const { w, h } = drawn;
 	const clip = `fd${useId().replace(/:/g, "")}`;
 	return (
-		<svg
+		<FigureSvg
 			viewBox={[-w / 2, -h / 2, w, h].map(tidy).join(" ")}
 			className="mx-auto block max-h-[380px] w-full touch-manipulation select-none"
-			role="img"
 		>
 			<defs>
 				<clipPath id={clip}>
@@ -245,7 +244,7 @@ function PatternView({
 						/>
 					))}
 			</g>
-		</svg>
+		</FigureSvg>
 	);
 }
 
@@ -356,7 +355,7 @@ export function FdDrawFigure({ caption }: { caption?: string }) {
 					cols={5}
 				/>
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				{dead.length
 					? `${dead.length} dead end${dead.length === 1 ? "" : "s"} per period (ringed): a grid point with exactly one drawn edge. Not a pattern until each is gone.`
 					: describe(pattern)}
@@ -372,24 +371,24 @@ const GRIDS: Record<string, { label: string; ks: number[]; file: (k: number) => 
 	square: {
 		label: "Square",
 		ks: [1, 2, 3, 4],
-		file: (k) => (k <= 3 ? "/freedraw/solutions.json.gz" : `/freedraw/solutions-k${k}.json.gz`),
+		file: (k) => (k <= 3 ? "/freedraw/solutions.json.br" : `/freedraw/solutions-k${k}.json.br`),
 		prefix: "fd-",
 	},
-	triangle: { label: "Triangle", ks: [1, 2, 3], file: () => "/freedraw/tri-solutions.json.gz", prefix: "fdt-" },
-	hex: { label: "Hexagon", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/hex-solutions-k${k}.json.gz`, prefix: "fdh-" },
+	triangle: { label: "Triangle", ks: [1, 2, 3], file: () => "/freedraw/tri-solutions.json.br", prefix: "fdt-" },
+	hex: { label: "Hexagon", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/hex-solutions-k${k}.json.br`, prefix: "fdh-" },
 	"4436": {
 		label: "3.4.6.4",
 		ks: [1, 2, 3, 4],
-		file: (k) => `/freedraw/4436-solutions-k${k}.json.gz`,
+		file: (k) => `/freedraw/4436-solutions-k${k}.json.br`,
 		prefix: "fd4436-",
 	},
 	"488": {
 		label: "4.8.8",
 		ks: [1, 2, 3, 4, 5],
-		file: (k) => `/freedraw/488-solutions-k${k}.json.gz`,
+		file: (k) => `/freedraw/488-solutions-k${k}.json.br`,
 		prefix: "fd488-",
 	},
-	ts: { label: "Square + triangle", ks: [1, 2], file: (k) => `/freedraw/ts-solutions-k${k}.json.gz`, prefix: "fdts-" },
+	ts: { label: "Square + triangle", ks: [1, 2], file: (k) => `/freedraw/ts-solutions-k${k}.json.br`, prefix: "fdts-" },
 };
 
 const files = new Map<string, Promise<FreedrawPattern[]>>();
@@ -397,7 +396,7 @@ function loadFile(url: string): Promise<FreedrawPattern[]> {
 	if (!files.has(url))
 		files.set(
 			url,
-			fetch(url)
+			fetchData(url)
 				.then((r) => readAtlas<FreedrawPattern>(r))
 				.catch(() => []),
 		);
@@ -465,7 +464,7 @@ function Stepper({
 				aria-label="Random pattern"
 				onClick={() => onIndex(Math.floor(Math.random() * count))}
 			/>
-			<span className="ml-2 font-mono text-xs text-fg-muted tabular-nums">{label}</span>
+			<span className="ml-2 font-mono text-small text-fg-muted tabular-nums">{label}</span>
 		</div>
 	);
 }
@@ -546,7 +545,7 @@ function CatalogueBrowser({ grids, caption }: { grids: string[]; caption?: strin
 						onIndex={setIndex}
 						label={`${Math.min(index, slice.length - 1) + 1} of ${slice.length.toLocaleString("en-US")}`}
 					/>
-					<p className="mt-1 text-center text-xs text-fg-muted">{describe(p)}</p>
+					<p className="mt-1 text-center text-small text-fg-muted">{describe(p)}</p>
 				</>
 			)}
 		</Figure>
@@ -590,7 +589,7 @@ function NamedPatterns({ ids, labels, caption }: { ids: string[]; labels: string
 					cols={Math.min(ids.length, 4)}
 				/>
 			</div>
-			{p && <p className="mt-2 text-center text-xs text-fg-muted">{describe(p)}</p>}
+			{p && <p className="mt-2 text-center text-small text-fg-muted">{describe(p)}</p>}
 		</Figure>
 	);
 }
@@ -599,11 +598,11 @@ function NamedPatterns({ ids, labels, caption }: { ids: string[]; labels: string
 
 const solidFiles = new Map<string, Promise<IcoPattern[]>>();
 function loadSolid(solid: string, k: number) {
-	const url = `/freedraw-ico/${solid}-k${k}.json.gz`;
+	const url = `/freedraw-ico/${solid}-k${k}.json.br`;
 	if (!solidFiles.has(url))
 		solidFiles.set(
 			url,
-			fetch(url)
+			fetchData(url)
 				.then((r) => readAtlas<IcoPattern>(r))
 				.catch(() => []),
 		);
@@ -671,7 +670,7 @@ export function FdSolidFigure({ solid: initial = "octahedron", caption }: { soli
 			{slice && p && (
 				<>
 					<Stepper index={i} count={slice.length} onIndex={setIndex} label={`${i + 1} of ${slice.length}`} />
-					<p className="mt-1 text-center text-xs text-fg-muted">
+					<p className="mt-1 text-center text-small text-fg-muted">
 						{`${p.nDrawn} of ${cfg.id === "tetrahedron" ? 6 : cfg.id === "cube" || cfg.id === "octahedron" ? 12 : 30} edges drawn, ${p.nTiles} tile${p.nTiles === 1 ? "" : "s"}, ${p.achiral ? "achiral" : "chiral"}. Click it, then drag to turn it.`}
 					</p>
 				</>

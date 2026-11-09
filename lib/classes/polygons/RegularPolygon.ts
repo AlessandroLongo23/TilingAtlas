@@ -1,6 +1,8 @@
-import { Polygon, PolygonType, Vector } from "@/classes";
+import { Polygon } from "@/classes/polygons/Polygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { Vector } from "@/classes/Vector";
 import { Cyclotomic } from "../Cyclotomic";
-import { isWithinTolerance, map } from "@/utils";
+import { isWithinTolerance, map } from "@/utils/math";
 
 export class RegularPolygon extends Polygon {
 	constructor(n: number) {

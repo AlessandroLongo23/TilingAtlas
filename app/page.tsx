@@ -1,9 +1,8 @@
-import Link from "next/link";
+import { IntentLink } from "@/components/intent-link";
 import { loadLandingData } from "@/lib/services/landingData";
 import { HeroRotator } from "@/components/landing/hero-rotator";
 import { HeroSpecimenProvider } from "@/components/landing/hero-specimen";
 import { LandingButtons } from "@/components/landing/landing-buttons";
-import { DownloadSearcher } from "@/components/download-searcher";
 import { LandingPhoneNav } from "@/components/landing/landing-phone-nav";
 import { CollectionCard } from "@/components/landing/collection-card";
 import { CompletenessBadge } from "@/components/landing/completeness-badge";
@@ -49,24 +48,19 @@ export default async function HomePage() {
 					<HeroSpecimenProvider initialId={data.heroPool[0]?.id ?? null}>
 						<div className="flex flex-col lg:pt-10">
 							<p className="ta-label">
-								<Link
+								<IntentLink
 									href="/catalogue"
 									className="transition-colors hover:text-fg max-md:inline-flex max-md:min-h-11 max-md:items-center"
 								>
 									{fmt(counts.total)} tilings
-								</Link>
+								</IntentLink>
 							</p>
-							<h1 className="mt-5 text-5xl leading-[0.98] font-semibold tracking-[-0.035em] md:text-6xl xl:text-7xl">
-								The Tiling Atlas
-							</h1>
-							<p className="mt-6 max-w-md text-lg leading-snug text-fg-secondary md:text-xl">
+							<h1 className="mt-5 text-hero font-semibold">The Tiling Atlas</h1>
+							<p className="mt-6 max-w-md text-heading leading-tight text-fg-secondary md:text-heading">
 								A catalogue of tilings of the plane, the sphere, and the hyperbolic plane.
 							</p>
 							<div className="mt-10">
 								<LandingButtons />
-							</div>
-							<div className="mt-6">
-								<DownloadSearcher variant="hero" />
 							</div>
 						</div>
 						<div className="relative h-80 overflow-hidden rounded-surface ring-1 ring-line-subtle sm:h-[26rem] lg:h-[34rem]">
@@ -78,17 +72,17 @@ export default async function HomePage() {
 				{/* P6, start here: three deep links for the newcomer, as hover chips on one line with the label. */}
 				<nav
 					aria-label="Start here"
-					className="mt-8 flex flex-wrap items-center gap-x-1 gap-y-1 border-t border-line-subtle pt-3 text-[13px]"
+					className="mt-8 flex flex-wrap items-center gap-x-1 gap-y-1 border-t border-line-subtle pt-3 text-ui"
 				>
 					<span className="ta-label mr-3">Start here</span>
 					{START_HERE.map(([hash, label]) => (
-						<Link
+						<IntentLink
 							key={hash}
 							href={`/catalogue/about/uniform-tilings#${hash}`}
-							className="inline-flex h-7 items-center rounded-control px-2.5 text-fg transition-colors hover:bg-surface-overlay hover:text-accent max-md:h-11 max-md:text-sm"
+							className="inline-flex h-7 items-center rounded-control px-2.5 text-fg transition-colors hover:bg-surface-overlay hover:text-fg-accent max-md:h-11 max-md:text-body"
 						>
 							{label}
-						</Link>
+						</IntentLink>
 					))}
 				</nav>
 
@@ -100,7 +94,7 @@ export default async function HomePage() {
 			    has one text baseline. */}
 				<section className="mt-10">
 					<p className="ta-label">Nine collections</p>
-					<h2 className="mt-2 mb-6 text-[28px] leading-tight font-semibold tracking-[-0.02em]">The collections</h2>
+					<h2 className="mt-2 mb-6 text-headline leading-tight font-semibold tracking-tight">The collections</h2>
 					<div className="grid auto-rows-[24rem] grid-cols-1 gap-4 max-sm:auto-rows-[21rem] sm:auto-rows-[22rem] sm:grid-cols-2 lg:auto-rows-[23rem] lg:grid-cols-4">
 						{/* The four live cells (Play, Hyperbolic, Spherical, Aperiodic) render real canvases
 					    instead of baked stills, so their media takes the drag and the caption below carries
@@ -208,7 +202,7 @@ export default async function HomePage() {
 
 				{/* P7 — footer with the citation block. */}
 				<footer className="mt-16 border-t border-line-subtle">
-					<div className="flex flex-col gap-2 pt-8 pb-12 text-xs text-fg-muted">
+					<div className="flex flex-col gap-2 pt-8 pb-12 text-small text-fg-muted">
 						{/* The landing page carries no Nav, so this line is the only "what's new" affordance here. */}
 						<p>
 							Updated{" "}
@@ -218,12 +212,9 @@ export default async function HomePage() {
 								timeZone: "UTC",
 							})}{" "}
 							· v{CURRENT_VERSION} —{" "}
-							<Link
-								href="/updates"
-								className="text-accent hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center"
-							>
+							<IntentLink href="/updates" className="ta-link max-md:inline-flex max-md:min-h-11 max-md:items-center">
 								what&rsquo;s new
-							</Link>
+							</IntentLink>
 						</p>
 						<p>Built by Alessandro Longo as part of an MSc thesis on the enumeration of k-uniform tilings.</p>
 						{/* The landing page carries no Nav, so the header's Discord button is repeated here. */}
@@ -231,7 +222,7 @@ export default async function HomePage() {
 							href={DISCORD_INVITE}
 							target="_blank"
 							rel="noreferrer"
-							className="mt-1 inline-flex w-fit items-center gap-1.5 text-fg-secondary transition-colors hover:text-fg max-md:min-h-11 max-md:text-sm"
+							className="mt-1 inline-flex w-fit items-center gap-1.5 text-fg-secondary transition-colors hover:text-fg max-md:min-h-11 max-md:text-body"
 						>
 							<DiscordIcon size={14} />
 							Join the Discord

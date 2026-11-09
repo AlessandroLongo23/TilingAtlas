@@ -357,13 +357,13 @@ export function parse(
 		} else if ((kw === "search" || kw === "geometry") && t.length === 2) {
 			b.extra.push({ text: t.join(" "), ...note });
 			lines.set(`extra:${b.extra.length - 1}`, lineno);
-			const ok = kw === "search" ? t[1] === "vertices" : t[1] === "none";
+			const ok = kw === "search" ? t[1] === "vertices" || t[1] === "faces" : t[1] === "none";
 			if (!ok)
 				problems.push({
 					severity: "error",
 					line: lineno,
 					where: { kind: "extra", index: b.extra.length - 1 },
-					message: kw === "search" ? "Face-first search is not built yet." : "Geometry checks are not built yet.",
+					message: kw === "search" ? "A search counts vertices or faces." : "Geometry checks are not built yet.",
 				});
 		} else if (kw === "vertex" || kw === "face" || kw === "optional") bad(`This ${kw === "optional" ? "face" : kw} has no corners.`);
 		else bad(KEYWORDS.has(kw) ? `The ${kw} line is not in a form the searcher reads.` : `Unknown statement “${kw}”.`);
@@ -590,6 +590,13 @@ export function check(
 			err({ kind: "face", index: i }, `face:${i}`, "The repeat count must be a whole number from 1 up, or ∞.");
 	});
 	b.vertices.forEach((v, i) => unknown(v.word, { kind: "vertex", index: i }, `vertex:${i}`, "vertex"));
+	// a face search runs on the board with faces and vertices swapped (engineBoard): an apeirogon would be a vertex
+	// with no end to its corners
+	if (searchesFaces(b))
+		b.faces.forEach((f, i) => {
+			if (f.repeat === "inf")
+				err({ kind: "face", index: i }, `face:${i}`, "Counting tile orbits needs every face finite: an apeirogon has no end to go round.");
+		});
 
 	if (!b.name)
 		out.push({ severity: "error", line: at("name") ?? ctx.last ?? null, where: { kind: "name" }, message: "The board needs a name.", beforeRun: true });
@@ -743,43 +750,23 @@ export function cyclicKey(w: string[], multiset = false): string {
 	return (d >= 0 && y[d] < x[d] ? y : x).join(" ");
 }
 
-/**
- * Every cyclic order of the multiset `word`, one per order up to rotation and reflection. With `digons`, each
- * order also comes once for every way to put at most one digon in each gap between its corners: the vertices
- * of an edge system, where a digon in a gap marks the edge there. A vertex with exactly one marked edge is a
- * loose end, kept only with `loose` (Marek's edge systems have none). Fewest marked edges first; null when
- * the orders to try pass `budget`.
- */
-export function arrangements(word: string[], digons: string[] = [], loose = false, budget = 2e6): string[][] | null {
+/** Every cyclic order of the multiset `word`, one per order up to rotation and reflection; null when the orders
+ *  to try pass `budget`. */
+export function arrangements(word: string[], budget = 2e6): string[][] | null {
 	const count = new Map<string, number>();
 	for (const s of word) count.set(s, (count.get(s) ?? 0) + 1);
 	const syms = [...count.keys()].sort();
 	const out = new Map<string, string[]>();
 	const cur: string[] = [];
 	let steps = 0;
-	const marks = (order: string[]) => {
-		// each gap, after corner i, holds nothing (-1) or one of the digons
-		const gap = order.map(() => -1);
-		const rec = (i: number, marked: number) => {
-			if (++steps > budget) return;
-			if (i === order.length) {
-				if (marked === 1 && !loose) return;
-				const w = order.flatMap((c, j) => (gap[j] < 0 ? [c] : [c, digons[gap[j]]]));
-				const k = cyclicKey(w);
-				if (!out.has(k)) out.set(k, w);
-				return;
-			}
-			for (let d = -1; d < digons.length; d++) {
-				gap[i] = d;
-				rec(i + 1, marked + (d < 0 ? 0 : 1));
-			}
-		};
-		rec(0, 0);
-	};
 	// every order starts with the first symbol, which loses no order up to rotation
 	const build = () => {
-		if (steps > budget) return;
-		if (cur.length === word.length) return marks(cur);
+		if (++steps > budget) return;
+		if (cur.length === word.length) {
+			const k = cyclicKey(cur);
+			if (!out.has(k)) out.set(k, [...cur]);
+			return;
+		}
 		for (const s of syms)
 			if (count.get(s)! > 0 && (cur.length || s === syms[0])) {
 				count.set(s, count.get(s)! - 1);
@@ -790,9 +777,7 @@ export function arrangements(word: string[], digons: string[] = [], loose = fals
 			}
 	};
 	if (word.length) build();
-	if (steps > budget) return null;
-	const digonCount = (w: string[]) => w.length - word.length;
-	return [...out.values()].sort((x, y) => digonCount(x) - digonCount(y));
+	return steps > budget ? null : [...out.values()];
 }
 
 /**
@@ -807,7 +792,7 @@ export function withPermutations(b: Board, on: boolean): Board | null {
 	const vertices: Board["vertices"] = [];
 	const to: number[][] = [];
 	for (const v of b.vertices) {
-		const words = on ? [v.word] : arrangements(v.word, [], false, 1e5);
+		const words = on ? [v.word] : arrangements(v.word, 1e5);
 		if (!words) return null;
 		to.push(
 			words.map((word, j) => {
@@ -977,6 +962,10 @@ export function printLength(l: Length): string {
 		})
 		.join("");
 }
+
+/** The edge corner of a length's own type: `Esqrt2`, `E3_2`, `Esqrt3m1` (for sqrt3-1), one per length. */
+export const lengthSymbol = (text: string) =>
+	`E${printLength(readLength(text)!).replace(/\+/g, "p").replace(/-/g, "m").replace(/\//g, "_")}`;
 
 /** Whether a length is 1, however written ("1", "2/2"): a plain unit edge, which needs no type. */
 export const isUnitLength = (v: string | undefined) => {
@@ -1159,6 +1148,63 @@ export function serialize(b: Board): string {
 		else for (const c of e.lead ?? []) out.push(c ? `# ${c}` : "#");
 	}
 	return out.join("\n") + "\n";
+}
+
+// ── counting tile orbits ──
+
+/** `search faces`: k counts orbits of tiles, not of vertices (Marek's face-first search; k = 1 is isohedral). */
+export const searchesFaces = (b: Board) => b.extra.some((e) => e.text === "search faces");
+
+/** A word as a face line: its shortest period and how many times it goes round. */
+const asFace = (w: string[]): Face => {
+	const p = Array.from({ length: w.length }, (_, i) => i + 1).find((q) => w.length % q === 0 && w.every((c, i) => c === w[i % q]))!;
+	return { word: w.slice(0, p), repeat: w.length / p };
+};
+
+/**
+ * The board the engine searches. For `search faces`, faces and vertices swapped, as Marek runs face-first searches:
+ * each face, written out, becomes a vertex, each vertex (every order of its corners, with Permutations on) a face,
+ * and each corner keeps its symbol, so the engine's k counts tile orbits. Each is listed once: the engine places a
+ * vertex mirrored as it does a face, and listing mirror images too counted tilings twice. A required face becomes a
+ * required vertex; a required or initial vertex, the faces of its orders. Checked on AL's 78 {3,7} octiamonds against
+ * the vertex search: the tilings of 2 tile orbits and 2 or 3 vertex orbits of three or more corners agree, 17 and
+ * 1,168. Any other board comes back as it is.
+ */
+export function engineBoard(b: Board): Board {
+	if (!searchesFaces(b)) return b;
+	const tiles = b.faces.filter((f) => !f.optional);
+	if (tiles.some((f) => f.repeat === "inf")) throw new Error("Counting tile orbits needs every face finite.");
+	const full = (f: Face) => Array.from({ length: f.repeat as number }, () => f.word).flat();
+	const orders = b.vertices.map((v, i) => {
+		const os = b.permutations ? arrangements(v.word, 1e5) : [v.word];
+		if (!os) throw new Error(`Vertex ${i + 1} has too many orders of its corners to search by faces.`);
+		return os;
+	});
+	const faces = new Map<string, Face>();
+	for (const w of orders.flat()) faces.set(cyclicKey(w), asFace(w));
+	const vertexOf = new Map(tiles.map((f, i) => [cyclicKey(full(f)), i + 1]));
+	const ofVertices = (set: number[]) => set.flatMap((i) => orders[i - 1] ?? []);
+	const require: Required[] = [...(b.initial.length ? [{ set: b.initial }] : []), ...b.require].map((r) => {
+		if (!r.faces) return { set: [], faces: ofVertices(r.set) };
+		const set = r.faces.map((w, i) => (r.infinite?.[i] ? undefined : vertexOf.get(cyclicKey(w))));
+		if (set.some((x) => x === undefined)) throw new Error("A required face is not one of the board's faces.");
+		return { set: set as number[] };
+	});
+	return {
+		...b,
+		faces: [...faces.values()],
+		vertices: tiles.map((f) => ({ word: full(f) })),
+		permutations: false,
+		initial: [],
+		require,
+		extra: b.extra.filter((e) => e.text !== "search faces"),
+	};
+}
+
+/** A board's text as the engine should read it: the swapped board for `search faces`, else the text itself. */
+export function engineText(text: string): string {
+	const b = parse(text).board;
+	return searchesFaces(b) ? serialize(engineBoard(b)) : text;
 }
 
 // ── edits the visual editor makes, keeping `initial` and the required sets pointed at the same vertices ──

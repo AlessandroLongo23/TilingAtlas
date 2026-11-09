@@ -1,27 +1,26 @@
 // The Tiling Searcher: build a board (visually or as text, the two kept in step), run it, watch the runs.
 // The board text is the one source of truth: the visual editor parses it and writes it back.
-import { BookOpen, ChevronLeft, FilePlus, FolderOpen, Play, Save, Settings as Gear, X } from "lucide-react";
-import { ActionMenu } from "@/components/ui/context-menu";
+import { BookOpen, Check as CheckIcon, ChevronLeft, FilePlus, FolderOpen, Play, Save, Settings as Gear, X } from "lucide-react";
+import { ActionMenu } from "@/design-system/components/context-menu";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NAV_BAR, NAV_LABEL, NavActivePill, NavBrand, NavDivider, navLinkClass } from "@/components/nav-bar";
-import { HoverPill } from "@/components/ui/hover-pill";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Modal } from "@/components/ui/modal";
-import { OptionWall } from "@/components/ui/option-wall";
-import { Reveal } from "@/components/ui/reveal";
-import { Toggle } from "@/components/ui/toggle";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { Button } from "@/design-system/components/button";
+import { Input } from "@/design-system/components/input";
+import { Modal } from "@/design-system/components/modal";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Reveal } from "@/design-system/components/reveal";
 import { cn } from "@/lib/utils/cn";
-import { emptyBoard, MAX_K, parse, serialize, type Board, type Problem } from "./board";
+import { emptyBoard, MAX_K, parse, searchesFaces, serialize, type Board, type Problem } from "./board";
 import { withPermutations } from "./corners";
 import type { Check, Estimate, RaiseRule, Rule, Run, Settings, Status, StatusPush, Update } from "./bridge";
 import { problemCount, ProblemList, Problems, VisualEditor } from "./editor";
 import { DiskMap } from "./diskmap";
 import { isStudy, MAX_ROWS, plainBoard, planStudy, readParams, substitute } from "./study";
-import { DrawnAt, StudyFields, StudyRunFields, StudyView, type StudySettings } from "./studies";
-import { Field, PRIORITY_HINT, PriorityInput, SettingsModal } from "./settings";
+import { DrawnAt, StudyEditModal, StudyFields, StudyRunFields, StudyView, type StudySettings } from "./studies";
+import { PRIORITY_HINT, PriorityInput, SettingsModal } from "./settings";
+import { Field } from "@/design-system/components/field";
 import { UpdateModal } from "./update";
 import {
 	approx,
@@ -85,9 +84,9 @@ function SizeEstimate({
 			/>
 			{result && result !== "running" ? (
 				"error" in result ? (
-					<p className="text-xs text-danger">{result.error}</p>
+					<p className="text-small text-danger">{result.error}</p>
 				) : (
-					<div className="space-y-1 rounded-control bg-surface-sunken p-2.5 font-mono text-xs text-fg-secondary">
+					<div className="space-y-1 rounded-control bg-surface-sunken p-2.5 font-mono text-small text-fg-secondary">
 						{Object.entries(result.perK).map(([kk, v]) => (
 							<div key={kk} className="flex justify-between gap-2">
 								<span>k = {kk}</span>
@@ -120,7 +119,7 @@ function TextEditor({ text, setText, problems }: { text: string; setText: (t: st
 	};
 	return (
 		<div className="flex h-full flex-col gap-3">
-			<div className="flex min-h-0 flex-1 overflow-hidden rounded-surface border border-line-subtle bg-surface-raised font-mono text-[13px] leading-6 shadow-sm">
+			<div className="ta-card flex min-h-0 flex-1 overflow-hidden font-mono text-ui leading-6 shadow-raised">
 				<div
 					ref={gutter}
 					className="overflow-hidden border-r border-line-subtle bg-surface-sunken/50 py-3 text-right select-none"
@@ -134,7 +133,7 @@ function TextEditor({ text, setText, problems }: { text: string; setText: (t: st
 									? "bg-danger-subtle text-danger"
 									: bad.get(i + 1)
 										? "text-fg"
-										: "text-fg-disabled",
+										: "text-fg-muted",
 							)}
 						>
 							{i + 1}
@@ -171,6 +170,8 @@ const STUDY_SETTINGS = "tilesearch:study";
 const RAISE = "tilesearch:raise";
 const K_HINT =
 	"The number of vertex orbits: k = 1 is the uniform tilings, k = 2 the 2-uniform ones, and so on. Each step up costs far more than the last.";
+const K_HINT_TILES =
+	"The number of tile orbits: k = 1 is the isohedral tilings, k = 2 the 2-isohedral ones, and so on. Each step up costs far more than the last.";
 
 /** A face's corners cut to their period, as a face line writes them: `A6p30 A6d270 x 6`. */
 function periodic(w: string[]): string {
@@ -195,26 +196,22 @@ function Choice<T extends string | boolean>({
 	options: { value: T; title: string; line: string }[];
 }) {
 	return (
-		<div className="space-y-2">
-			<div className="ta-label flex items-center gap-1.5">
-				{label}
-				<InfoDot>{hint}</InfoDot>
-			</div>
+		<Field label={label} hint={hint}>
 			<OptionWall
 				columns={2}
 				options={options.map((o) => ({
 					value: o.value,
 					label: (
 						<span className="block px-1 py-1.5 text-left">
-							<span className="block text-sm font-semibold text-fg">{o.title}</span>
-							<span className="mt-0.5 block text-xs leading-snug font-normal text-fg-secondary">{o.line}</span>
+							<span className="block text-body font-semibold text-fg">{o.title}</span>
+							<span className="mt-0.5 block text-small leading-tight font-normal text-fg-secondary">{o.line}</span>
 						</span>
 					),
 				}))}
 				selected={value}
 				onChange={onChange}
 			/>
-		</div>
+		</Field>
 	);
 }
 
@@ -263,6 +260,9 @@ export function App() {
 	const [message, setMessage] = useState("");
 	const [askQuit, setAskQuit] = useState(false);
 	const [askRun, setAskRun] = useState(false);
+	// the study whose board Edit board opened: the board page can apply the edits to it (StudyEditModal)
+	const [editing, setEditing] = useState<string | null>(null);
+	const [applying, setApplying] = useState(false);
 	// the boards that come with the app, for a first look
 	const [examples, setExamples] = useState<{ title: string; text: string }[]>([]);
 	useEffect(() => void api().examples().then(setExamples), []);
@@ -289,7 +289,10 @@ export function App() {
 	// typing stays quick; the sidebar and the Run button share it
 	const deferredText = useDeferredValue(text);
 	const studyPlan = useMemo(() => (study ? planStudy(deferredText) : null), [study, deferredText]);
-	const { board, problems: parsed } = useMemo(() => parse(text, parametric ? vars : undefined), [text, parametric, vars]);
+	const { board, problems: parsed } = useMemo(
+		() => parse(text, parametric ? vars : undefined),
+		[text, parametric, vars],
+	);
 	const engineBoard = useMemo(() => (instance ? parse(instance.text).board : board), [instance, board]);
 	const found = useMemo(
 		() => [
@@ -312,7 +315,10 @@ export function App() {
 	}, []);
 	// the board keeps its formulas ({n}, x {n}) on the way back to text
 	const set = useCallback((b: Board) => setText(serialize(b)), [setText]);
-	const loadBoard = useCallback((t: string) => (setText(t), setStudyOn(false), setRunK(null), setView("board")), [setText]);
+	const loadBoard = useCallback(
+		(t: string) => (setText(t), setStudyOn(false), setRunK(null), setView("board"), setEditing(null)),
+		[setText],
+	);
 	// back to one board: every face always on again (Cmd+Z brings the study back)
 	const runAsStudy = (on: boolean) => {
 		setStudyOn(on);
@@ -348,7 +354,8 @@ export function App() {
 				if (!sel || !was || (now && !(now.raised && !was.raised))) return sel;
 				// to the newest run of the chain still there
 				let next = replacedBy.get(sel);
-				for (let i = 0; i < 100 && next && (!shown(next) || shown(replacedBy.get(next))); i++) next = replacedBy.get(next);
+				for (let i = 0; i < 100 && next && (!shown(next) || shown(replacedBy.get(next))); i++)
+					next = replacedBy.get(next);
 				return shown(next) ? next! : sel;
 			});
 			setStatus(s);
@@ -374,12 +381,16 @@ export function App() {
 			.then((t) => t && loadBoard(t));
 		return () => (off(), offHook(), offQuit());
 	}, [loadBoard]);
-		// Esc on a run goes back to the disk map, unless a field or a dialog has it
+	// Esc on a run goes back to the disk map, unless a field or a dialog has it
 	useEffect(() => {
 		if (view !== "runs" || !selected) return;
 		const onKey = (e: KeyboardEvent) => {
 			const t = e.target instanceof HTMLElement ? e.target : null;
-			if (e.key !== "Escape" || t?.closest("input, textarea, select, [role=dialog]") || document.querySelector("[role=dialog]"))
+			if (
+				e.key !== "Escape" ||
+				t?.closest("input, textarea, select, [role=dialog]") ||
+				document.querySelector("[role=dialog]")
+			)
 				return;
 			setSelected(null);
 		};
@@ -406,6 +417,7 @@ export function App() {
 	const running = status.runs.filter((r) => r.state === "running").length;
 	const run = status.runs.find((r) => r.id === selected) ?? null;
 	const studyShown = status.studies.find((s) => s.id === selected) ?? null;
+	const editStudy = editing ? status.studies.find((s) => s.id === editing) : undefined;
 	// a run that is a study's row goes back to its study
 	const parentStudy = run
 		? status.studies.find((s) => run.dir.startsWith(s.dir + "/") || run.dir.startsWith(s.dir + "\\"))
@@ -456,18 +468,18 @@ export function App() {
 			{board.require.length ? (
 				<ol className="space-y-0.5">
 					{board.require.map((r, i) => (
-						<li key={i} className="flex items-center gap-2 text-sm text-fg">
-							<span className="w-4 shrink-0 font-mono text-xs text-fg-muted">{i + 1}</span>
+						<li key={i} className="flex items-center gap-2 text-body text-fg">
+							<span className="w-4 shrink-0 font-mono text-small text-fg-muted">{i + 1}</span>
 							{r.faces ? (
 								<span
-									className="min-w-0 flex-1 truncate font-mono text-xs"
+									className="min-w-0 flex-1 truncate font-mono text-small"
 									title={r.faces.map((w) => `face ${w.join(" ")}`).join("\n")}
 								>
 									{r.faces.length === 1 ? `face ${periodic(r.faces[0])}` : `one of ${r.faces.length} faces`}
 								</span>
 							) : (
 								<span className="min-w-0 flex-1 truncate" title={`Vertex ${r.set.join(", ")}`}>
-									{r.trail ? <span className="font-mono text-xs">{r.trail}</span> : `Vertex ${r.set.join(", ")}`}
+									{r.trail ? <span className="font-mono text-small">{r.trail}</span> : `Vertex ${r.set.join(", ")}`}
 									<span className="text-fg-muted"> · {r.set.length}</span>
 								</span>
 							)}
@@ -482,7 +494,7 @@ export function App() {
 					))}
 				</ol>
 			) : (
-				<span className="text-sm text-fg">None</span>
+				<span className="text-body text-fg">None</span>
 			)}
 		</Field>
 	);
@@ -490,7 +502,15 @@ export function App() {
 		<aside className="flex w-[360px] shrink-0 flex-col">
 			<div className="min-h-0 flex-1 overflow-y-auto">
 				<div className="space-y-5 p-5 pb-1">
-					<Toggle leftValue="visual" rightValue="text" value={mode} onChange={setMode} />
+					<OptionWall
+						columns={2}
+						options={[
+							{ value: "visual", label: "Visual" },
+							{ value: "text", label: "Text" },
+						]}
+						selected={mode}
+						onChange={setMode}
+					/>
 					<Choice
 						label="Search"
 						hint="Enumerate finds every tiling up to k and counts them: the result is complete. Prove existence looks for one tiling that meets every required set and stops there. It first finds tilings for each two of the sets, then searches all of them together on only the vertices those tilings use, a board far smaller than yours. What it finds is a tiling; when it finds none, only its steps on the full board prove anything, and the run says which."
@@ -512,7 +532,7 @@ export function App() {
 						]}
 					/>
 					{parametric ? (
-						<p className="-mt-3 text-xs text-fg-muted">
+						<p className="-mt-3 text-small text-fg-muted">
 							A board with parameters always runs as a study. Remove its parameters to run it once.
 						</p>
 					) : null}
@@ -538,13 +558,13 @@ export function App() {
 				<div className="space-y-5 p-5">
 					{finding ? required : null}
 					{finding && !board.require.length ? (
-						<p className="-mt-3 text-xs text-fg-muted">
+						<p className="-mt-3 text-small text-fg-muted">
 							Nothing required yet: any tiling of the board will do. Require a face or a vertex set to ask a question.
 						</p>
 					) : null}
 					{(() => {
 						const range = (
-							<div className="flex items-center gap-2 text-sm text-fg-secondary">
+							<div className="flex items-center gap-2 text-body text-fg-secondary">
 								from
 								<Input
 									type="number"
@@ -573,7 +593,7 @@ export function App() {
 						) : (
 							// one range, or raised by itself from the board's lowest k to its highest
 							<KField
-								hint={K_HINT}
+								hint={searchesFaces(board) ? K_HINT_TILES : K_HINT}
 								range={range}
 								rule={raise}
 								onRule={setRaise}
@@ -585,6 +605,28 @@ export function App() {
 						);
 					})()}
 					<Field
+						label="k counts"
+						hint="Vertex orbits: the engine's own search, every vertex alike at k = 1. Tile orbits: every tile alike at k = 1 (isohedral), Marek's face-first search: the engine is given the board with faces and vertices swapped, and the tilings come back as this board's. It finds every n-omino, n-iamond and n-hex Joseph Myers counts as isohedral (to n = 8, 9 and 6). Every face must be finite."
+					>
+						<OptionWall
+							columns={2}
+							options={[
+								{ value: "vertices", label: "Vertex orbits" },
+								{ value: "faces", label: "Tile orbits" },
+							]}
+							selected={searchesFaces(board) ? "faces" : "vertices"}
+							onChange={(v) =>
+								set({
+									...board,
+									extra: [
+										...board.extra.filter((e) => !/^search\b/.test(e.text)),
+										...(v === "faces" ? [{ text: "search faces" }] : []),
+									],
+								})
+							}
+						/>
+					</Field>
+					<Field
 						label="Permutations"
 						hint={
 							board.permutations
@@ -592,10 +634,13 @@ export function App() {
 								: "Off: a vertex is exactly the order you arranged its corners in (a turned or mirrored order is the same vertex). Turning it on merges the orders of one set of corners into one vertex."
 						}
 					>
-						<Toggle
-							leftValue="off"
-							rightValue="on"
-							value={board.permutations ? "on" : "off"}
+						<OptionWall
+							columns={2}
+							options={[
+								{ value: "off", label: "Off" },
+								{ value: "on", label: "On" },
+							]}
+							selected={board.permutations ? "on" : "off"}
 							onChange={(v) => {
 								const next = withPermutations(board, v === "on");
 								if (next) set(next);
@@ -606,10 +651,13 @@ export function App() {
 						label="Chiral only"
 						hint="On: only the tilings with no mirror and no glide reflection among their symmetries, like the snub hexagonal tiling. A tiling and its mirror image still count once."
 					>
-						<Toggle
-							leftValue="off"
-							rightValue="on"
-							value={board.chiral ? "on" : "off"}
+						<OptionWall
+							columns={2}
+							options={[
+								{ value: "off", label: "Off" },
+								{ value: "on", label: "On" },
+							]}
+							selected={board.chiral ? "on" : "off"}
 							onChange={(v) => set({ ...board, chiral: v === "on" })}
 						/>
 					</Field>
@@ -617,7 +665,7 @@ export function App() {
 						label="Initial vertices"
 						hint="Output only the tilings that contain at least one initial vertex. Mark vertices as initial on their cards; with none marked, every tiling is output."
 					>
-						<div className="flex items-center gap-2 text-sm text-fg">
+						<div className="flex items-center gap-2 text-body text-fg">
 							{board.initial.length ? `Vertex ${board.initial.join(", ")}` : "None: all tilings"}
 							{board.initial.length ? (
 								<Button size="sm" variant="ghost" label="Clear" onClick={() => set({ ...board, initial: [] })} />
@@ -635,10 +683,7 @@ export function App() {
 				</div>
 
 				<div className="space-y-5 p-5">
-					<Field
-						label={`Threads · ${options.threads}`}
-						hint={settings ? threadsHint(settings.cores) : undefined}
-					>
+					<Field label={`Threads · ${options.threads}`} hint={settings ? threadsHint(settings.cores) : undefined}>
 						<ThreadsInput
 							value={options.threads}
 							cores={settings?.cores ?? 1}
@@ -661,7 +706,7 @@ export function App() {
 							label="Time limit"
 							hint="Each step searches one k at a time, upward. A k that runs past this limit ends its step, and the search moves to the next step: a limit never makes it miss a tiling it reports, only stop looking sooner."
 						>
-							<div className="flex items-center gap-2 text-sm text-fg-secondary">
+							<div className="flex items-center gap-2 text-body text-fg-secondary">
 								<Input
 									type="number"
 									min={5}
@@ -679,17 +724,20 @@ export function App() {
 							label="k for this run"
 							hint="Leave the board's range, or run part of it. A resumed run keeps the range it started with."
 						>
-							<div className="flex items-center gap-2 text-sm text-fg-secondary">
-								<Toggle
-									leftValue="board"
-									rightValue="custom"
-									value={runK ? "custom" : "board"}
+							<div className="flex items-center gap-2 text-body text-fg-secondary">
+								<OptionWall
+									columns={2}
+									className="w-full"
+									options={[
+										{ value: "board", label: "Board" },
+										{ value: "custom", label: "Custom" },
+									]}
+									selected={runK ? "custom" : "board"}
 									onChange={(v) => setRunK(v === "custom" ? [board.kmin, board.kmax] : null)}
-									padding="py-1 px-2"
 								/>
 							</div>
 							{runK ? (
-								<div className="flex items-center gap-2 text-sm text-fg-secondary">
+								<div className="flex items-center gap-2 text-body text-fg-secondary">
 									from
 									<Input
 										type="number"
@@ -705,7 +753,9 @@ export function App() {
 										min={runK[0]}
 										max={MAX_K}
 										value={runK[1]}
-										onChange={(e) => setRunK([runK[0], Math.min(MAX_K, Math.max(runK[0], Number(e.target.value) || 1))])}
+										onChange={(e) =>
+											setRunK([runK[0], Math.min(MAX_K, Math.max(runK[0], Number(e.target.value) || 1))])
+										}
 										className="w-20"
 										aria-label="Run k to"
 									/>
@@ -724,7 +774,7 @@ export function App() {
 					<Field label="Output folder" hint="Every run stops when the disk drops under 10 GB free.">
 						<div className="flex items-center gap-2">
 							<span
-								className="min-w-0 flex-1 truncate font-mono text-xs text-fg-secondary"
+								className="min-w-0 flex-1 truncate font-mono text-small text-fg-secondary"
 								title={status.root}
 								dir="rtl"
 							>
@@ -732,17 +782,32 @@ export function App() {
 							</span>
 							<Button size="sm" label="Change…" onClick={() => void api().chooseRoot().then(setSettings)} />
 						</div>
-						<p className={cn("text-xs", lowDisk ? "text-danger" : "text-fg-muted")}>
+						<p className={cn("text-small", lowDisk ? "text-danger" : "text-fg-muted")}>
 							{bytes(status.freeBytes)} free{lowDisk ? ": under 10 GB, runs cannot start." : ""}
 						</p>
 					</Field>
 				</div>
 			</div>
 			<div className="space-y-2 px-5 py-4">
+				{editStudy && study ? (
+					<>
+						<p className="text-small text-fg-muted">
+							The board of study {editStudy.name}: apply the edits to it, or run them as a new study.
+						</p>
+						<Button
+							variant="primary"
+							className="w-full"
+							icon={CheckIcon}
+							label={`Apply to ${editStudy.name}`}
+							disabled={errors.length > 0 || !studyPlan?.rows || studyPlan.problems.length > 0}
+							onClick={() => setApplying(true)}
+						/>
+					</>
+				) : null}
 				<Button
 					id="run-search"
-					variant="primary"
-					fullWidth
+					variant={editStudy && study ? "secondary" : "primary"}
+					className="w-full"
 					icon={Play}
 					label={
 						study
@@ -759,7 +824,7 @@ export function App() {
 					}
 					onClick={() => (unused.length ? setAskRun(true) : void start())}
 				/>
-				{message ? <p className="text-xs text-danger">{message}</p> : null}
+				{message ? <p className="text-small text-danger">{message}</p> : null}
 			</div>
 		</aside>
 	);
@@ -804,7 +869,7 @@ export function App() {
 							<Input
 								value={board.name}
 								onChange={(e) => set({ ...board, name: e.target.value.replace(/\s|#/g, "_") })}
-								className="max-w-sm text-base font-semibold"
+								className="max-w-sm text-title font-semibold"
 								aria-label="Board name"
 							/>
 							<div className="ml-auto flex gap-1.5">
@@ -847,13 +912,13 @@ export function App() {
 							</div>
 						) : (
 							<div className="flex min-h-0 flex-1 flex-col gap-3">
-								<p className="text-xs text-fg-muted">
+								<p className="text-small text-fg-muted">
 									The board file, as the engine reads it (docs/searcher/board-format.md). Edits here and in the visual
 									editor are the same board; a line the visual editor cannot show is kept as written.
 								</p>
 								<TextEditor text={text} setText={setText} problems={problems} />
 								{engine?.ok ? (
-									<details className="text-xs text-fg-muted">
+									<details className="text-small text-fg-muted">
 										<summary className="cursor-pointer">What the engine reads (tilesearch --dump)</summary>
 										<pre className="mt-2 max-h-60 overflow-auto rounded-control bg-surface-sunken p-2 font-mono">
 											{engine.dump}
@@ -867,7 +932,7 @@ export function App() {
 			) : (
 				<div className="flex min-h-0 flex-1 pr-2 pb-2">
 					<aside className="w-[360px] shrink-0 overflow-y-auto">
-						<RunList status={status} selected={run?.id ?? studyShown?.id ?? null} onSelect={setSelected} />
+						<RunList status={status} options={options} selected={run?.id ?? studyShown?.id ?? null} onSelect={setSelected} />
 					</aside>
 					<main className="ts-sheet min-w-0 flex-1 overflow-hidden">
 						{studyShown ? (
@@ -876,7 +941,7 @@ export function App() {
 								status={status}
 								options={options}
 								cores={settings?.cores ?? 1}
-								onEdit={loadBoard}
+								onEdit={(t) => (loadBoard(t), setEditing(studyShown.id))}
 								onSelect={setSelected}
 							/>
 						) : run ? (
@@ -909,8 +974,17 @@ export function App() {
 					</main>
 				</div>
 			)}
+			{applying && editStudy ? (
+				<StudyEditModal
+					id={editStudy.id}
+					name={editStudy.name}
+					text={text}
+					onClose={() => setApplying(false)}
+					onDone={() => (setApplying(false), setEditing(null), setSelected(editStudy.id), setView("runs"))}
+				/>
+			) : null}
 			<Modal
-				isOpen={askRun}
+				open={askRun}
 				onOpenChange={setAskRun}
 				title={`${problemCount(unused)} before the search`}
 				size="md"
@@ -923,7 +997,12 @@ export function App() {
 					<div className="flex justify-end gap-2">
 						<Button label="Back to the board" onClick={() => setAskRun(false)} />
 						{blocking ? null : (
-							<Button variant="primary" icon={Play} label="Run anyway" onClick={() => (setAskRun(false), void start())} />
+							<Button
+								variant="primary"
+								icon={Play}
+								label="Run anyway"
+								onClick={() => (setAskRun(false), void start())}
+							/>
 						)}
 					</div>
 				}
@@ -935,7 +1014,9 @@ export function App() {
 				onClose={() => setAskQuit(false)}
 				runs={status.runs.filter((r) => r.state === "running")}
 			/>
-			{update && settings ? <UpdateModal update={update} current={settings.version} onClose={() => setUpdate(null)} /> : null}
+			{update && settings ? (
+				<UpdateModal update={update} current={settings.version} onClose={() => setUpdate(null)} />
+			) : null}
 		</div>
 	);
 }
@@ -945,7 +1026,7 @@ function QuitModal({ open, onClose, runs }: { open: boolean; onClose: () => void
 	const n = runs.length;
 	return (
 		<Modal
-			isOpen={open && n > 0}
+			open={open && n > 0}
 			onOpenChange={(o) => !o && onClose()}
 			title={n === 1 ? "A search is running" : `${n} searches are running`}
 			size="sm"
@@ -961,7 +1042,7 @@ function QuitModal({ open, onClose, runs }: { open: boolean; onClose: () => void
 				</div>
 			}
 		>
-			<div className="space-y-4 p-5 text-sm text-fg-secondary">
+			<div className="space-y-4 p-5 text-body text-fg-secondary">
 				<p>
 					Quitting stops {n === 1 ? "it" : "them"}. Every finished root is kept on disk; the roots in progress are lost
 					and start again from the beginning when you press Resume on the run.
@@ -973,7 +1054,7 @@ function QuitModal({ open, onClose, runs }: { open: boolean; onClose: () => void
 							className="flex items-center justify-between gap-3 rounded-control bg-surface-sunken px-3 py-2"
 						>
 							<span className="truncate font-medium text-fg">{r.name}</span>
-							<span className="shrink-0 font-mono text-xs text-fg-muted">
+							<span className="shrink-0 font-mono text-small text-fg-muted">
 								{r.roots.done} / {r.roots.all || "?"} roots · {r.total.toLocaleString("en")} tilings
 							</span>
 						</li>

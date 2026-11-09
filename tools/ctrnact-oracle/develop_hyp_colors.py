@@ -207,7 +207,7 @@ def run(source, base_id, out_prefix, ncolors=3, ks=None, surjective=False, repor
             r["name"] = r["id"]
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json.gz"
+            path = f"{out_prefix}-k{k}.json.br"
             fd.write_json(path, recs, separators=(",", ":"))
             written.append((path, len(recs), os.path.getsize(path)))
 

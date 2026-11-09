@@ -1,0 +1,197 @@
+/* SEMANTIC TOKENS (static): what a value is for, the same in both themes. These names are the public
+   vocabulary, exposed to Tailwind by tailwind.css and read by the library's CSS. Every value here is a core
+   token or arithmetic on one. Colour and elevation roles that change with the theme live in themed.css. */
+
+:root {
+	/* ─── Type ─────────────────────────────────────────────────────────────────────────────────────
+	   A compact scale for a data-dense instrument: interface text is 13px, the scale steps by 1px through
+	   the dense range (10 to 14) where most of the screen is, then opens up for titles and headings.
+	   Each role bundles size, line height and tracking, so a call site writes one class (text-ui) and
+	   never a line height of its own. Weight stays separate (font-medium, font-semibold).
+
+	   role       size  line  tracking   for
+	   micro       10    12     0        section labels (mono caps, .ta-label), tags on a thumbnail
+	   caption     11    14     0        meta lines, counts, hints, table secondaries
+	   small       12    16     0        dense controls (options, inputs in a sidebar), table cells
+	   ui          13    18     0        the default: rows, buttons, menus, checkboxes, sidebar text
+	   body        14    20     0        sentences in panels and dialogs
+	   title       16    22   -0.01em    card, panel and dialog titles, a tiling's name
+	   reading     16    26     0        article prose (/about, /theory, the updates)
+	   heading     18    24   -0.01em    a view's or page section's heading
+	   headline    24    30   -0.02em    a page title
+	   display     32    38   -0.025em   a headline number, a page's big statement
+	   hero      32-72  0.98  -0.025em   the landing's title, fluid with the viewport
+
+	   Line heights land on the 2px grid and the steps in the dense range keep a ratio near 1.33. */
+	--type-micro-size: var(--font-size-10);
+	--type-micro-line: var(--line-height-12);
+	--type-micro-tracking: var(--letter-spacing-0);
+	--type-caption-size: var(--font-size-11);
+	--type-caption-line: var(--line-height-14);
+	--type-caption-tracking: var(--letter-spacing-0);
+	--type-small-size: var(--font-size-12);
+	--type-small-line: var(--line-height-16);
+	--type-small-tracking: var(--letter-spacing-0);
+	--type-ui-size: var(--font-size-13);
+	--type-ui-line: var(--line-height-18);
+	--type-ui-tracking: var(--letter-spacing-0);
+	--type-body-size: var(--font-size-14);
+	--type-body-line: var(--line-height-20);
+	--type-body-tracking: var(--letter-spacing-0);
+	--type-title-size: var(--font-size-16);
+	--type-title-line: var(--line-height-22);
+	--type-title-tracking: var(--letter-spacing-n010);
+	--type-reading-size: var(--font-size-16);
+	--type-reading-line: var(--line-height-26);
+	--type-reading-tracking: var(--letter-spacing-0);
+	--type-heading-size: var(--font-size-18);
+	--type-heading-line: var(--line-height-24);
+	--type-heading-tracking: var(--letter-spacing-n010);
+	--type-headline-size: var(--font-size-24);
+	--type-headline-line: var(--line-height-30);
+	--type-headline-tracking: var(--letter-spacing-n020);
+	--type-display-size: var(--font-size-32);
+	--type-display-line: var(--line-height-38);
+	--type-display-tracking: var(--letter-spacing-n025);
+	/* The landing's title only: it grows with the viewport from display (32) to 72, on one line height. */
+	--type-hero-size: clamp(var(--font-size-32), 1rem + 4.5vw, var(--font-size-72));
+	--type-hero-line: 0.98;
+	--type-hero-tracking: var(--letter-spacing-n025);
+
+	/* The section label: micro, mono, caps, wide tracking, muted. One style for every panel's sections. */
+	--type-label-tracking: var(--letter-spacing-120);
+
+	--font-sans: var(--font-family-sans);
+	--font-mono: var(--font-family-mono);
+	--font-weight-normal: var(--font-weight-400);
+	--font-weight-medium: var(--font-weight-500);
+	--font-weight-semibold: var(--font-weight-600);
+
+	/* Line heights for the rare text that sets its own (a one-line badge, a tight two-line label). */
+	--leading-none: 1;
+	--leading-tight: 1.25;
+	--leading-relaxed: 1.6;
+
+	/* ─── Space ────────────────────────────────────────────────────────────────────────────────────
+	   Paddings, margins and gaps are steps of the 4px unit, from this set only (Tailwind's number):
+	     0  px  0.5  1  1.5  2  2.5  3  3.5  4  5  6  8  10  12  16  20  24
+	   The half steps stop at 3.5: below 16px a 2px difference reads, above it nobody sees one.
+	   The roles below are distances that mean something, so they are named and never re-derived. */
+	/* Content that belongs to a checked option starts under its label: the box (16) plus its gap (12). */
+	--space-indent: calc(var(--space-unit) * 7);
+	/* One level deeper in a tree (the catalogue list). */
+	--space-tree-step: calc(var(--space-unit) * 4);
+	/* Room a heading leaves for the corner button beside it: the button (44) and its inset (12). */
+	--space-corner: calc(var(--size-44) + var(--space-unit) * 3);
+
+	/* ─── Size ─── */
+	/* Controls: the compact density in one place. Heights for buttons, inputs, options and toolbars; a
+	   phone raises every control to `touch`. */
+	--control-xs: var(--size-24); /* a hint pill, a figure's control row */
+	--control-sm: var(--size-28); /* options in a wall, dense sidebar controls */
+	--control-md: var(--size-32); /* the default button and input */
+	--control-lg: var(--size-36); /* a dialog's primary action */
+	--control-touch: var(--size-44); /* the phone floor */
+	/* Icons follow the text beside them: xs with micro and caption, sm with small and ui, md with body,
+	   lg with title and heading. */
+	--icon-xs: var(--size-12);
+	--icon-sm: var(--size-14);
+	--icon-md: var(--size-16);
+	--icon-lg: var(--size-18);
+
+	/* ─── Radius: by what carries it ─── */
+	--radius-mark: var(--radius-2); /* a chart's bars, a swatch, a mark inside a figure */
+	--radius-tag: var(--radius-4); /* badges, chips, inline code */
+	--radius-control: var(--radius-6); /* buttons, inputs, options */
+	--radius-surface: var(--radius-8); /* cards, panels, wells */
+	--radius-overlay: var(--radius-12); /* popovers, dialogs, panels floating over a canvas */
+	--radius-sheet: var(--radius-16); /* the large figure frames and the app's sheets */
+	--radius-pill: var(--radius-full);
+
+	/* ─── Motion: by what moves ───────────────────────────────────────────────────────────────────
+	   A role is a duration and a curve together; a call site names the role (motion-glide), never a
+	   number. Exits run faster than entrances: leaving is never what the reader waits on.
+
+	   role       in    out   curve       for
+	   feedback  120   120   out         a state change in place: colour, border, a press, a thumb's swell
+	   floating  200   150   out-strong  a dialog, a popover or a menu arriving, and the scrim under it
+	   glide     240   150   out-strong  something moving inside the page: a pill, a fold, a panel's width
+	   travel    360   200   drawer      a sheet or a panel crossing the screen, and what rides on it
+	   arrive    360    -    out-strong  content that comes once and stays: a toolbar's rise, a grid's cards
+	   settle    600    -    out-strong  a slow change: a bar growing to new data, a preview drifting
+	   pulse    1600  loop   standard    a placeholder breathing while it waits */
+	--duration-feedback: var(--duration-120);
+	--ease-feedback: var(--curve-out);
+	--duration-floating: var(--duration-200);
+	--duration-floating-exit: var(--duration-150);
+	--ease-floating: var(--curve-out-strong);
+	--ease-floating-exit: var(--curve-out);
+	--duration-glide: var(--duration-240);
+	--duration-glide-exit: var(--duration-150);
+	--ease-glide: var(--curve-out-strong);
+	--duration-travel: var(--duration-360);
+	--duration-travel-exit: var(--duration-200);
+	--ease-travel: var(--curve-drawer);
+	--duration-arrive: var(--duration-360);
+	--ease-arrive: var(--curve-out-strong);
+	--duration-settle: var(--duration-600);
+	--ease-settle: var(--curve-out-strong);
+	--duration-pulse: var(--duration-1600);
+	--ease-pulse: var(--curve-standard);
+	--duration-spin: var(--duration-1000);
+	/* Items that arrive together come this far apart (a grid's cards); a drawn path draws a piece per step. */
+	--motion-stagger: var(--duration-40);
+	--motion-step: var(--duration-70);
+
+	/* ─── Layers: what may cover what ───
+	   Stacking inside a component uses z-0, z-10 and z-20, and stays inside it. Anything that covers other
+	   parts of the app names its layer. */
+	--z-chrome: 30; /* controls over a canvas or a page: corner buttons, floating toolbars, sticky bars */
+	--z-sheet: 40; /* a phone's sheet or side panel, the phone's top bar, a sheet's floating button */
+	--z-modal: 50; /* a dialog, a lifted card, and the scrim under them */
+	--z-menu: 60; /* the phone's navigation menu, over an open sheet */
+	--z-popup: 400; /* dropdowns, menus, comboboxes and tooltips: above dialogs */
+	--z-cursor: 1000; /* the gamepad cursor and its hint, above everything */
+
+	/* ─── Colour that does not change with the theme ─── */
+	--color-accent-contrast: var(--palette-white); /* text on an accent fill */
+	--color-thumb: var(--palette-white); /* a slider's thumb: paper on the track in both themes */
+	/* The scrim under a dialog or a sheet: the page dims and softens behind it. */
+	--color-scrim: oklch(from var(--palette-black) l c h / 0.35);
+	--blur-scrim: 2px;
+	/* Panels that float over a canvas (.ta-float) frost what is behind them. */
+	--blur-float: 6px;
+	/* Hazard tape: barricade tape is an object laid over the page, so it carries the same yellow and black
+	   in both themes. Reserved for "this is not built yet". */
+	--color-caution: var(--palette-amber-400);
+	--color-caution-ink: var(--palette-neutral-950);
+	/* A handle drawn inside a figure or a pad (a vertex you drag) casts a small drop that reads on any fill. */
+	--drop-shadow-handle: 0 1px 2px oklch(from var(--palette-black) l c h / 0.15);
+}
+
+/* A phone (docs/mobile/DESIGN.md): no text under 12px, and sentences at 15px. The roles change here, so no
+   call site needs a max-md: size of its own. */
+@media (width < theme(--breakpoint-md)) {
+	:root {
+		--type-micro-size: var(--font-size-12);
+		--type-micro-line: var(--line-height-16);
+		--type-caption-size: var(--font-size-12);
+		--type-caption-line: var(--line-height-16);
+		--type-body-size: var(--font-size-15);
+		--type-body-line: var(--line-height-22);
+	}
+}
+
+/* Reduced motion, at the token layer: the roles that move something across the page (glide, travel,
+   arrive, settle) finish at once, so every call site that names them obeys without a rule of its own.
+   Fades and feedback keep their time; they move nothing. 0.01ms, not 0, so `transitionend` still fires. */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-glide: 0.01ms;
+		--duration-glide-exit: 0.01ms;
+		--duration-travel: 0.01ms;
+		--duration-travel-exit: 0.01ms;
+		--duration-arrive: 0.01ms;
+		--duration-settle: 0.01ms;
+	}
+}

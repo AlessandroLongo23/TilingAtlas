@@ -17,7 +17,7 @@ import {
 	type SphericalCamera,
 	sphereDriver,
 } from "@/lib/render/sphericalCamera";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { useSolid } from "@/lib/render/sphericalSolids";
 import { isNobleFamily, nobleFamilySolid } from "@/lib/render/nobleSolids";
 import { partialFill } from "@/lib/render/sphericalGeometry";
 import { dualCompound, polarDual } from "@/lib/render/dualSolid";
@@ -115,8 +115,9 @@ export function SphericalCanvas({
 	// solids and has no one vertex figure, and not a bubble decoration, which has no flat faces.
 	const faceView = useConfiguration((s) => (s.solidDualMode === "compound" || bubbleBites ? "all" : s.solidFaceView));
 	const facePick = useConfiguration((s) => s.solidFacePick);
+	const solid = useSolid(nobleParams ? null : solidId);
 	const { poly, dualFaceStart } = useMemo(() => {
-		const base = nobleParams ? nobleFamilySolid(solidId, nobleParams) : polyhedronForId(solidId);
+		const base = nobleParams ? nobleFamilySolid(solidId, nobleParams) : solid;
 		if (!base || mode === "solid") return { poly: base, dualFaceStart: -1 };
 		if (mode === "compound") {
 			const c = dualCompound(base);
@@ -124,7 +125,7 @@ export function SphericalCanvas({
 		}
 		const r = polarDual(base);
 		return { poly: "dual" in r ? r.dual : base, dualFaceStart: -1 };
-	}, [solidId, mode, nobleParams]);
+	}, [solidId, mode, nobleParams, solid]);
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	// The canvas element itself (created imperatively below) — the gate effect writes its touch-action,
 	// and the mount effect reads the gate without taking it as a dep (it must never rebuild the WebGL
@@ -692,7 +693,7 @@ export function SphericalCanvas({
 	if (errored) {
 		return (
 			<div className="absolute inset-0 z-10 flex items-center justify-center">
-				<p className="max-w-xs text-center text-sm text-fg-muted">
+				<p className="max-w-xs text-center text-body text-fg-muted">
 					3D view unavailable — the browser ran out of WebGL contexts. Reload the page to free them.
 				</p>
 			</div>

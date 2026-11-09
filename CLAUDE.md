@@ -40,6 +40,11 @@ collaborators looking at it, a shelf that presents a partial corpus as a catalog
 bug. Keep flagging those (e.g. non-contiguous k coverage in a shipped corpus). That is atlas quality
 work, not thesis work.
 
+**Hyperbolic hybrid completeness has written limits (AL, 2026-11-05):** every "complete" said of the hybrid
+studies or anything shipped from them holds within `docs/HYBRID_SEARCH_LIMITS.md` (faces to 200 sides and
+K = max(50, 20/s) side multiples, vertices to 120 polygons or the angle bound, rows split at 10,000, k ≤ 5).
+Cite it; widen it there, never silently.
+
 
 ## The engine — what "the algorithm" means (durable; added 2026-07-12, AL directive)
 
@@ -118,6 +123,9 @@ replaced the change does not exist for AL. (Called TileSearch until 2026-10-29; 
    it landed. Quote every path: the name has spaces.
 4. Install: `ditto` the new `release/mac-arm64/The Tiling Searcher.app` to
    `~/Applications/The Tiling Searcher.app`, then check its modification time.
+5. To start it again from a Claude shell, run the binary with `env -u ELECTRON_RUN_AS_NODE` and outside the
+   sandbox. Cursor's extension host exports `ELECTRON_RUN_AS_NODE=1`, and with it the app runs as plain Node and
+   exits at once (`open -a` fails the same way).
 
 Say in the report that the app was reinstalled, or why it could not be.
 
@@ -143,34 +151,49 @@ load differently — never make it absent. See `docs/DEVELOPMENT_NOTES.md` "ever
 If a corpus genuinely cannot ship (no decoder exists, certificates fail to develop), that is a
 DIFFERENT statement and must be recorded as such: what is missing and why, never as a size decision.
 
-## Shipped data under public/ is stored gzipped (durable; AL decision, 2026-10-21)
+## Shipped data under public/: brotli files, mastered on Cloudflare R2, not in git (durable; AL, 2026-11-09)
 
-**Every atlas data file under `public/` is committed as `.json.gz`, never as plain `.json`.** New
-corpora, rebuilt shards and pipeline outputs are written gzipped from the start.
+**Every atlas data file under `public/` is a brotli `.json.br`, and its master copy is the Cloudflare R2 bucket
+`tiling-atlas-data`, served at `https://data.thetilingatlas.com`. Git does not track the data:** `.gitignore`
+covers `public/**/*.json.br` and `.json.gz`, and `public/` on a machine is a local copy. (History: plain JSON
+until 2026-10-21, gzip `.json.gz` in git until 2026-11-09; that history stays in git, nothing after it.)
 
-Why: the Vercel team `falesteos-projects` is on Hobby, which allows 10 GB of Deployment Storage for
-ALL projects together. Every retained deployment stores a full copy of `public/`, and Hobby keeps at
-least the 3 latest production deploys plus the 3 latest of any kind per project. On 2026-10-21 this
-repo tracked 2.8 GB of plain JSON, so 4 kept deploys alone hit 100% of the quota. The JSON gzips
-8-55x; gzipped, the whole tree is in the low hundreds of MB.
+Why: the Vercel team `falesteos-projects` is on Hobby, 10 GB of Deployment Storage for ALL projects together,
+and every kept deployment stored all of `public/` (2.8 GB of plain JSON hit the quota on 2026-10-21). Git kept
+every version of every shard forever (pack 784 MB on 2026-11-09). R2's free tier is 10 GB with free egress.
 
-- **Read through `shardBody` in `lib/services/atlasCodec.ts`.** It un-gzips by sniffing the magic
-  bytes and also accepts plain JSON, so fetchers need only the `.json.gz` URL. Do not write a second
-  decoder. The pattern to copy is `lib/tilings/hyp-poly.ts` (shard URLs end in `.json.gz`).
-- **Build-time readers gunzip too.** Anything that reads `public/` from Node (`lib/about/load.ts`,
-  the landing-data script) uses `zlib.gunzipSync` on `.gz` files.
-- **The wire is unchanged.** The CDN already compressed plain JSON in transit; this saves storage in
-  the repo and in every deployment, not bandwidth.
-- **Budget.** Keep tracked `public/` under 500 MB. Check it with
-  `git ls-files -z public | xargs -0 stat -f %z | awk '{s+=$1} END{print s/1048576 " MB"}'`.
-  If a drop pushes it past that, the fix is in the delivery layer (pack, split, gzip), never in
-  dropping data: the "everything ships" rule above still wins.
-- **`public/frames/` is shipped data, not local renders.** It is the `/frames` shelf (1,822,452 frames,
-  commit `65d8c790`): 1,184 MB plain, 78 MB gzipped, and it was the largest single item in the 2.8 GB.
-- **Exceptions, kept plain:** `public/release.json` only (133 B; the release-notes skill polls it on the
-  live site). `scripts/docs-check.mjs` fails a commit that stages any other plain `.json` under `public/`.
-- **Writers:** Node scripts write through `scripts/atlas/io.mjs` (`writeDataFile` to a `.json.gz` path,
-  `readDataJson` to read); the Python tools through `read_json`/`write_json` in `tools/ctrnact-oracle/develop_freedraw.py`.
+- **Getting the data:** `pnpm data:pull` downloads every file missing from `public/` (about 585 MB, 21,000 files,
+  a few minutes). It never overwrites a local file that differs: it lists them. `pnpm build` pulls first.
+- **Publishing data:** a new or rebuilt file reaches production only through `pnpm data:sync` (uploads every
+  local file whose MD5 differs from the bucket; `--check` lists them). Nothing is ever deleted from the bucket.
+  Run it after any builder writes `public/`; committing code that reads a file R2 does not have breaks production.
+- **Production reads R2, not the deployment.** Browser code fetches data only through `fetchData(path)` in
+  `lib/services/atlasCodec.ts`, which prefixes `PUBLIC_DATA_URL` (set on Vercel for production and preview, unset
+  locally so development reads `public/`). A bare `fetch` of a `.json.br` breaks production.
+- **Vercel builds** (`scripts/data-sync.mjs`): pull everything from R2, generate (hero cells, update cells) and
+  build, then production uploads what the build generated and every build deletes the data from its output, so
+  no deployment carries it. Guards: pruning runs only in Vercel's container (`/vercel/...`) and only with
+  `PUBLIC_DATA_URL` set; a build without R2 keys fails. Keys live in the Vercel project (secrets) and in
+  `.env.local` here (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`), never `PUBLIC_*`.
+- **Backups.** R2 keeps no old versions, so the copies are the bucket and this Mac's `public/`. Never delete local
+  data that is not in R2 (`pnpm data:sync --check` shows it), and treat bucket deletions as destroying data.
+- **Cloudflare access.** AL's own account (longoa02@gmail.com): use `cf ... --profile atlas`; the default `cf`
+  profile is the EDL account. The domain's DNS is on Cloudflare (the site stays on Vercel); a cache rule keeps
+  data files 1 hour at the edge and in browsers, so an upload is live everywhere within the hour.
+- **Read and write through the one codec.** In the browser `shardBody` decodes `.json.br` (natively where the
+  browser can, Chrome through the lazily loaded `brotli-dec-wasm`), `.json.gz` and plain JSON, and sniffs a body a
+  CDN already unwrapped. Node scripts and tests read through `scripts/atlas/io.mjs` (`readDataJson`,
+  `readDataText`, resolving `x.json` to `x.json.br`) and write through `writeDataFile` or `dataBytes`; Python through
+  `read_json`/`write_json` in `tools/ctrnact-oracle/develop_freedraw.py`. Both pick the format by extension, at
+  brotli quality 10 with a 16 MB window (io.mjs says why; keep the window at 24, `shardBody`'s sniff depends on
+  it). Never `zlib.gunzipSync` a public file by hand, and never write a second decoder.
+- **Budget.** R2's free 10 GB (about 0.6 GB used on 2026-11-09). Page weight is still solved in the delivery
+  layer (shard, pack, split), never by dropping data: the "everything ships" rule above still wins.
+- **Exceptions, kept in git:** `public/release.json` (the release-notes skill polls it on the live site) and the
+  non-data assets (images, theory markdown). `scripts/docs-check.mjs` fails a commit that stages any `.json`,
+  `.json.gz` or `.json.br` under `public/`.
+- **Not in scope, still gzip:** the Supabase pipeline batches (`lib/algorithm/run-pipeline.ts`,
+  `app/api/pipeline/*`) and the Searcher's `.txt.gz` certificate files.
 
 ## Fewer lines out than in (durable; AL directive, 2026-08-23)
 
@@ -190,6 +213,19 @@ implementation beside the one that already exists. This repo is large and most p
   count went up.
 - Net-new features (a new page, a new shelf) legitimately add lines. Optimizations, fixes,
   generalizations and refactors should not. When the count must rise, say why in one sentence.
+
+## UI is built from the design system (durable; AL directive, 2026-11-07)
+
+**Both apps, the atlas and the Tiling Searcher, build their screens from `design-system/`:** its tokens
+(`tokens/`), its CSS classes (`styles/`) and its components (`components/`, imported as
+`@/design-system/components/<name>`). The Searcher imports the same files from the repo root, so one change
+reaches both. Read `design-system/README.md` before UI work: the type roles (compact density, `text-ui` is
+13px), the colour, space, icon, radius, elevation, motion and layer roles, and which component does which job.
+Tailwind's own scales are cleared, so `text-sm`, `rounded-lg`, `bg-red-500` or `ease-out` generate nothing; a
+transition names a role (`motion-glide`), and JavaScript animates from `design-system/motion.ts`. A look written by hand, or a value off
+the token set, is a bug; when the system lacks something, extend it (and record why in
+`design-system/DECISIONS.md`), never fork a local version. Run `pnpm ds:check` after UI work: it fails if any
+file's count rises above its baseline.
 
 ## Visual inspection (Playwright — the default tool)
 
@@ -241,7 +277,7 @@ This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16
 
 **Rendering primitives.** p5.js is wrapped by `lib/hooks/useP5.ts` (Strict-Mode safe) with domain variants `useVcCanvas`, `usePolygonsCanvas`. Chart.js goes through `react-chartjs-2`. The `react-markdown` stack (remark-math/rehype-katex/rehype-raw) renders `/theory`, with custom markdown tags mapped to React components. The flat WebGL pipeline is shared: GLSL + `FlatCellRenderer` in `lib/render/flatTilingGL.ts`, interaction constants/math in `lib/render/viewControls.ts` — both `euclidean-canvas.tsx` (/play) and `interactive-tiling-preview-card.tsx` (/theory) draw and feel through them.
 
-**UI.** `components/ui/` is 14 primitives — Modal and Tabs via Radix, the rest hand-rolled. Domain components in `components/*.tsx`.
+**UI.** `design-system/` holds the tokens, the library's CSS and its components (see its README). Domain components live in `components/*.tsx`.
 
 ## Agent sync protocol (multiple agents, one project)
 

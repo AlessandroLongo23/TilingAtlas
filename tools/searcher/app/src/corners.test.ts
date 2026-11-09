@@ -195,15 +195,8 @@ describe("star points solved with the edge", () => {
 	});
 });
 
-describe("edge systems", () => {
-	it("rebuilds squares_edges: every square vertex with marked edges, no loose ends", () => {
-		const b = board("squares_edges");
-		const words = closingVertices(b, "plane", 0, 12).words.flatMap((w) => arrangements(w, ["A2"]) ?? []);
-		expect(new Set(words.map((w) => cyclicKey(w)))).toEqual(new Set(b.vertices.map((v) => cyclicKey(v.word))));
-		expect(words.length).toBe(b.vertices.length);
-	});
-	it("keeps loose ends on request and spells out a set's orders", () => {
-		expect(arrangements(["A4", "A4", "A4", "A4"], ["A2"], true)!.length).toBe(6);
+describe("cyclic orders", () => {
+	it("spells out a set's orders", () => {
 		// 3.3.4.4 and 3.4.3.4
 		expect(arrangements(["A3", "A4", "A3", "A4", "A3"])!.length).toBe(2);
 	});

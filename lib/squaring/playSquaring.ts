@@ -48,7 +48,9 @@ export const CLASS_LIMIT = 6;
  * Why a record cannot be squared. Each is shown to the reader verbatim, so each has to name a cause a
  * reader can act on — "unavailable" would be the one answer that helps nobody.
  */
-export type SquaringRefusal = "geometry" | "no-cell" | "quotient";
+export type SquaringRefusal = "geometry" | "no-cell" | "quotient" | "size";
+/** Quotients with more edges are not squared: the exact solves would take seconds (squaringAvailability). */
+export const SQUARING_EDGE_LIMIT = 150;
 
 export const REFUSAL_TEXT: Record<SquaringRefusal, string> = {
 	geometry:
@@ -57,6 +59,7 @@ export const REFUSAL_TEXT: Record<SquaringRefusal, string> = {
 		"This record's translation cell has no closed tiles to read a quotient graph off. Nothing is wrong with the tiling; the shelf stores it in a form this construction does not take.",
 	quotient:
 		"This record's translation cell does not close into a consistent quotient of the torus — some edge finds no partner across the gluing. That is a defect in the cell, not a property of the tiling, and it is worth reporting.",
+	size: `This tiling's quotient graph has more than ${SQUARING_EDGE_LIMIT} edges. The squaring's exact solves grow far faster than the graph (a second at 140 edges, twenty at 300), so cells this large are not squared here. Nothing is wrong with the tiling.`,
 };
 
 /** Everything the construction needs for one tiling, and none of it moves when the class does. */
@@ -95,60 +98,88 @@ function torusCellOf(t: CatalogueTiling): TorusCell | null {
 	return polygons.length > 0 ? { polygons, basis: base.basis } : null;
 }
 
-// Keyed on canonicalKey, capped so a long browsing session cannot grow it without bound. The whole
+// Keyed on canonicalKey, capped so a long browsing session cannot grow them without bound. The whole
 // support object for one tiling is a few hundred kB at the top end and most records are far smaller.
+const quotientCache = new Map<string, { map: TorusMap } | { reason: SquaringRefusal }>();
 const supportCache = new Map<string, SquaringAvailability>();
-const SUPPORT_CACHE_MAX = 48;
+const CACHE_MAX = 48;
+const remember = <V>(cache: Map<string, V>, key: string, value: V): V => {
+	if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value as string);
+	cache.set(key, value);
+	return value;
+};
+
+/** The quotient graph a record would be squared from, or why there is none. Cheap: one buildTorusMap. */
+function quotientOf(t: CatalogueTiling | null | undefined): { map: TorusMap } | { reason: SquaringRefusal } {
+	if (!t) return { reason: "geometry" };
+	// The registry answers "which renderer owns this canvas" for the whole app; "flat" is the plain
+	// Euclidean tiling and is the only surface with a period lattice AND real tile bodies. Hollow draws
+	// on its own canvas from self-intersecting faces, and every disk/sphere surface is the wrong genus.
+	if (surfaceOf(t) !== "flat") return { reason: "geometry" };
+	// A squared torus cuts the cell into rectangles, which a curved tile boundary cannot bound.
+	if (hasCurvedTiles(t)) return { reason: "geometry" };
+	const hit = quotientCache.get(t.canonicalKey);
+	if (hit) return hit;
+	let cell: TorusCell | null;
+	try {
+		cell = torusCellOf(t);
+	} catch {
+		cell = null;
+	}
+	const built = cell ? buildTorusMap(cell) : null;
+	return remember(
+		quotientCache,
+		t.canonicalKey,
+		!cell
+			? { reason: "no-cell" }
+			: !built?.ok
+				? { reason: "quotient" }
+				: built.map.E > SQUARING_EDGE_LIMIT
+					? { reason: "size" }
+					: { map: built.map },
+	);
+}
+
+/** Why a record cannot be squared, or null if it can: the cheap half of squaringAvailability, which is all a
+ *  toggle needs. Selecting a tiling must not pay for the solves. */
+export function squaringRefusal(t: CatalogueTiling | null | undefined): SquaringRefusal | null {
+	const q = quotientOf(t);
+	return "reason" in q ? q.reason : null;
+}
 
 /**
  * Can this record be squared, and if so with what.
  *
- * Costs one `buildTorusMap` (about 0.3 ms) plus the two solves of the frame and the O(E²) BigInt sweep
- * of `torusSqDomains`. That is well under a millisecond for the E ≤ 60 that covers most of the atlas
- * and about 75 ms for the largest cell in it (E = 240, `ctrnact-mixed-family-k4-02`), which is why the
- * result is cached per record and never recomputed while the class moves.
+ * Costs one `buildTorusMap` plus the two exact solves of the frame and the BigInt sweep of `torusSqDomains`,
+ * which grow much faster than E²: 0.17 s at E = 74, 1.3 s at 137, 6 s at 212, 22 s at 298 (regular tilings,
+ * measured 2026-11-09), minutes at the thousand edges of a k = 48 face-homogeneous cell. So it runs only while
+ * squaring is on (squaringRefusal answers the toggle), refuses above SQUARING_EDGE_LIMIT, and is cached per
+ * record, never recomputed while the class moves.
  */
 export function squaringAvailability(t: CatalogueTiling | null | undefined): SquaringAvailability {
-	if (!t) return { ok: false, reason: "geometry" };
-	// The registry answers "which renderer owns this canvas" for the whole app; "flat" is the plain
-	// Euclidean tiling and is the only surface with a period lattice AND real tile bodies. Hollow draws
-	// on its own canvas from self-intersecting faces, and every disk/sphere surface is the wrong genus.
-	if (surfaceOf(t) !== "flat") return { ok: false, reason: "geometry" };
-	// A squared torus cuts the cell into rectangles, which a curved tile boundary cannot bound.
-	if (hasCurvedTiles(t)) return { ok: false, reason: "geometry" };
-
-	const key = t.canonicalKey;
+	const q = quotientOf(t);
+	if ("reason" in q) return { ok: false, reason: q.reason };
+	const key = t!.canonicalKey;
 	const hit = supportCache.get(key);
 	if (hit) return hit;
-
-	const answer = ((): SquaringAvailability => {
-		let cell: TorusCell | null;
-		try {
-			cell = torusCellOf(t);
-		} catch {
-			cell = null;
-		}
-		if (!cell) return { ok: false, reason: "no-cell" };
-		const built = buildTorusMap(cell);
-		if (!built.ok) return { ok: false, reason: "quotient" };
-		const frame = torusFrame(built.map);
-		const domains = frame ? torusSqDomains(built.map) : null;
-		if (!frame || !domains) return { ok: false, reason: "quotient" };
-		return {
-			ok: true,
-			support: {
-				map: built.map,
-				frame,
-				domains,
-				sectors: sqSectors(domains.walls),
-				halfTurn: halfTurn(built.map).present,
-			},
-		};
-	})();
-
-	if (supportCache.size >= SUPPORT_CACHE_MAX) supportCache.delete(supportCache.keys().next().value as string);
-	supportCache.set(key, answer);
-	return answer;
+	const frame = torusFrame(q.map);
+	const domains = frame ? torusSqDomains(q.map) : null;
+	return remember(
+		supportCache,
+		key,
+		!frame || !domains
+			? { ok: false, reason: "quotient" }
+			: {
+					ok: true,
+					support: {
+						map: q.map,
+						frame,
+						domains,
+						sectors: sqSectors(domains.walls),
+						halfTurn: halfTurn(q.map).present,
+					},
+				},
+	);
 }
 
 /**

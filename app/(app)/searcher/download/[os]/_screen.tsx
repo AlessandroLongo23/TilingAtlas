@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Download, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { AppleIcon, WindowsIcon } from "@/components/icons/os";
 import { downloadUrl, OS_NAME, releasePage, type Os } from "@/lib/downloads";
 import { cn } from "@/lib/utils/cn";
@@ -51,14 +51,12 @@ export function DownloadScreen({ os, version }: { os: Os; version: string }) {
 
 	return (
 		<main className="min-h-0 flex-1 overflow-y-auto">
-			<div className="mx-auto max-w-6xl px-6 py-14 max-md:px-4 max-md:py-8">
+			<div className="mx-auto max-w-6xl px-6 py-12 max-md:px-4 max-md:py-8">
 				<section className="grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
 					<div>
 						<p className="ta-label">Download</p>
-						<h1 className="mt-3 text-[40px] leading-[1.05] font-semibold tracking-[-0.025em] text-balance max-md:text-[32px]">
-							The Tiling Searcher
-						</h1>
-						<p className="mt-4 max-w-md text-[15px] leading-relaxed text-fg-secondary">
+						<h1 className="mt-3 text-display font-semibold text-balance">The Tiling Searcher</h1>
+						<p className="mt-4 max-w-md text-reading leading-relaxed text-fg-secondary">
 							Find tilings on your own computer. Build a board of tiles, choose k, and the engine that fills this atlas
 							enumerates every tiling the board allows, or proves that one exists.
 						</p>
@@ -66,27 +64,27 @@ export function DownloadScreen({ os, version }: { os: Os; version: string }) {
 							<Button href={url} variant="primary" size="md" icon={Icon} label={`Download for ${OS_NAME[os]}`} />
 							<Button href={releasePage} variant="secondary" size="md" icon={ExternalLink} label="Other platforms" />
 						</div>
-						<p className="mt-4 flex items-center gap-1.5 text-[13px] text-fg-muted" aria-live="polite">
+						<p className="mt-4 flex items-center gap-1.5 text-ui text-fg-muted" aria-live="polite">
 							{started ? (
 								<>
-									<Check size={14} className="text-success" aria-hidden />
+									<Check className="size-icon-sm text-success" aria-hidden />
 									Your download has started.{" "}
-									<a href={url} className="text-fg-secondary underline-offset-2 hover:text-fg hover:underline">
+									<a href={url} className="ta-link-quiet">
 										Start it again
 									</a>
 								</>
 							) : (
 								<>
-									<Download size={14} aria-hidden />
+									<Download className="size-icon-sm" aria-hidden />
 									Your download starts in a moment.
 								</>
 							)}
 						</p>
-						<p className="mt-6 font-mono text-[11px] text-fg-muted">
+						<p className="mt-6 font-mono text-caption text-fg-muted">
 							Version {version} · {FOR[os]} · free
 						</p>
 					</div>
-					<figure className="overflow-hidden rounded-xl border border-line bg-surface-raised shadow-lg">
+					<figure className="ta-card overflow-hidden shadow-overlay">
 						{/* A board in the app, the hyperbolic hybrid example, in the theme the page is in. Fixed 70 KB
 						    WebPs (public/searcher), so there is nothing for next/image to resize. */}
 						{(["board", "board-dark"] as const).map((file) => (
@@ -104,15 +102,15 @@ export function DownloadScreen({ os, version }: { os: Os; version: string }) {
 				</section>
 
 				<section className="mt-16 border-t border-line-subtle pt-10">
-					<h2 className="text-lg font-semibold tracking-tight">The first launch</h2>
+					<h2 className="text-heading font-semibold tracking-tight">The first launch</h2>
 					<ol className="mt-6 grid gap-4 md:grid-cols-3">
 						{[...STEPS[os], FROM_THE_ATLAS].map((s, i) => (
-							<li key={s.title} className="rounded-surface border border-line-subtle bg-surface-raised p-5">
-								<span className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-sunken font-mono text-xs text-fg-secondary">
+							<li key={s.title} className="ta-card p-5">
+								<span className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-sunken font-mono text-small text-fg-secondary">
 									{i + 1}
 								</span>
-								<h3 className="mt-4 text-[15px] font-medium text-fg">{s.title}</h3>
-								<p className="mt-1.5 text-[13px] leading-relaxed text-fg-secondary">{s.body}</p>
+								<h3 className="mt-4 text-title font-medium text-fg">{s.title}</h3>
+								<p className="mt-1.5 text-ui leading-relaxed text-fg-secondary">{s.body}</p>
 							</li>
 						))}
 					</ol>

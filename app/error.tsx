@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Home, Library, RotateCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { ErrorScreen } from "@/components/error-screen";
 
 // Next 16 renames the recovery prop to `unstable_retry` (it re-fetches as well as re-renders);

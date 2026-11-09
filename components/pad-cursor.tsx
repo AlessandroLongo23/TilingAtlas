@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { enableTouchpad } from "@/lib/hooks/useGamepad";
 import { touchpadSupported } from "@/lib/input/padTouch";
 import { useGamepadState, usePadGlyph } from "@/lib/stores/gamepad";
+import { Button } from "@/design-system/components/button";
 
 // The controller's pointer: an arrow the left stick (or a DualShock's touchpad) moves over the page, for
 // whatever the D-pad cannot reach. It only draws; the moving and the clicking are in useGamepad. The
@@ -31,7 +32,7 @@ export function PadCursor() {
 				height="24"
 				viewBox="0 0 20 24"
 				aria-hidden="true"
-				className="pointer-events-none fixed top-0 left-0 z-[1000] drop-shadow-md"
+				className="pointer-events-none fixed top-0 left-0 z-cursor drop-shadow-handle"
 			>
 				<path
 					d="M1 1 L1 19 L6 14.5 L9.5 22.5 L12.5 21.2 L9 13.3 L16 13.3 Z"
@@ -41,20 +42,20 @@ export function PadCursor() {
 					strokeLinejoin="round"
 				/>
 			</svg>
-			<div className="ta-float pointer-events-none fixed top-14 left-1/2 z-[999] flex -translate-x-1/2 items-center gap-3 px-3 py-1.5 text-[12px] text-fg-secondary">
+			<div className="ta-float pointer-events-none fixed top-14 left-1/2 z-cursor flex -translate-x-1/2 items-center gap-3 px-3 py-1.5 text-small text-fg-secondary">
 				<span>
 					Pointer · <span className="font-mono text-fg">{click}</span> click ·{" "}
 					<span className="font-mono text-fg">{exit}</span> exit
 				</span>
 				{canAsk ? (
 					// A real mouse click: the browser's device chooser will not open for a synthetic one.
-					<button
-						type="button"
+					<Button
+						variant="primary"
+						size="xs"
+						label="Use the touchpad"
 						onClick={enableTouchpad}
-						className="pointer-events-auto rounded-control bg-accent px-2 py-0.5 font-medium text-accent-contrast hover:bg-accent-hover"
-					>
-						Use the touchpad
-					</button>
+						className="pointer-events-auto"
+					/>
 				) : null}
 			</div>
 		</>

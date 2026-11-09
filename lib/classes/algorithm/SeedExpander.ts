@@ -13,7 +13,7 @@
 
 import type { Polygon } from "../polygons/Polygon";
 import { Cyclotomic } from "../Cyclotomic";
-import { deduplicatePolygons } from "@/utils";
+import { deduplicatePolygons } from "@/utils/geometry";
 
 const POLYGON_BUCKET_GRID_SIDE_LENGTH = 1;
 const POLYGON_SEARCH_RADIUS = 3;

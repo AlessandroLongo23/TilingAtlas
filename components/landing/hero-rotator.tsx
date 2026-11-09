@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Shuffle } from "lucide-react";
+import { Tooltip } from "@/design-system/components/tooltip";
 import {
 	drawPolygons,
 	expandToViewport,
@@ -18,7 +19,7 @@ import {
 } from "@/lib/utils/tilingTransition";
 import type { LandingSpecimen } from "@/lib/services/landingData";
 import { usePublishHeroSpecimen } from "./hero-specimen";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // The hero's living background. Three behaviours on top of the static specimen render:
 //  - a slow drift in one fixed direction. The pattern is periodic, so the steady state is ONE
@@ -42,8 +43,8 @@ const PX_PER_EDGE = 56;
 const ROTATE_MS = 10_000;
 const DRIFT_PX_PER_S = 9; // slow — one tile edge every ~6 s
 const DRIFT_DIR = { x: 1, y: 0.4 }; // world units; y is up, so the pattern drifts right and up
-const HERO_INDEX_URL = "/hero-index.json.gz";
-const heroCellUrl = (id: string) => `/hero-cells/${id}.json.gz`;
+const HERO_INDEX_URL = "/hero-index.json.br";
+const heroCellUrl = (id: string) => `/hero-cells/${id}.json.br`;
 const LOOKAHEAD = 3; // prepared specimens kept ready so a rotation never waits on a fetch
 
 interface Stage {
@@ -169,7 +170,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 					let s = cache.get(id);
 					if (!s) {
 						try {
-							const r = await fetch(heroCellUrl(id));
+							const r = await fetchData(heroCellUrl(id));
 							if (!r.ok) continue;
 							s = (await shardBody(r)) as LandingSpecimen;
 							cache.set(id, s);
@@ -343,7 +344,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 
 		// Fetch the full atlas id set, then keep the lookahead queue warm. Failure is silent — the
 		// rotator just stays on the seed pool.
-		fetch(HERO_INDEX_URL)
+		fetchData(HERO_INDEX_URL)
 			.then((r) => (r.ok ? shardBody(r) : []))
 			.then((ids: unknown) => {
 				if (disposed || !Array.isArray(ids)) return;
@@ -395,22 +396,22 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 				<canvas ref={canvasRef} className="block h-full w-full" />
 			</div>
 			{specimen ? (
-				<div className="ta-float absolute right-3 bottom-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2.5 px-2.5 py-1.5 font-mono text-[11px] text-fg-secondary">
+				<div className="ta-float absolute right-3 bottom-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2.5 px-2.5 py-1.5 font-mono text-caption text-fg-secondary">
 					<span className="min-w-0 truncate">
 						{specimen.id} <span className="hidden sm:inline">· {specimen.label} </span>· k&nbsp;=&nbsp;{specimen.k}
 					</span>
-					<button
-						type="button"
-						onClick={() => {
-							shuffleRef.current = true;
-						}}
-						title="Show another tiling"
-						aria-label="Show another tiling"
-						className="inline-flex shrink-0 items-center gap-1 text-fg-muted transition-colors hover:text-fg max-md:-my-3 max-md:-mr-2 max-md:min-h-11 max-md:px-2"
-					>
-						<Shuffle size={12} aria-hidden="true" />
-						<span>shuffle</span>
-					</button>
+					<Tooltip label="Show another tiling">
+						<button
+							type="button"
+							onClick={() => {
+								shuffleRef.current = true;
+							}}
+							className="inline-flex shrink-0 items-center gap-1 text-fg-muted transition-colors hover:text-fg max-md:-my-3 max-md:-mr-2 max-md:min-h-11 max-md:px-2"
+						>
+							<Shuffle className="size-icon-xs" aria-hidden="true" />
+							<span>shuffle</span>
+						</button>
+					</Tooltip>
 				</div>
 			) : null}
 		</>

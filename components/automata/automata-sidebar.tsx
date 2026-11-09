@@ -7,12 +7,14 @@
 // .tsx), because it is the one control you use while watching rather than while configuring.
 
 import { useEffect, useMemo, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import { OptionWall } from "@/components/ui/option-wall";
-import { Tabs } from "@/components/ui/tabs";
+import { Input } from "@/design-system/components/input";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { Slider } from "@/design-system/components/slider";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Tabs } from "@/design-system/components/tabs";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { AutomataInfo } from "@/components/automata/automata-info";
 import { CatalogueListPanel } from "@/components/sidebar/catalogue-list-panel";
 import type { BoardPlan } from "@/lib/automata/board";
@@ -98,7 +100,7 @@ function Panel({ children }: { children: React.ReactNode }) {
 /** The small caption over a control group, with its description on the info dot. */
 function GroupLabel({ children, info }: { children: React.ReactNode; info?: React.ReactNode }) {
 	return (
-		<span className="flex items-center gap-1.5 text-[11px] text-fg-muted max-md:text-xs">
+		<span className="flex items-center gap-1.5 text-caption text-fg-muted">
 			{children}
 			{info ? <InfoDot>{info}</InfoDot> : null}
 		</span>
@@ -161,9 +163,7 @@ export function AutomataSidebar({
 							// picture. `isolate` pins the sticky headers' z-index contest inside this scroller so
 							// they can never rise over the transport bar next door.
 							<div className="ta-scroll-fade isolate h-full overflow-y-auto px-2 pb-6" data-sidebar-scroll>
-								{loading && (
-									<p className="p-3 text-[11px] leading-relaxed text-fg-muted max-md:text-xs">Loading the catalogue…</p>
-								)}
+								{loading && <p className="p-3 text-caption leading-relaxed text-fg-muted">Loading the catalogue…</p>}
 								<CatalogueListPanel items={tilings} selectedKey={cfg.tilingId} onSelect={onSelect} />
 							</div>
 						) : t === "Rule" ? (
@@ -258,23 +258,22 @@ export function AutomataSidebar({
 									{RULE_GROUPS.map((group) => (
 										<div key={group.label} className="space-y-1">
 											<span className="ta-label">{group.label}</span>
-											<div className="space-y-0.5">
+											<div className="relative flex flex-col gap-0.5">
+												<HoverPill />
 												{group.rules.map((r) => (
-													<button
-														key={r.rule}
-														type="button"
-														onClick={() => cfg.set("rule", r.rule)}
-														title={r.description}
-														className={cn(
-															"w-full cursor-pointer rounded-control px-2 py-1 text-left text-[11px] transition-colors max-md:min-h-11 max-md:text-[13px]",
-															cfg.rule === r.rule
-																? "bg-surface-overlay text-fg"
-																: "text-fg-muted hover:bg-surface-overlay hover:text-fg",
-														)}
-													>
-														<span className="font-medium">{r.name}</span>
-														<span className="ml-1.5 font-mono opacity-60">{r.rule}</span>
-													</button>
+													<Tooltip key={r.rule} label={r.description} side="right">
+														<button
+															type="button"
+															onClick={() => cfg.set("rule", r.rule)}
+															className={cn(
+																"w-full cursor-pointer rounded-control px-2 py-1 text-left text-caption transition-colors max-md:min-h-11 max-md:text-ui",
+																cfg.rule === r.rule ? "bg-surface-overlay text-fg" : "text-fg-muted hover:text-fg",
+															)}
+														>
+															<span className="font-medium">{r.name}</span>
+															<span className="ml-1.5 font-mono opacity-60">{r.rule}</span>
+														</button>
+													</Tooltip>
 												))}
 											</div>
 										</div>

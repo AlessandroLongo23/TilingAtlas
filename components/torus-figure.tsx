@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { prepare, screenMapper, type Box } from "@/lib/render/figureCanvas";
 import { polygonHue, TILE_FILL_ALPHA, tileFill, tileLine } from "@/lib/utils/renderTiling";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // Why fixing the period lattice first makes the search finite, in two panels.
 //
@@ -188,7 +188,7 @@ export function TorusFigure() {
 
 	useEffect(() => {
 		let alive = true;
-		fetch("/defense/period-figure.json.gz")
+		fetchData("/defense/period-figure.json.br")
 			.then((r) => shardBody<FigureData>(r))
 			.then((d: FigureData) => {
 				if (alive) setData(d);
@@ -538,7 +538,7 @@ export function TorusFigure() {
 	return (
 		<div className="not-prose flex flex-wrap items-start justify-center gap-5">
 			<figure className="m-0 flex flex-col items-center gap-1">
-				<div ref={planeHost} className="bg-surface-base relative aspect-square h-[46vh] rounded-2xl border border-line">
+				<div ref={planeHost} className="ta-well relative aspect-square h-[46vh] rounded-sheet">
 					<canvas ref={planeCanvas} className="absolute inset-0 h-full w-full" />
 				</div>
 				<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">
@@ -546,7 +546,7 @@ export function TorusFigure() {
 				</figcaption>
 			</figure>
 			<figure className="m-0 flex flex-col items-center gap-1">
-				<div ref={torusHost} className="bg-surface-base relative aspect-[4/3] h-[46vh] rounded-2xl border border-line">
+				<div ref={torusHost} className="ta-well relative aspect-[4/3] h-[46vh] rounded-sheet">
 					<canvas ref={torusCanvas} className="absolute inset-0 h-full w-full" />
 				</div>
 				<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">

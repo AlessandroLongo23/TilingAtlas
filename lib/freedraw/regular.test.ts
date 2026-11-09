@@ -74,8 +74,8 @@ describe("classifyRegular — mechanics", () => {
 
 const CATALOGUE = "public/freedraw";
 const load = (file: string): FreedrawPattern[] | null =>
-	existsSync(`${CATALOGUE}/${file}.gz`)
-		? decodeAtlas<FreedrawPattern>(JSON.parse(readDataText(`${CATALOGUE}/${file}.gz`)))
+	existsSync(`${CATALOGUE}/${file}.br`)
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readDataText(`${CATALOGUE}/${file}.br`)))
 		: null;
 
 const allRegular = (ps: FreedrawPattern[]) => ps.filter((p) => info(p).allRegular);

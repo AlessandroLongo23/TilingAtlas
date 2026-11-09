@@ -505,7 +505,7 @@ def run(source, board_id, out_prefix=None, ks=None, report_path=None, limit=None
         if not out_prefix:
             continue
         os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-        path = f"{out_prefix}-k{k}.json.gz"
+        path = f"{out_prefix}-k{k}.json.br"
         fd.write_json(path, recs, separators=(",", ":"))
         written.append((path, len(recs), os.path.getsize(path)))
 

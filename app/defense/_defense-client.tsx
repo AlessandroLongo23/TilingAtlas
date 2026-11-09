@@ -43,6 +43,7 @@ import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { Slide } from "@/lib/defense/slides";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/design-system/components/button";
 
 /** Rehearsal target, in minutes. The clock turns amber at 90% and red past it. */
 const TARGET_MINUTES = 35;
@@ -446,7 +447,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 				const cell = tiling ? cells[tiling] : undefined;
 				if (!cell) {
 					return (
-						<div className="not-prose flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+						<div className="ta-well not-prose flex aspect-square items-center justify-center p-4 text-center text-small text-fg-muted">
 							Unknown tiling id: {tiling ?? "(none)"}
 						</div>
 					);
@@ -471,7 +472,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							<figcaption
 								className={cn(
 									"mt-2 text-center text-[clamp(0.7rem,1vh+0.3vw,1rem)]",
-									marked ? "font-semibold text-accent" : "text-fg-muted",
+									marked ? "font-semibold text-fg-accent" : "text-fg-muted",
 								)}
 							>
 								{title}
@@ -503,8 +504,8 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 						<div
 							aria-label={ok ? "has the property" : "does not"}
 							className={cn(
-								"text-[clamp(1.7rem,5.4vh,3.2rem)] leading-none font-bold",
-								ok ? "text-emerald-600" : "text-red-600",
+								"text-[clamp(1.7rem,5.4vh,3.2rem)] leading-none font-semibold",
+								ok ? "text-signal-positive" : "text-danger",
 							)}
 						>
 							{ok ? "✓" : "✗"}
@@ -530,7 +531,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 									) : (
 										<div
 											key={id}
-											className="flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-2 text-center text-[0.55rem] text-fg-muted"
+											className="ta-well flex aspect-square items-center justify-center p-2 text-center text-micro text-fg-muted"
 										>
 											unknown: {id}
 										</div>
@@ -562,7 +563,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 				const orbits = tiling && source ? orbitsFor(tiling, source) : null;
 				if (!cell || !orbits || !tiling) {
 					return (
-						<div className="not-prose flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+						<div className="ta-well not-prose flex aspect-square items-center justify-center p-4 text-center text-small text-fg-muted">
 							No exact cell for {tiling ?? "(none)"}, so its orbits cannot be drawn.
 						</div>
 					);
@@ -613,7 +614,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 				const orbits = tiling && source ? orbitsFor(tiling, source) : null;
 				if (!cell || !orbits || !tiling) {
 					return (
-						<div className="not-prose flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+						<div className="ta-well not-prose flex aspect-square items-center justify-center p-4 text-center text-small text-fg-muted">
 							No exact cell for {tiling ?? "(none)"}, so its seed cannot be cut.
 						</div>
 					);
@@ -644,7 +645,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 				word ? (
 					<VertexFigureCard word={word} tiles={String(tiles) !== "no"} />
 				) : (
-					<div className="not-prose flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+					<div className="ta-well not-prose flex aspect-square items-center justify-center p-4 text-center text-small text-fg-muted">
 						vc-card with no word
 					</div>
 				),
@@ -655,7 +656,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 				patch ? (
 					<PatchCard patch={patch} label={label} interactive={String(fixed) !== "yes"} />
 				) : (
-					<div className="not-prose flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+					<div className="ta-well not-prose flex aspect-square items-center justify-center p-4 text-center text-small text-fg-muted">
 						No patch named.
 					</div>
 				),
@@ -836,10 +837,10 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 	if (slides.length === 0) {
 		return (
 			<main className="flex h-screen w-full items-center justify-center bg-surface-raised p-8">
-				<p className="max-w-md text-center text-sm text-fg-muted">
+				<p className="max-w-md text-center text-body text-fg-muted">
 					No talk content found. Author the deck at{" "}
-					<code className="rounded bg-surface-overlay px-1.5 py-0.5 text-accent">public/defense/talk.md</code>,
-					separating slides with a <code className="text-accent">---</code> fence.
+					<code className="rounded-tag bg-surface-overlay px-1.5 py-0.5 text-fg-accent">public/defense/talk.md</code>,
+					separating slides with a <code className="text-fg-accent">---</code> fence.
 				</p>
 			</main>
 		);
@@ -871,7 +872,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			>
 				{overview ? (
 					<div className="h-full w-full overflow-y-auto p-6">
-						<h2 className="mb-4 text-sm font-semibold tracking-wide text-fg-muted uppercase">Overview</h2>
+						<h2 className="ta-label mb-4">Overview</h2>
 						<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 							{slides.map((s) => (
 								<button
@@ -881,17 +882,16 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 										setIndex(s.index);
 										setOverview(false);
 									}}
+									// The deck's page is raised paper, so a card takes the base paper to stand off it.
 									className={cn(
-										"group relative flex h-40 flex-col overflow-hidden rounded-lg border p-3 text-left transition-colors",
-										s.index === index
-											? "border-accent bg-surface-overlay/50"
-											: "border-line bg-surface hover:border-accent/60",
+										"ta-card group relative flex h-40 flex-col overflow-hidden p-3 text-left transition-colors",
+										s.index === index ? "border-accent bg-surface-overlay/50" : "bg-surface hover:border-accent/60",
 									)}
 								>
 									<div className="pointer-events-none flex-1 overflow-hidden">
 										<SlideMarkdown content={s.content} components={components} compact />
 									</div>
-									<div className="mt-1 flex shrink-0 items-center justify-between text-[0.6rem] text-fg-muted">
+									<div className="mt-1 flex shrink-0 items-center justify-between text-micro text-fg-muted">
 										<span className="truncate">{s.title}</span>
 										<span>{s.number}</span>
 									</div>
@@ -903,7 +903,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 					<div className="flex h-full w-full flex-col">
 						<div className="h-0.5 w-full shrink-0 bg-transparent">
 							<div
-								className="h-full origin-left bg-accent transition-transform duration-300"
+								className="h-full origin-left bg-accent transition-transform motion-glide"
 								style={{ transform: `scaleX(${progress})`, width: "100%" }}
 							/>
 						</div>
@@ -928,6 +928,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							    somewhere to go, so the content still measures 68rem and still starts in exactly
 							    the same place. */}
 							<div
+								tabIndex={0}
 								className={cn(
 									"slide-frame w-full max-w-[69rem] overflow-y-auto p-2",
 									// A pinned or spread slide divides a height, so it needs one: `max-h-full`
@@ -941,7 +942,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							</div>
 						</div>
 
-						<div className="flex shrink-0 items-center justify-between px-[6vw] py-3 text-xs text-fg-muted max-md:gap-2 max-md:px-3 max-md:py-1 max-md:pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+						<div className="flex shrink-0 items-center justify-between px-[6vw] py-3 text-small text-fg-muted max-md:gap-2 max-md:px-3 max-md:py-1 max-md:pb-[max(0.25rem,env(safe-area-inset-bottom))]">
 							<span className="tabular-nums">
 								{current.number} / {slides.length}
 							</span>
@@ -950,39 +951,36 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							</span>
 							{/* The keyboard's moves, on screen for a phone: previous, the overview, next. */}
 							<span className="flex items-center gap-1 md:hidden">
-								<button
-									type="button"
+								<Button
+									variant="ghost"
+									size="bar"
+									icon={ChevronLeft}
 									onClick={retreat}
 									disabled={index === 0}
 									aria-label="Previous slide"
-									className="flex size-11 items-center justify-center rounded-control text-fg disabled:opacity-30"
-								>
-									<ChevronLeft size={20} />
-								</button>
-								<button
-									type="button"
+								/>
+								<Button
+									variant="ghost"
+									size="bar"
+									icon={LayoutGrid}
 									onClick={() => setOverview(true)}
 									aria-label="All slides"
-									className="flex size-11 items-center justify-center rounded-control text-fg"
-								>
-									<LayoutGrid size={18} />
-								</button>
-								<button
-									type="button"
+								/>
+								<Button
+									variant="ghost"
+									size="bar"
+									icon={ChevronRight}
 									onClick={advance}
 									disabled={index === lastIndex}
 									aria-label="Next slide"
-									className="flex size-11 items-center justify-center rounded-control text-fg disabled:opacity-30"
-								>
-									<ChevronRight size={20} />
-								</button>
+								/>
 							</span>
 							<span
 								className={cn(
 									"tabular-nums",
-									overTime && "font-semibold text-red-500",
-									nearTime && "text-amber-500",
-									!running && "opacity-50",
+									running ? "text-fg" : "text-fg-muted",
+									overTime && "font-semibold text-danger",
+									nearTime && "text-signal-attention",
 								)}
 							>
 								{formatClock(elapsed)} / {TARGET_MINUTES}:00

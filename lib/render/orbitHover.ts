@@ -4,6 +4,7 @@
 // behaving differently. The numbers come from Tiling.drawVertexOrbits, the original p5 implementation.
 
 import { applyMat2, invertMat2, isIdentityDeform, type Mat2 } from "@/lib/render/flatView";
+import { rayCastContains } from "@/lib/utils/canvasPick";
 
 /** Dot radius in CSS px. The shader's uRadiusPx and the hit-test radius are the same number by
  *  construction: hovering should start exactly when the pointer touches the disk, not before. */
@@ -104,20 +105,93 @@ export function hoveredOrbitAt(
 	let best = rWorld * rWorld;
 	let hovered = -1;
 	for (const d of dots) {
-		// Nearest lattice image: solve Δ = i·v1 + j·v2 over the reals, then round to integers.
-		const dx = world.x - d.x;
-		const dy = world.y - d.y;
-		const i = Math.round((dx * v2[1] - dy * v2[0]) / det);
-		const j = Math.round((dy * v1[0] - dx * v1[1]) / det);
-		const rx = dx - (i * v1[0] + j * v2[0]);
-		const ry = dy - (i * v1[1] + j * v2[1]);
-		const dist2 = rx * rx + ry * ry;
+		const p = nearImage(world, d.x, d.y, v1, v2, det);
+		const dist2 = (p.x - d.x) ** 2 + (p.y - d.y) ** 2;
 		if (dist2 < best) {
 			best = dist2;
 			hovered = d.orbit;
 		}
 	}
 	return hovered;
+}
+
+/** How near an edge the pointer has to be, in CSS px, for edge mode to pick its orbit. */
+export const ORBIT_EDGE_HIT_PX = 6;
+
+/** An edge or a tile of one fundamental cell, with its orbit: what edge and tile modes hit-test. */
+export interface OrbitSegment {
+	ax: number;
+	ay: number;
+	bx: number;
+	by: number;
+	orbit: number;
+}
+export interface OrbitTile {
+	ring: { x: number; y: number }[];
+	cx: number;
+	cy: number;
+	orbit: number;
+}
+
+/** `world` minus the lattice vector that brings it nearest (x, y): Δ = i·v1 + j·v2 solved, then rounded. */
+function nearImage(
+	world: { x: number; y: number },
+	x: number,
+	y: number,
+	v1: readonly [number, number],
+	v2: readonly [number, number],
+	det: number,
+): { x: number; y: number } {
+	const dx = world.x - x;
+	const dy = world.y - y;
+	const i = Math.round((dx * v2[1] - dy * v2[0]) / det);
+	const j = Math.round((dy * v1[0] - dx * v1[1]) / det);
+	return { x: world.x - (i * v1[0] + j * v2[0]), y: world.y - (i * v1[1] + j * v2[1]) };
+}
+
+/** Which edge orbit is under `world`, or -1: the nearest edge within ORBIT_EDGE_HIT_PX, any lattice image. */
+export function hoveredEdgeAt(
+	segs: readonly OrbitSegment[],
+	world: { x: number; y: number } | null,
+	v1: readonly [number, number],
+	v2: readonly [number, number],
+	det: number,
+	zoom: number,
+): number {
+	if (!world || Math.abs(det) < 1e-9 || zoom <= 0) return -1;
+	let best = (ORBIT_EDGE_HIT_PX / zoom) ** 2;
+	let hovered = -1;
+	for (const s of segs) {
+		const p = nearImage(world, (s.ax + s.bx) / 2, (s.ay + s.by) / 2, v1, v2, det);
+		const ex = s.bx - s.ax,
+			ey = s.by - s.ay;
+		const t = Math.max(0, Math.min(1, ((p.x - s.ax) * ex + (p.y - s.ay) * ey) / (ex * ex + ey * ey || 1)));
+		const d2 = (p.x - s.ax - t * ex) ** 2 + (p.y - s.ay - t * ey) ** 2;
+		if (d2 < best) {
+			best = d2;
+			hovered = s.orbit;
+		}
+	}
+	return hovered;
+}
+
+/** Which tile orbit is under `world`, or -1. A tile can reach past its cell, so the image nearest its
+ *  centroid and that image's eight neighbours are all tried. */
+export function hoveredTileAt(
+	tiles: readonly OrbitTile[],
+	world: { x: number; y: number } | null,
+	v1: readonly [number, number],
+	v2: readonly [number, number],
+	det: number,
+): number {
+	if (!world || Math.abs(det) < 1e-9) return -1;
+	for (const t of tiles) {
+		const p = nearImage(world, t.cx, t.cy, v1, v2, det);
+		for (let i = -1; i <= 1; i++)
+			for (let j = -1; j <= 1; j++)
+				if (rayCastContains(t.ring, p.x + i * v1[0] + j * v2[0], p.y + i * v1[1] + j * v2[1])) return t.orbit;
+	}
+	return -1;
 }
 
 /**

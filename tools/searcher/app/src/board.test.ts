@@ -6,7 +6,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } fro
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { check, cyclicKey, deadWeight, followFace, moveVertex, parse, printedLabels, removeVertices, renameAngle, requiresFaces, serialize, withoutFaces } from "./board";
+import { check, cyclicKey, deadWeight, engineBoard, engineText, followFace, moveVertex, parse, printedLabels, removeVertices, renameAngle, requiresFaces, serialize, withoutFaces } from "./board";
 
 const SEARCHER = join(__dirname, "../..");
 const ENGINE = join(SEARCHER, process.platform === "win32" ? "tilesearch.exe" : "tilesearch");
@@ -56,7 +56,7 @@ const BROKEN: Record<string, string> = {
 	"require with nothing": base + "require\n",
 	"unknown statement": base + "colour red\n",
 	"permutations maybe": base + "permutations maybe\n",
-	"search faces": base + "search faces\n",
+	"search for something else": base + "search edges\n",
 	"geometry euclidean": base + "geometry euclidean\n",
 	"comment only after error": base + "vertex A4 Q   # Q is a typo\n# trailing\n",
 	"power zero": base + "vertex A4^0 A4^4\n",
@@ -207,5 +207,48 @@ describe("required faces follow their face", () => {
 		const lost = { ...b, faces: [b.faces[0]] };
 		expect(check(lost).filter((p) => p.where.kind === "require").map((p) => p.severity)).toEqual(["error"]);
 		expect(check(b).filter((p) => p.where.kind === "require")).toEqual([]);
+	});
+});
+
+// Marek's face-first search (AL, 2026-11-09): k counts tile orbits, the engine running the board with faces and
+// vertices swapped
+describe("search faces", () => {
+	const text = [
+		"name sq",
+		"k 1 2",
+		"angle A 90",
+		"angle B 270",
+		"angle Pi",
+		"face A Pi A A Pi A",
+		"face A B A A A A",
+		"vertex A A A A",
+		"vertex A B",
+		"vertex Pi Pi",
+		"vertex A A Pi",
+		"permutations yes",
+		"initial 2",
+		"require face A Pi A A Pi A",
+		"search faces",
+	].join("\n");
+	it("is a board, whose swap the engine reads", () => {
+		expect(parse(text).problems.filter((p) => p.severity === "error")).toEqual([]);
+		const e = engineBoard(parse(text).board);
+		// each face written out is a vertex, each vertex's orders a face (A A Pi has one: turned or mirrored it is the
+		// same), once each
+		expect(e.vertices.map((v) => v.word.join(" "))).toEqual(["A Pi A A Pi A", "A B A A A A"]);
+		expect(e.faces.map((f) => `${f.word.join(" ")} x ${f.repeat}`)).toEqual(["A x 4", "A B x 1", "Pi x 2", "A A Pi x 1"]);
+		expect(e.permutations).toBe(false);
+		// the initial vertex and the required face, swapped: a face of its orders, and the vertex that face became
+		expect(e.require).toEqual([{ set: [], faces: [["A", "B"]] }, { set: [1] }]);
+		expect(e.extra.some((x) => /search/.test(x.text))).toBe(false);
+		if (existsSync(ENGINE)) expect(engine(engineText(text)).line).toBeNull();
+	});
+	it("needs every face finite", () => {
+		const inf = text.replace("face A B A A A A", "face A x inf");
+		expect(parse(inf).problems.some((p) => p.severity === "error" && /finite/.test(p.message))).toBe(true);
+	});
+	it("leaves any other board as it is", () => {
+		const plain = text.replace("\nsearch faces", "");
+		expect(engineText(plain)).toBe(plain);
 	});
 });

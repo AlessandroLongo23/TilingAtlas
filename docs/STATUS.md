@@ -6,6 +6,43 @@
 > entry of each ledger. **Never write history here.** — last updated 2026-08-23, CC
 > (acting as TA too, AL authorization 2026-07-10). Last touched 2026-09-06.
 
+## public/ is brotli now; the budget and where the data goes next (2026-11-09)
+
+Shipped data is `.json.br` (CLAUDE.md "Shipped data under public/"): `public/` 506 MB, under
+the 650 MB budget (693 MB with everything in flight before). Tracked `public/` is one copy per kept deployment and
+every shard version stays in git (pack 784 MB), so compression only buys time. Production now reads the data from
+R2 (`data.thetilingatlas.com`, `fetchData`, `scripts/data-sync.mjs`; all 21,003 files uploaded), live once the
+code is pushed. Open: recompress the q9 fast pass at q10 (about 13% off hyperbolic-poly); store half of each
+hyperbolic glue involution (about 31% off that shelf); whether `public/` data leaves git. Detail: DEVELOPMENT_NOTES
+"Shipped data moves from gzip to brotli" and "Production reads the data from Cloudflare R2".
+
+## /catalogue is the page; classifications and the regular shelf past k = 10 (2026-11-07)
+
+feat/browse-merge is merged (24934bf8, not pushed): /play and /library are one /catalogue page, grid and tiling
+lenses over a browse tree. Classifications (`lib/classifications.ts`) are tree nodes under a "Classifications"
+heading with a checklist icon, `/catalogue?set=<slug>`: lists someone proved complete, gathered from the shelves.
+Live: Krötenheerdt (135) and Galebach's 203 edge-homogeneous tilings, all 203 in the Atlas. Admission: a named,
+proven-complete list. Both lists are now also confirmed complete with no bound on k by our own Delaney–Dress search
+(`tools/ctrnact-oracle/homogeneous.py`, 2026-11-08, about a second each); open: 22 of the 203 are strongly
+edge-homogeneous where Chavey is quoted at 20 (asked Galebach). Both are member lists now
+(`public/classifications/*.json.br`), each member paired with the search's symbol by its own record's symbol
+(`scripts/atlas/symbols.ts`); the CSV export of a classification carries the symbols.
+Third: strongly edge-homogeneous (22, 2026-11-09), Chavey's reported 20 still unexplained.
+Fourth: face-homogeneous to k = 10 (1,441, a scan of the complete shelf). Above k = 10 open: the figure search does not
+close it; next idea is a late-commitment search by vertex stars. DEVELOPMENT_NOTES 2026-11-09.
+
+**Exception to the 2026-08-18 rule below.** The regular shelf is complete to k = 16 (`REGULAR_COMPLETE_K`,
+1,792,288 tilings; k = 11 to 16 built 2026-11-09 by `scripts/build-regular-shards.ts` from the engine's k <= 16 run,
+k >= 13 split into 100,000-tiling parts, `REGULAR_SHARD_PARTS`); above it, per AL 2026-11-06, a k holds what
+targeted Searcher runs found, labelled as partial (`REGULAR_SHARD_KS`, k 8 to 22 today). Face-homogeneous to
+k = 16: another session's run of `scripts/classify-face-homogeneous.ts` (now checked against a face-figure search
+of 13,144 tilings to k = 54) was scanning the k <= 16 shelf at 20:06. Known bug: after a deep link into a split k, the sidebar
+counts only the loaded part (that k's Load button fixes it). Those shards load on demand, never at mount. Running at nice 19 since 2026-11-07, resumable:
+`targeted/import-runs.sh`, ~63,200 tilings from four complete boards (k ≤ 30), log
+`experiments/results/tilesearch-exact.log`. NEXT when it ends: add k = 23 to 30 to `REGULAR_SHARD_KS`, regenerate
+the manifest, rerun `scripts/classify-edge-homogeneous.ts --match-only`. Detail: DEVELOPMENT_NOTES
+"feat/browse-merge merged; classifications move into the browse tree".
+
 ## Marek Čtrnáct's shelf review: what is fixed and what is open (2026-08-24)
 
 **FIXED.** Every spherical and hyperbolic /play deep link opened the wrong tiling (arch-cuboctahedron,
@@ -362,7 +399,7 @@ analytic ground truths as the gate: plain hexv k=1 = 2, pent k=1 = 2, hexm = 1, 
 ## /library opens in 73 MB, down from 756 (2026-08-18)
 
 The eager-load deferral (written 2026-08-17, committed since) plus the facet-memo fix. Measured with
-`node scripts/measure-page-load.mjs` against a PRODUCTION build, so it is like-for-like with the
+`node scripts/measure-page-load.mjs` (since replaced by `scripts/bench-journey.mjs --phases cold`) against a PRODUCTION build, so it is like-for-like with the
 deployed figure: **67 JSON requests, 1.2 MB on the wire, 73 MB of JS heap**, against the deployed
 build's 118 / 14.1 MB / 756 MB. (The dev server reads 111 MB for the same page; use prod for any
 number that gets quoted.)

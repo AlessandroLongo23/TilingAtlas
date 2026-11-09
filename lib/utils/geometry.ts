@@ -2,15 +2,15 @@ import { tolerance } from "./tolerance";
 import {
 	parametricStarRegex,
 	equilateralPolygonRegex,
-	Vector,
 	regularStarRegex,
 	regularPolygonRegex,
-	type PolygonSignatureData,
-	PolygonType,
-	StarVertexTypes,
-	Polygon,
 	genericPolygonRegex,
-} from "@/classes";
+} from "@/classes/algorithm/regex";
+import { Vector } from "@/classes/Vector";
+import { type PolygonSignatureData } from "@/classes/algorithm/PolygonSignature";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { StarVertexTypes } from "@/classes/polygons/PolygonType";
+import { Polygon } from "@/classes/polygons/Polygon";
 import { TriangleType, QuadrilateralType, type TriangleSignature, type QuadrilateralSignature } from "./types";
 import { isWithinTolerance } from "./math";
 

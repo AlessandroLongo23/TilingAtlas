@@ -2,8 +2,9 @@
 // for it). It says what changed and opens the atlas's download page; installing stays by hand, since the app
 // is not signed and macOS will not let an unsigned app replace itself.
 import { Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
+import { Button } from "@/design-system/components/button";
+import { Modal } from "@/design-system/components/modal";
+import { Notice } from "@/design-system/components/notice";
 import type { Update } from "./bridge";
 
 const api = () => window.tilesearch;
@@ -22,7 +23,7 @@ function Note({ text }: { text: string }) {
 			{label ? <span className="font-medium text-fg">{label} </span> : null}
 			{rest.split(/(`[^`]+`)/).map((part, i) =>
 				/^`.+`$/.test(part) ? (
-					<code key={i} className="font-mono text-xs">
+					<code key={i} className="font-mono text-small">
 						{part.slice(1, -1)}
 					</code>
 				) : (
@@ -36,7 +37,7 @@ function Note({ text }: { text: string }) {
 export function UpdateModal({ update, current, onClose }: { update: Update; current: string; onClose: () => void }) {
 	return (
 		<Modal
-			isOpen
+			open
 			onOpenChange={(o) => !o && onClose()}
 			title={`The Tiling Searcher ${update.version} is out`}
 			size="md"
@@ -51,11 +52,11 @@ export function UpdateModal({ update, current, onClose }: { update: Update; curr
 				</div>
 			}
 		>
-			<div className="space-y-4 p-5 text-sm text-fg-secondary">
+			<div className="space-y-4 p-5 text-body text-fg-secondary">
 				<p>You have {current}.</p>
 				{update.notes.length ? (
 					<section className="space-y-2">
-						<h3 className="text-sm font-semibold text-fg">What&rsquo;s new</h3>
+						<h3 className="text-body font-semibold text-fg">What&rsquo;s new</h3>
 						<ul className="list-disc space-y-1.5 pl-5 leading-relaxed">
 							{update.notes.map((n, i) => (
 								<Note key={i} text={n} />
@@ -63,9 +64,9 @@ export function UpdateModal({ update, current, onClose }: { update: Update; curr
 						</ul>
 					</section>
 				) : null}
-				<p className="rounded-control bg-surface-sunken px-3 py-2.5 text-xs leading-relaxed">
+				<Notice tone="info" className="text-small leading-relaxed">
 					{INSTALL[update.os]} Your runs and settings stay where they are.
-				</p>
+				</Notice>
 			</div>
 		</Modal>
 	);

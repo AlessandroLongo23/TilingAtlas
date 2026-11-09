@@ -121,7 +121,7 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX,
 			boundRef.current = null;
 			if (!t?.darts) return;
 			const all = allEdgesDrawn(mode);
-			const walk = buildWalk(t.darts, t.edge, { allDrawn: all });
+			const walk = buildWalk(t.darts, t.edge, { allDrawn: all, shapeRanks: t.shapeRanks });
 			gl.setWalk(walk);
 			const a0 = starFamilyOf(t)?.defaultAlphaDeg;
 			boundRef.current = {

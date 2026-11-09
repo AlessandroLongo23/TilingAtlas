@@ -159,41 +159,41 @@ export const freedrawKNoun = (grid: FreedrawGrid): string =>
  * it — Marek solved it to k=9, where one slice is 22,361 patterns / 58 MB.
  */
 export const FREEDRAW_EAGER_FILES = [
-	"/freedraw/solutions.json.gz",
-	"/freedraw/solutions-k4.json.gz",
-	"/freedraw/solutions-k5.json.gz",
-	"/freedraw/tri-solutions.json.gz",
-	"/freedraw/tri-solutions-k4.json.gz",
-	"/freedraw/ts-solutions-k1.json.gz",
-	"/freedraw/ts-solutions-k2.json.gz",
-	"/freedraw/ts-solutions-k3.json.gz",
-	"/freedraw/hex-solutions-k1.json.gz",
-	"/freedraw/hex-solutions-k2.json.gz",
-	"/freedraw/hex-solutions-k3.json.gz",
-	"/freedraw/hex-solutions-k4.json.gz",
-	"/freedraw/hex-solutions-k5.json.gz",
-	"/freedraw/hex-solutions-k6.json.gz",
+	"/freedraw/solutions.json.br",
+	"/freedraw/solutions-k4.json.br",
+	"/freedraw/solutions-k5.json.br",
+	"/freedraw/tri-solutions.json.br",
+	"/freedraw/tri-solutions-k4.json.br",
+	"/freedraw/ts-solutions-k1.json.br",
+	"/freedraw/ts-solutions-k2.json.br",
+	"/freedraw/ts-solutions-k3.json.br",
+	"/freedraw/hex-solutions-k1.json.br",
+	"/freedraw/hex-solutions-k2.json.br",
+	"/freedraw/hex-solutions-k3.json.br",
+	"/freedraw/hex-solutions-k4.json.br",
+	"/freedraw/hex-solutions-k5.json.br",
+	"/freedraw/hex-solutions-k6.json.br",
 	// No sch236 k=5: the only slice we ever had came from the withdrawn solver build. See the note in
 	// components/freedraw/planar-freedraw.tsx.
-	"/freedraw/sch236-solutions-k3.json.gz",
-	"/freedraw/sch236-solutions-k4.json.gz",
-	"/freedraw/sch244-solutions-k2.json.gz",
-	"/freedraw/sch244-solutions-k3.json.gz",
+	"/freedraw/sch236-solutions-k3.json.br",
+	"/freedraw/sch236-solutions-k4.json.br",
+	"/freedraw/sch244-solutions-k2.json.br",
+	"/freedraw/sch244-solutions-k3.json.br",
 	// The two Archimedean boards, 2026-08-29. 3.4.6.4 developed 18,992/18,992 and 4.8.8 71,331/71,331,
 	// both with 0 failures, and 4.8.8 reproduces every per-k count in its census. On each the digon-free
 	// slice — nothing drawn, so the bare underlying tiling — came back exactly once per k, which is the
 	// check that says the grid is the right one and not merely a consistent one.
-	"/freedraw/4436-solutions-k1.json.gz",
-	"/freedraw/4436-solutions-k2.json.gz",
-	"/freedraw/4436-solutions-k3.json.gz",
-	"/freedraw/4436-solutions-k4.json.gz",
-	"/freedraw/488-solutions-k1.json.gz",
-	"/freedraw/488-solutions-k2.json.gz",
-	"/freedraw/488-solutions-k3.json.gz",
-	"/freedraw/488-solutions-k4.json.gz",
-	"/freedraw/488-solutions-k5.json.gz",
-	"/freedraw/488-solutions-k6.json.gz",
-	"/freedraw/488-solutions-k7.json.gz",
+	"/freedraw/4436-solutions-k1.json.br",
+	"/freedraw/4436-solutions-k2.json.br",
+	"/freedraw/4436-solutions-k3.json.br",
+	"/freedraw/4436-solutions-k4.json.br",
+	"/freedraw/488-solutions-k1.json.br",
+	"/freedraw/488-solutions-k2.json.br",
+	"/freedraw/488-solutions-k3.json.br",
+	"/freedraw/488-solutions-k4.json.br",
+	"/freedraw/488-solutions-k5.json.br",
+	"/freedraw/488-solutions-k6.json.br",
+	"/freedraw/488-solutions-k7.json.br",
 ];
 
 /** The dense tails, per shard prefix: k slices too big to load with the atlas, fetched when that k comes
@@ -216,7 +216,7 @@ export const FREEDRAW_LAZY_KS: Record<string, number[]> = {
 export function freedrawLazyShardsForK(k: number): { url: string; k: number }[] {
 	return Object.entries(FREEDRAW_LAZY_KS)
 		.filter(([, ks]) => ks.includes(k))
-		.map(([prefix]) => ({ url: `/freedraw/${prefix}-solutions-k${k}.json.gz`, k }));
+		.map(([prefix]) => ({ url: `/freedraw/${prefix}-solutions-k${k}.json.br`, k }));
 }
 
 export const cosetCount = (p: Pick<FreedrawPattern, "a" | "d">) => p.a * p.d;

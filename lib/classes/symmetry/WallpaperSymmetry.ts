@@ -49,12 +49,49 @@ export const _inLatticeForTest = inLattice;
 const applyRot = (j: number, t: Cyclotomic, z: Cyclotomic) => z.mulZeta(j).add(t);
 const applyRef = (j: number, t: Cyclotomic, z: Cyclotomic) => z.conj().mulZeta(j).add(t);
 
+// The seed vertices bucketed by position modulo Λ (float fractional coordinates, a bucket 1e-6 of a period),
+// so `preserves` puts to the exact test only the vertices a float says can match. Scanning the whole seed
+// made the analysis cubic in the cell: 8 s on 330 vertices. The lookup reads the 8 neighbouring buckets
+// too, so float error (about 1e-12 here) cannot hide the vertex that matches; inLattice still decides.
+const BUCKETS = 1e6;
+type SeedIndex = { T1: Cyclotomic; T2: Cyclotomic; near: (z: Cyclotomic) => Cyclotomic[] };
+const seedIndexes = new WeakMap<Cyclotomic[], SeedIndex>();
+function seedIndex(T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[]): SeedIndex {
+	const hit = seedIndexes.get(seed);
+	if (hit && hit.T1 === T1 && hit.T2 === T2) return hit;
+	const [a, b] = [T1.toVector(), T2.toVector()];
+	const det = a.x * b.y - a.y * b.x;
+	const cellOf = (z: Cyclotomic): [number, number] => {
+		const p = z.toVector();
+		const u = (p.x * b.y - p.y * b.x) / det;
+		const v = (a.x * p.y - a.y * p.x) / det;
+		return [Math.floor((u - Math.floor(u)) * BUCKETS) % BUCKETS, Math.floor((v - Math.floor(v)) * BUCKETS) % BUCKETS];
+	};
+	const at = new Map<string, Cyclotomic[]>();
+	for (const w of seed) {
+		const key = cellOf(w).join();
+		at.set(key, [...(at.get(key) ?? []), w]);
+	}
+	const near = (z: Cyclotomic) => {
+		const [i, j] = cellOf(z);
+		const out: Cyclotomic[] = [];
+		for (const di of [-1, 0, 1])
+			for (const dj of [-1, 0, 1])
+				out.push(...(at.get(`${(i + di + BUCKETS) % BUCKETS},${(j + dj + BUCKETS) % BUCKETS}`) ?? []));
+		return out;
+	};
+	const index = { T1, T2, near };
+	seedIndexes.set(seed, index);
+	return index;
+}
+
 // g preserves the tiling iff every seed vertex maps into (seed + Λ): g(v) ≡ some seed w (mod Λ).
 // This is THE decisive test — exact, congruence-closed (mod the translation lattice), no tolerance.
 function preserves(T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[], g: (z: Cyclotomic) => Cyclotomic): boolean {
+	const { near } = seedIndex(T1, T2, seed);
 	for (const v of seed) {
 		const gv = g(v);
-		if (!seed.some((w) => inLattice(T1, T2, gv.sub(w)))) return false;
+		if (!near(gv).some((w) => inLattice(T1, T2, gv.sub(w)))) return false;
 	}
 	return true;
 }

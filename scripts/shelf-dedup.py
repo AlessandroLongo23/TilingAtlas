@@ -37,7 +37,7 @@ build emits, from any tier and any palette, and a check that lives downstream of
 only kind that cannot be bypassed by adding one.
 
 Run (after build-period-atlas.ts):
-  python3 scripts/shelf-dedup.py --shelf public/reference-atlas-period.json.gz --write \
+  python3 scripts/shelf-dedup.py --shelf public/reference-atlas-period.json.br --write \
       --log experiments/results/period-shelf-dedup-2026-08-09.log
 """
 import argparse
@@ -68,7 +68,7 @@ def log(msg):
 
 
 def shard_paths(main_path):
-    m = re.search(r"\.json(\.gz)?$", main_path)
+    m = re.search(r"\.json(\.br)?$", main_path)
     base, ext = main_path[: m.start()], m.group(0)
     return sorted(glob.glob(f"{base}-k*{ext}"))
 

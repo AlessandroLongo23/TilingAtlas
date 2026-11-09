@@ -2,12 +2,12 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { polyhedronForId, useSolidsLoaded } from "@/lib/render/sphericalSolids";
 import { buildBubbleSphere } from "@/lib/render/sphBubble";
 import { buildFlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { applyStudioMaterials } from "@/lib/render/sphericalLook";
 import { mountSpinningThumb, thumbPhase } from "@/lib/render/sphereThumbStage";
-import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
+import { ThumbnailSkeleton } from "@/design-system/components/thumbnail-skeleton";
 
 // A slowly turning 3D preview of a spherical tiling for the library grid and /play sidebar. It builds
 // the solid with the same builder as the interactive view (one source of truth for the look) and hands
@@ -44,6 +44,8 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 	// hyperbolic thumbnails' exact-colours choice.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
 	const ready = readyKey === solidId;
+	// A non-convex or genus solid is not drawable until its shelf loads; the build re-runs when it does.
+	const solidsLoaded = useSolidsLoaded();
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -84,11 +86,11 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 			onReady: () => setReadyKey(solidId),
 			onFail: () => setFailed(true),
 		});
-	}, [solidId, size, hueOffset, bitesKey]);
+	}, [solidId, size, hueOffset, bitesKey, solidsLoaded]);
 
 	if (failed) {
 		return (
-			<div className="flex h-full w-full items-center justify-center rounded bg-surface-raised text-[10px] text-fg-disabled">
+			<div className="flex h-full w-full items-center justify-center rounded-tag bg-surface-raised text-micro text-fg-muted">
 				sphere
 			</div>
 		);
@@ -102,7 +104,7 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 				width={size}
 				height={size}
 				aria-label={`${solidId} spherical tiling`}
-				className={`relative block h-full w-full rounded object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
+				className={`relative block h-full w-full rounded-tag object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
 			/>
 		</div>
 	);

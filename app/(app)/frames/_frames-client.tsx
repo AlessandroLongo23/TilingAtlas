@@ -21,10 +21,10 @@ import { applyViewTransform, type AperiodicFrame } from "@/lib/hooks/useAperiodi
 import { STROKE_CSS, STROKE_WIDTH, strokePxAt, usePatchCanvas } from "@/lib/hooks/usePatchCanvas";
 import { useImmersiveShortcuts } from "@/components/fullscreen-toggle";
 import { PeekTitle } from "@/components/dock-peek";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CornerControls } from "@/components/ui/corner-controls";
-import { Pagination } from "@/components/ui/pagination";
+import { Button } from "@/design-system/components/button";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { CornerControls } from "@/design-system/components/corner-controls";
+import { Pagination } from "@/design-system/components/pagination";
 import { PATCH_LIGHT } from "@/lib/hooks/usePatchCanvas";
 import {
 	HEESCH_GRIDS,
@@ -389,7 +389,7 @@ export function FramesClient() {
 				<Section label="Cells">
 					<Segmented options={sizeOptions} value={setId} onChange={setSetId} cols={SET_COLS} fill={false} />
 					{setInfo && (
-						<p className="text-[11px] text-fg-muted max-md:text-xs">
+						<p className="text-caption text-fg-muted">
 							{setInfo.count === 1
 								? `The one free ${polyformName(setInfo)}`
 								: `All ${setInfo.count.toLocaleString()} free ${polyformPlural(setInfo.grid, setInfo.cells)}`}
@@ -424,8 +424,8 @@ export function FramesClient() {
 	const header = (
 		<>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-[15px] leading-tight font-semibold text-fg">{title}</h1>
-				<p className="truncate text-xs text-fg-muted" title={sub}>
+				<h1 className="text-title leading-tight font-semibold text-fg">{title}</h1>
+				<p className="truncate text-small text-fg-muted" title={sub}>
 					{sub}
 				</p>
 			</div>
@@ -455,11 +455,15 @@ export function FramesClient() {
 					}
 				>
 					<Segmented
-						options={shapes.slice(sPageStart, sPageStart + PAGE_SIZE).map(({ s, f }, k) => ({
-							v: String(sPageStart + k),
-							label: <RingGlyph rings={[outlinePage(s)]} />,
-							title: `${polyformName(s)} · ${plural(f, "frame")}`,
-						}))}
+						options={shapes.slice(sPageStart, sPageStart + PAGE_SIZE).map(({ s, f }, k) => {
+							const title = `${polyformName(s)} · ${plural(f, "frame")}`;
+							return {
+								v: String(sPageStart + k),
+								label: <RingGlyph rings={[outlinePage(s)]} />,
+								title,
+								ariaLabel: title,
+							};
+						})}
 						value={String(at)}
 						onChange={(v) => selectShape(Number(v))}
 						cols={PICKER_COLS}
@@ -525,6 +529,9 @@ export function FramesClient() {
 							<Segmented
 								options={Array.from({ length: Math.max(0, Math.min(PAGE_SIZE, frameCount - fPageStart)) }, (_, k) => {
 									const f = frameAt(fPageStart + k);
+									const title = f
+										? `${plural(f.n, "tile")} a tiling${f.h.length ? `, ${plural(f.h.length, "hole")}` : ""}${f.c ? `, ${f.c} tilings` : ""}`
+										: "Loading";
 									return {
 										v: String(fPageStart + k),
 										label: f ? (
@@ -532,9 +539,8 @@ export function FramesClient() {
 										) : (
 											<span className="my-0.5 block h-[22px] w-[22px]" />
 										),
-										title: f
-											? `${plural(f.n, "tile")} a tiling${f.h.length ? `, ${plural(f.h.length, "hole")}` : ""}${f.c ? `, ${f.c} tilings` : ""}`
-											: "Loading",
+										title,
+										ariaLabel: title,
 									};
 								})}
 								value={String(fAt)}
@@ -608,7 +614,7 @@ export function FramesClient() {
 				<canvas ref={canvasRef} className="block h-full w-full" />
 				<canvas ref={overlayRef} aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full" />
 				{allShapes && !shapes.length && (
-					<p className="absolute inset-0 m-auto h-fit max-w-sm px-4 text-center text-sm text-fg-muted">
+					<p className="absolute inset-0 m-auto h-fit max-w-sm px-4 text-center text-body text-fg-muted">
 						{emptied
 							? `Every region of this set is one tiling up to ${hiddenKinds(hide)}, so hiding those leaves nothing. Untick the boxes to see all ${setInfo.regions.toLocaleString()}.`
 							: `No shape of this size has a region of at most ${setInfo?.N ?? "?"} tiles a tiling.`}

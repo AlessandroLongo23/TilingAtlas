@@ -275,9 +275,10 @@ export function defaultZoomForCell(
 	v2: { x: number; y: number },
 	cardWidthPx: number,
 	periods = 3,
+	min = ZOOM_MIN,
 ): number {
 	const span = Math.max(Math.hypot(v1.x, v1.y), Math.hypot(v2.x, v2.y));
 	if (!(span > 0) || !(cardWidthPx > 0)) return ZOOM_RESET;
 	const z = cardWidthPx / (periods * span);
-	return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+	return Math.max(min, Math.min(ZOOM_MAX, z));
 }

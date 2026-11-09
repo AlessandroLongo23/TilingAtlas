@@ -20,8 +20,8 @@ import {
 	WallGroup,
 	WallSubLabel,
 } from "@/components/freedraw/filter-wall";
-import { OptionWall } from "@/components/ui/option-wall";
-import { Pagination } from "@/components/ui/pagination";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Pagination } from "@/design-system/components/pagination";
 import { DEFAULT_TILE_RULE, WIRINGS, type Wiring } from "@/lib/freedraw/arcs";
 import { analyseFaces, rankLabel, summarise } from "@/lib/freedraw/faces";
 import {
@@ -42,7 +42,7 @@ import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { requestViewReset } from "@/lib/render/touchGestures";
 import { serializePlayState } from "@/lib/services/playUrlState";
-import { readAtlas } from "@/lib/services/atlasCodec";
+import { fetchData, readAtlas } from "@/lib/services/atlasCodec";
 import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 // The four base grids, then the Schwarz and Archimedean boards: one selection, one wall of two rows.
@@ -148,68 +148,68 @@ const PAGE_SIZE = 240;
 // file, not the whole ~35MB / 112k-pattern atlas. Cached module-wide, so switching back is instant.
 const CATALOGUE: Record<FreedrawCatalogueGrid, { url: string; ks: number[]; heavy?: true }[]> = {
 	square: [
-		{ url: "/freedraw/solutions.json.gz", ks: [1, 2, 3] },
-		{ url: "/freedraw/solutions-k4.json.gz", ks: [4] },
-		{ url: "/freedraw/solutions-k5.json.gz", ks: [5] },
+		{ url: "/freedraw/solutions.json.br", ks: [1, 2, 3] },
+		{ url: "/freedraw/solutions-k4.json.br", ks: [4] },
+		{ url: "/freedraw/solutions-k5.json.br", ks: [5] },
 	],
 	triangle: [
-		{ url: "/freedraw/tri-solutions.json.gz", ks: [1, 2, 3] },
-		{ url: "/freedraw/tri-solutions-k4.json.gz", ks: [4] },
+		{ url: "/freedraw/tri-solutions.json.br", ks: [1, 2, 3] },
+		{ url: "/freedraw/tri-solutions-k4.json.br", ks: [4] },
 	],
 	ts: [
-		{ url: "/freedraw/ts-solutions-k1.json.gz", ks: [1] },
-		{ url: "/freedraw/ts-solutions-k2.json.gz", ks: [2] },
-		{ url: "/freedraw/ts-solutions-k3.json.gz", ks: [3] },
+		{ url: "/freedraw/ts-solutions-k1.json.br", ks: [1] },
+		{ url: "/freedraw/ts-solutions-k2.json.br", ks: [2] },
+		{ url: "/freedraw/ts-solutions-k3.json.br", ks: [3] },
 	],
 	// k=5 is DELIBERATELY ABSENT. The slice we had came from the solver build Marek withdrew on
 	// 2026-07-29 (it dropped every tiling drawing the longest edge class), and his corrected drop
 	// only reaches k=4. Showing six known-short patterns beside a corrected k=3 and k=4 would make
 	// the board look enumerated to k=5 when it is not. Restore the entry when a corrected k=5 exists.
 	sch236: [
-		{ url: "/freedraw/sch236-solutions-k3.json.gz", ks: [3] },
-		{ url: "/freedraw/sch236-solutions-k4.json.gz", ks: [4] },
+		{ url: "/freedraw/sch236-solutions-k3.json.br", ks: [3] },
+		{ url: "/freedraw/sch236-solutions-k4.json.br", ks: [4] },
 	],
 	// The (2,4,4) board's k=4 slice is 12,361 patterns / 18.8 MB, so it is `heavy` like the hexagonal
 	// tail: "All" skips it and picking its chip loads it.
 	sch244: [
-		{ url: "/freedraw/sch244-solutions-k2.json.gz", ks: [2] },
-		{ url: "/freedraw/sch244-solutions-k3.json.gz", ks: [3] },
-		{ url: "/freedraw/sch244-solutions-k4.json.gz", ks: [4], heavy: true },
+		{ url: "/freedraw/sch244-solutions-k2.json.br", ks: [2] },
+		{ url: "/freedraw/sch244-solutions-k3.json.br", ks: [3] },
+		{ url: "/freedraw/sch244-solutions-k4.json.br", ks: [4], heavy: true },
 	],
 	// The hexagonal grid runs deep — Marek solved it to k=9, where one slice is 22,361 patterns / 58 MB.
 	// `heavy` keeps those three out of the "All" fetch; picking their k chip still loads them.
 	hex: [
-		{ url: "/freedraw/hex-solutions-k1.json.gz", ks: [1] },
-		{ url: "/freedraw/hex-solutions-k2.json.gz", ks: [2] },
-		{ url: "/freedraw/hex-solutions-k3.json.gz", ks: [3] },
-		{ url: "/freedraw/hex-solutions-k4.json.gz", ks: [4] },
-		{ url: "/freedraw/hex-solutions-k5.json.gz", ks: [5] },
-		{ url: "/freedraw/hex-solutions-k6.json.gz", ks: [6] },
-		{ url: "/freedraw/hex-solutions-k7.json.gz", ks: [7], heavy: true },
-		{ url: "/freedraw/hex-solutions-k8.json.gz", ks: [8], heavy: true },
-		{ url: "/freedraw/hex-solutions-k9.json.gz", ks: [9], heavy: true },
+		{ url: "/freedraw/hex-solutions-k1.json.br", ks: [1] },
+		{ url: "/freedraw/hex-solutions-k2.json.br", ks: [2] },
+		{ url: "/freedraw/hex-solutions-k3.json.br", ks: [3] },
+		{ url: "/freedraw/hex-solutions-k4.json.br", ks: [4] },
+		{ url: "/freedraw/hex-solutions-k5.json.br", ks: [5] },
+		{ url: "/freedraw/hex-solutions-k6.json.br", ks: [6] },
+		{ url: "/freedraw/hex-solutions-k7.json.br", ks: [7], heavy: true },
+		{ url: "/freedraw/hex-solutions-k8.json.br", ks: [8], heavy: true },
+		{ url: "/freedraw/hex-solutions-k9.json.br", ks: [9], heavy: true },
 	],
 	// 3.4.6.4 and 4.8.8, 2026-08-29. Same `heavy` policy: the tails stay out of the "All" fetch and
 	// load when their own k chip is picked.
 	"4436": [
-		{ url: "/freedraw/4436-solutions-k1.json.gz", ks: [1] },
-		{ url: "/freedraw/4436-solutions-k2.json.gz", ks: [2] },
-		{ url: "/freedraw/4436-solutions-k3.json.gz", ks: [3] },
-		{ url: "/freedraw/4436-solutions-k4.json.gz", ks: [4] },
-		{ url: "/freedraw/4436-solutions-k5.json.gz", ks: [5], heavy: true },
-		{ url: "/freedraw/4436-solutions-k6.json.gz", ks: [6], heavy: true },
+		{ url: "/freedraw/4436-solutions-k1.json.br", ks: [1] },
+		{ url: "/freedraw/4436-solutions-k2.json.br", ks: [2] },
+		{ url: "/freedraw/4436-solutions-k3.json.br", ks: [3] },
+		{ url: "/freedraw/4436-solutions-k4.json.br", ks: [4] },
+		{ url: "/freedraw/4436-solutions-k5.json.br", ks: [5], heavy: true },
+		{ url: "/freedraw/4436-solutions-k6.json.br", ks: [6], heavy: true },
 	],
 	"488": [
-		{ url: "/freedraw/488-solutions-k1.json.gz", ks: [1] },
-		{ url: "/freedraw/488-solutions-k2.json.gz", ks: [2] },
-		{ url: "/freedraw/488-solutions-k3.json.gz", ks: [3] },
-		{ url: "/freedraw/488-solutions-k4.json.gz", ks: [4] },
-		{ url: "/freedraw/488-solutions-k5.json.gz", ks: [5] },
-		{ url: "/freedraw/488-solutions-k6.json.gz", ks: [6] },
-		{ url: "/freedraw/488-solutions-k7.json.gz", ks: [7] },
-		{ url: "/freedraw/488-solutions-k8.json.gz", ks: [8], heavy: true },
-		{ url: "/freedraw/488-solutions-k9.json.gz", ks: [9], heavy: true },
-		{ url: "/freedraw/488-solutions-k10.json.gz", ks: [10], heavy: true },
+		{ url: "/freedraw/488-solutions-k1.json.br", ks: [1] },
+		{ url: "/freedraw/488-solutions-k2.json.br", ks: [2] },
+		{ url: "/freedraw/488-solutions-k3.json.br", ks: [3] },
+		{ url: "/freedraw/488-solutions-k4.json.br", ks: [4] },
+		{ url: "/freedraw/488-solutions-k5.json.br", ks: [5] },
+		{ url: "/freedraw/488-solutions-k6.json.br", ks: [6] },
+		{ url: "/freedraw/488-solutions-k7.json.br", ks: [7] },
+		{ url: "/freedraw/488-solutions-k8.json.br", ks: [8], heavy: true },
+		{ url: "/freedraw/488-solutions-k9.json.br", ks: [9], heavy: true },
+		{ url: "/freedraw/488-solutions-k10.json.br", ks: [10], heavy: true },
 	],
 };
 
@@ -225,7 +225,7 @@ const catalogueCache = new Map<string, FreedrawPattern[]>();
 const loadFile = (url: string): Promise<void> =>
 	catalogueCache.has(url)
 		? Promise.resolve()
-		: fetch(url)
+		: fetchData(url)
 				.then((r) => (r.ok ? readAtlas<FreedrawPattern>(r) : []))
 				.catch(() => [] as FreedrawPattern[])
 				.then((d) => {
@@ -444,11 +444,7 @@ export function EuclideanFreedraw({
 					active={[...new URLSearchParams(serializeFilter(filter)).keys()].filter((key) => key !== "g").length}
 					top={
 						!isDefault && (
-							<button
-								type="button"
-								onClick={resetFilters}
-								className="text-fg-muted underline underline-offset-2 hover:text-fg"
-							>
+							<button type="button" onClick={resetFilters} className="ta-link-quiet">
 								Reset filters
 							</button>
 						)
@@ -462,7 +458,7 @@ export function EuclideanFreedraw({
 								options={GRID_OPTIONS}
 								selected={filter.grid}
 								onChange={switchGrid}
-								classes="[&>button]:whitespace-nowrap [&>button]:px-1"
+								className="[&>button]:px-1 [&>button]:whitespace-nowrap"
 							/>
 						</WallGroup>
 						<WallGroup title="k" note="orbits">
@@ -666,7 +662,7 @@ export function EuclideanFreedraw({
 							<div className="ta-label mb-1.5">tiles</div>
 							<ul className="space-y-1">
 								{detail.faces.map((f) => (
-									<li key={f.id} className="text-xs text-fg-secondary">
+									<li key={f.id} className="text-small text-fg-secondary">
 										<span className="text-fg">{rankLabel(f.rank, detail.grid)}</span>
 										{f.rank === 0 && ` · ${f.cells} cell${f.cells === 1 ? "" : "s"}`}
 										{f.rank === 0 && f.holes > 0 && ` · ${f.holes} hole${f.holes === 1 ? "" : "s"}`}

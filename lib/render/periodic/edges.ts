@@ -13,17 +13,17 @@ import { gridCellArcs, patchTileArcs } from "@/lib/freedraw/patternArcs";
 import type { FillMode } from "@/lib/freedraw/render";
 import { cubicAt, cubicFlatness, cubicSegmentCount, type Cubic } from "../cubic";
 import type { PeriodicCell, PeriodicPrim } from "../periodicCell";
-import { hslToRgb } from "./color";
+import { patchShapeIds, shapeClasses, shapeClassHue, type ShapeRanks } from "@/lib/render/tileShapes";
+import { tileHueRgb01 } from "@/lib/render/tilePalette";
 import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 const SQRT3_2 = Math.sqrt(3) / 2;
 
-/** Golden-angle hue walk — the RGB twin of `orbitColour` in lib/freedraw/render.ts. */
-const orbitRgb = (i: number, dark: boolean) => hslToRgb((34 + i * 137.508) % 360, 46, dark ? 36 : 74);
+/** Golden-angle hue walk on the tile palette — the RGB twin of `orbitColour` in lib/freedraw/render.ts. */
+const orbitRgb = (i: number) => tileHueRgb01(shapeClassHue(i));
 
 /** Finite / strip / unbounded as three fixed hues — the RGB twin of `rankColour`. */
-const rankRgb = (rank: 0 | 1 | 2, dark: boolean) =>
-	hslToRgb(rank === 0 ? 150 : rank === 1 ? 40 : 265, 55, dark ? 32 : 76);
+const rankRgb = (rank: 0 | 1 | 2) => tileHueRgb01(rank === 0 ? 150 : rank === 1 ? 40 : 265);
 
 const scaffoldRgb = (dark: boolean): [number, number, number] => (dark ? [1, 1, 1] : [0, 0, 0]);
 const drawnRgb = (dark: boolean): [number, number, number] => (dark ? [0.949, 0.957, 0.973] : [0.063, 0.075, 0.094]); // #f2f4f8 / #101318
@@ -54,12 +54,16 @@ export interface EdgesCellOptions {
 	arcRule?: TileRule;
 	/** The face analysis for this pattern (memoised by the caller — it walks the whole period). */
 	analysis: FaceAnalysis;
+	/** The board's colour order for shapes (tileShapes.ts). */
+	shapeRanks?: ShapeRanks;
 }
 
 export function edgesPeriodicCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | null {
 	// The fill and the arcs are two answers to the same question and a coloured face under a curve reads
 	// as neither — the same suppression drawFreedraw applies, so both renderers show one picture.
 	if (opts.showArcs && opts.fillMode !== "none") opts = { ...opts, fillMode: "none" };
+	// filled, a pattern is a tiling and draws as one in either theme (drawFreedraw's rule)
+	if (opts.fillMode !== "none" && opts.dark) opts = { ...opts, dark: false };
 	return p.patch ? patchCell(p, opts) : gridCell(p, opts);
 }
 
@@ -121,8 +125,8 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 	const classes = opts.fillMode === "shape" || opts.fillMode === "pose" ? classifyFaces(analysis) : null;
 	const faceRgb = analysis.faces.map((f) =>
 		opts.fillMode === "rank"
-			? rankRgb(f.rank, opts.dark)
-			: orbitRgb(classes ? classes[opts.fillMode as "shape" | "pose"][f.id] : f.id, opts.dark),
+			? rankRgb(f.rank)
+			: orbitRgb(classes ? classes[opts.fillMode as "shape" | "pose"][f.id] : f.id),
 	);
 
 	const prims: PeriodicPrim[] = [];
@@ -275,11 +279,14 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 		}
 	};
 
-	const classes = opts.fillMode === "shape" || opts.fillMode === "pose" ? classifyPatchFaces(patch) : null;
+	const classes =
+		opts.fillMode === "shape"
+			? shapeClasses(patchShapeIds(patch), opts.shapeRanks)
+			: opts.fillMode === "pose"
+				? classifyPatchFaces(patch).pose
+				: null;
 	const compRgb = patch.compRank.map((r, i) =>
-		opts.fillMode === "rank"
-			? rankRgb(r, opts.dark)
-			: orbitRgb(classes ? classes[opts.fillMode as "shape" | "pose"][i] : i, opts.dark),
+		opts.fillMode === "rank" ? rankRgb(r) : orbitRgb(classes ? classes[i] : i),
 	);
 
 	const prims: PeriodicPrim[] = [];

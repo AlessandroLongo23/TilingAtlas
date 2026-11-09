@@ -110,3 +110,205 @@ wallpaper-group histogram:
     ctrnact-s24f-family-k9-05: no star orbits + k>1
 
 ★ wrote public/reference-atlas.json in 350s
+
+# 2026-11-06 14:36:06 public/reference-atlas-k12.json.gz public/reference-atlas-k13.json.gz public/reference-atlas-k14.json.gz public/reference-atlas-k15.json.gz public/reference-atlas-k16.json.gz public/reference-atlas-k17.json.gz public/reference-atlas-k18.json.gz public/reference-atlas-k19.json.gz public/reference-atlas-k20.json.gz public/reference-atlas-k21.json.gz public/reference-atlas-k22.json.gz
+
+# 2026-11-06 14:38:01 public/reference-atlas-k11.json.gz public/reference-atlas-k12.json.gz
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas-k11.json.gz (4 entries) ===
+
+--- summary ---
+m/partition:  4 classified, 0 unclassified
+wallpaper:    4 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=11: {"8":3,"9":1}
+
+wallpaper-group histogram:
+  p6m   3
+  pmm   1
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k11.json.gz in 13s
+
+=== classify public/reference-atlas-k12.json.gz (2 entries) ===
+
+--- summary ---
+m/partition:  2 classified, 0 unclassified
+wallpaper:    2 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=12: {"7":1,"9":1}
+
+wallpaper-group histogram:
+  pmm   2
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k12.json.gz in 2s
+
+# 2026-11-06 14:40:27 public/reference-atlas-k11.json.gz public/reference-atlas-k12.json.gz public/reference-atlas-k13.json.gz public/reference-atlas-k14.json.gz public/reference-atlas-k15.json.gz public/reference-atlas-k16.json.gz public/reference-atlas-k17.json.gz public/reference-atlas-k18.json.gz public/reference-atlas-k19.json.gz public/reference-atlas-k20.json.gz public/reference-atlas-k21.json.gz public/reference-atlas-k22.json.gz
+
+# 2026-11-06 14:56:50 public/reference-atlas-k18.json.gz
+
+# 2026-11-06 14:56:50 public/reference-atlas-k19.json.gz
+
+# 2026-11-06 14:56:50 public/reference-atlas-k21.json.gz
+
+# 2026-11-06 14:56:50 public/reference-atlas-k20.json.gz
+
+# 2026-11-06 14:56:50 public/reference-atlas-k22.json.gz
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas-k18.json.gz (77 entries) ===
+
+--- summary ---
+m/partition:  77 classified, 0 unclassified
+wallpaper:    77 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=18: {"9":77}
+
+wallpaper-group histogram:
+  cm    1
+  cmm   27
+  p6m   2
+  pmm   47
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k18.json.gz in 204s
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas-k19.json.gz (127 entries) ===
+  [100/127] regular classified — 276s elapsed, ETA 75s
+
+--- summary ---
+m/partition:  127 classified, 0 unclassified
+wallpaper:    127 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=19: {"9":127}
+
+wallpaper-group histogram:
+  cmm   48
+  p6m   4
+  pm    1
+  pmg   3
+  pmm   71
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k19.json.gz in 354s
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas-k20.json.gz (211 entries) ===
+  [100/211] regular classified — 272s elapsed, ETA 302s
+  [200/211] regular classified — 528s elapsed, ETA 29s
+
+--- summary ---
+m/partition:  211 classified, 0 unclassified
+wallpaper:    211 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=20: {"9":211}
+
+wallpaper-group histogram:
+  cm    2
+  cmm   83
+  p6m   3
+  pmg   7
+  pmm   116
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k20.json.gz in 559s
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas-k21.json.gz (354 entries) ===
+  [100/354] regular classified — 269s elapsed, ETA 684s
+  [200/354] regular classified — 513s elapsed, ETA 395s
+  [300/354] regular classified — 787s elapsed, ETA 142s
+
+--- summary ---
+m/partition:  354 classified, 0 unclassified
+wallpaper:    354 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=21: {"9":354}
+
+wallpaper-group histogram:
+  cmm   137
+  p3m1  1
+  p6m   3
+  pm    2
+  pmg   12
+  pmm   199
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k21.json.gz in 920s
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas-k22.json.gz (583 entries) ===
+  [100/583] regular classified — 293s elapsed, ETA 1416s
+  [200/583] regular classified — 550s elapsed, ETA 1054s
+  [300/583] regular classified — 798s elapsed, ETA 753s
+  [400/583] regular classified — 1067s elapsed, ETA 488s
+  [500/583] regular classified — 1404s elapsed, ETA 233s
+
+--- summary ---
+m/partition:  583 classified, 0 unclassified
+wallpaper:    583 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=22: {"9":583}
+
+wallpaper-group histogram:
+  cm    3
+  cmm   234
+  p6m   11
+  pm    1
+  pmg   19
+  pmm   315
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k22.json.gz in 1619s
+
+# 2026-11-07 11:18:08 public/reference-atlas-k13.json.gz
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas-k13.json.gz (5 entries) ===
+
+--- summary ---
+m/partition:  5 classified, 0 unclassified
+wallpaper:    5 classified, 0 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=13: {"9":4,"10":1}
+
+wallpaper-group histogram:
+  cmm   2
+  p6m   1
+  pmm   2
+
+✓ ctrnact partition gate: all 0 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k13.json.gz in 13s

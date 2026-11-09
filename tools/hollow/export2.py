@@ -1,8 +1,8 @@
 """Export certified hollow tilings to the Atlas shelf.
 
 Writes
-  public/hollow/<id>.json.gz          face geometry + period lattice
-  public/reference-atlas-hollow.json.gz  the shelf index (ReferenceTiling rows)
+  public/hollow/<id>.json.br          face geometry + period lattice
+  public/reference-atlas-hollow.json.br  the shelf index (ReferenceTiling rows)
 
 Only configurations that produce a TORUS CERTIFICATE are exported. "unknown"
 (the node budget ran out) is not a result and is never shipped -- the shelf must
@@ -22,7 +22,7 @@ from develop_freedraw import write_json  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_GEO = os.path.join(REPO, "public", "hollow")
-OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json.gz")
+OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json.br")
 
 RIM = 5.2          # payload trim; the certificate, not the payload, proves the tiling
 KMAX = 2
@@ -81,7 +81,7 @@ def main(cfgstrs, node_cap):
             print("  ok   %-26s d=%-3d k=%d convex (regression only, not shipped)"
                   % (s, geo["density"], geo["kappa"]), flush=True)
             continue
-        write_json(os.path.join(OUT_GEO, sid + ".json.gz"), geo, separators=(",", ":"))
+        write_json(os.path.join(OUT_GEO, sid + ".json.br"), geo, separators=(",", ":"))
         rows.append(dict(
             id=sid, source="hollow", k=1, family=s,
             renderCell={"p": [], "b": [[1, 0], [0, 1]]},        # throwaway; never drawn

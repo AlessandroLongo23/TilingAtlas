@@ -12,9 +12,9 @@
 import { useEffect } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useConfiguration } from "@/stores/configuration";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Reveal } from "@/components/ui/reveal";
+import { Button } from "@/design-system/components/button";
+import { Slider } from "@/design-system/components/slider";
+import { Reveal } from "@/design-system/components/reveal";
 import { SpiralVelocityPad } from "@/components/spiral-velocity-pad";
 
 /**
@@ -62,7 +62,7 @@ function Choice<T extends string | boolean>({
 					key={String(o.v)}
 					variant={value === o.v ? "primary" : "secondary"}
 					size="sm"
-					classes="flex-1"
+					className="flex-1"
 					onClick={() => onChange(o.v)}
 				>
 					{o.label}

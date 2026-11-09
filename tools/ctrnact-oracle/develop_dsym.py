@@ -35,7 +35,7 @@ same, and two symmetries of a tiling that agree on one chamber are equal. So one
 `symmetry_order` then counts the symmetries the finished picture really has; main() refuses to call a
 row clean unless that count equals the order of the type's point group.
 
-usage: develop_dsym.py <euclidean.tdb> "<sql where>" <reference-atlas.json[.gz]> [log]
+usage: develop_dsym.py <euclidean.tdb> "<sql where>" <reference-atlas.json[.br]> [log]
        e.g. "vertices<=2" for the two complete levels, written as atlas rows (source "tegula")
        The rows carry no renderCell: the atlas bends each skeleton on first draw (lib/tilings/tegula.ts).
 """

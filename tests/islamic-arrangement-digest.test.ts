@@ -36,7 +36,7 @@ function digest(parts: (number | string)[]): string {
 	return `${h.toString(16).padStart(8, "0")}:${s.length}`;
 }
 
-const shelfPath = path.join(process.cwd(), "public", "reference-atlas-mixed.json.gz");
+const shelfPath = path.join(process.cwd(), "public", "reference-atlas-mixed.json.br");
 const shelf: { id: string; paramCell?: ParametricCellData }[] = fs.existsSync(shelfPath)
 	? decodeAtlas<{ id: string; paramCell?: ParametricCellData }>(JSON.parse(readDataText(shelfPath)))
 	: [];

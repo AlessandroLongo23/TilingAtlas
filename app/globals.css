@@ -6,313 +6,17 @@
 @source "../app";
 @source "../components";
 @source "../lib";
+@source "../design-system";
 
-/* Design tokens — three layers: primitives → themed + derived → components */
-@import "./styles/tokens/primitives.css";
-@import "./styles/tokens/themed.css";
-@import "./styles/tokens/derived.css";
+/* The design system: tokens, the Tailwind theme built from them, and the library's styles
+   (design-system/README.md). Everything below is the atlas's own. */
+@import "../design-system/index.css";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-/* Tailwind v4 — map utilities to semantic tokens.
-   `inline` keeps references to CSS vars at runtime so `.dark` flips
-   every utility automatically. */
-@theme inline {
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-
-  /* Tailwind's own radius scale, matched to the token scale in primitives.css so a built-in
-     rounded-* utility and a token radius agree. rounded-full is not var-driven in Tailwind v4. */
-  --radius: 6px;
-  --radius-xs: 3px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-3xl: 20px;
-  --radius-4xl: 24px;
-
-  /* Surfaces → bg-surface, bg-surface-raised, bg-surface-chrome, bg-surface-overlay, bg-surface-sunken */
-  --color-surface:         var(--color-surface-base);
-  --color-surface-raised:  var(--color-surface-raised);
-  --color-surface-chrome:  var(--color-surface-chrome);
-  --color-surface-overlay: var(--color-surface-overlay);
-  --color-surface-sunken:  var(--color-surface-sunken);
-
-  /* Foreground (text) → text-fg, text-fg-muted, … */
-  --color-fg:           var(--color-text-primary);
-  --color-fg-secondary: var(--color-text-secondary);
-  --color-fg-muted:     var(--color-text-muted);
-  --color-fg-disabled:  var(--color-text-disabled);
-  --color-fg-inverse:   var(--color-text-inverse);
-  --color-fg-accent:    var(--color-text-accent);
-
-  /* Borders (named `line` to avoid the `border-border` collision) →
-     border-line, border-line-subtle, border-line-strong, border-line-focus */
-  --color-line-subtle: var(--color-border-subtle);
-  --color-line:        var(--color-border-default);
-  --color-line-strong: var(--color-border-strong);
-  --color-line-focus:  var(--color-border-focus);
-
-  /* Accent → bg-accent, text-accent, bg-accent-subtle, text-accent-contrast, … */
-  --color-accent:          var(--color-accent);
-  --color-accent-hover:    var(--color-accent-hover);
-  --color-accent-active:   var(--color-accent-active);
-  --color-accent-subtle:   var(--color-accent-subtle);
-  --color-accent-contrast: var(--color-accent-contrast);
-
-  /* Status */
-  --color-danger:         var(--color-danger);
-  --color-danger-subtle:  var(--color-danger-subtle);
-  --color-success:        var(--color-success);
-  --color-success-subtle: var(--color-success-subtle);
-  --color-warning:        var(--color-warning);
-  --color-warning-subtle: var(--color-warning-subtle);
-  --color-info:           var(--color-info);
-  --color-info-subtle:    var(--color-info-subtle);
-  --color-caution:        var(--color-caution);
-  --color-caution-ink:    var(--color-caution-ink);
-
-  /* Radii → rounded-control, rounded-surface, rounded-overlay, rounded-pill */
-  --radius-control: var(--radius-control);
-  --radius-surface: var(--radius-surface);
-  --radius-overlay: var(--radius-overlay);
-  --radius-pill:    var(--radius-pill);
-
-  /* Shadows */
-  --shadow-sm: var(--shadow-sm);
-  --shadow-md: var(--shadow-md);
-  --shadow-lg: var(--shadow-lg);
-  --shadow-xl: var(--shadow-xl);
-}
-
-body {
-  background: var(--color-surface-base);
-  color: var(--color-text-primary);
-  font-family: var(--font-sans);
-  transition:
-    background-color var(--duration-base) var(--ease-standard),
-    color var(--duration-base) var(--ease-standard);
-}
-
-.disable-transitions *,
-.disable-transitions *::before,
-.disable-transitions *::after {
-  transition: none !important;
-  animation: none !important;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Tracked range (2026-07-22) — the .ta-range successor used by <RangeInput>. The track, fill,
-   tick marks and thumb are ordinary DOM elements; the native input lies transparent on top and
-   keeps every pointer, keyboard and a11y behaviour. Position is one inherited custom property,
-   --f (0..1), so the fill and thumb can never drift out of sync.
-   Geometry mirrors the native control: a 12px thumb travels centre-6px … centre-(width-6px),
-   which is exactly where the tick marks land. The fill is a full-width bar scaled from the left
-   — off by at most 6px from the true thumb centre, and that error is always hidden underneath
-   the 12px thumb, which is why it can be a composited scaleX instead of an animated width. */
-/* No width here on purpose: unlayered rules beat Tailwind's `@layer utilities`, so a width in
-   this block would silently override the w-* class a caller passes (as .ta-range did). Width
-   comes from RangeInput's className, which defaults to w-full. */
-/* A size container, so .ta-track-travel below can ride on container units. See the note there. */
-.ta-track {
-  position: relative;
-  display: block;
-  height: 14px;
-  cursor: pointer;
-  container-type: inline-size;
-}
-.ta-track-line,
-.ta-track-fill {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  margin-top: -2px;
-  border-radius: 9999px;
-  pointer-events: none;
-}
-.ta-track-line {
-  background: var(--color-surface-sunken);
-  box-shadow: inset 0 0 0 1px var(--color-border-subtle);
-}
-.ta-track-fill {
-  background: var(--color-text-primary);
-  transform-origin: left center;
-  transform: scaleX(var(--f, 0));
-}
-/* The thumb's carrier. It is THUMB-SIZED and travels the container's own width minus the thumb, which
-   is the only form of this that does not overflow: a full-track-width box translated by a fraction of
-   its own width sticks out past the track by exactly that fraction — invisible and pointer-inert, but
-   real SCROLLABLE overflow, so the sidebar gained a phantom horizontal scroll that GREW WITH THE VALUE
-   (AL saw it on the face-opacity slider, 2026-08-25). That was diagnosed and fixed once already, on
-   2026-07-23, but only inside .ta-ival — the single-thumb track it was copied from kept the bug for
-   another month. Fixed here now, where both spellings of the track read it. */
-.ta-track-travel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12px;
-  height: 100%;
-  pointer-events: none;
-  transform: translateX(calc(var(--f, 0) * (100cqi - 12px)));
-}
-.ta-track-thumb {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 12px;
-  height: 12px;
-  margin-top: -6px;
-  border-radius: 9999px;
-  background: var(--palette-white);
-  box-shadow:
-    0 0 0 1px var(--color-border-strong),
-    0 1px 3px oklch(0 0 0 / 0.18);
-}
-/* Stepped values would otherwise jump the thumb a whole interval at a time. The glide is capped
-   at one step of travel, so it smooths the jump without ever trailing the pointer by more. */
-.ta-track-fill,
-.ta-track-travel {
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-track-fill,
-  .ta-track-travel {
-    transition: none;
-  }
-}
-.ta-track-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  opacity: 0;
-  cursor: inherit;
-}
-.ta-track-input::-webkit-slider-runnable-track {
-  height: 2px;
-  background: transparent;
-}
-.ta-track-input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  border: none;
-  background: transparent;
-}
-.ta-track-input::-moz-range-track {
-  height: 2px;
-  background: transparent;
-}
-.ta-track-input::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-}
-/* The thumb answers the pointer: it swells a little under hover and more while held, on a ring of the
-   accent, so a drag feels taken hold of. Scale only (the travel transform is on the carrier). */
-.ta-track-thumb,
-.ta-ival-thumb {
-  transition:
-    scale 160ms var(--ease-out-strong),
-    box-shadow 160ms var(--ease-out);
-}
-@media (hover: hover) {
-  .ta-track:hover .ta-track-thumb,
-  .ta-ival-thumb:hover {
-    scale: 1.15;
-  }
-}
-.ta-track:has(.ta-track-input:active) .ta-track-thumb,
-.ta-ival-thumb:active {
-  scale: 1.3;
-  box-shadow:
-    0 0 0 1px var(--color-border-strong),
-    0 0 0 5px color-mix(in oklab, var(--color-accent) 18%, transparent),
-    0 1px 3px oklch(0 0 0 / 0.18);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-track-thumb,
-  .ta-ival-thumb {
-    transition: none;
-  }
-}
-.ta-track:has(.ta-track-input:disabled) .ta-track-thumb {
-  scale: none;
-}
-.ta-track:has(.ta-track-input:focus-visible) .ta-track-thumb {
-  outline: 2px solid oklch(from var(--color-accent) l c h / 0.5);
-  outline-offset: 2px;
-}
 /* A controller's D-pad moves real DOM focus (lib/hooks/useGamepad.ts), which :focus-visible does not
    reliably follow, so with a pad in use every focused sidebar control is ringed. */
 html[data-pad] aside :focus {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
-}
-.ta-track:has(.ta-track-input:disabled) {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-/* IntervalSlider (2026-07-23) — the dual-thumb .ta-track. Same track, ticks and thumb metrics; the
-   differences are the fill (the selected span runs --lo→--hi instead of 0→--f) and the thumbs being
-   the focusable controls themselves (no native input can express the coincident-handle drag rule),
-   so the focus ring keys on the thumb, not on a hidden input. touch-action:none lets the track own
-   horizontal touch drags instead of fighting the sidebar scroll. */
-.ta-ival {
-  touch-action: none;
-}
-.ta-ival-fill {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  margin-top: -2px;
-  border-radius: 9999px;
-  pointer-events: none;
-  background: var(--color-text-primary);
-  transform-origin: left center;
-  /* translateX %s resolve against the untransformed box, so this is start=lo, span=hi−lo. Like
-     .ta-track-fill it is full-track-width based (thumb centres travel inset 6px); the ≤6px end
-     error hides under the 12px thumbs. */
-  transform: translateX(calc(var(--lo, 0) * 100%)) scaleX(calc(var(--hi, 1) - var(--lo, 0)));
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-ival-fill {
-    transition: none;
-  }
-}
-.ta-ival-thumb {
-  pointer-events: auto;
-}
-.ta-ival-thumb:focus-visible {
-  outline: 2px solid oklch(from var(--color-accent) l c h / 0.5);
-  outline-offset: 2px;
-}
-.ta-ival-disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 
 /* Walls, retired (2026-09-24). The squared system built each panel as a "wall": a container painted
@@ -323,80 +27,12 @@ html[data-pad] aside :focus {
   background-color: transparent;
 }
 
-/* THE section label, on every sidebar and the landing page's eyebrows: mono caps, wide tracking,
-   muted. One style so a panel reads as one system (2026-09-24: there had been six). */
-.ta-label {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  line-height: 1.3;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--color-text-muted);
-}
-/* A panel floating over a canvas (info popovers, the edge/shape controls, the editor's bars, the
-   canvas buttons): near-opaque paper, a hairline ring and a soft drop, the same object as the
-   FloatingToolbar. One class so every overlay on every canvas is the same material. */
-.ta-float {
-  background-color: color-mix(in oklab, var(--color-surface-raised) 95%, transparent);
-  border-radius: var(--radius-xl);
-  box-shadow:
-    0 0 0 1px var(--color-border-subtle),
-    0 4px 16px oklch(0 0 0 / 0.1);
-  backdrop-filter: blur(6px);
-}
-/* A scroll region whose content runs past its bottom edge: the last 24px fade out, so a cut-off
-   control reads as "more below" and not as clipped. Pair it with bottom padding on the content. */
-.ta-scroll-fade {
-  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--ta-fade-end)), transparent);
-}
-/* Where the browser has scroll timelines, the fade clears over the last 48px of travel, so a panel
-   scrolled to its end shows its last row whole. Bottom only: a top fade would wash out the catalogue
-   tree's pinned headers. A panel that does not scroll has no active timeline and keeps the fade, which
-   its bottom padding absorbs. (`animation-timeline` after the shorthand, which would reset it.) */
-@property --ta-fade-end {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 24px;
-}
-@keyframes ta-scroll-end {
-  to {
-    --ta-fade-end: 0px;
-  }
-}
-@supports (animation-timeline: scroll()) {
-  .ta-scroll-fade {
-    animation: ta-scroll-end linear both;
-    animation-timeline: scroll(self);
-    animation-range: calc(100% - 48px) 100%;
-  }
-}
-
-/* Scrollbars: thin, and in the theme's own ink instead of the OS grey. .scrollbar-hide still wins. */
-:where(html, body, *) {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklab, var(--color-text-muted) 40%, transparent) transparent;
-}
-::selection {
-  background-color: color-mix(in oklab, var(--color-accent) 24%, transparent);
-}
-
-/* Something that arrives once and stays (the floating toolbar): it rises 8px into place as it fades in. */
-@keyframes ta-rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-.ta-rise-in {
-  animation: ta-rise-in 360ms var(--ease-out-strong) both;
-}
-/* A grid whose cells arrive together (the library's page of cards): they come in one after another,
-   40ms apart, capped at the twelfth so a large page never keeps the reader waiting. Opacity and a
+/* A grid whose cells arrive together (the library's page of cards): they come in one after another, a
+   stagger apart, capped at the twelfth so a large page never keeps the reader waiting. Opacity and a
    short rise only — no scale, the thumbnails are already fading in on their own. */
 .ta-stagger > * {
-  animation: ta-rise-in 420ms var(--ease-out-strong) both;
-  animation-delay: calc(min(var(--ta-i, 12), 12) * 40ms);
+  animation: ta-rise-in var(--duration-arrive) var(--ease-arrive) both;
+  animation-delay: calc(min(var(--ta-i, 12), 12) * var(--motion-stagger));
 }
 .ta-stagger > :nth-child(1) { --ta-i: 0; }
 .ta-stagger > :nth-child(2) { --ta-i: 1; }
@@ -419,32 +55,26 @@ html[data-pad] aside :focus {
 }
 @media (hover: hover) and (pointer: fine) {
   .card-thumb > :not(.absolute) {
-    transition: scale 600ms var(--ease-out-strong);
+    transition: scale var(--duration-settle) var(--ease-settle);
   }
   .card-thumb:hover > :not(.absolute) {
     scale: 1.04;
   }
   .ta-lane-cell:has(.card-thumb:hover) {
-    box-shadow: 0 10px 24px -12px oklch(0 0 0 / 0.25);
+    box-shadow: var(--shadow-lift);
   }
 }
 .ta-lane-cell {
   transition:
-    box-shadow 300ms var(--ease-out-strong),
-    outline-color 150ms var(--ease-out),
-    scale 150ms var(--ease-out);
+    box-shadow var(--duration-glide) var(--ease-glide),
+    outline-color var(--duration-feedback) var(--ease-feedback),
+    scale var(--duration-feedback) var(--ease-feedback);
 }
 .ta-lane-cell:has(.card-thumb:active) {
   scale: 0.985;
 }
+/* Reduced motion: the rise and the drift take arrive's and settle's time, which is nothing then (semantic.css). */
 @media (prefers-reduced-motion: reduce) {
-  .ta-rise-in,
-  .ta-stagger > * {
-    animation: none;
-  }
-  .card-thumb > :not(.absolute) {
-    transition: none;
-  }
   .ta-lane-cell:has(.card-thumb:active) {
     scale: none;
   }
@@ -462,84 +92,6 @@ html[data-pad] aside :focus {
   );
 }
 
-/* THE segmented control (2026-09-24). `.ta-seg` is the rounded grey track (named apart from .ta-track, the range slider); each `.ta-tab` inside
-   it is transparent until selected, when it lifts to a white pill with a hairline ring and a soft
-   drop. Every "pick one of N" in the app is this: the tab pairs, the geometry/decoration pickers,
-   every OptionWall. State comes off the attributes the controls already publish (Radix data-state,
-   aria-pressed, aria-checked), so nothing threads a prop. The gap is set here, unlayered, so it beats whatever
-   gap-px utility a call site still carries from the wall era. */
-.ta-seg {
-  background-color: var(--color-surface-sunken);
-  border-radius: var(--radius-lg);
-  padding: 3px;
-  gap: 2px;
-}
-.ta-tab {
-  border-radius: var(--radius-md);
-  background-color: transparent;
-}
-.ta-tab:hover:not([data-state="active"]):not([aria-pressed="true"]):not([aria-checked="true"]) {
-  background-color: color-mix(in oklab, var(--color-tab-on) 55%, transparent);
-}
-.ta-tab[data-state="active"],
-.ta-tab[aria-pressed="true"],
-.ta-tab[aria-checked="true"],
-.ta-seg-ind {
-  background-color: var(--color-tab-on);
-  box-shadow:
-    0 0 0 1px var(--color-tab-ring),
-    0 1px 2px oklch(0 0 0 / 0.12);
-  position: relative;
-  z-index: 1;
-}
-/* The sliding pill (<SegIndicator>). It sits under the tabs, so every tab is lifted over it; while the
-   track carries data-ind the selected tab drops its own fill and the pill paints it. Width and height
-   travel too, so the pill reshapes between options of different widths and across a wall's rows. */
-.ta-seg {
-  position: relative;
-}
-.ta-seg-ind {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 0;
-  border-radius: var(--radius-md);
-  pointer-events: none;
-  opacity: 0;
-  transition:
-    transform 280ms var(--ease-out-strong),
-    width 280ms var(--ease-out-strong),
-    height 280ms var(--ease-out-strong);
-}
-.ta-seg[data-ind] > .ta-seg-ind {
-  opacity: 1;
-}
-.ta-seg[data-ind] > .ta-tab {
-  position: relative;
-  z-index: 1;
-}
-.ta-seg[data-ind] > .ta-tab:is([data-state="active"], [aria-pressed="true"], [aria-checked="true"]) {
-  background-color: transparent;
-  box-shadow: none;
-}
-/* A press sinks the option a hair, so a click is felt before the pill arrives. */
-.ta-tab {
-  transition-property: color, background-color, scale;
-  transition-duration: var(--duration-fast);
-  transition-timing-function: var(--ease-out);
-}
-.ta-tab:active:not(:disabled) {
-  scale: 0.97;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-seg-ind {
-    transition: none;
-  }
-  .ta-tab:active:not(:disabled) {
-    scale: none;
-  }
-}
-
 /* A wall with lanes, without lane cells (2026-07-22). The /play tile grid builds its lanes out of
    real cells, which it can afford: fixed pitch, two columns, virtualised. A ragged grid with a
    user-settable column count can't, so here each cell draws its own 1px outline and the container's
@@ -547,10 +99,10 @@ html[data-pad] aside :focus {
    double rule — and at each four-corner crossing the cells' rounded corners open the same diamond.
    The lane is the gap minus the two outlines. */
 .ta-lanes {
-  gap: 8px;
+  gap: calc(var(--space-unit) * 2);
 }
 .ta-lane-cell {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-surface);
   /* Colour through a variable so a cell can darken its own hairline on hover from a utility class —
      these rules are unlayered and would otherwise beat any Tailwind outline-* the caller passes. */
   outline: 1px solid var(--ta-lane-color, var(--color-border-subtle));
@@ -565,308 +117,11 @@ html[data-pad] aside :focus {
     0 -1px 0 0 var(--color-surface-chrome);
 }
 
-/* Thumbnail loading (2026-07-22) — see lib/render/thumbnailQueue.ts for why previews arrive late.
-   The skeleton fills the preview slot while its bake is queued or running; the preview then fades in
-   ON TOP of it (opaque media over an opaque placeholder), so there is no muddy 50/50 cross-fade.
-
-   The placeholder's fill (bg-surface-overlay, set by <ThumbnailSkeleton>) is deliberately NOT
-   surface-raised: raised is pure white in light mode, so a pulse on it would be invisible against the
-   card. Overlay is neutral-100 light / neutral-800 dark — legible in both themes. A pulse, not
-   a travelling shimmer band: 25 sweeps at once fight the wall's hairline grid, whereas opacity
-   breathing reads as "working" without adding direction.
-
-   This class carries ONLY the pulse. Once the preview lands the placeholder crossfades out under it
-   (.ta-fade-out, same duration as the preview's .ta-fade-in) — so it never blinks to card-white for
-   the duration of the fade, and no unmount timer is needed. It has to go: the hyperbolic and
-   spherical previews are transparent PNGs, and a placeholder left painted shows through them as a
-   grey plate. */
-@keyframes ta-skeleton-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
-  }
-}
-.ta-skeleton {
-  animation: ta-skeleton-pulse 1.6s var(--ease-standard) infinite;
-}
-
-/* An animation, not a transition: this class is applied at the same moment the element first paints
-   (or leaves opacity-0), and an animation runs on mount without the two-frame class-swap dance a
-   transition needs. `both` holds the from-state before the first frame and the to-state after. */
-@keyframes ta-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.ta-fade-in {
-  animation: ta-fade-in var(--duration-slow) var(--ease-out) both;
-}
-
-@keyframes ta-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-.ta-fade-out {
-  animation: ta-fade-out var(--duration-slow) var(--ease-out) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ta-skeleton,
-  .ta-fade-in {
-    animation: none;
-  }
-  /* No animation, but the end state still has to hold — otherwise the placeholder stays opaque. */
-  .ta-fade-out {
-    animation: none;
-    opacity: 0;
-  }
-}
-
-/* <HoverPill>: one hover highlight per row of controls. Every other child is lifted over it, and while it
-   shows (data-pill) the controls drop their own hover fill so there is one highlight, not two. A
-   pressed toggle and the current page keep theirs. */
-.ta-pill-host > :not(.ta-hover-pill) {
-  position: relative;
-  z-index: 1;
-}
-/* The current link holds the sliding active fill (NavActivePill). One layer down, so the fill passes under
-   the other links' labels when it slides to an earlier link. */
-.ta-pill-host > [aria-current] {
-  z-index: 0;
-}
-.ta-hover-pill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 0;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface-overlay);
-  pointer-events: none;
-  opacity: 0;
-  transition-property: transform, width, height, opacity;
-  transition-duration: 220ms, 220ms, 220ms, 150ms;
-  transition-timing-function: var(--ease-out-strong);
-}
-.ta-pill-host[data-pill] > .ta-hover-pill {
-  opacity: 1;
-}
-.ta-pill-host[data-pill] :is(button, a):not([aria-pressed="true"], [aria-current], [data-pill-skip]):hover {
-  background-color: transparent;
-}
-/* A list's highlighted option (the Dropdown, the ContextMenu) gives way to the pill while the pointer drives it. */
-.ta-pill-host[data-pill] :is([role="option"], [role="menuitem"])[data-highlighted] {
-  background-color: transparent;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-hover-pill {
-    transition-property: opacity;
-  }
-}
-
-/* A keycap whose key was just pressed dips and inks for a moment (UiProviders). */
-@keyframes ta-kbd-hit {
-  0%,
-  30% {
-    translate: 0 1px;
-    color: var(--color-text-primary);
-    border-color: var(--color-border-strong);
-    background-color: var(--color-surface-sunken);
-  }
-}
-.ta-kbd-hit {
-  animation: ta-kbd-hit 260ms var(--ease-out);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-kbd-hit {
-    animation: none;
-  }
-}
-
-/* <SwapIcon>: a glyph that replaces another (Copy → Check) arrives out of a small blur. */
-@keyframes ta-icon-pop {
-  from {
-    opacity: 0;
-    scale: 0.5;
-    filter: blur(2px);
-  }
-}
-.ta-icon-pop {
-  animation: ta-icon-pop 220ms var(--ease-out-strong);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-icon-pop {
-    animation: none;
-  }
-}
-
-/* <Modal>'s enter and exit (components/ui/modal.tsx). Radix keeps a closing dialog mounted until its
-   animation ends, so the exit is real. On a desktop the dialog grows from 96% and fades, from its own
-   centre (`transform` composes with the `translate` the centring utilities set). On a phone it is a
-   sheet: it rises from the bottom edge and drops back down. The exit is quicker than the entrance —
-   leaving is never what the reader is waiting on. */
-@keyframes ta-dialog-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-@keyframes ta-dialog-out {
-  to {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-}
-@keyframes ta-sheet-out {
-  to {
-    transform: translateY(100%);
-  }
-}
-.ta-dialog[data-state="open"] {
-  animation: ta-dialog-in 240ms var(--ease-out-strong);
-}
-.ta-dialog[data-state="closed"] {
-  animation: ta-dialog-out 150ms var(--ease-out) forwards;
-}
-.ta-overlay[data-state="open"] {
-  animation: ta-fade-in 220ms var(--ease-out);
-}
-.ta-overlay[data-state="closed"] {
-  animation: ta-fade-out 180ms var(--ease-out) forwards;
-}
-@media (max-width: 767.98px) {
-  .ta-dialog[data-state="open"] {
-    animation: ta-sheet-in 380ms var(--ease-drawer);
-  }
-  .ta-dialog[data-state="closed"] {
-    animation: ta-sheet-out 220ms var(--ease-drawer) forwards;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-dialog[data-state],
-  .ta-overlay[data-state] {
-    animation: none;
-  }
-}
-
-/* The catalogue tree's reveal (components/sidebar/catalogue-list-panel.tsx): the rows a folder opens
-   into fade up to full ink. An animation, not a transition — the block MOUNTS when the row opens, and
-   only an animation runs on an element's first paint.
-
-   OPACITY ONLY, and the two rules behind that are worth keeping.
-
-   No height collapse: every header in that tree is `position: sticky`, and folding a height needs
-   `overflow: hidden` (a scroll container) or `overflow: clip` (a clip box) between those headers and
-   the scroller. Either one un-pins them, so animating the fold would break the pinned path the fold
-   just created.
-
-   No transform either, which is subtler and cost a bug first. TileGrid virtualises off
-   `getBoundingClientRect().top` measured against the scroller, and it recomputes on EVERY render with
-   no dep array. A 4px translate on an ancestor moves that rect, so a grid inside a reveal picked its
-   visible row window from the animated offset and painted the wrong tiles until the next commit —
-   a flash of the wrong thumbnails. Opacity moves nothing and measures the same. */
-@keyframes ta-tree-reveal {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.ta-tree-reveal {
-  animation: ta-tree-reveal var(--duration-base) var(--ease-out) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-tree-reveal {
-    animation: none;
-  }
-}
-
-/* The browse tree's rail (components/atlas/browse-tree.tsx), the Tiling Searcher's run-tree rail
-   (tools/searcher/app/src/app.css, which keeps its own copy until the app is next rebuilt from here).
-   An open node's children hang off a line under its icon, each branching off with a curve; the line
-   stops at the last child's curve. --rail-mid is where a child row is centred.
-
-   The path to the active node is an overlay (::after) in the text colour on the entries the tree marks:
-   [data-rail-pass] the entries it runs past, a straight piece; [data-rail-on] the one it enters, a curve.
-   A piece draws top-down after its --rail-delay when it appears or changes role (each role has its own
-   keyframes, so the change restarts it); pieces the old and new path share stay as they are. */
-.ta-rail {
-  --rail: color-mix(in oklab, var(--color-fg) 22%, var(--color-surface-chrome));
-  margin-left: 15px;
-}
-.ta-rail > li {
-  position: relative;
-  padding-left: 14px;
-  padding-bottom: 2px;
-}
-.ta-rail > li:not(:last-child) {
-  background: linear-gradient(var(--rail), var(--rail)) no-repeat 0 0 / 1px 100%;
-}
-.ta-rail > li::before,
-.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: 0;
-  pointer-events: none;
-  border-left: 1px solid var(--rail);
-}
-.ta-rail > li::before,
-.ta-rail > li[data-rail-on]::after {
-  width: 10px;
-  height: calc(var(--rail-mid, 18px) + 2px);
-  border-bottom: 1px solid var(--rail);
-  border-bottom-left-radius: 8px;
-}
-.ta-rail > li[data-rail-pass]::after {
-  bottom: 0;
-}
-.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
-  border-color: var(--color-fg);
-  animation: 70ms linear var(--rail-delay) both;
-}
-.ta-rail > li[data-rail-on]::after {
-  animation-name: ta-rail-draw-on;
-}
-.ta-rail > li[data-rail-pass]::after {
-  animation-name: ta-rail-draw-pass;
-}
-@keyframes ta-rail-draw-on {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-}
-@keyframes ta-rail-draw-pass {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-rail > li::after {
-    animation: none !important;
-  }
-}
-
 /* The merged page's side panels (components/atlas): a column that slides shut by animating its width
    while the content inside keeps its own, so labels never reflow on the way out (the same move
    PageSidebar's `collapsed` makes for immersive mode). */
 .ta-side-panel {
-  transition: width var(--duration-base) var(--ease-out);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ta-side-panel {
-    transition: none;
-  }
+  transition: width var(--duration-glide) var(--ease-glide);
 }
 
 /* A spread slide (2026-08-02): the prose holds together and the figure floats with EQUAL air above

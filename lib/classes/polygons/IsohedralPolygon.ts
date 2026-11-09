@@ -1,4 +1,5 @@
-import { GenericPolygon, Vector } from "@/classes";
+import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
+import { Vector } from "@/classes/Vector";
 
 export class IsohedralPolygon extends GenericPolygon {
 	constructor(n: number) {

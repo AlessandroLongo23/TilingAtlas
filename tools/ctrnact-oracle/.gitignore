@@ -3,6 +3,7 @@ eu_solver
 eu_pruner
 eu_classify
 eu_develop
+homogeneous_dfs
 # pipeline run outputs (curated run-star-k*/ reference runs stay committed)
 run-k*/
 run-composite-*/

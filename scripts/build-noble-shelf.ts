@@ -1,5 +1,5 @@
 // Build the noble-polyhedra shelf: lib/render/nobleData.ts and the sph-noble-* rows of
-// public/reference-atlas-spherical.json.gz.
+// public/reference-atlas-spherical.json.br.
 //
 //   git clone https://github.com/Plasmath/noble-tools-revised /tmp/noble
 //   curl -L https://arxiv.org/src/2607.28711 | tar -xz -C /tmp/noble-paper      (optional, for the audit)
@@ -33,7 +33,7 @@ const write = process.argv.includes("--write");
 const [CLONE, TEX] = args;
 if (!CLONE) throw new Error("usage: build-noble-shelf.ts <clone of noble-tools-revised> [main.tex] [--write]");
 const ROOT = process.cwd();
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.br");
 const DATA = path.join(ROOT, "lib", "render", "nobleData.ts");
 const PAPER = "arXiv:2607.28711";
 
@@ -410,5 +410,5 @@ fs.writeFileSync(DATA, data);
 atlas.records = [...kept, ...added];
 writeDataFile(ATLAS, JSON.stringify(atlas));
 console.log(
-	`wrote lib/render/nobleData.ts and public/reference-atlas-spherical.json.gz (${atlas.records.length} records)`,
+	`wrote lib/render/nobleData.ts and public/reference-atlas-spherical.json.br (${atlas.records.length} records)`,
 );

@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
+import { Kbd } from "@/design-system/components/kbd";
 import { PHONE_QUERY } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // Assembling a seed, run by hand in front of the room: one vertex configuration of the set at the
 // origin, then the other two placed on it.
@@ -258,7 +259,7 @@ interface Choice {
 	ci: number;
 }
 
-export function SeedStrip({ src = "/defense/seed-build.json.gz" }: { src?: string }) {
+export function SeedStrip({ src = "/defense/seed-build.json.br" }: { src?: string }) {
 	const [fig, setFig] = useState<SeedFigure | null>(null);
 	const [path, setPath] = useState<Choice[]>([]);
 	const [selected, setSelected] = useState<number | null>(null);
@@ -266,7 +267,7 @@ export function SeedStrip({ src = "/defense/seed-build.json.gz" }: { src?: strin
 
 	useEffect(() => {
 		let live = true;
-		fetch(src)
+		fetchData(src)
 			.then((r) => shardBody<SeedFigure>(r))
 			.then((d: SeedFigure) => {
 				if (live) setFig(d);
@@ -362,7 +363,7 @@ export function SeedStrip({ src = "/defense/seed-build.json.gz" }: { src?: strin
 
 	if (!fig || !frame) {
 		return (
-			<div className="not-prose flex h-[34vh] items-center justify-center border border-line bg-surface-overlay/30 text-xs text-fg-muted">
+			<div className="ta-well not-prose flex h-[34vh] items-center justify-center text-small text-fg-muted">
 				loading the seed…
 			</div>
 		);
@@ -379,7 +380,7 @@ export function SeedStrip({ src = "/defense/seed-build.json.gz" }: { src?: strin
 				{[0, 1, 2].map((i) => (
 					<div key={i} className="contents">
 						{i > 0 && (
-							<span aria-hidden className={cn("shrink-0 text-2xl", patches[i] ? "text-fg-muted" : "text-line")}>
+							<span aria-hidden className={cn("shrink-0 text-headline", patches[i] ? "text-fg-muted" : "text-line")}>
 								→
 							</span>
 						)}
@@ -401,7 +402,7 @@ export function SeedStrip({ src = "/defense/seed-build.json.gz" }: { src?: strin
 				))}
 			</div>
 
-			<div className="flex h-[1.9em] items-center gap-2 text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)] max-md:h-auto max-md:min-h-11 max-md:flex-wrap max-md:justify-center max-md:text-sm">
+			<div className="flex h-[1.9em] items-center gap-2 text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)] max-md:h-auto max-md:min-h-11 max-md:flex-wrap max-md:justify-center max-md:text-body">
 				{!state ? (
 					<button
 						type="button"
@@ -444,9 +445,8 @@ export function SeedStrip({ src = "/defense/seed-build.json.gz" }: { src?: strin
 							className="ml-1 flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.8em] py-[0.15em] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11"
 						>
 							place it
-							<kbd className="border border-line px-[0.35em] font-mono text-[0.85em] text-fg-muted max-md:hidden">
-								↵
-							</kbd>
+							{/* Sized in em, so the cap scales with the slide's type. */}
+							<Kbd className="h-[1.45em] min-w-[1.45em] px-[0.35em] text-[0.85em]">↵</Kbd>
 						</button>
 					</>
 				)}

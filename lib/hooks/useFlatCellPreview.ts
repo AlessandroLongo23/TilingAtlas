@@ -104,6 +104,12 @@ export interface FlatCellPreviewOptions {
 	 *  small one went on to fifty. Periods of the longer lattice vector, as homePeriods counts them, so a
 	 *  tiling of long bands shows that many bands. */
 	zoomOutPeriods?: number;
+	/** The smallest home zoom in px per tile edge, for a large cell that `homePeriods` would draw smaller.
+	 *  Default ZOOM_MIN. */
+	homeZoomMin?: number;
+	/** A resize scales the view with the host's shorter side, so what was in view stays in view, larger or
+	 *  smaller (the Searcher's fullscreen). Default false: the zoom holds and the host shows more or less. */
+	scaleWithHost?: boolean;
 }
 
 export interface FlatCellPreview {
@@ -140,10 +146,16 @@ export function useFlatCellPreview({
 	keepView = false,
 	lineWidth = 1,
 	zoomOutPeriods,
+	homeZoomMin,
+	scaleWithHost = false,
 }: FlatCellPreviewOptions): FlatCellPreview {
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	const zoomOutRef = useRef(zoomOutPeriods);
 	zoomOutRef.current = zoomOutPeriods;
+	const homeMinRef = useRef(homeZoomMin);
+	homeMinRef.current = homeZoomMin;
+	const scaleRef = useRef(scaleWithHost);
+	scaleRef.current = scaleWithHost;
 	// In refs, not the GL effect's deps: changing one must not tear down and rebuild the context.
 	const periodsRef = useRef(homePeriods);
 	periodsRef.current = homePeriods;
@@ -229,14 +241,18 @@ export function useFlatCellPreview({
 
 	// The reset zoom: a caller-fixed px-per-edge if one was given, else the whole patch fitted (single
 	// mode), else `homePeriods` of the cell's lattice across the host. All three go through the shared
-	// clamp, and no further out than zoomOutPeriods allows.
-	// The wheel's, pinch's and reset's window: the shared one, its floor set by zoomOutPeriods when given
+	// clamp (its floor homeZoomMin when given), and no further out than zoomOutPeriods allows.
+	// The wheel's, pinch's and reset's window: the shared one, its floor set by zoomOutPeriods when given (that
+	// many periods across the shorter side). A view a resize scaled outside it goes no further, and is not pulled back.
 	const zoomBounds = () => {
 		const n = zoomOutRef.current;
 		const b = basisRef.current;
 		const span = b ? Math.max(Math.hypot(b.v1.x, b.v1.y), Math.hypot(b.v2.x, b.v2.y)) : 0;
-		const w = hostRef.current?.clientWidth ?? 0;
-		return { min: n && span > 0 && w > 0 ? Math.min(ZOOM_MAX, w / (n * span)) : ZOOM_MIN, max: ZOOM_MAX };
+		const host = hostRef.current;
+		const side = host ? Math.min(host.clientWidth, host.clientHeight) : 0;
+		const min = n && span > 0 && side > 0 ? Math.min(ZOOM_MAX, side / (n * span)) : ZOOM_MIN;
+		const z = controlsRef.current?.targetZoom ?? min;
+		return { min: Math.min(min, z), max: Math.max(ZOOM_MAX, z) };
 	};
 	const resolveHomeZoom = (
 		basis: { v1: { x: number; y: number }; v2: { x: number; y: number } },
@@ -259,7 +275,7 @@ export function useFlatCellPreview({
 				return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fit));
 			}
 		}
-		return defaultZoomForCell(basis.v1, basis.v2, w, periodsRef.current);
+		return defaultZoomForCell(basis.v1, basis.v2, w, periodsRef.current, homeMinRef.current);
 	};
 
 	/**
@@ -307,6 +323,8 @@ export function useFlatCellPreview({
 		// overlay on, and an unused canvas is still a compositor layer.
 		let overlay: HTMLCanvasElement | null = null;
 		let raf = 0;
+		// The host's shorter side when the view was last framed, for scaleWithHost.
+		let side = 0;
 		let visible = false;
 		let broken = false; // latched on unrecoverable failure so the observer stops retrying
 		// What the renderer currently holds, so the loop can notice the `o` overlay being toggled.
@@ -327,7 +345,7 @@ export function useFlatCellPreview({
 			if (!badge) {
 				badge = document.createElement("div");
 				badge.className =
-					"absolute left-1 top-1 z-20 rounded bg-black/80 px-1.5 py-1 font-mono text-[10px] leading-tight text-lime-300";
+					"absolute left-1 top-1 z-20 rounded-tag bg-black/80 px-1.5 py-1 font-mono text-micro leading-tight text-signal-positive";
 				badge.style.whiteSpace = "pre";
 				host.prepend(badge);
 			}
@@ -425,6 +443,7 @@ export function useFlatCellPreview({
 				centreRef.current = box ? { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 } : { x: 0, y: 0 };
 				homeZoomRef.current = resolveHomeZoom(basisRef.current, w, h);
 				framingRef.current = `${w}x${h}:${singleRef.current && overlayFlagsRef.current.fd ? "fd" : ""}`;
+				side = Math.min(w, h);
 				controlsRef.current = makeCardControls(homeZoomRef.current);
 			}
 			const ctrl = controlsRef.current;
@@ -439,6 +458,17 @@ export function useFlatCellPreview({
 			const framing = `${w}x${h}:${singleRef.current && overlayFlagsRef.current.fd ? "fd" : ""}`;
 			if (framingRef.current !== framing) {
 				framingRef.current = framing;
+				// zoom and pan grow with the shorter side, so the same piece of the tiling stays in view
+				const r = Math.min(w, h) / side;
+				side = Math.min(w, h);
+				if (scaleRef.current && interactiveRef.current && Number.isFinite(r) && r > 0) {
+					ctrl.zoom *= r;
+					ctrl.targetZoom *= r;
+					for (const o of [ctrl.offset, ctrl.targetOffset]) {
+						o.x *= r;
+						o.y *= r;
+					}
+				}
 				if (basisRef.current) {
 					if (!interactiveRef.current) {
 						const box = singleRef.current ? singleHomeBox() : null;

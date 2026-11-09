@@ -201,7 +201,7 @@ export async function freezeView(host: HTMLElement, live: CaptureRequest): Promi
 
 /**
  * The themed page background behind /play's canvases — `--color-surface-base`, the token the canvas root
- * carries as `bg-surface-base`. Distinct from renderTiling's themeSurfaceColor, which resolves the RAISED
+ * carries as `bg-surface`. Distinct from renderTiling's themeSurfaceColor, which resolves the RAISED
  * surface that preview cards sit on.
  *
  * Returned as an sRGB hex, not as the token's own value. The palette is authored in modern colour spaces,

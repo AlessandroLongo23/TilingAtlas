@@ -1,4 +1,4 @@
-// Pure math for the hue ring (components/ui/hue-ring.tsx): an annular slider whose thumb angle is a
+// Pure math for the hue ring (design-system/components/hue-ring.tsx): an annular slider whose thumb angle is a
 // global hue offset in degrees. Angle convention: 0° at 12 o'clock, increasing CLOCKWISE (screen y
 // down), so the thumb literally points at the color that hue-0 (red) maps to. Positions are in ring
 // pixels with the origin at the ring centre and y DOWN, matching pointer events.

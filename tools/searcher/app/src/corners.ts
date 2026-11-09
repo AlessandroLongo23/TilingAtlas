@@ -17,6 +17,8 @@ import {
 	coloredName,
 	cyclicKey,
 	flatOf,
+	isUnitLength,
+	lengthSymbol,
 	typedCorner,
 	typedName,
 	type Board,
@@ -172,6 +174,23 @@ export function cornerAngle(s: Shape | undefined, g: Geometry, edge: number): nu
 	return c > 0 && c <= 1 ? 2 * Math.asin(c) : null;
 }
 
+/**
+ * Where the faces with every corner set (Pi aside) put a board: a polygon's corners add up to (n − 2)·180° in
+ * the plane, less in the hyperbolic plane and more on the sphere, at any size. Its vertices cannot tell: a set
+ * angle is the same in each, so five 72° corners close in all three. Null when no face is set or they disagree.
+ */
+export function setFacesGeometry(board: Board): Geometry | null {
+	const shapes = cornerShapes(board);
+	const seen = new Set<Geometry>();
+	for (const f of board.faces) {
+		const w = f.repeat === "inf" ? [] : Array.from({ length: f.repeat }, () => f.word).flat();
+		if (w.length < 3 || !w.every((c) => ["set", "pi"].includes(shapes.get(c)?.kind ?? ""))) continue;
+		const d = w.reduce((t, c) => t + cornerAngle(shapes.get(c), "plane", 0)!, 0) - (w.length - 2) * Math.PI;
+		seen.add(Math.abs(d) < 1e-9 ? "plane" : d < 0 ? "hyperbolic" : "sphere");
+	}
+	return seen.size === 1 ? [...seen][0] : null;
+}
+
 /** The edge length at which `word` closes to 360° in `g`, or null if it closes at none. */
 export function solveEdge(word: string[], shapes: Map<string, Shape>, g: Geometry): number | null {
 	if (g === "plane" || !word.length) return null;
@@ -278,22 +297,34 @@ export function seedWords(board: Board, g: Geometry, max: number, limit = 200): 
 	if (g === "plane") return [];
 	const shapes = cornerShapes(board);
 	const syms = board.angles.map((a) => a.sym).filter((s) => (cornerAngle(shapes.get(s), "plane", 0) ?? 0) > 1e-9);
+	// only a regular polygon's corner or a star's dent follows the edge; a word without one fixes no edge. A board
+	// of set angles has none (5-cell (2,3,7) polyforms: 15 corners, some 10⁸ words to 14, which froze Quick setup)
+	const follows = syms.map((s) => {
+		const sh = shapes.get(s);
+		return sh?.kind === "polygon" || (sh?.kind === "iso" && sh.dent);
+	});
+	const last = follows.lastIndexOf(true);
+	if (last < 0) return [];
 	const out: { word: string[]; l: number }[] = [];
 	const cur: string[] = [];
-	const rec = (i: number, size: number, flat: number) => {
-		if (out.length >= limit || (g === "sphere" && flat >= TWO_PI - 1e-9)) return; // the sphere's sums only grow
+	let nodes = 0;
+	const rec = (i: number, size: number, flat: number, fixed: number, moving: boolean) => {
+		if (out.length >= limit || ++nodes > 2e6 || (g === "sphere" && flat >= TWO_PI - 1e-9)) return; // the sphere's sums only grow
+		// off the plane a following corner's angle falls toward 0 as the edge grows: the fixed ones must leave room
+		if (g === "hyperbolic" && fixed >= TWO_PI - 1e-9) return;
 		if (cur.length === size) {
-			const l = solveEdge(cur, shapes, g);
+			const l = moving ? solveEdge(cur, shapes, g) : null;
 			if (l !== null) out.push({ word: [...cur], l });
 			return;
 		}
-		for (let j = i; j < syms.length; j++) {
+		for (let j = i; j < syms.length && (moving || j <= last); j++) {
+			const a = cornerAngle(shapes.get(syms[j]), "plane", 0)!;
 			cur.push(syms[j]);
-			rec(j, size, flat + cornerAngle(shapes.get(syms[j]), "plane", 0)!);
+			rec(j, size, flat + a, fixed + (follows[j] ? 0 : a), moving || follows[j]);
 			cur.pop();
 		}
 	};
-	for (let size = 3; size <= max; size++) rec(0, size, 0);
+	for (let size = 3; size <= max; size++) rec(0, size, 0, 0, false);
 	return out;
 }
 
@@ -316,7 +347,7 @@ export function closingVertices(
 	for (const { sym, edge: side } of board.angles) {
 		const s = shapes.get(sym)!;
 		const a = cornerAngle(s, g, edge);
-		if (s.kind === "digon") skipped.push({ sym, why: "a digon marks an edge; it adds no angle" });
+		if (s.kind === "digon") skipped.push({ sym, why: "is a digon, which adds no angle (Edge types draws and hides sides)" });
 		// a styled edge type marks a side's middle and meets only its partner; a plain one (Marek's `edge Pi`)
 		// is a flat point that real corners can meet (A3 A24 Pi)
 		else if (side && (side.style || side.length))
@@ -737,23 +768,39 @@ function baseView(b: Board): Board {
 	};
 }
 
+/** A preset type on a side of another length: `Esqrt2_Ed`, the drawn side of length √2 (plainOf reads it back). */
+const lengthStyled = (length: string, t: string) => (length ? `${length}_${t}` : t);
+const PRESET_TYPES = Object.values(EDGE_PRESETS).flatMap((p) => p.edges.map((e) => e.sym as string));
+
 /**
  * The board with its edge types taken off: edge lines, the edge corners in its faces, its gluing lines, and
- * each typed corner back to its base, faces and vertices that become the same kept once. Quick setup types a
- * board from this, so running it twice gives the same board.
+ * each typed corner back to its base, faces and vertices that become the same kept once. A side keeps its
+ * length, which is the face's shape: a typed side of another length goes back to that length's own type
+ * (`Esqrt2_Ed` to `Esqrt2`), and a type of length only stays. Quick setup types a board from this, so running
+ * it twice gives the same board.
  */
 export function plainOf(b: Board): Board {
 	const v = baseView(b);
 	const edges = new Set(b.angles.flatMap((a) => (a.edge ? [a.sym] : [])));
+	// a side of a length other than 1 keeps it: each styled type goes to that length's own type
+	const own = new Map<string, Board["angles"][number]>();
+	const to = new Map<string, string>();
+	for (const a of b.angles) {
+		const l = a.edge?.length;
+		if (!a.edge || isUnitLength(l ?? "1")) continue;
+		const t = a.edge.style && PRESET_TYPES.find((t) => a.sym.endsWith(`_${t}`));
+		const sym = !a.edge.style ? a.sym : t ? a.sym.slice(0, -t.length - 1) : lengthSymbol(l!);
+		to.set(a.sym, sym);
+		if (!own.has(sym)) own.set(sym, { sym, value: "180", edge: { length: l } });
+	}
+	const sides = (w: string[]) => w.flatMap((c) => (to.has(c) ? [to.get(c)!] : edges.has(c) ? [] : [c]));
 	const once = <T extends { word: string[] }>(xs: T[]) => {
 		const seen = new Set<string>();
 		return xs.filter((x) => !seen.has(cyclicKey(x.word)) && seen.add(cyclicKey(x.word)));
 	};
 	const faces = v.faces.map((f) => {
-		if (f.repeat === "inf") return { ...f, word: f.word.filter((c) => !edges.has(c)) };
-		const full = Array.from({ length: f.repeat }, () => f.word)
-			.flat()
-			.filter((c) => !edges.has(c));
+		if (f.repeat === "inf") return { ...f, word: sides(f.word) };
+		const full = sides(Array.from({ length: f.repeat }, () => f.word).flat());
 		const p = Array.from({ length: full.length }, (_, i) => i + 1).find(
 			(q) => full.length % q === 0 && full.every((c, i) => c === full[i % q]),
 		)!;
@@ -761,7 +808,7 @@ export function plainOf(b: Board): Board {
 	});
 	return {
 		...v,
-		angles: v.angles.filter((a) => !a.edge),
+		angles: [...v.angles.filter((a) => !a.edge), ...own.values()],
 		faces: once(faces.map((f) => ({ ...f, word: f.repeat === "inf" ? f.word : [...f.word] }))).filter((f) => f.word.length),
 		vertices: once(v.vertices.filter((x) => !x.word.every((c) => edges.has(c)))),
 		initial: [],
@@ -772,28 +819,36 @@ export function plainOf(b: Board): Board {
 /**
  * The board with edge types on its sides, the vertex lines that glue them, and a way to type vertices.
  *
- * With a preset, the board is first made plain (plainOf), then every face becomes one face per way of
+ * The board is first made plain (plainOf, its side lengths kept), then every face becomes one face per way of
  * typing its sides (up to the face's own turns and mirrors: a square with drawn and hidden sides is six),
  * each corner named with the types of the sides beside it (typedName). `vertices` turns a plain vertex
  * (corners in cyclic order) into every edge pattern round it, as typed corners: the side between corners i
  * and i+1 has a type on i's face and the type it glues to on i+1's. Without `loose`, a drawn and hidden
  * board leaves out the vertices with exactly one drawn side (loose ends). Faces whose sides are cut by Pi
  * are kept as they are.
- *
- * Without a preset the board's own edge lines are used, the faces kept as written (lengths are geometry,
- * so the user types those sides), and an edge with no gluing line glues to itself.
  */
 export function decorate(
 	b: Board,
-	preset: EdgePreset | null,
+	preset: EdgePreset,
 	loose = true,
 ): { board: Board; glue: string[][]; vertices: (plain: string[][]) => string[][]; plain: Board } {
-	if (!preset) return { board: b, glue: glueLines(b), vertices: (ws) => ws, plain: b };
 	const p = EDGE_PRESETS[preset];
 	const plain = plainOf(b);
-	const ts = p.edges.map((e) => e.sym);
-	const partner = new Map<string, string>(p.glue.flatMap(([x, y]) => [[x, y], [y, x]] as [string, string][]));
-	const drawn = new Set<string>(p.edges.flatMap((e) => (e.style === "drawn" ? [e.sym] : [])));
+	// the preset's types for each length a side has: its own for length 1, `Esqrt2_Ed` and so on for the others
+	const lengths = new Map(plain.angles.flatMap((a) => (a.edge ? [[a.sym, a.edge.length] as const] : [])));
+	const edgeLines = ["", ...lengths.keys()].flatMap((l) =>
+		p.edges.map((e) => ({
+			sym: lengthStyled(l, e.sym),
+			value: "180",
+			edge: l ? { length: lengths.get(l), style: e.style } : { style: e.style },
+		})),
+	);
+	const partner = new Map<string, string>(
+		["", ...lengths.keys()].flatMap((l) =>
+			p.glue.flatMap(([x, y]) => [[lengthStyled(l, x), lengthStyled(l, y)], [lengthStyled(l, y), lengthStyled(l, x)]] as [string, string][]),
+		),
+	);
+	const drawn = new Set(edgeLines.flatMap((e) => (e.edge.style === "drawn" ? [e.sym] : [])));
 	const value = new Map(plain.angles.map((a) => [a.sym, a.value]));
 	// each typed corner made, to its base corner
 	const typed = new Map<string, string>();
@@ -802,13 +857,13 @@ export function decorate(
 		typed.set(n, c);
 		return n;
 	};
-	/** Every way to give the n slots a type, as arrays. */
-	const assignments = function* (n: number) {
-		for (let m = 0; m < ts.length ** n; m++) {
+	/** Every way to give the n slots one of k types, as arrays of indices. */
+	const assignments = function* (n: number, k: number) {
+		for (let m = 0; m < k ** n; m++) {
 			let r = m;
 			yield Array.from({ length: n }, () => {
-				const t = ts[r % ts.length];
-				r = Math.floor(r / ts.length);
+				const t = r % k;
+				r = Math.floor(r / k);
 				return t;
 			});
 		}
@@ -816,20 +871,27 @@ export function decorate(
 	const faces = plain.faces.flatMap((f) => {
 		if (f.repeat === "inf" || f.word.includes("Pi")) return [f];
 		const full = Array.from({ length: f.repeat }, () => f.word).flat();
+		// the corners, each with the length of the side after it ("" for 1)
+		const start = full.findIndex((c) => !lengths.has(c));
+		const round = [...full.slice(start), ...full.slice(0, start)];
+		const corners = round.flatMap((c, i) => (lengths.has(c) ? [] : [{ c, l: lengths.has(round[i + 1]) ? round[i + 1] : "" }]));
 		const out = new Map<string, Face>();
-		for (const s of assignments(full.length)) {
+		for (const s of assignments(corners.length, p.edges.length)) {
 			// side i runs from corner i to corner i+1
-			const word = full.flatMap((c, i) => [name(c, s[(i + full.length - 1) % full.length], s[i]), s[i]]);
+			const t = corners.map(({ l }, i) => lengthStyled(l, p.edges[s[i]].sym));
+			const word = corners.flatMap(({ c }, i) => [name(c, t[(i + corners.length - 1) % corners.length], t[i]), t[i]]);
 			const k = cyclicKey(word);
 			if (!out.has(k)) out.set(k, { word, repeat: 1 });
 		}
 		return [...out.values()];
 	});
+	const used = (sym: string) => faces.some((f) => f.word.includes(sym));
+	const types = edgeLines.filter((e) => used(e.sym));
 	const board: Board = {
 		...plain,
 		angles: [
-			...plain.angles.filter((a) => faces.some((f) => f.word.includes(a.sym))),
-			...p.edges.map((e) => ({ sym: e.sym, value: "180", edge: { style: e.style } as const })),
+			...plain.angles.filter((a) => used(a.sym)),
+			...types,
 			// typed corners after the edge lines they name, each with its base corner's angle
 			...[...typed].map(([sym, base]) => (value.get(base) === undefined ? { sym } : { sym, value: value.get(base) })),
 		],
@@ -837,19 +899,38 @@ export function decorate(
 		vertices: [],
 	};
 	const declared = new Set(typed.keys());
+	// every edge pattern round a plain vertex, the sides chosen last to first (so in the order counting does)
+	// and an order dropped as soon as a corner it settles is one no face has
 	const vertices = (ws: string[][]) => {
 		const out = new Map<string, string[]>();
-		for (const w of ws)
-			for (const s of assignments(w.length)) {
-				if (!loose && drawn.size && s.filter((t) => drawn.has(t)).length === 1) continue;
-				// side i leaves corner i with type s[i] and reaches corner i+1 as the type it glues to
-				const word = w.map((c, i) => typedName(c, partner.get(s[(i + w.length - 1) % w.length])!, s[i]));
-				const k = cyclicKey(word);
-				if (!out.has(k) && word.every((c) => declared.has(c))) out.set(k, word);
-			}
+		for (const w of ws) {
+			const n = w.length;
+			const s: string[] = [];
+			// side i leaves corner i as s[i] and reaches corner i+1 as the type it glues to
+			const at = (i: number) => typedName(w[i], partner.get(s[(i + n - 1) % n])!, s[i]);
+			const pick = (i: number): void => {
+				if (i < 0) {
+					if (!declared.has(at(0)) || (!loose && drawn.size && s.filter((t) => drawn.has(t)).length === 1)) return;
+					const word = w.map((_, j) => at(j));
+					const k = cyclicKey(word);
+					if (!out.has(k)) out.set(k, word);
+					return;
+				}
+				for (const t of types) {
+					s[i] = t.sym;
+					if (i === n - 1 || declared.has(at(i + 1))) pick(i - 1);
+				}
+			};
+			pick(n - 1);
+		}
 		return [...out.values()];
 	};
-	return { board, glue: p.glue.map((g) => [...g]), vertices, plain };
+	return {
+		board,
+		glue: [...new Set(types.map((t) => [t.sym, partner.get(t.sym)!].sort().join(" ")))].map((g) => g.split(" ")),
+		vertices,
+		plain,
+	};
 }
 
 // ── colourings ──

@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows straight off the shipped JSON */
-import { readFileSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { kUniformity, minimalImage } from "@/lib/classes/algorithm/delaney/DSymbol";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
@@ -10,28 +8,29 @@ import { cellDSymbol, dartsDSymbol, solidDSymbol } from "@/lib/tilings/dsymFromM
 import { referenceToCatalogue } from "@/lib/services/referenceAtlas";
 import { conePoints, morphTiling, orbifoldName, parseTegulaSymbol, withOrders } from "@/lib/tilings/orbifoldMorph";
 import { recordShape, recordSymbol } from "@/lib/tilings/recordSymbol";
+import { readDataJson } from "../../scripts/atlas/io.mjs";
 
-const load = (f: string) => JSON.parse(gunzipSync(readFileSync(f)).toString());
+const load = (f: string) => readDataJson(f);
 const key = (s: Parameters<typeof minimalImage>[0] | null) => (s ? minimalImage(s).canonicalKey() : null);
 
 // The ground truths: Tegula ships every type's symbol, and a k-uniform tiling's symbol has k vertex classes.
 describe("symbols read off the atlas's own geometry", () => {
 	it("gives every Tegula type its shipped symbol, from the plane skeleton and from the solid", () => {
 		const bad: string[] = [];
-		for (const r of load("public/reference-atlas-tegula.json.gz")) {
+		for (const r of load("public/reference-atlas-tegula.json.br")) {
 			const cell = {
 				basis: r.tegula.basis,
 				cellPolygons: r.tegula.polys.map((q: { v: number[][] }) => ({ vertices: q.v })),
 			};
 			if (key(cellDSymbol(cell)) !== key(parseTegulaSymbol(r.note))) bad.push(r.id);
 		}
-		for (const r of load("public/reference-atlas-tegula-sph.json.gz"))
+		for (const r of load("public/reference-atlas-tegula-sph.json.br"))
 			if (key(solidDSymbol(r.sphPoly.vertices, r.sphPoly.faces)) !== key(parseTegulaSymbol(r.note))) bad.push(r.id);
 		expect(bad).toEqual([]);
 	});
 
 	it("names the eleven Archimedean tilings' groups and counts k on the k-uniform shelf", () => {
-		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.gz")));
+		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.br")));
 		const groups = Object.fromEntries(
 			rows
 				.filter((r: any) => /^t10(0\d|1[01])$/.test(r.id))
@@ -57,11 +56,11 @@ describe("symbols read off the atlas's own geometry", () => {
 	}, 60_000);
 
 	it("finds 3.4.7.4 on the hyperbolic board as the 3.4.6.4 tiling with its hexagons raised to 7", () => {
-		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.gz")));
+		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.br")));
 		const sym = cellDSymbol(rows.find((r: any) => r.id === "t1006").renderCell)!;
 		const pts = conePoints(sym);
 		const vs = pts.map((p) => (p.kind === "tile" && p.v === 6 ? 7 : p.v));
-		const hp = decodeAtlas<any>(load("public/hyperbolic-poly/hp7-k1.json.gz"))[0];
+		const hp = decodeAtlas<any>(load("public/hyperbolic-poly/hp7-k1.json.br"))[0];
 		expect(hp.config).toBe("3.4.7.4");
 		expect(key(dartsDSymbol(hp.darts, hp.edge))).toBe(key(withOrders(sym, vs)));
 	});
@@ -70,7 +69,7 @@ describe("symbols read off the atlas's own geometry", () => {
 	// would morph the 12-gons into hexagons and the stars into triangles. The record's drawn shape rides
 	// along (recordShape), and the stars and 12-gons come back in every geometry.
 	it("keeps 3.3*.4.6.12's stars through a morph", () => {
-		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.gz")));
+		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.br")));
 		const t = referenceToCatalogue(rows.find((r: any) => r.id === "ctrnact-star-k7-n0003"));
 		const sym = recordSymbol(t)!;
 		const shape = recordShape(t);
@@ -89,7 +88,7 @@ describe("symbols read off the atlas's own geometry", () => {
 	// A star whose dents are real vertices (three tiles meet there) is drawn convex by the circle pattern;
 	// fitShape pulls it back to the record's angles, so a morph keeps its reflex corners.
 	it("keeps a star's reflex corners through a morph into the disk", () => {
-		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.gz")));
+		const rows = hydrateRenderCells(decodeAtlas<any>(load("public/reference-atlas.json.br")));
 		const t = referenceToCatalogue(rows.find((r: any) => r.id === "ctrnact-star-k5-n0186"));
 		const sym = recordSymbol(t)!;
 		const pts = conePoints(sym);

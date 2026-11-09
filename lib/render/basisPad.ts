@@ -1,4 +1,4 @@
-// Pure math for the basis pad (components/ui/basis-pad.tsx): the 2x2 view deformation, edited by
+// Pure math for the basis pad (design-system/components/basis-pad.tsx): the 2x2 view deformation, edited by
 // dragging the images of the two unit vectors around a [-2, 2] square ruled at 0.25.
 //
 // The matrix IS the pair of vectors — red = D*(1,0) is its first column, blue = D*(0,1) its second — so

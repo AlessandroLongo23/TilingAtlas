@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useMainThreadSettled } from "@/lib/hooks/useMainThreadSettled";
@@ -9,7 +10,6 @@ import {
 	Camera,
 	Film,
 	Check,
-	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
 	Link2,
@@ -24,43 +24,47 @@ import { SliceLoader } from "@/components/atlas/slice-loader";
 import { OpenInSearcher, useSearcherBoard } from "@/components/atlas/open-in-searcher";
 import { ReferenceShelf, type ShelfCommand } from "@/components/reference-shelf";
 import { PageSidebar } from "@/components/page-sidebar";
+import { TilingInfoPanel } from "@/components/tiling-info";
+import { Tabs } from "@/design-system/components/tabs";
+import type { VCWithOccurrences } from "@/classes/Tiling";
 import { NavHeader } from "@/components/sidebar/nav-header";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
+import { FoldChevron } from "@/design-system/components/disclosure";
 import type { Crumb } from "@/components/atlas/stage-bar";
 import { OptionsTab } from "@/components/sidebar/options-tab";
-import { buildBrowseTree, findScopeNode, nodeOfRecord, pathTo, type BrowseNode } from "@/lib/atlas/browse";
+import {
+	buildBrowseTree,
+	classificationNodes,
+	findScopeNode,
+	nodeOfRecord,
+	pathTo,
+	type BrowseNode,
+} from "@/lib/atlas/browse";
 import { flushQuery, mirroredQuery, mirrorQuery } from "@/lib/services/urlMirror";
-import { FloatingToolbar, ToolbarButton, ToolbarDivider, ToolbarReveal } from "@/components/ui/floating-toolbar";
-import { SwapIcon } from "@/components/ui/swap-icon";
+import {
+	FloatingToolbar,
+	ToolbarButton,
+	ToolbarDivider,
+	ToolbarReveal,
+} from "@/design-system/components/floating-toolbar";
+import { SwapIcon } from "@/design-system/components/swap-icon";
 import { Canvas } from "@/components/canvas";
-import { InversiveCanvas } from "@/components/inversive-canvas";
-import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
 import { HyperbolicJoystick } from "@/components/hyperbolic-joystick";
-import { SphericalCanvas } from "@/components/spherical-canvas";
-import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
-import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { TruchetOverlay } from "@/components/truchet-overlay";
 import { SquaringInset } from "@/components/squaring/squaring-inset";
 import { SquaringOverlay } from "@/components/squaring/squaring-overlay";
 import { canReset, useStudio } from "@/lib/stores/studio";
 import { PaletteStrip } from "@/components/studio/palette-strip";
 import { StudioHistory, StudioPeriod, StudioTools, useStudioKeys } from "@/components/studio/studio-bar";
-import { StudioCanvas } from "@/components/studio/studio-canvas";
 import { blendedSquaring, exactSquaring, squaringAvailability, squaringCell } from "@/lib/squaring/playSquaring";
 import { truchetPattern as buildTruchetPattern } from "@/lib/render/truchetTiling";
-import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
-import { HollowCanvas } from "@/components/hollow/hollow-canvas";
-import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
-import { SphSchwarzCanvas } from "@/components/freedraw/sph-schwarz-canvas";
-import { SphPolyCanvas } from "@/components/freedraw/sph-poly-canvas";
-import { SphStarCanvas } from "@/components/freedraw/sph-star-canvas";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { isChiralTiling, reflectRenderCell } from "@/lib/services/chirality";
 import { DEFAULT_BUBBLE_EDGE_STYLE } from "@/lib/bubble/edges";
 import { bubbleRenderCell, isBubbleId } from "@/lib/bubble/pattern";
 import { useImmersive } from "@/stores/immersive";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { cn } from "@/lib/utils/cn";
 import { useInversiveCell } from "@/lib/hooks/useInversiveCell";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
@@ -71,6 +75,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { IcoMode } from "@/lib/render/icoFreedraw";
 import {
 	loadAtlasManifest,
+	tierKey,
 	unloadedTiers,
 	type AtlasManifest,
 	type TierShelf,
@@ -113,6 +118,7 @@ import {
 	loadSphericalEdgesAtlas,
 	loadSphericalEdgesShard,
 	loadSphericalPolyAtlas,
+	loadTegulaSphAtlas,
 	loadPentagonEdgesAtlas,
 	loadPentagonEdgesShard,
 	loadIsohedralEdgesAtlas,
@@ -129,6 +135,7 @@ import {
 	tileClassOf,
 	subOf,
 	sortCatalogueForDisplay,
+	mergeCatalogueForDisplay,
 	geometryOf,
 	decorationOf,
 	type Geometry,
@@ -147,6 +154,7 @@ import {
 	PENROSE_SHARD_KS,
 	EUHALF_SHARD_KS,
 	loadEuHalfAtlasShard,
+	regularShardOf,
 	resolveMergedFamilyKey,
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
@@ -157,10 +165,6 @@ import { SPH_HALF_BOARDS } from "@/lib/tilings/sph-half";
 import { HYP_HALF_BOARDS, hypHalfLazyShardsForK } from "@/lib/tilings/hyp-half";
 import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
 import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
-import { PentagonEdgesCanvas } from "@/components/pentagon-edges-canvas";
-import { IsohedralEdgesCanvas } from "@/components/isohedral-edges-canvas";
-import { PentagonEdgesControls } from "@/components/pentagon-edges-controls";
-import { IsohedralEdgesControls } from "@/components/isohedral-edges-controls";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK, SPH_COLORS_SOLIDS } from "@/lib/colors/sph-colors";
 import { paramGlyphs, resolveAlphaDegs } from "@/lib/utils/paramCell";
@@ -181,6 +185,67 @@ import { pickStratified } from "@/lib/utils/pickStratified";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { DECORATIONS, GEOMETRIES, SOURCES } from "@/lib/vocabulary";
+import { loadClassification } from "@/lib/classifications";
+
+// The canvases of the other geometries and decorations, fetched the first time a tiling needs one. The grid
+// lens draws none of them, and imported here they put three.js, the solid catalogues and the hyperbolic and
+// isohedral renderers in the first load of every catalogue page.
+const InversiveCanvas = dynamic(() => import("@/components/inversive-canvas").then((m) => m.InversiveCanvas), {
+	ssr: false,
+});
+const HyperbolicCanvas = dynamic(() => import("@/components/hyperbolic-canvas").then((m) => m.HyperbolicCanvas), {
+	ssr: false,
+});
+const SphericalCanvas = dynamic(() => import("@/components/spherical-canvas").then((m) => m.SphericalCanvas), {
+	ssr: false,
+});
+const SphericalColorsCanvas = dynamic(
+	() => import("@/components/spherical-colors-canvas").then((m) => m.SphericalColorsCanvas),
+	{ ssr: false },
+);
+const FreedrawPlayCanvas = dynamic(
+	() => import("@/components/freedraw-play-canvas").then((m) => m.FreedrawPlayCanvas),
+	{ ssr: false },
+);
+const ColorsPlayCanvas = dynamic(() => import("@/components/colors-play-canvas").then((m) => m.ColorsPlayCanvas), {
+	ssr: false,
+});
+const PentagonEdgesCanvas = dynamic(
+	() => import("@/components/pentagon-edges-canvas").then((m) => m.PentagonEdgesCanvas),
+	{ ssr: false },
+);
+const IsohedralEdgesCanvas = dynamic(
+	() => import("@/components/isohedral-edges-canvas").then((m) => m.IsohedralEdgesCanvas),
+	{ ssr: false },
+);
+const PentagonEdgesControls = dynamic(
+	() => import("@/components/pentagon-edges-controls").then((m) => m.PentagonEdgesControls),
+	{ ssr: false },
+);
+const IsohedralEdgesControls = dynamic(
+	() => import("@/components/isohedral-edges-controls").then((m) => m.IsohedralEdgesControls),
+	{ ssr: false },
+);
+const StudioCanvas = dynamic(() => import("@/components/studio/studio-canvas").then((m) => m.StudioCanvas), {
+	ssr: false,
+});
+const HollowCanvas = dynamic(() => import("@/components/hollow/hollow-canvas").then((m) => m.HollowCanvas), {
+	ssr: false,
+});
+const IcoFreedrawCanvas = dynamic(
+	() => import("@/components/freedraw/ico-freedraw-canvas").then((m) => m.IcoFreedrawCanvas),
+	{ ssr: false },
+);
+const SphSchwarzCanvas = dynamic(
+	() => import("@/components/freedraw/sph-schwarz-canvas").then((m) => m.SphSchwarzCanvas),
+	{ ssr: false },
+);
+const SphPolyCanvas = dynamic(() => import("@/components/freedraw/sph-poly-canvas").then((m) => m.SphPolyCanvas), {
+	ssr: false,
+});
+const SphStarCanvas = dynamic(() => import("@/components/freedraw/sph-star-canvas").then((m) => m.SphStarCanvas), {
+	ssr: false,
+});
 
 // Higher-k demo shards held out of the eager main atlas (convex k3, isotoxal k3/k4). We pull them all into
 // the browse list on mount — see the eager-merge effect below.
@@ -226,6 +291,46 @@ const TIER_LOADER: Record<TierShelf, (t: UnloadedTier) => Promise<ReferenceTilin
 const NO_RECORDS: ReferenceTiling[] = [];
 const NO_TILINGS: CatalogueTiling[] = [];
 
+/**
+ * What the page knows about every record it has loaded, grown one batch at a time. The corpus only ever
+ * grows, so a batch is sorted on its own and merged into the cells it joins; re-sorting, re-partitioning and
+ * re-indexing everything on each batch was most of the 4 s the Edge patterns chip cost.
+ */
+interface Corpus {
+	/** Every record, in arrival order. */
+	list: CatalogueTiling[];
+	/** The nine (geometry, decoration) cells, each in display order (sortCatalogueForDisplay). */
+	byCell: ReadonlyMap<string, CatalogueTiling[]>;
+	geo: Record<Geometry, number>;
+	/** The (class, sub, k) tiers present, keyed by tierKey: what the manifest's unloaded rows are checked against. */
+	tiers: ReadonlyMap<string, { cls: ReturnType<typeof tileClassOf>; sub: string; k: number }>;
+	/** Record by key. Append-only and shared by every Corpus: copying 300k entries per batch cost 300 to 600 ms. */
+	byKey: Map<string, CatalogueTiling>;
+}
+
+function growCorpus(prev: Corpus | null, batch: CatalogueTiling[]): Corpus {
+	const byCell = new Map(prev?.byCell);
+	const geo = { ...(prev?.geo ?? { euclidean: 0, hyperbolic: 0, spherical: 0 }) };
+	const tiers = new Map(prev?.tiers);
+	const byKey = prev?.byKey ?? new Map<string, CatalogueTiling>();
+	const add = new Map<string, CatalogueTiling[]>();
+	for (const t of sortCatalogueForDisplay(batch)) {
+		const g = geometryOf(t);
+		const key = `${g}|${decorationOf(t)}`;
+		geo[g] += 1;
+		const rows = add.get(key);
+		if (rows) rows.push(t);
+		else add.set(key, [t]);
+		const cls = tileClassOf(t);
+		const sub = subOf(t);
+		tiers.set(tierKey(cls, sub, t.k), { cls, sub, k: t.k });
+		byKey.set(t.canonicalKey, t);
+	}
+	for (const [key, rows] of add) byCell.set(key, mergeCatalogueForDisplay(byCell.get(key) ?? NO_TILINGS, rows));
+	return { list: prev ? [...prev.list, ...batch] : batch, byCell, geo, tiers, byKey };
+}
+const EMPTY_CORPUS = growCorpus(null, []);
+
 /** Which lens a path opens: /catalogue/view the viewer of one tiling, /catalogue the grid of many. */
 type Lens = "grid" | "tiling";
 const lensOf = (path: string | null): Lens => (path?.startsWith("/catalogue/view") ? "tiling" : "grid");
@@ -236,6 +341,16 @@ export function AtlasClient() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const lens = lensOf(pathname);
+	// In the viewer, the curved geometries' canvases (three.js, the per-pixel disk) load once the page is idle,
+	// so the first switch to Hyperbolic or Spherical does not wait on them; the grid never needs them.
+	useEffect(() => {
+		if (lens !== "tiling") return;
+		const warm = () =>
+			void Promise.all([import("@/components/hyperbolic-canvas"), import("@/components/spherical-canvas")]);
+		if (typeof requestIdleCallback !== "function") return void setTimeout(warm, 2000);
+		const id = requestIdleCallback(warm, { timeout: 5000 });
+		return () => cancelIdleCallback(id);
+	}, [lens]);
 	// No measured-size state here on purpose: every renderer below (p5, the flat/Islamic/inversive/
 	// hyperbolic WebGL canvases, the three.js sphere) measures its own host box inside its frame loop —
 	// see lib/render/canvasSize.ts. Routing the size through React made the tiling stretch and snap back
@@ -271,7 +386,8 @@ export function AtlasClient() {
 	// CatalogueTiling shape) — the page browses every tiling however you arrive. The Supabase certified
 	// catalogue it used to fall back on is gone: both of its tables held 0 rows, and fetching them cost
 	// every catalogue page two round trips (75-175 ms each) before its HTML could start.
-	const [refList, setRefList] = useState<CatalogueTiling[] | null>(null);
+	const [corpus, setCorpus] = useState<Corpus | null>(null);
+	const refList = corpus?.list ?? null;
 	// The same records as the library filters read them. The viewer's CatalogueTiling is a mapped copy
 	// that drops what the library's facets need (certification, notes, decomposability…), so the page
 	// keeps both, in step: ONE store, which every loader on the page writes to, the viewer's and the
@@ -324,7 +440,7 @@ export function AtlasClient() {
 				else byCell.set(key, [r]);
 			}
 			startTransition(() => {
-				setRefList((prev) => (prev ? [...prev, ...cat] : cat));
+				setCorpus((prev) => growCorpus(prev, cat));
 				setRecords((prev) => {
 					const next = new Map(prev);
 					for (const [key, add] of byCell) next.set(key, [...(prev?.get(key) ?? []), ...add]);
@@ -385,7 +501,7 @@ export function AtlasClient() {
 			})
 			.catch(() => {
 				if (!alive) return;
-				setRefList((prev) => prev ?? []);
+				setCorpus((prev) => prev ?? growCorpus(null, []));
 				setRecords((prev) => prev ?? new Map());
 				setBaseLoaded(true);
 			});
@@ -488,7 +604,7 @@ export function AtlasClient() {
 	// (composable, period, isotoxal) predate it and can fold in here whenever they are next touched.
 	useEffect(() => {
 		if (!requestedKey) return;
-		const RESOLVERS: { re: RegExp; load: (k: number) => Promise<ReferenceTiling[]>; ks: readonly number[] }[] = [
+		const RESOLVERS: { re: RegExp; load: (k: number) => Promise<ReferenceTiling[]>; ks?: readonly number[] }[] = [
 			// "ctrnact-mixed-family-k3-01" and the rigid crossing entries "ctrnact-cross-star-scaled-k2-08".
 			{ re: /^ctrnact-(?:mixed-family|cross-star-scaled)-k(\d+)-/, load: loadMixedAtlasShard, ks: MIXED_SHARD_KS },
 			// "d-ctrnact-07_3t-…" / "s-ctrnact-01_3e-…" — the two-digit field after the palette tag is k.
@@ -497,11 +613,13 @@ export function AtlasClient() {
 			// five slices, k=5 alone 9,357 tilings, so it stays off KNOWN_HIGHER_TIERS and resolves one
 			// shard per link.
 			{ re: /^euh[a-z]+-k(\d+)-/, load: loadEuHalfAtlasShard, ks: EUHALF_SHARD_KS },
+			// "fh-30-12": a face-homogeneous tiling above the shelf's k, on no shelf: its record is in the list.
+			{ re: /^fh-(\d+)-/, load: () => loadClassification("face-homogeneous").then((l) => l?.records ?? []) },
 		];
 		const hit = RESOLVERS.map((r) => ({ r, m: requestedKey.match(r.re) })).find((x) => x.m);
 		if (!hit?.m) return;
 		const k = Number(hit.m[1]);
-		if (!hit.r.ks.includes(k)) return; // k≤2 rides the eager bundle; anything else has no shard
+		if (hit.r.ks && !hit.r.ks.includes(k)) return; // k≤2 rides the eager bundle; anything else has no shard
 		let alive = true;
 		hit.r
 			.load(k)
@@ -537,18 +655,15 @@ export function AtlasClient() {
 		};
 	}, [requestedKey, appendRefs]);
 
-	// Higher-k regular tilings (Čtrnáct, k≥8, id "ctrnact-{kk}_…") live in lazy per-k shards
-	// (public/reference-atlas-k{k}.json), not the base atlas. If we arrived directly at one (a click from
-	// the /library higher-k shelf), fetch its shard and merge it in so the requested key resolves —
-	// otherwise useCatalogueSelection can't find it and silently falls back to the first tiling. Best-
-	// effort; dedup by key so navigating between k≥8 tilings doesn't append the shard twice.
+	// Higher-k regular tilings (k≥8) live in lazy per-k shards (public/reference-atlas-k{k}.json), not the
+	// base atlas. If we arrived directly at one (a link, a click in the grid), fetch its shard and merge it in
+	// so the requested key resolves — otherwise useCatalogueSelection can't find it and silently falls back
+	// to the first tiling. regularShardOf reads the k off the id. Best-effort; the store dedupes by key.
 	useEffect(() => {
-		const m = requestedKey?.match(/^ctrnact-(\d+)_/);
-		if (!m) return;
-		const k = Number(m[1]);
-		if (!Number.isFinite(k) || k < 8) return;
+		if (!requestedKey) return;
 		let alive = true;
-		loadReferenceAtlasShard(k)
+		regularShardOf(requestedKey)
+			.then((k) => (alive && k != null ? loadReferenceAtlasShard(k, requestedKey) : []))
 			.then((data) => {
 				if (!alive || data.length === 0) return;
 				appendRefs(data);
@@ -559,15 +674,7 @@ export function AtlasClient() {
 		};
 	}, [requestedKey, appendRefs]);
 
-	const working = refList ?? NO_TILINGS;
-
-	// The catalogue's ONE canonical order — the same class → sub → k → key order the sidebar renders (see
-	// compareCatalogueDisplayOrder). Making this THE order means arrow-key / prev-next browsing steps through
-	// the visible list, and the default first paint + a geometry switch both land on that geometry's first
-	// sidebar row. Deterministic (never random), so the first paint is still stable.
-	const sorted = useMemo(() => sortCatalogueForDisplay(working), [working]);
-
-	const { selected, setSelected } = useCatalogueSelection(sorted, requestedKey);
+	const { selected, setSelected } = useCatalogueSelection(refList ?? NO_TILINGS, requestedKey);
 
 	// Geometry is the catalogue's top-level split AND a browse mode: random/prev/next roam only within the
 	// active geometry, and switching it jumps the canvas to that geometry's first tiling. The toggle state
@@ -594,28 +701,23 @@ export function AtlasClient() {
 	// from `geometryList`, which is already filtered to (geometry, decoration), so an unscoped tier is a
 	// row for a shelf the current view cannot hold. Marek Čtrnáct caught it as Euclidean rows offered
 	// under Hyperbolic that vanished when clicked, the records having been filtered out on arrival.
-	// The (class, sub, k) of everything loaded. This is a property of `refList` and of nothing else, but
-	// it used to be rebuilt inside the memo below, which also depends on the two chips — so every switch
-	// re-ran tileClassOf and subOf over the whole corpus and allocated an object per record. That was the
-	// single most expensive thing a switch did: 3.1 s on Hyperbolic × Edge patterns, which fetches nothing.
-	const loadedTiers = useMemo(
-		() => (refList ?? []).map((t) => ({ cls: tileClassOf(t), sub: subOf(t), k: t.k })),
-		[refList],
-	);
+	// The (class, sub, k) of everything loaded, kept by the corpus as it grows. Rebuilt here from the
+	// records, it re-ran tileClassOf and subOf over the whole corpus: 3.1 s on Hyperbolic × Edge patterns.
+	const loadedTiers = corpus?.tiers;
 	// The SAME set difference, unscoped: what every cell is still missing. The segment labels below add
 	// it to what they hold, so a segment reads the number of tilings that EXIST rather than the number
 	// currently in memory — the same rule the tree's rows follow. Without it the two disagreed on screen:
 	// the hyperbolic Tilings segment read 32,403 above rows summing to 2,220,588 (AL spotted it).
 	const pendingByCell = useMemo(() => {
 		const m = new Map<string, number>();
-		for (const t of unloadedTiers(manifest, loadedTiers)) {
+		for (const t of unloadedTiers(manifest, loadedTiers?.values() ?? [])) {
 			const key = `${t.geometry}|${t.decoration}`;
 			m.set(key, (m.get(key) ?? 0) + t.count);
 		}
 		return m;
 	}, [manifest, loadedTiers]);
 	const unloaded = useMemo(
-		() => unloadedTiers(manifest, loadedTiers, { geometry, decoration }),
+		() => unloadedTiers(manifest, loadedTiers?.values() ?? [], { geometry, decoration }),
 		[manifest, loadedTiers, geometry, decoration],
 	);
 	// The decoration catalogues are deferred in every geometry (see loadColorsDecorAtlas): each loads when
@@ -631,32 +733,13 @@ export function AtlasClient() {
 	// Same story one axis up: the base hyperbolic shelf is deferred, so its geometry chip reads 0 and
 	// `disabled={empty}` would grey out the only control that fetches it.
 	const [hypLoaded, setHypLoaded] = useState(false);
-	// THE nine cells, built in one pass and keyed by (geometry, decoration).
-	//
-	// The segment counts and the active list used to be three separate sweeps of the whole corpus, two
-	// of them re-running on every switch — and geometryOf/decorationOf both go through tileClassOf,
-	// which is a chain of string tests per record. With every shelf a session has visited still in
-	// `refList` (it only ever grows), switching a chip was 300k+ classifications for numbers that do
-	// not depend on the chip at all. Measured on /play: 2.0-4.4 s per switch, on transitions that
-	// fetched nothing.
-	//
-	// Partitioning once per atlas change makes every switch a Map lookup. The buckets keep `sorted`'s
-	// order because they are filled by walking it, which is what the sidebar, the nav count and
-	// random/prev/next all read.
-	const cells = useMemo(() => {
-		const m = new Map<string, CatalogueTiling[]>();
-		const geo: Record<Geometry, number> = { euclidean: 0, hyperbolic: 0, spherical: 0 };
-		for (const t of sorted) {
-			const g = geometryOf(t);
-			const d = decorationOf(t);
-			geo[g] += 1;
-			const key = `${g}|${d}`;
-			const bucket = m.get(key);
-			if (bucket) bucket.push(t);
-			else m.set(key, [t]);
-		}
-		return { byCell: m, geo };
-	}, [sorted]);
+	// The same for the shelves Spherical loads on entry (see the effect that fetches them).
+	const [sphLoaded, setSphLoaded] = useState(false);
+	// THE nine cells, keyed by (geometry, decoration), each in the catalogue's one display order (class →
+	// sub → k → key, the order the sidebar renders), so prev/next steps through the visible list and a
+	// switch lands on the cell's first sidebar row. Partitioned by the corpus as it grows, which makes a
+	// switch a Map lookup: sweeping the whole corpus per switch cost 2.0-4.4 s on transitions that fetched nothing.
+	const cells = corpus ?? EMPTY_CORPUS;
 	/** One shared empty list, so an unvisited cell does not hand React a new array identity each render. */
 	const EMPTY_CELL = useMemo(() => [] as CatalogueTiling[], []);
 	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
@@ -696,9 +779,12 @@ export function AtlasClient() {
 	// ── The two lenses and what they share ─────────────────────────────────────────────────────────────
 	//
 	// The browse tree of the active cell: class → family → board, counted from the loaded records and the
-	// manifest together (lib/atlas/browse.ts). Both lenses read it: the sidebar draws it, the grid's rows
-	// open its nodes, the breadcrumb walks it.
-	const tree = useMemo(() => buildBrowseTree(geometryList, unloaded), [geometryList, unloaded]);
+	// manifest together (lib/atlas/browse.ts), then the cell's classifications. Both lenses read it: the
+	// sidebar draws it, the grid's rows open its nodes, the breadcrumb walks it.
+	const tree = useMemo(
+		() => [...buildBrowseTree(geometryList, unloaded), ...classificationNodes(`${geometry}|${decoration}`)],
+		[geometryList, unloaded, geometry, decoration],
+	);
 	// The grid lens is the library (components/reference-shelf.tsx). It mounts on the first visit and then
 	// stays, hidden while the viewer is up, so its filters, page and sort survive a trip to a tiling and
 	// back. Its filters are mirrored here only to be read: the tree's highlight and the breadcrumb.
@@ -716,16 +802,20 @@ export function AtlasClient() {
 	// The results the grid shows, in its order. The viewer's ←/→ and Random walk them whenever the tiling
 	// on the canvas is one of them; a tiling reached some other way (a link, the tree) walks its cell.
 	const [resultIds, setResultIds] = useState<readonly string[]>([]);
-	const byKey = useMemo(() => new Map((refList ?? []).map((t) => [t.canonicalKey, t])), [refList]);
+	// One Map that grows in place, so a memo reads it through `cells`, whose identity changes with each batch.
+	const byKey = cells.byKey;
 	const resultList = useMemo(
-		() => resultIds.map((id) => byKey.get(id)).filter((t): t is CatalogueTiling => !!t),
-		[resultIds, byKey],
+		() => resultIds.map((id) => cells.byKey.get(id)).filter((t): t is CatalogueTiling => !!t),
+		[resultIds, cells],
 	);
-	// The side panels: the browse tree on the left, and on the right the filters (grid) or the view
-	// options (viewer). Each slides shut on its own.
+	// The side panels: the browse tree on the left, and on the right the filters (grid) or, in the viewer,
+	// the tiling's Info and the View options as two tabs. Each slides shut on its own.
 	const [browseOpen, setBrowseOpen] = useState(true);
 	const [filtersOpen, setFiltersOpen] = useState(true);
 	const [optionsOpen, setOptionsOpen] = useState(true);
+	const [rightTab, setRightTab] = useState("Info");
+	// The drawn tiling's vertex configurations, which only the flat canvas computes, for the Info tab.
+	const [vcs, setVcs] = useState<VCWithOccurrences[]>([]);
 
 	const goLens = useCallback(
 		(next: Lens) => {
@@ -755,7 +845,7 @@ export function AtlasClient() {
 	// active cell — see the ⚑ there for what inferring it from a mismatch cost.
 	const awaitingSwitch = useRef(false);
 	// Switch geometry from the toggle: set the mode and jump to that geometry's first tiling so the canvas
-	// follows. Reads `sorted` (not `geometryList`, which still holds the OLD cell this render).
+	// follows. Reads the target cell (not `geometryList`, which still holds the OLD cell this render).
 	//
 	// The decoration carries across when the target cell has anything in it, so switching Euclidean →
 	// Hyperbolic while browsing colorings keeps you on colorings. It falls back to Tilings when the cell is
@@ -765,32 +855,31 @@ export function AtlasClient() {
 		(g: Geometry) => {
 			if (g === geometry) return;
 			setGeometry(g);
-			const keepsDecoration = sorted.some((t) => geometryOf(t) === g && decorationOf(t) === decoration);
-			const d = keepsDecoration ? decoration : "tilings";
+			const d = cells.byCell.get(`${g}|${decoration}`)?.length ? decoration : "tilings";
 			setDecoration(d);
-			const first = sorted.find((t) => geometryOf(t) === g && decorationOf(t) === d);
+			const first = cells.byCell.get(`${g}|${d}`)?.[0];
 			if (first) setSelected(first);
 			awaitingSwitch.current = !first;
 		},
-		[geometry, decoration, sorted, setSelected],
+		[geometry, decoration, cells, setSelected],
 	);
 	// Switch decoration from the toggle: same move one level down, within the active geometry.
 	const onDecorationChange = useCallback(
 		(d: Decoration) => {
 			if (d === decoration) return;
 			setDecoration(d);
-			const first = sorted.find((t) => geometryOf(t) === geometry && decorationOf(t) === d);
+			const first = cells.byCell.get(`${geometry}|${d}`)?.[0];
 			if (first) setSelected(first);
 			awaitingSwitch.current = !first;
 		},
-		[decoration, geometry, sorted, setSelected],
+		[decoration, geometry, cells, setSelected],
 	);
 	// Keep both toggles in sync with the selection — covers deep-links, the initial atlas load, and any path
 	// that sets `selected` outside the toggles ("R", ←/→, a click in the list).
 	//
 	// ⚑ It must follow a NEW SELECTION, never a new toggle, and the difference is the whole bug this ref
 	// fixes. Hyperbolic and Spherical are deferred shelves, so pressing their chip on a fresh page runs
-	// `onGeometryChange` with no records of that geometry loaded yet: `sorted.find(...)` returns nothing,
+	// `onGeometryChange` with no records of that geometry loaded yet: the target cell is empty,
 	// `selected` keeps its Euclidean tiling, and this effect then read that tiling and set the geometry
 	// straight back. The chip flipped and reverted within a frame, and the load it had just triggered
 	// arrived into a view that was Euclidean again. Measured before the fix: clicking Hyperbolic left
@@ -982,9 +1071,10 @@ export function AtlasClient() {
 					})
 					.catch(() => {});
 			}
-			loadSphericalPolyAtlas()
-				.then(merge)
-				.catch(() => {});
+			// The chip reads "–" until both have landed: before that its count is missing them.
+			Promise.all([loadSphericalPolyAtlas().then(merge), loadTegulaSphAtlas().then(mergeAlways)])
+				.catch(() => {})
+				.finally(() => setSphLoaded(true));
 		}
 		if (wantHyp) {
 			loadHyperbolicBaseAtlas()
@@ -1148,6 +1238,15 @@ export function AtlasClient() {
 			alive = false;
 		};
 	}, [geometry, decoration, requestedKey, appendRefs, markLoaded]);
+
+	// A link to a Tegula type on the sphere. The plane's and the sphere's ids share the "tegula-" prefix and only
+	// the plane's come with the base atlas, so the sphere's file is fetched once that has landed without the key.
+	useEffect(() => {
+		if (!baseLoaded || !requestedKey?.startsWith("tegula-") || cells.byKey.has(requestedKey)) return;
+		loadTegulaSphAtlas()
+			.then(appendRefs)
+			.catch(() => {});
+	}, [baseLoaded, requestedKey, cells, appendRefs]);
 
 	// Exact wallpaper-symmetry analysis of the selected tiling (fetched cell_codec → analyzeSymmetry),
 	// memoized per canonicalKey; drives the two canvas overlays. Null while loading / for tilings with
@@ -1447,13 +1546,13 @@ export function AtlasClient() {
 	// useCatalogueSelection seeds selection at mount; the atlas list arrives AFTER mount (async fetch),
 	// so apply the requested key (or the first entry) once the atlas lands.
 	useEffect(() => {
-		if (sorted.length === 0 || selected) return;
-		const requested = requestedKey ? sorted.find((t) => t.canonicalKey === requestedKey) : undefined;
+		if (!refList?.length || selected) return;
+		const requested = requestedKey ? byKey.get(requestedKey) : undefined;
 		if (requested) setSelected(requested);
 		// The active cell's first row: a /library?geo=hyperbolic link has already moved the cell, and a
 		// Euclidean first pick would drag it back. An empty cell (a deferred shelf in flight) waits.
 		else if (baseLoaded && geometryList.length) setSelected(geometryList[0]);
-	}, [sorted, selected, requestedKey, setSelected, baseLoaded, geometryList]);
+	}, [refList, byKey, selected, requestedKey, setSelected, baseLoaded, geometryList]);
 
 	// Jump to a random tiling, stratified by (polygon class × k) so fat buckets (e.g. regular k=10)
 	// don't swamp thin ones (e.g. star k=1): each class×k combination is equally likely, then a tiling
@@ -1794,10 +1893,10 @@ export function AtlasClient() {
 	const squaringOn = useConfiguration((s) => s.squaring);
 	const squaringClass = useConfiguration((s) => s.squaringClass);
 	const squaringMono = useConfiguration((s) => s.squaringMono);
-	// Cached per record inside the adapter, so this is a map lookup on all but the first render for a
-	// given tiling. Deliberately not conditional on `squaringOn`: the Options tab asks the same question
-	// to decide whether the toggle is live, and both must get the same answer.
+	// Only while squaring is on: the support's exact solves take seconds on a large cell, and selecting a tiling
+	// must not pay for them. The toggle reads the cheap squaringRefusal. Cached per record inside the adapter.
 	const squaringSupport = (() => {
+		if (!squaringOn) return null;
 		const a = squaringAvailability(selected ?? null);
 		return a.ok ? a.support : null;
 	})();
@@ -1994,7 +2093,7 @@ export function AtlasClient() {
 		const lead = board ? `${board.label} · ` : null;
 		return lead && name.startsWith(lead) ? name.slice(lead.length) : name;
 	}, [selected, tilingNode, tree]);
-	const geometryPending = useMemo(() => ({ hyperbolic: !hypLoaded }), [hypLoaded]);
+	const geometryPending = useMemo(() => ({ hyperbolic: !hypLoaded, spherical: !sphLoaded }), [hypLoaded, sphLoaded]);
 	const decorationPending = useMemo(
 		() => ({
 			edges: !decorLoaded.has(`${geometry}|${DECORATIONS.EDGES}`),
@@ -2016,7 +2115,28 @@ export function AtlasClient() {
 		},
 		[byKey, setSelected, goLens],
 	);
-	const optionsPanel = useMemo(() => <OptionsTab selected={selected} />, [selected]);
+	// The symmetry steppers fold into the view options. A squaring draws a different tiling, which they
+	// do not describe, so they step aside while it is up.
+	const symmetryPanel = useMemo(
+		() =>
+			dsym && selected && !squaringActive ? (
+				<OrbifoldMorphControls
+					id={selected.canonicalKey}
+					symbol={dsym}
+					error={morphed && "error" in morphed ? morphed.error : undefined}
+					bent={morph?.bent}
+					topological={!selected.dsym}
+					loaded={refList ?? []}
+					shape={recordShape(selected)}
+				/>
+			) : null,
+		[dsym, selected, squaringActive, morphed, morph?.bent, refList],
+	);
+	const optionsPanel = useMemo(
+		() => <OptionsTab selected={selected} symmetry={symmetryPanel} />,
+		[selected, symmetryPanel],
+	);
+	const infoPanel = useMemo(() => <TilingInfoPanel spec={tilingSpec} vcs={vcs} />, [tilingSpec, vcs]);
 	// The phone dock's header row: what is on the canvas, and the three ways to step off it.
 	const stepDisabled = stepList.length < 2 || studioActive;
 	// Memoized like everything else the sidebar takes: the page re-renders on every slider tick.
@@ -2076,6 +2196,7 @@ export function AtlasClient() {
 				onDecorationChange={onDecorationChange}
 				collapsed={!browseOpen || immersive}
 				peek={dockPeek}
+				info={infoPanel}
 				options={optionsPanel}
 			/>
 			<div className="flex min-w-0 flex-1 flex-col">
@@ -2093,7 +2214,7 @@ export function AtlasClient() {
 						browseOpen={browseOpen}
 						onToggleBrowse={toggleBrowse}
 						panelOpen={lens === "grid" ? filtersOpen : optionsOpen}
-						panelLabel={lens === "grid" ? "Filters" : "View options"}
+						panelLabel={lens === "grid" ? "Filters" : "Info and view"}
 						onTogglePanel={togglePanel}
 						searcher={searcherButton}
 					/>
@@ -2115,6 +2236,7 @@ export function AtlasClient() {
 								filtersOpen={filtersOpen}
 								title={scopeNode?.label ?? rootLabel}
 								notLoaded={scopePending}
+								pending={unloaded}
 								countNote={
 									<SliceLoader node={scopeNode} pending={scopePending} onLoad={loadTier} loading={loadingTiers} />
 								}
@@ -2132,7 +2254,7 @@ export function AtlasClient() {
 								<div
 									ref={canvasHostRef}
 									className={cn(
-										"relative min-h-0 min-w-0 flex-1 [&_canvas]:transition-[filter,opacity] [&_canvas]:duration-500 motion-reduce:[&_canvas]:transition-none",
+										"relative min-h-0 min-w-0 flex-1 [&_canvas]:transition-[filter,opacity] [&_canvas]:motion-settle motion-reduce:[&_canvas]:transition-none",
 										!settled && "[&_canvas]:opacity-75 [&_canvas]:saturate-[.3]",
 									)}
 								>
@@ -2149,7 +2271,7 @@ export function AtlasClient() {
 										paramCell={squaringActive || morph ? null : (paramCell ?? null)}
 										symmetryData={squaringActive || morph ? null : symmetryData}
 										orbitData={hoverOrbit ?? (squaringActive || morph ? null : orbitData)}
-										spec={tilingSpec}
+										onVcs={setVcs}
 										showTilingRuleInput={false}
 										cellHasTiles={cellHasTiles}
 									/>
@@ -2365,7 +2487,7 @@ export function AtlasClient() {
 										className={cn(
 											"contents",
 											trayLabel &&
-												"max-md:pointer-events-none max-md:absolute max-md:inset-x-2 max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+64px)] max-md:z-30 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-2 max-md:transition-[bottom] max-md:duration-300",
+												"max-md:pointer-events-none max-md:absolute max-md:inset-x-2 max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+64px)] max-md:z-chrome max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-2 max-md:transition-[bottom] max-md:motion-travel",
 										)}
 									>
 										{trayLabel ? (
@@ -2373,7 +2495,7 @@ export function AtlasClient() {
 												type="button"
 												onClick={() => setTrayOpen((o) => !o)}
 												aria-expanded={trayOpen}
-												className="hidden h-11 items-center gap-1.5 self-end rounded-full bg-surface-raised/95 px-4 text-[13px] font-medium text-fg-secondary shadow-sm ring-1 ring-line-subtle backdrop-blur-sm max-md:pointer-events-auto max-md:flex"
+												className="ta-float hidden h-11 items-center gap-1.5 self-end px-4 text-ui font-medium text-fg-secondary max-md:pointer-events-auto max-md:flex"
 											>
 												{trayOpen ? `Hide ${trayLabel.toLowerCase()}` : trayLabel}
 												{!trayOpen && glyphs.length ? (
@@ -2381,11 +2503,8 @@ export function AtlasClient() {
 														{glyphs.length > 3 ? `(${glyphs.length})` : glyphs.join(" ")}
 													</span>
 												) : null}
-												<ChevronDown
-													size={16}
-													aria-hidden
-													className={cn("transition-transform", !trayOpen && "rotate-180")}
-												/>
+												{/* Up while folded: the tray opens upward. */}
+												<FoldChevron open={trayOpen} size={16} className={cn(!trayOpen && "-rotate-90")} />
 											</button>
 										) : null}
 										<div
@@ -2416,20 +2535,11 @@ export function AtlasClient() {
 											{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving
 						    the tiling in the corner rather than the one on the canvas while it is up. */}
 											{showParamPanel && paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
-											{dsym && selected && !squaringActive ? (
-												// One column top right: the symmetry above the cell shape, which only applies to the
-												// type as catalogued and so steps aside while the group is changed.
-												<div className="absolute top-3 right-3 z-20 flex w-56 flex-col gap-2 max-md:hidden">
-													<OrbifoldMorphControls
-														id={selected.canonicalKey}
-														symbol={dsym}
-														error={morphed && "error" in morphed ? morphed.error : undefined}
-														bent={morph?.bent}
-														topological={!selected.dsym}
-														loaded={refList ?? []}
-														shape={recordShape(selected)}
-													/>
-													{morphed ? null : tegula ? (
+											{dsym && selected && !squaringActive && !morphed && (tegula || sphBend) ? (
+												// The cell shape, top right. It only applies to the type as catalogued, so it steps aside
+												// while the group is changed (the symmetry steppers are in the view options).
+												<div className="absolute top-3 right-3 z-20 w-56 max-md:hidden">
+													{tegula ? (
 														<TegulaCellEditor id={selected.canonicalKey} cell={tegula} />
 													) : sphBend ? (
 														<TegulaCellEditor id={selected.canonicalKey} sphere={sphBend} />
@@ -2464,7 +2574,7 @@ export function AtlasClient() {
 													onClick={onPrev}
 													disabled={stepList.length < 2}
 												>
-													<ChevronLeft size={16} />
+													<ChevronLeft className="size-icon-md" />
 												</ToolbarButton>
 												{/* Icon-only on a phone (the word stays for screen readers), so immersive's full row fits. */}
 												<ToolbarButton
@@ -2475,11 +2585,11 @@ export function AtlasClient() {
 													disabled={stepList.length < 2}
 													className="max-md:w-11 max-md:px-0"
 												>
-													<Shuffle size={14} />
+													<Shuffle className="size-icon-sm" />
 													<span className="max-md:sr-only">Random</span>
 												</ToolbarButton>
 												<ToolbarButton label="Next tiling" shortcut="→" onClick={onNext} disabled={stepList.length < 2}>
-													<ChevronRight size={16} />
+													<ChevronRight className="size-icon-md" />
 												</ToolbarButton>
 											</ToolbarReveal>
 										</span>
@@ -2503,7 +2613,7 @@ export function AtlasClient() {
 												onClick={() => useConfiguration.getState().set({ studioActive: !studioActive })}
 												className="w-auto gap-1.5 px-2.5 max-md:w-auto"
 											>
-												<PenTool size={15} className="max-md:hidden" />
+												<PenTool className="size-icon-md max-md:hidden" />
 												{studioActive ? "Close" : "Edit"}
 											</ToolbarButton>
 										) : null}
@@ -2530,7 +2640,7 @@ export function AtlasClient() {
 												aria-pressed={timelineOpen}
 												onClick={() => useAnimation.getState().toggle()}
 											>
-												<Film size={16} />
+												<Film className="size-icon-md" />
 											</ToolbarButton>
 										) : null}
 										{canCaptureImage(selected) ? (
@@ -2551,7 +2661,7 @@ export function AtlasClient() {
 													})
 												}
 											>
-												<Camera size={16} />
+												<Camera className="size-icon-md" />
 											</ToolbarButton>
 										) : null}
 										<ToolbarButton
@@ -2561,7 +2671,7 @@ export function AtlasClient() {
 											aria-pressed={immersive}
 											className="max-md:hidden"
 										>
-											{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
+											{immersive ? <Minimize className="size-icon-md" /> : <Maximize className="size-icon-md" />}
 										</ToolbarButton>
 									</FloatingToolbar>
 								</div>
@@ -2574,10 +2684,25 @@ export function AtlasClient() {
 									paramCell={paramCell ?? null}
 								/>
 							</div>
-							{/* The view options, opposite the browse panel. A phone has them as the dock's second tab. */}
+							{/* Info and View, opposite the browse panel. Each tab scrolls on its own under the strip. A
+							    phone has them as the dock's second and third tabs. */}
 							{isPhone ? null : (
-								<PageSidebar side="right" collapsed={!optionsOpen || immersive} mobile="dock" title="View options">
-									{optionsPanel}
+								<PageSidebar
+									side="right"
+									scrollable={false}
+									collapsed={!optionsOpen || immersive}
+									mobile="dock"
+									title="Info and view"
+								>
+									<Tabs
+										value={rightTab}
+										onValueChange={setRightTab}
+										tabs={["Info", "View"]}
+										keepMounted
+										listClassName="mx-3.5 mt-3"
+									>
+										{(t) => (t === "Info" ? infoPanel : optionsPanel)}
+									</Tabs>
 								</PageSidebar>
 							)}
 						</>

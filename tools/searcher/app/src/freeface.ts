@@ -16,7 +16,19 @@
 // Closing is decided exactly. Every direction is a power of ζ = e^(iπ/N), and a sum of them is zero only
 // when its coordinates in ℤ[ζ] (basis 1, ζ, …, reduced by the cyclotomic polynomial Φ₂ₙ) all are. A length's
 // square roots are sums of powers of ζ too (surdPowers), so typed lengths close exactly as well.
-import { angleDegrees, flatOf, isUnitLength, printLength, readLength, removeVertices, unitTypes, type Angle, type Board, type Face } from "./board";
+import {
+	angleDegrees,
+	flatOf,
+	isUnitLength,
+	lengthSymbol,
+	printLength,
+	readLength,
+	removeVertices,
+	unitTypes,
+	type Angle,
+	type Board,
+	type Face,
+} from "./board";
 import { gauss } from "./corners";
 
 /**
@@ -328,10 +340,6 @@ export function angleOf(num: number, den: number): { value: string; tag: string 
 	return den === 1 ? { value: `${num}`, tag: `${num}` } : { value: `${num}/${den}`, tag: `${num}_${den}` };
 }
 
-/** The edge corner of a length's own type: `Esqrt2`, `E3_2`, `Esqrt3m1` (for sqrt3-1), one per length. */
-export const lengthSymbol = (text: string) =>
-	`E${printLength(readLength(text)!).replace(/\+/g, "p").replace(/-/g, "m").replace(/\//g, "_")}`;
-
 /** The face line of a drawing; a typed side's edge corner is `typeOf` its length (lengthSymbol unless the
  *  board already names that length). */
 export function faceOf(
@@ -427,12 +435,25 @@ export function regrid(edges: Edge[], from: Grid, to: Grid): Edge[] | null {
  * The board with face `at` (a new one when absent) set to the drawing, its corners declared with their
  * angles; corners the old face used that nothing uses any more are dropped.
  */
-export function withDrawnFace(board: Board, edges: Edge[], at = board.faces.length, g = G12): Board {
+export const withDrawnFace = (board: Board, edges: Edge[], at = board.faces.length, g = G12): Board =>
+	withMadeFace(board, (prefix, typeOf) => faceOf(edges, prefix, g, typeOf), at);
+
+/**
+ * The board with face `at` (a new one when absent) set to the face `make` builds from its corners' prefix and
+ * the edge corner of each side length, the corners and edge lines declared and each new edge type glued to
+ * itself. A new length's type is named `name` (lengthSymbol unless given).
+ */
+export function withMadeFace(
+	board: Board,
+	make: (prefix: string, typeOf: (text: string) => string) => { face: Face; angles: Angle[] },
+	at = board.faces.length,
+	name = lengthSymbol,
+): Board {
 	const b = withoutUnitType(board);
 	const old = at < b.faces.length ? b.faces[at] : null;
 	// a typed side's edge corner: the board's own edge line of that length, else a new one
-	const typeOf = boardTypes(b);
-	const { face, angles: declare } = faceOf(edges, (old && prefixOf(old, flatOf(b))) ?? nextPrefix(b), g, typeOf.of);
+	const typeOf = boardTypes(b, name);
+	const { face, angles: declare } = make((old && prefixOf(old, flatOf(b))) ?? nextPrefix(b), typeOf.of);
 	if (face.word.includes("Pi")) declare.push({ sym: "Pi" });
 	const fresh = [...typeOf.made].filter(([sym]) => face.word.includes(sym));
 	for (const [sym, length] of fresh) declare.push({ sym, value: "180", edge: { length } });
@@ -451,8 +472,8 @@ export function withDrawnFace(board: Board, edges: Edge[], at = board.faces.leng
 }
 
 /** The edge type of each length on the board: its own unstyled edge line of that length, else a new one
- *  (lengthSymbol), recorded in `made` with the length as written there. */
-export function boardTypes(b: Board) {
+ *  (`name`, lengthSymbol unless given), recorded in `made` with the length as written there. */
+export function boardTypes(b: Board, name = lengthSymbol) {
 	const named = new Map<string, string>();
 	for (const a of b.angles) {
 		const l = a.edge && !a.edge.style && readLength(a.edge.length ?? "1");
@@ -462,7 +483,7 @@ export function boardTypes(b: Board) {
 	const of = (text: string) => {
 		const key = printLength(readLength(text)!);
 		if (!named.has(key)) {
-			let sym = lengthSymbol(key);
+			let sym = name(key);
 			while (b.angles.some((a) => a.sym === sym)) sym += "x";
 			named.set(key, sym);
 			made.set(sym, key);

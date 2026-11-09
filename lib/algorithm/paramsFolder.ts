@@ -9,9 +9,9 @@
  * - equi_5_30: equilateral n≤5, angle 30°
  * - dual_12: dual polygons from regular n≤12
  */
-import { PolygonType } from "@/classes";
-import type { GeneratorParameters } from "@/classes";
-import { toDegrees } from "@/utils";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import type { GeneratorParameters } from "@/classes/algorithm/types";
+import { toDegrees } from "@/utils/geometry";
 
 /**
  * Validates a paramsFolder string received from request bodies.

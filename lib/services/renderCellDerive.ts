@@ -20,7 +20,7 @@ import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { deserializeCell } from "@/classes/algorithm/cellCodec";
 import { reconstructOracleCell } from "@/classes/algorithm/oracleCellReconstruct";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
-import { defineLazyRenderCell } from "@/lib/services/atlasCodec";
+import { defineLazy } from "@/lib/services/atlasCodec";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import { starCellFromExact } from "@/lib/services/starExactCell";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -194,7 +194,7 @@ interface Derivable {
  * costs its derivation once and only if something actually draws it. Thumbnails already mount as they
  * scroll into view, which is what spreads that cost out.
  *
- * The property is NON-ENUMERABLE (see defineLazyRenderCell): an enumerable lazy getter is fired by
+ * The property is NON-ENUMERABLE (see defineLazy): an enumerable lazy getter is fired by
  * anything that walks props, and React DEV's render logging walked all 6,200 of them on every /play
  * open. A spread therefore does not carry the cell; nothing in the app spreads a record.
  *
@@ -213,8 +213,9 @@ export function hydrateRenderCells<T extends Derivable>(records: T[]): T[] {
 		// not call this; adding it there would have been a 293 MB regression with no visible cause.
 		const existing = Object.getOwnPropertyDescriptor(rec, "renderCell");
 		if (existing && (existing.get !== undefined || existing.value !== undefined)) continue;
-		defineLazyRenderCell(
+		defineLazy(
 			rec,
+			"renderCell",
 			(self) => renderCellFromExactSource(activeRing24(), self.id, self.exactSource!) ?? NOTHING_TO_DRAW,
 		);
 	}

@@ -18,8 +18,8 @@ import {
 	WallSubLabel,
 } from "@/components/freedraw/filter-wall";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
-import { OptionWall } from "@/components/ui/option-wall";
-import { Pagination } from "@/components/ui/pagination";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Pagination } from "@/design-system/components/pagination";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import type { IcoMode, IcoPattern } from "@/lib/render/icoFreedraw";
@@ -33,7 +33,7 @@ import {
 	type SchwarzBoard,
 	type SphSchwarzShard,
 } from "@/lib/freedraw/schwarz";
-import { decodeAtlas, decodeShard, shardBody } from "@/lib/services/atlasCodec";
+import { decodeAtlas, decodeShard, fetchData, shardBody } from "@/lib/services/atlasCodec";
 import { GEOMETRIES } from "@/lib/vocabulary";
 
 // The spherical arm of /freedraw — Marek Čtrnáct's freedraw on the Platonic solids, laid out like the
@@ -137,8 +137,8 @@ export function SphericalFreedraw({
 		const board = solid.board;
 		// A solid's shard is a plain IcoPattern[]; a board's is a shared-board shard whose patterns carry
 		// only their drawn bits, so each is adapted here and nothing downstream branches again.
-		const url = board ? `/schwarz-sph/s${board.id}-k${k}.json.gz` : `/freedraw-ico/${solidId}-k${k}.json.gz`;
-		fetch(url)
+		const url = board ? `/schwarz-sph/s${board.id}-k${k}.json.br` : `/freedraw-ico/${solidId}-k${k}.json.br`;
+		fetchData(url)
 			.then((r) => shardBody(r))
 			// A solid shard is a record array and may be packed; a board shard is an object wrapper the
 			// codec does not own, so only the former goes through the decoder.

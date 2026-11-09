@@ -61,7 +61,19 @@ export function buildTilingFromCell(
 		if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
 		poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
 		basePolys.push(poly);
-		if (orbitData) poly.orbitOfCorner = poly.vertices.map((v) => orbitData.orbitAt(v.x, v.y));
+		if (orbitData) {
+			poly.orbitOfCorner = poly.vertices.map((v) => orbitData.orbitAt(v.x, v.y));
+			const vs = poly.vertices;
+			if (orbitData.edges)
+				poly.edgeOrbitOfSide = vs.map((v, k) =>
+					orbitData.edges!.at((v.x + vs[(k + 1) % vs.length].x) / 2, (v.y + vs[(k + 1) % vs.length].y) / 2),
+				);
+			if (orbitData.faces)
+				poly.faceOrbit = orbitData.faces.at(
+					vs.reduce((t, v) => t + v.x, 0) / vs.length,
+					vs.reduce((t, v) => t + v.y, 0) / vs.length,
+				);
+		}
 		const c = poly.centroid;
 		for (const vv of poly.vertices) {
 			const d = Math.hypot(vv.x - c.x, vv.y - c.y);

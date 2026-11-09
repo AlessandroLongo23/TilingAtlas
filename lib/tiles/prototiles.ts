@@ -9,7 +9,8 @@
  * convex isotoxal tile. The convex-irregular family ⊃ the alternating convex tiles on ζ₁₂, so a tile can appear under
  * more than one family filter; that overlap is real, not a bug.
  */
-import { CyclotomicRing, StarParametricPolygon } from "@/classes";
+import { CyclotomicRing } from "@/classes/Cyclotomic";
+import { StarParametricPolygon } from "@/classes/polygons/StarParametricPolygon";
 import { generateFamily } from "@/lib/classes/algorithm/composable/generateFamily";
 import { tileVertices } from "@/lib/classes/algorithm/composable/convexTiles";
 import { enumerateConvexIsotoxal, isotoxalVertices } from "@/lib/isotoxal/enumerate";

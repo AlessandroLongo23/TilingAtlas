@@ -2,14 +2,14 @@
  * Shared filter helpers for list/graph pages (polygons, vertex configs, compatibility graph).
  */
 
+import { PolygonType } from "@/classes/polygons/PolygonType";
 import {
-	PolygonType,
 	regularPolygonRegex,
 	regularStarRegex,
 	parametricStarRegex,
 	equilateralPolygonRegex,
 	genericPolygonRegex,
-} from "@/classes";
+} from "@/classes/algorithm/regex";
 
 /** Returns true if val is (within float tolerance) a multiple of divisor. */
 export function isValidMultiple(val: number, divisor: number): boolean {

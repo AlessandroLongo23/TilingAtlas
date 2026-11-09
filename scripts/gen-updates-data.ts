@@ -54,7 +54,7 @@ const EAGER_ATLAS_FILES = [
 	"reference-atlas-penrose.json",
 ];
 
-const OUT = path.join(process.cwd(), "public", "updates-cells.json.gz");
+const OUT = path.join(process.cwd(), "public", "updates-cells.json.br");
 
 // The release the built site serves, as a static asset. Written here because this script already
 // runs in `pnpm build` and already holds UPDATES.
@@ -105,7 +105,7 @@ async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, Ref
 	if (!missing.size) return found;
 	const dir = path.join(process.cwd(), "public");
 	const shards = (await readdir(dir))
-		.filter((f) => /^reference-atlas-.*-k\d+\.json(\.gz)?$/.test(f))
+		.filter((f) => /^reference-atlas-.*-k\d+\.json(\.br)?$/.test(f))
 		.map((f) => ({ f, size: statSync(path.join(dir, f)).size }))
 		.sort((a, b) => a.size - b.size);
 

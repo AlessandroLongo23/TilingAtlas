@@ -81,7 +81,7 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 	if (missing.length) {
 		const left = new Set(missing);
 		const shards = (await readdir(dir))
-			.filter((f) => /^reference-atlas-.*-k\d+\.json(\.gz)?$/.test(f))
+			.filter((f) => /^reference-atlas-.*-k\d+\.json(\.br)?$/.test(f))
 			.map((f) => ({ f, size: statSync(/* turbopackIgnore: true */ inDir(f)).size }))
 			.sort((a, b) => a.size - b.size);
 		for (const { f } of shards) {

@@ -23,16 +23,16 @@ import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react";
 import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
-import { Button } from "@/components/ui/button";
-import { RangeInput } from "@/components/ui/range-input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Reveal } from "@/components/ui/reveal";
+import { Button } from "@/design-system/components/button";
+import { RangeInput } from "@/design-system/components/range-input";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { Reveal } from "@/design-system/components/reveal";
 import { TilingInfo } from "@/components/tiling-info";
 import { PeekTitle, showPickOnCanvas } from "@/components/dock-peek";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
 import { useImmersiveShortcuts } from "@/components/fullscreen-toggle";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -230,11 +230,11 @@ export function PentagonsClient() {
 		() =>
 			PENTAGON_TYPES.map((t) => ({
 				v: String(t.id),
-				label: <span className="text-[13px] tabular-nums">{t.id}</span>,
+				label: <span className="text-ui tabular-nums">{t.id}</span>,
 				// Sans at 11px so "1" never reads as "i"; a lock marks the rigid types.
 				sub: (
-					<span className="font-sans text-[11px] max-md:text-xs">
-						{t.dof === 0 ? <Lock size={10} className="inline" aria-label="rigid" /> : t.dof}
+					<span className="font-sans text-caption">
+						{t.dof === 0 ? <Lock className="inline size-icon-xs" aria-label="rigid" /> : t.dof}
 					</span>
 				),
 				dim: !hasAssembly(t.id),
@@ -246,15 +246,15 @@ export function PentagonsClient() {
 	const header = (
 		<div className="ta-wall-cell flex flex-col gap-1.5 bg-surface-chrome px-3.5 py-3">
 			{/* On a phone the dock's peek row already names the type. */}
-			<span className="text-[15px] font-semibold text-fg max-md:hidden">{type.label}</span>
-			<span className="text-xs text-fg-secondary">
+			<span className="text-title font-semibold text-fg max-md:hidden">{type.label}</span>
+			<span className="text-small text-fg-secondary">
 				{type.discovered} · {type.tilesPerUnit} tiles/unit
 			</span>
 			<span className="flex flex-wrap gap-1">
 				{type.groups.split(", ").map((g) => (
 					<span
 						key={g}
-						className="rounded-control bg-surface-sunken px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary max-md:text-xs"
+						className="rounded-control bg-surface-sunken px-1.5 py-0.5 font-mono text-caption text-fg-secondary"
 					>
 						{g}
 					</span>
@@ -390,17 +390,17 @@ export function PentagonsClient() {
 							icon={RotateCcw}
 							label="Reset"
 							onClick={resetShape}
-							classes="border-line-subtle"
+							className="border-line-subtle"
 						/>
 						{result.ok ? null : (
-							<p className="text-[11px] text-fg-muted max-md:text-xs">
+							<p className="text-caption text-fg-muted">
 								No pentagon here: {result.reason}. The tiling shown is the last valid one.
 							</p>
 						)}
 					</Section>
 				) : (
 					<Section label="Parameters">
-						<p className="text-xs text-fg-muted">
+						<p className="text-small text-fg-muted">
 							Rigid. This type&apos;s conditions fix the pentagon completely, up to size.
 						</p>
 					</Section>
@@ -441,7 +441,7 @@ export function PentagonsClient() {
 						onCheckedChange={(v) => setLens(v)}
 					/>
 					<Reveal show={lens}>
-						<div className="pl-7">
+						<div className="pl-indent">
 							<InversiveControls />
 						</div>
 					</Reveal>
@@ -488,11 +488,11 @@ function ParamRow({
 }) {
 	return (
 		<div className="grid h-9 grid-cols-[3.75rem_1fr_3.5rem] items-center gap-3 max-md:h-11">
-			<label htmlFor={id} title={title} className="text-[13px] font-medium text-fg-secondary">
+			<label htmlFor={id} title={title} className="text-ui font-medium text-fg-secondary">
 				{label}
 			</label>
 			<RangeInput id={id} {...range} />
-			<span className="text-right font-mono text-xs text-fg tabular-nums">{format(range.value)}</span>
+			<span className="text-right font-mono text-small text-fg tabular-nums">{format(range.value)}</span>
 		</div>
 	);
 }

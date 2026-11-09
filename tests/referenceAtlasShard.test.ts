@@ -27,13 +27,13 @@ describe("loadReferenceAtlasShard", () => {
 		expect(first).toEqual(sample);
 		expect(second).toBe(first); // cache hit returns the same reference
 		expect(fetchMock).toHaveBeenCalledTimes(1);
-		expect(fetchMock).toHaveBeenCalledWith("/reference-atlas-k8.json.gz");
+		expect(fetchMock).toHaveBeenCalledWith("/reference-atlas-k8.json.br");
 	});
 
 	it("rejects and does not cache on a non-ok response", async () => {
 		const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404, json: () => Promise.resolve([]) });
 		vi.stubGlobal("fetch", fetchMock);
 
-		await expect(loadReferenceAtlasShard(9)).rejects.toThrow("reference-atlas-k9.json: HTTP 404");
+		await expect(loadReferenceAtlasShard(9)).rejects.toThrow("reference-atlas-k9.json.br: HTTP 404");
 	});
 });

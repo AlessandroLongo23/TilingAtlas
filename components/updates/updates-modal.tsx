@@ -3,15 +3,16 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
+import { Button } from "@/design-system/components/button";
+import { Modal } from "@/design-system/components/modal";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { ChangeImages } from "@/components/updates/change-images";
 import { ChangeText } from "@/components/updates/change-text";
 import { KIND_LABEL, KIND_ORDER, type Change, type ChangeKind, type UpdateEntry } from "@/lib/updates/entries";
 import { parseShelfPreviewId, previewHref, previewLabel } from "@/lib/updates/preview-ids";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // The "what's new" modal: everything a visitor has not seen, merged into one grouped list rather
 // than one block per release. A returning reader wants to know WHAT changed, not which version
@@ -44,7 +45,7 @@ interface UpdatesModalProps {
 let cellsRequest: Promise<CellMap> | null = null;
 
 function loadPreviewCells(): Promise<CellMap> {
-	cellsRequest ??= fetch("/updates-cells.json.gz")
+	cellsRequest ??= fetchData("/updates-cells.json.br")
 		.then((r) => (r.ok ? (shardBody(r) as Promise<CellMap>) : ({} as CellMap)))
 		.catch(() => ({}) as CellMap);
 	return cellsRequest;
@@ -76,33 +77,35 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 					// No flat cell for this id (hyperbolic, spherical, freedraw, Schwarz, hollow). Still
 					// reachable — it just travels as a chip instead of a picture.
 					return (
-						<Link
+						<Button
 							key={id}
 							href={href}
-							className="inline-flex items-center gap-1 border border-line px-2 py-1 font-mono text-xs text-fg-secondary transition-colors hover:border-line-strong hover:text-fg"
-						>
-							{previewLabel(id)}
-							<ArrowRight size={12} aria-hidden="true" className="shrink-0" />
-						</Link>
+							variant="secondary"
+							size="xs"
+							label={previewLabel(id)}
+							iconRight={ArrowRight}
+							className="font-mono"
+						/>
 					);
 				}
 				return (
-					<Link
-						key={id}
-						href={href}
-						title={`Open ${entry.label}`}
-						className="block h-20 w-20 overflow-hidden border border-line transition-colors hover:border-accent"
-					>
-						{/* Small pxPerEdge on purpose: at 80px a card needs several repeats to read as a
-						    tiling, not as a crop of one tile. A shelf cell is scaled by its lattice
-						    instead — its boundary is a flattened curve, so an "edge" there is a
-						    segment, not a side, and pxPerEdge would zoom in about eightfold. */}
-						<TilingThumbnail
-							translationalCell={entry.cell}
-							pxPerEdge={8}
-							periodsAcross={parseShelfPreviewId(id) ? 2.2 : undefined}
-						/>
-					</Link>
+					<Tooltip key={id} label={`Open ${entry.label}`}>
+						<Link
+							href={href}
+							aria-label={`Open ${entry.label}`}
+							className="ta-well block h-20 w-20 overflow-hidden transition-colors hover:border-accent"
+						>
+							{/* Small pxPerEdge on purpose: at 80px a card needs several repeats to read as a
+							    tiling, not as a crop of one tile. A shelf cell is scaled by its lattice
+							    instead — its boundary is a flattened curve, so an "edge" there is a
+							    segment, not a side, and pxPerEdge would zoom in about eightfold. */}
+							<TilingThumbnail
+								translationalCell={entry.cell}
+								pxPerEdge={8}
+								periodsAcross={parseShelfPreviewId(id) ? 2.2 : undefined}
+							/>
+						</Link>
+					</Tooltip>
 				);
 			})}
 		</div>
@@ -130,14 +133,14 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 
 	return (
 		<Modal
-			isOpen={isOpen}
+			open={isOpen}
 			onOpenChange={(open) => {
 				if (!open) onClose();
 			}}
 			size="md"
 			title="What's new"
 			header={
-				<span className="mr-2 font-mono text-xs text-fg-muted">
+				<span className="mr-2 font-mono text-small text-fg-muted">
 					{range} · {count}
 				</span>
 			}
@@ -145,10 +148,10 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 			<div className="flex max-h-[65vh] flex-col gap-5 overflow-y-auto p-4">
 				{KIND_ORDER.filter((kind) => byKind.has(kind)).map((kind) => (
 					<section key={kind} className="flex flex-col gap-2">
-						<h3 className="text-[11px] tracking-wider text-fg-muted uppercase">{KIND_LABEL[kind]}</h3>
+						<h3 className="ta-label">{KIND_LABEL[kind]}</h3>
 						<ul className="flex flex-col gap-3">
 							{(byKind.get(kind) ?? []).map((change, i) => (
-								<li key={i} className="text-sm leading-relaxed text-fg-secondary">
+								<li key={i} className="text-body leading-relaxed text-fg-secondary">
 									{change.href ? (
 										<Link href={change.href} className="transition-colors hover:text-fg">
 											<ChangeText text={change.text} />
@@ -166,7 +169,9 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 										</ul>
 									) : null}
 									{change.tilings?.length ? <TilingStrip ids={change.tilings} cells={cells} /> : null}
-									{change.images?.length ? <ChangeImages images={change.images} href={change.href} /> : null}
+									{change.images?.length ? (
+										<ChangeImages images={change.images} alt={change.text.replaceAll("**", "")} href={change.href} />
+									) : null}
 								</li>
 							))}
 						</ul>
@@ -174,7 +179,7 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 				))}
 			</div>
 			<div className="flex items-center justify-between gap-3 border-t border-line p-3">
-				<span className="text-xs text-fg-muted">
+				<span className="text-small text-fg-muted">
 					{newest.date} · v{newest.version}
 				</span>
 				<Button href="/updates" variant="secondary" size="sm" iconRight={ArrowRight} onClick={onClose}>

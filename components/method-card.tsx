@@ -468,7 +468,7 @@ export function MethodCard({ fig, name, note, accent, linked, frame }: MethodCar
 			<div
 				className={cn(
 					"relative aspect-square w-full p-[6%]",
-					framed && ["bg-surface-base border", marked ? "border-accent" : "border-line"],
+					framed && ["border bg-surface", marked ? "border-accent" : "border-line"],
 				)}
 			>
 				{/* Anchored to the panel, not the card, so the arrow sits on the drawings' centre
@@ -486,7 +486,7 @@ export function MethodCard({ fig, name, note, accent, linked, frame }: MethodCar
 						<Figure />
 					</svg>
 				) : (
-					<div className="flex h-full w-full items-center justify-center border border-dashed border-line-strong text-center text-[0.65rem] text-fg-muted">
+					<div className="flex h-full w-full items-center justify-center border border-dashed border-line-strong text-center text-micro text-fg-muted">
 						{fig ? `figure: ${fig}` : "no figure"}
 					</div>
 				)}
@@ -496,7 +496,7 @@ export function MethodCard({ fig, name, note, accent, linked, frame }: MethodCar
 					<span
 						className={cn(
 							"block text-[min(7.6cqw,1.05rem)] leading-tight font-semibold text-balance",
-							marked ? "text-accent" : "text-fg",
+							marked ? "text-fg-accent" : "text-fg",
 						)}
 					>
 						{name}

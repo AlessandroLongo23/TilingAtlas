@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
+import { Button } from "@/design-system/components/button";
+import { Kbd } from "@/design-system/components/kbd";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // The expansion, run by hand in front of the room: a k=3 seed, then the two stamps that grow it.
 //
@@ -94,7 +96,7 @@ const DOT_R = 4.5; // collapsed vertex, CSS px
 const OPEN_R = 3; // open (frontier) vertex
 const TARGET_R = 9; // ring on the vertex the expander takes next
 
-export function GrowthStrip({ src = "/defense/growth-k3.json.gz" }: { src?: string }) {
+export function GrowthStrip({ src = "/defense/growth-k3.json.br" }: { src?: string }) {
 	const [fig, setFig] = useState<GrowthFigure | null>(null);
 	const [confirmed, setConfirmed] = useState<number[]>([]);
 	const [cursor, setCursor] = useState(0);
@@ -102,7 +104,7 @@ export function GrowthStrip({ src = "/defense/growth-k3.json.gz" }: { src?: stri
 
 	useEffect(() => {
 		let live = true;
-		fetch(src)
+		fetchData(src)
 			.then((r) => shardBody<GrowthFigure>(r))
 			.then((d: GrowthFigure) => {
 				if (live) setFig(d);
@@ -222,7 +224,7 @@ export function GrowthStrip({ src = "/defense/growth-k3.json.gz" }: { src?: stri
 
 	if (!fig || !frame) {
 		return (
-			<div className="not-prose flex h-[38vh] items-center justify-center rounded-xl border border-line bg-surface-overlay/30 text-xs text-fg-muted">
+			<div className="ta-well not-prose flex h-[38vh] items-center justify-center text-small text-fg-muted">
 				loading the expansion…
 			</div>
 		);
@@ -234,7 +236,7 @@ export function GrowthStrip({ src = "/defense/growth-k3.json.gz" }: { src?: stri
 				{[0, 1, 2].map((i) => (
 					<div key={i} className="contents">
 						{i > 0 && (
-							<span aria-hidden className={cn("shrink-0 text-2xl", patches[i] ? "text-fg-muted" : "text-line")}>
+							<span aria-hidden className={cn("shrink-0 text-headline", patches[i] ? "text-fg-muted" : "text-line")}>
 								→
 							</span>
 						)}
@@ -255,51 +257,37 @@ export function GrowthStrip({ src = "/defense/growth-k3.json.gz" }: { src?: stri
 				))}
 			</div>
 
-			<div className="flex items-center gap-2 text-xs max-md:flex-wrap max-md:justify-center max-md:text-sm">
+			<div className="flex items-center gap-2 text-small max-md:flex-wrap max-md:justify-center max-md:text-body">
 				{active ? (
 					<>
-						<button
-							type="button"
-							onClick={() => cycle(-1)}
+						<Button
+							size="sm"
+							className="max-md:min-w-11"
+							label="‹"
 							aria-label="previous placement"
-							className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:min-w-11"
-						>
-							‹
-						</button>
+							onClick={() => cycle(-1)}
+						/>
 						<span className="text-fg-secondary tabular-nums">
 							placement {cursor + 1} of {total}
 						</span>
-						<button
-							type="button"
-							onClick={() => cycle(1)}
+						<Button
+							size="sm"
+							className="max-md:min-w-11"
+							label="›"
 							aria-label="next placement"
-							className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:min-w-11"
-						>
-							›
-						</button>
-						<button
-							type="button"
-							onClick={confirm}
-							className="ml-1 rounded-md border border-accent bg-accent/10 px-3 py-1 font-medium text-accent transition-colors hover:bg-accent/20 max-md:min-h-11"
-						>
-							stamp it
-						</button>
+							onClick={() => cycle(1)}
+						/>
+						<Button size="sm" variant="primary" className="ml-1" label="stamp it" onClick={confirm} />
 					</>
 				) : (
 					<span className="text-fg-muted">two stamps placed — the expansion runs to graph distance 18 from here</span>
 				)}
-				<button
-					type="button"
-					onClick={reset}
-					className="ml-3 rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:ml-1 max-md:min-h-11"
-				>
-					reset
-				</button>
+				<Button size="sm" className="ml-3 max-md:ml-1" label="reset" onClick={reset} />
 			</div>
-			<p className="m-0 text-[11px] text-fg-disabled max-md:text-center max-md:text-xs max-md:text-fg-muted">
+			<p className="m-0 text-caption text-fg-muted max-md:text-center">
 				{/* Whole-line variants: a span boundary mid-line nudges the desktop glyphs after it. */}
 				<span className="max-md:hidden">
-					<kbd>,</kbd> <kbd>.</kbd> cycle · <kbd>Enter</kbd> stamps · the ringed vertex is the one the search takes next
+					<Kbd>,</Kbd> <Kbd>.</Kbd> cycle · <Kbd>Enter</Kbd> stamps · the ringed vertex is the one the search takes next
 				</span>
 				<span className="md:hidden">
 					‹ › cycle · stamp it places it · the ringed vertex is the one the search takes next
@@ -425,15 +413,15 @@ function GrowthCard({
 			<div
 				ref={hostRef}
 				className={cn(
-					"bg-surface-base relative aspect-square w-full rounded-2xl border",
-					!patch && "border-dashed",
-					activeStep ? "border-accent" : patch ? "border-line" : "border-line/60",
+					"ta-well relative aspect-square w-full",
+					!patch && "border-dashed border-line/60",
+					activeStep && "border-accent",
 				)}
 			>
 				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 			</div>
 			<figcaption
-				className={cn("text-[clamp(0.65rem,0.9vh+0.3vw,0.95rem)]", patch ? "text-fg-muted" : "text-fg-disabled")}
+				className={cn("text-[clamp(0.65rem,0.9vh+0.3vw,0.95rem)]", patch ? "text-fg-secondary" : "text-fg-muted")}
 			>
 				{label}
 			</figcaption>

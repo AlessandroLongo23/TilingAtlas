@@ -15,6 +15,7 @@
 // be what stops a push.
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
@@ -218,22 +219,34 @@ if (!reasons.length) console.log(c("dim", "  · no new route or registry value �
 // ── new atlas ids ─────────────────────────────────────────────────────────────
 // The one fact that cannot be read off a commit subject, and the source of preview ids.
 if (!NO_ATLAS) {
-	// By logical name: a shard stored gzipped (`.json.gz`) and its older plain `.json` are one shard.
+	// By logical name: a shard stored as `.json.br`, its older `.json.gz` and its older plain `.json` are one shard.
 	const shards = [
 		...new Set(
-			sh(`git diff ${RANGE} --name-only -- "public/reference-atlas*.json" "public/reference-atlas*.json.gz"`)
+			sh(`git diff ${RANGE} --name-only -- "public/reference-atlas*.json" "public/reference-atlas*.json.?z" "public/reference-atlas*.json.br"`)
 				.split("\n")
 				.filter(Boolean)
-				.map((f) => f.replace(/\.gz$/, "")),
+				.map((f) => f.replace(/\.(br|gz)$/, "")),
 		),
 	];
+	// The shard's text at `rev`, in whichever form it had there.
+	const textAt = (rev, shard) => {
+		for (const [ext, un] of [[".br", zlib.brotliDecompressSync], [".gz", zlib.gunzipSync], ["", (b) => b]]) {
+			try {
+				const opts = { cwd: REPO, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 30 };
+				return un(execSync(`git show ${rev}:${shard}${ext}`, opts)).toString("utf8");
+			} catch {
+				// not stored in this form at `rev`
+			}
+		}
+		return "";
+	};
 	if (!shards.length) {
 		console.log("\n" + c("b", "new tilings ") + c("dim", "no atlas shard changed"));
 	} else {
 		console.log("\n" + c("b", "new tilings"));
 		for (const shard of shards) {
 			const idsAt = (rev) => {
-				const blob = sh(`git show ${rev}:${shard}.gz | gunzip`) || sh(`git show ${rev}:${shard}`);
+				const blob = textAt(rev, shard);
 				if (!blob) return null;
 				// Shelf files are packed (scripts/atlas/encode.mjs), and an OLD rev may predate that, so
 				// decodeAtlas handles both shapes — otherwise every id reads as undefined and the diff is junk.

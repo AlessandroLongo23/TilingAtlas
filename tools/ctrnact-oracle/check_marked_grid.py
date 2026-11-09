@@ -19,7 +19,7 @@ not a tiling"), while the search knows nothing about that and enumerates danglin
 They are filtered here and counted, because how many there are is itself worth knowing.
 
   python3 check_marked_grid.py --grid triangle --cells fdtri-k3.json \
-      --oracle ../../public/freedraw/tri-solutions.json.gz
+      --oracle ../../public/freedraw/tri-solutions.json.br
 """
 import argparse
 import json

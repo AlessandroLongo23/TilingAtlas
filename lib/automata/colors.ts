@@ -5,7 +5,7 @@
 //
 // The tokens are plain space-separated RGB triples in 0–1 rather than the oklch() the rest of the system
 // uses, because these values go straight into a WebGL uniform and a three.js buffer — neither can parse a
-// CSS colour function. See app/styles/tokens/themed.css.
+// CSS colour function. See design-system/tokens/themed.css.
 
 export type Rgb = [number, number, number];
 

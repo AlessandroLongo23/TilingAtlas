@@ -49,9 +49,9 @@ import {
 } from "@/lib/render/substitutionPatch";
 import { PATCH_LIGHT, PATCH_SAT, patchHue as hueOf, usePatchCanvas } from "@/lib/hooks/usePatchCanvas";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { Slider } from "@/design-system/components/slider";
+import { Button } from "@/design-system/components/button";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -303,8 +303,8 @@ function RulePanel({ caption, pieces }: { caption: string; pieces: RawPolygon[] 
 		oy = (H - s * bh) / 2;
 	return (
 		<div>
-			<div className="mb-1.5 text-xs text-fg-muted">{caption}</div>
-			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
+			<div className="mb-1.5 text-small text-fg-muted">{caption}</div>
+			<svg width={W} height={H} className="ta-well w-full">
 				{pieces.map((p, i) => (
 					<polygon
 						key={i}
@@ -368,7 +368,7 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 						format={(v) => `${v} · ${polys.length.toLocaleString()} tiles`}
 					/>
 					{effLevel === def.level.max && (
-						<span className="text-[11px] text-fg-muted">Deepest level within the tile budget</span>
+						<span className="text-caption text-fg-muted">Deepest level within the tile budget</span>
 					)}
 					<Segmented
 						options={[

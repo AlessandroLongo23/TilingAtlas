@@ -2,7 +2,7 @@
 
 import { createContext, useEffect, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
-import { CARD_LAYOUT_SPRING } from "@/components/interactive-tiling-preview-card";
+import { SPRING } from "@/design-system/motion";
 
 // The grid a run of tiling cards renders into, built so a card expansion moves EVERYTHING smoothly:
 // - LayoutGroup: a card's expansion only re-renders that card, so its siblings would never re-measure
@@ -44,7 +44,7 @@ export function CardGrid({
 			className="not-prose my-8 border border-line bg-surface max-md:-mx-1"
 			initial={false}
 			animate={{ height }}
-			transition={reduceMotion ? { duration: 0 } : CARD_LAYOUT_SPRING}
+			transition={reduceMotion ? { duration: 0 } : SPRING.layout}
 		>
 			<div ref={innerRef} className="p-4 max-md:p-3">
 				<div
@@ -58,7 +58,7 @@ export function CardGrid({
 						<LayoutGroup>{children}</LayoutGroup>
 					</InCardGrid>
 				</div>
-				{caption && <p className="mt-3 text-sm leading-snug text-fg-muted">{caption}</p>}
+				{caption && <p className="mt-3 text-body leading-tight text-fg-muted">{caption}</p>}
 			</div>
 		</motion.div>
 	);

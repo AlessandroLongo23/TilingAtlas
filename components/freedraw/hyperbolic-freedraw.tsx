@@ -19,8 +19,8 @@ import {
 } from "@/components/freedraw/filter-wall";
 import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
 import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
-import { OptionWall } from "@/components/ui/option-wall";
-import { Pagination } from "@/components/ui/pagination";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Pagination } from "@/design-system/components/pagination";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
@@ -33,7 +33,7 @@ import {
 	schwarzKGaps,
 	type HypSchwarzPattern,
 } from "@/lib/freedraw/schwarz";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 import { GEOMETRIES } from "@/lib/vocabulary";
 
 // The hyperbolic arm of /freedraw — Marek Čtrnáct's freedraw on a hyperbolic SCHWARZ board, laid out like
@@ -156,7 +156,7 @@ export function HyperbolicFreedraw({
 		const key = `${boardId}-${k}`;
 		if (cache.has(key)) return;
 		let live = true;
-		fetch(`/schwarz-hyp/h${boardId}-k${k}.json.gz`)
+		fetchData(`/schwarz-hyp/h${boardId}-k${k}.json.br`)
 			.then((r) => shardBody<HypSchwarzPattern[]>(r))
 			.then((data: HypSchwarzPattern[]) => {
 				if (!live) return;
@@ -211,7 +211,10 @@ export function HyperbolicFreedraw({
 	useKeyShortcuts({ g: () => setCfg({ freedrawScaffold: !useConfiguration.getState().freedrawScaffold }) });
 
 	// A Schwarz record's id is already globally unique, and it is exactly the key /play resolves it by.
-	const playHref = useMemo(() => (selected ? `/catalogue/view?tiling=${encodeURIComponent(selected.id)}` : null), [selected]);
+	const playHref = useMemo(
+		() => (selected ? `/catalogue/view?tiling=${encodeURIComponent(selected.id)}` : null),
+		[selected],
+	);
 
 	const switchBoard = (id: string) => {
 		const next = BOARDS.find((b) => b.id === id)!;

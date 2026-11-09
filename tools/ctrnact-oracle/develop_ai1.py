@@ -32,7 +32,7 @@ Usage:
     develop_ai1.py <corpus-dir> --n 7 --out <scratch>/hp7 --report ...
     develop_ai1.py <corpus-dir> --ai2 7 --out <scratch>/hpt7          # {3,7}
     develop_ai1.py <corpus-dir> --hybrid 1_7627 --out <scratch>/hpy17627
-    node scripts/pack-hyp-poly-shelf.mjs <scratch> --write    # plain shards -> public/hyperbolic-poly/*.json.gz
+    node scripts/pack-hyp-poly-shelf.mjs <scratch> --write    # plain shards -> public/hyperbolic-poly/*.json.br
     develop_ai1.py --selftest
 """
 import argparse
@@ -51,7 +51,8 @@ sys.path.insert(0, _HERE)
 import develop_freedraw as fd
 from develop_freedraw import DevelopError
 from develop_hyperbolic import interior_angle, solve_edge_length
-from develop_hyp_edges import FLAT, build_block, check_patch, develop_patch, quotient_faces, tile_size
+from develop_hyp_edges import FACE_SIZES, FLAT, STARS, build_block, check_patch, develop_patch, quotient_faces, tile_size
+from hyp_geom import star_dent
 from develop_ih_edges import site_rotation_order
 
 TWO_PI = 2 * math.pi
@@ -92,6 +93,7 @@ class Board:
         self.mult = {}
         # Marek's letter is S on the 2023 builds and A on the hybrid ones; the size token is the same.
         self.units = {f"{c}{'oo' if p == 0 else p}": interior_angle(p, l) for p in sizes for c in "SA"}
+        self.units.update({t: interior_angle(p, l) for t, p in FACE_SIZES.items() if p in sizes})
 
     @staticmethod
     def family(n):
@@ -140,6 +142,30 @@ class Board:
         # Board id "y17627" for hybrid_1_7627, the way ai2's are "t7": the "y" keeps it clear of the
         # other families' ids, and with prefix "hp" the shard stem and record ids come out as "hpy17627".
         return Board("y" + bid.replace("_", ""), ".".join("∞" if p == 0 else str(p) for p in figure), l, sizes, "hp")
+
+    @staticmethod
+    def study(path):
+        """A Searcher star-hybrid study (experiments/star-hybrid): its study.board names the edge and the point
+        (the `# star hybrid` header, 30 and 20 digits), the regular faces, and one isotoxal star
+        `face pt<n> dn<n> x <n>`. The star's size class is -n (`6*` in a label), so a 12-gon and a hexagram,
+        both twelve-sided, keep apart in `sizes` and in the face colours."""
+        text = open(os.path.join(path, "study.board")).read()
+        m = re.search(r"^# star hybrid: (\d+)\* at s = (\S+), point (\S+) deg", text, re.M)
+        n, l, a = int(m.group(1)), float(m.group(2)), math.radians(float(m.group(3)))
+        faces = re.findall(r"^(?:face|optional) (\S+)(?: (\S+))? x (\S+)", text, re.M)
+        pt, dn = next((x, y) for x, y, _ in faces if y)
+        regular = {t: 0 if c == "inf" else int(c) for t, y, c in faces if not y}
+        FACE_SIZES.update(regular)
+        FACE_SIZES.update({pt: 2 * n, dn: 2 * n})
+        STARS[dn] = pt
+        name = re.search(r"^name (\S+)", text, re.M).group(1)   # 0.9144011-6star-37.27deg
+        bid = "ys%sn%sp%s" % (re.sub(r"\D", "", name.split("-")[0])[:8], n, round(math.degrees(a) * 100))
+        polys = sorted(set(regular.values()), key=lambda p: (p == 0, p))
+        label = "edge %.4f (%s)" % (l, ", ".join(["∞" if p == 0 else str(p) for p in polys] + [f"{n}*"]))
+        b = Board(bid, label, l, polys + [-n], "hp")
+        b.units = {t: interior_angle(p, l) for t, p in regular.items()}
+        b.units.update({pt: a, dn: star_dent(n, a, l)})
+        return b
 
     @staticmethod
     def multi(bid, source):
@@ -239,6 +265,12 @@ def token_multiples(figs, l, base_letter="S", max_mult=12):
                 mult[u] = ms.pop()
                 progress = True
     missing = sorted({t for f in figs for t in f} - set(mult))
+    # A token that never stands alone in a figure (af3's B10 and B5 always meet together) takes its letter's
+    # multiple, Marek's convention on boards written in letters A, B, C … = 1, 2, 3 … edges. The closure
+    # check below still decides.
+    if missing and base_letter == "A":
+        mult.update({t: ord(t[0]) - ord("A") + 1 for t in missing})
+        missing = []
     if missing:
         raise DevelopError(f"no whole edge multiple found for {missing}")
     for f in figs:
@@ -253,13 +285,28 @@ def token_label(t, mult):
     not 1 (the scaled shelf's '3₂'), and π for a flat corner."""
     if t == FLAT:
         return "π"
+    if t in STARS or t in STARS.values():
+        return f"{FACE_SIZES[t] // 2}*"
     p = tile_size(t)
     m = mult.get(t, 1)
     return ("∞" if p == 0 else str(p)) + ("".join("₀₁₂₃₄₅₆₇₈₉"[int(d)] for d in str(m)) if m != 1 else "")
 
 
 def cert_paths(source):
-    return [p for p in sorted(glob.glob(os.path.join(source, "*.txt"))) if CERT_NAME.match(os.path.basename(p))]
+    return [p for p in sorted(glob.glob(os.path.join(source, "*.txt*"))) if CERT_NAME.match(os.path.basename(p))]
+
+
+def size_class(f):
+    """A quotient face's entry in `sizes`: its corner count, or -n for the star n*."""
+    return -f["size"] // 2 if f.get("star") else f["size"]
+
+
+def counted(t, units):
+    """Whether a vertex orbit counts toward k: three or more corners round it (the atlas's and the Searcher's
+    rule), not a (Pi, Pi) midpoint and not a dent filled by one corner. Its figure is one period."""
+    if not any(c != FLAT for c in t["figure"]):
+        return False
+    return len(t["figure"]) * round(TWO_PI / sum(units[c] for c in t["figure"])) >= 3
 
 
 def corpus_alphabet(source):
@@ -291,13 +338,36 @@ def board_of(n):
     return l, units, sizes
 
 
-def emit_darts(block, face_of, faces, sizes):
+def emit_darts(block, face_of, faces, sizes, board=None):
     """The shipped quotient structure: develop_hyp_colors.emit_darts with the color index replaced by
     the polygon-size index. lvert is indexed so the client's alpha(h) = interiorAngle(lvert[rneig[h]])
     reproduces block.step[h] — getting that shift backwards silently rotates every developed tiling, so
     it is asserted here, not commented."""
     n = len(block.rneig)
     lvert = [0] * n
+    idx_of = {p: i for i, p in enumerate(sizes)}
+    if any(f.get("star") for f in faces):
+        # A star board's corner turns are a regular angle, the star's point or its dent, so the client rebuilds
+        # them from `starKind` (0, 1, 2), lvert (a star face's side count 2n) and the record's `point`
+        # (hypStarFamily.ts starTurns). Shipping them as floats cost 81 bytes a tiling gzipped, against 22.
+        for h in range(n):
+            lvert[block.rneig[h]] = faces[face_of[h]]["size"]
+        kind = [1 if block.tile[h] in STARS.values() else 2 if block.tile[h] in STARS else 0 for h in range(n)]
+        a = board.units[next(iter(STARS.values()))]
+        for h in range(n):
+            p = lvert[block.rneig[h]]
+            turn = interior_angle(p, board.l) if kind[h] == 0 else a if kind[h] == 1 else star_dent(p // 2, a, board.l)
+            if abs(turn - block.step[h]) > 1e-9:
+                raise DevelopError("starKind and lvert do not reproduce the dart's turn")
+        return {
+            "rneig": [int(x) for x in block.rneig],
+            "glue": [int(x) for x in block.glue],
+            "lvert": lvert,
+            "starKind": kind,
+            "orbit": [int(x) for x in block.orbit_of],
+            "faceColor": [idx_of[size_class(faces[face_of[h]])] for h in range(n)],
+            "seed": 0,
+        }
     if any(f.get("mult", 1) != 1 for f in faces) or FLAT in block.tile:
         # Multi-length: the turn at a corner is no longer a function of one size at one ℓ, so the angles
         # ship explicitly (the client's `alpha`), and lvert is the face's count of UNIT sides (a 2ℓ
@@ -312,7 +382,7 @@ def emit_darts(block, face_of, faces, sizes):
             "lvert": lvert,
             "alpha": [float(x) for x in block.step],
             "orbit": [int(x) for x in block.orbit_of],
-            "faceColor": [idx_of[faces[face_of[h]]["size"]] for h in range(n)],
+            "faceColor": [idx_of[size_class(faces[face_of[h]])] for h in range(n)],
             "seed": 0,
         }
     for h in range(n):
@@ -357,17 +427,17 @@ def develop_cert(cert, board, boundR=0.86):
             if any(0 < f["size"] < 3 for f in faces):
                 reasons.append("degenerate face (digon) — this is not an edge system")
                 continue
-            darts = emit_darts(block, face_of, faces, sizes)
+            darts = emit_darts(block, face_of, faces, sizes, board)
         except DevelopError as e:
             reasons.append(str(e))
             continue
-        census = Counter(f["size"] for f in faces)
+        census = Counter(size_class(f) for f in faces)
         # A certificate lists one corner per site orbit, so a vertex whose stabilizer rotates it carries
         # one PERIOD of its figure: 3.7.3.7 arrives as 3.7, {5,4} as 5. Repeat it until it closes.
         # A vertex counts toward k only where at least three tiles meet (the atlas's rule, the same as on
         # the star and scaled shelves). An all-flat (Pi, Pi) site is the aligned midpoint of a long edge:
         # Marek's search counts it, the atlas does not, so it leaves both k and the label.
-        counting = [t for t in cert["types"] if any(c != FLAT for c in t["figure"])]
+        counting = [t for t in cert["types"] if counted(t, units)]
         figures = []
         for t in counting:
             reps = round(TWO_PI / sum(units[c] for c in t["figure"]))
@@ -379,6 +449,7 @@ def develop_cert(cert, board, boundR=0.86):
             "config": " + ".join(figures),
             "family": board.label,
             "edge": l,
+            **({"point": units[next(iter(STARS.values()))]} if STARS else {}),
             "tiles": res["faces"],
             "darts": darts,
             "stats": {
@@ -417,7 +488,7 @@ def figure_in(source):
 
 
 # ------------------------------------------------------------------ driver
-CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Za-z0-9]+?)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
+CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Za-z0-9]+?)(?P<chir>_o)?_(?P<n>\d+)\.txt(?:\.gz)?$")
 
 
 def read_census(source):
@@ -429,10 +500,41 @@ def read_census(source):
     return {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^k=(\d+)\s*--\s*(\d+)\s*$", open(path).read(), re.M)}
 
 
+def stage_study(study, staging, kmax=5):
+    """A Searcher study's certificates in one folder (symlinks) with a solution_list.txt, so `run` reads
+    them as one corpus. A study's rows split its tilings by face set, so no tiling is in two rows. For each
+    row and each k the newest run that FINISHED there (census MAX) is taken; a k no finished run of a row
+    reaches is left out and returned as (row, highest finished k), never shipped half done."""
+    os.makedirs(staging, exist_ok=True)
+    total, short = Counter(), []
+    for row in json.load(open(os.path.join(study, "study.json")))["rows"]:
+        if not row.get("run"):
+            continue
+        done = {}
+        for r in sorted(glob.glob(os.path.join(study, glob.escape(row["name"]) + "-2*")), reverse=True):
+            for f in glob.glob(os.path.join(glob.escape(r), "solver_*")):
+                cen = os.path.join(f, "census.txt")
+                text = open(cen).read() if os.path.exists(cen) else ""
+                if "MAX" in text:
+                    for k, c in re.findall(r"k=(\d+) -- (\d+)", text):
+                        done.setdefault(int(k), (f, int(c)))
+        for k, (f, c) in done.items():
+            total[k] += c
+            for path in glob.glob(os.path.join(glob.escape(f), f"*solver_{k:02d}_*.txt*")):
+                link = os.path.join(staging, os.path.basename(path))
+                if not os.path.lexists(link):
+                    os.symlink(path, link)
+        if max(done, default=0) < kmax:
+            short.append((row["name"], max(done, default=0)))
+    with open(os.path.join(staging, "solution_list.txt"), "w") as fh:
+        fh.writelines(f"k={k} -- {total[k]}\n" for k in sorted(total))
+    return short
+
+
 def run(source, board, out_prefix, ks=None, report_path=None, budget=None, boundR=0.86, progress=0,
         part_size=250000):
     l, units, sizes = board.l, board.units, board.sizes
-    paths = sorted(glob.glob(os.path.join(source, "*.txt"))) if os.path.isdir(source) else [source]
+    paths = cert_paths(source) if os.path.isdir(source) else [source]
 
     # Which k slices fit the budget. Decided from the CERTIFICATE COUNT before anything develops, so a
     # long run is never started only to be thrown away, and the dropped tail is named in the report.
@@ -440,7 +542,7 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
     for path in paths:
         m = CERT_NAME.match(os.path.basename(path))
         if m:
-            per_k[int(m.group("k"))] += open(path).read().count("Number of vertices:")
+            per_k[int(m.group("k"))] += fd.open_text(path).read().count("Number of vertices:")
     # A CONTIGUOUS PREFIX, and the first k that does not fit ends it. Skipping an expensive k and taking
     # a cheaper one above it would leave a hole in the middle of the shipped range, which reads as "the
     # board has nothing at that k" — the one thing a partial corpus must never claim.
@@ -487,7 +589,9 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
                 el = time.time() - t0
                 print(f"  [{el:6.0f}s] {n_certs}/{spent} developed, {sum(failures.values())} failed, "
                       f"ETA {el * (spent - n_certs) / max(1, n_certs):.0f}s", flush=True)
-            if cert.get("k") != k:
+            # Marek's solver counts (Pi, Pi) midpoints in the file's k; the Searcher, like the atlas, does not
+            visible = sum(counted(t, units) for t in cert["types"])
+            if k not in (cert.get("k"), visible):
                 failures["certificate k disagrees with the file name"] += 1
                 continue
             rec, err, ncombo = develop_cert(cert, board, boundR=boundR)
@@ -514,7 +618,8 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
     lines = [f"{board.label} develop ({board.id}) — tilings by regular {sizes} at one edge length",
              f"source          : {source}",
              f"forced edge len : l = {l:.12f}",
-             "angles          : " + ", ".join(f"{p or '∞'}-gon {math.degrees(interior_angle(p, l)):.4f}deg" for p in sizes),
+             "angles          : " + ", ".join(f"{p or '∞'}-gon {math.degrees(interior_angle(p, l)):.4f}deg" for p in sizes if p >= 0)
+             + "".join(f", {t} {math.degrees(units[t]):.4f}deg" for d in STARS for t in (STARS[d], d)),
              f"certificates in : {n_certs}",
              f"developed       : {sum(n_out.values())}",
              f"failed          : {sum(failures.values())}",
@@ -610,6 +715,7 @@ def main():
     ap.add_argument("--board", help="an abcdtest board id (e.g. 4568, 35bb) — the general a.b.c.d boards")
     ap.add_argument("--hybrid", help="a hybrid board id (e.g. 1_7627, af3)")
     ap.add_argument("--multi", help="a multi-length board id (e.g. 1247_1_0612)")
+    ap.add_argument("--study", action="store_true", help="source is a Searcher star-hybrid study folder")
     ap.add_argument("--figure", help="override the closing figure --hybrid reads off the certificates, 0 = apeirogon")
     ap.add_argument("--out")
     ap.add_argument("--report")
@@ -625,6 +731,20 @@ def main():
         return
     if not args.source:
         ap.error("source is required unless --selftest")
+    # A Searcher run keeps its board, and the board's `face <label> x <corners>` lines are the sizes
+    board_file = os.path.join(args.source, "board.txt")
+    if os.path.exists(board_file):
+        FACE_SIZES.update({t: 0 if n == "inf" else int(n)
+                           for t, n in re.findall(r"^face (\S+) x (\S+)\s*$", open(board_file).read(), re.M)})
+    if args.study:
+        board = Board.study(args.source)   # --out is a folder here: the shard stem is the board's own id
+        staging = os.path.join(os.path.abspath(args.out), "staged", board.id)
+        args.out = os.path.join(args.out, "hp" + board.id)
+        for row, top in stage_study(args.source, staging):
+            print(f"NOTE: row {row} finished only to k = {top}; its higher k are not in this develop")
+        ks = set(int(x) for x in args.ks.split(",")) if args.ks else None
+        run(staging, board, args.out, ks, args.report, args.budget, args.boundR, args.progress, args.part_size)
+        return
     if sum(x is not None for x in (args.n, args.ai2, args.board, args.hybrid, args.multi)) != 1:
         ap.error("give exactly one of --n (3.4.n.4), --ai2 ({3,n}), --board (an a.b.c.d id) or --hybrid")
     if args.n is not None:

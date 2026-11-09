@@ -12,7 +12,7 @@ import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ROWS = path.join(ROOT, "tools", "ctrnact-oracle", "isotoxal-atlas-rows.json");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.br");
 const DISCOVERER = "Čtrnáct engine + develop_euclid, isotoxal palettes over the eleven D=120 outlines, 2026-08-31";
 const isIso = (id) => id.startsWith("sph-iso-");
 const write = process.argv.includes("--write");
@@ -84,4 +84,4 @@ if (!write) {
 }
 atlas.records = out;
 writeDataFile(ATLAS, JSON.stringify(atlas));
-console.log(`wrote public/reference-atlas-spherical.json.gz — ${out.length} records`);
+console.log(`wrote public/reference-atlas-spherical.json.br — ${out.length} records`);

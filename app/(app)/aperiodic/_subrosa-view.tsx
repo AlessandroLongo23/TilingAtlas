@@ -14,8 +14,8 @@ import {
 import { prototileAngles } from "@/lib/subrosa/sigma";
 import { SubRosaGL } from "@/lib/render/subrosaGL";
 import { applyViewTransform, useAperiodicView, type AperiodicFrame, type HomeBox } from "@/lib/hooks/useAperiodicView";
-import { Slider } from "@/components/ui/slider";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { Slider } from "@/design-system/components/slider";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -304,7 +304,7 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 		return (
 			<div className="flex min-h-0 flex-1">
 				<AperiodicSidebar header={header}>
-					<p className="text-[11px] text-fg-muted">Sub Rosa engine failed to build for n={N}.</p>
+					<p className="text-caption text-fg-muted">Sub Rosa engine failed to build for n={N}.</p>
 				</AperiodicSidebar>
 				<div className="min-h-0 flex-1" />
 			</div>
@@ -369,7 +369,7 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 						format={(v) => `${v} · ${tiles.length.toLocaleString()} tiles`}
 					/>
 					{effDepth === maxDepth && maxDepth < DEPTH_CEILING && (
-						<span className="text-[11px] text-fg-muted">Deepest level within the tile budget</span>
+						<span className="text-caption text-fg-muted">Deepest level within the tile budget</span>
 					)}
 				</Section>
 
@@ -429,13 +429,13 @@ function RuleDiagram({ rule, x }: { rule: SubRosaRule; x: number }) {
 	const tx = (v: Vector) => [pad + s * (v.x - minx), H - pad - s * (v.y - miny)] as const;
 	return (
 		<div>
-			<div className="mb-1.5 flex justify-between text-xs">
+			<div className="mb-1.5 flex justify-between text-small">
 				<span className="text-fg-muted">
 					{Math.round((proto.x * 180) / rule.n)}°/{Math.round(((rule.n - proto.x) * 180) / rule.n)}° rhomb
 				</span>
 				<span className="font-mono text-fg tabular-nums">{proto.children.length} tiles</span>
 			</div>
-			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
+			<svg width={W} height={H} className="ta-well w-full">
 				{proto.children.map((c, i) => {
 					const pts = c.corners.map((v) => tx(v).join(",")).join(" ");
 					return (

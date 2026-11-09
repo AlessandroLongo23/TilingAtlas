@@ -10,8 +10,8 @@ import {
 	resolveAlphaDegsRaw,
 	type ParametricCellData,
 } from "@/lib/utils/paramCell";
-import { Kbd } from "@/components/ui/kbd";
-import { RangeInput } from "@/components/ui/range-input";
+import { Kbd } from "@/design-system/components/kbd";
+import { RangeInput } from "@/design-system/components/range-input";
 import { useMetaKeyLabel } from "@/lib/hooks/useMetaKeyLabel";
 import { ParamRegionPad } from "@/components/param-region-pad";
 
@@ -69,12 +69,12 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	if (paramCell.regionVertices?.length && paramCell.params.length === 2) {
 		return (
 			<div
-				className={`absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm ${PHONE_CARD}`}
+				className={`ta-float absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 items-stretch gap-4 px-4 py-2.5 ${PHONE_CARD}`}
 			>
 				<ParamRegionPad paramCell={paramCell} />
 				{/* The pad's axes now say what the pad is, so the sentence that used to sit here is gone. This
 				    chip stays because the gesture it names is otherwise invisible. */}
-				<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted max-md:hidden">
+				<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-micro text-fg-muted max-md:hidden">
 					<span className="inline-flex items-center gap-1.5 whitespace-nowrap">
 						<Kbd>{metaKey}</Kbd>
 						<span>+ move mouse to deform</span>
@@ -86,14 +86,14 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 
 	return (
 		<div
-			className={`absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm ${PHONE_CARD}`}
+			className={`ta-float absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 items-stretch gap-4 px-4 py-2.5 ${PHONE_CARD}`}
 		>
 			<div className="flex flex-col justify-center gap-2 max-md:min-w-0 max-md:flex-1">
 				{visible.map((p, j) => (
 					<div key={j} className="flex items-center gap-3 max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-0">
 						{/* A LENGTH parameter is not an angle: it prints its own name and no degree sign,
 						    and two decimals, because the interesting members sit at ratios like 0.55. */}
-						<span className="w-24 text-xs font-medium whitespace-nowrap text-fg max-md:w-auto max-md:text-[13px]">
+						<span className="w-24 text-small font-medium whitespace-nowrap text-fg max-md:w-auto max-md:text-ui">
 							{p.kind === "length"
 								? `${paramName(p, j)} = ${effAlphas[j].toFixed(2)}`
 								: `${paramName(p, j)} = ${effAlphas[j].toFixed(1)}\u00b0`}
@@ -102,7 +102,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 						    palette parameter has no such answer and the slot stays empty. */}
 						{p.dart != null && p.tile ? (
 							<span
-								className="w-28 truncate text-[10px] whitespace-nowrap text-fg-muted max-md:w-auto max-md:min-w-0 max-md:flex-1 max-md:text-xs"
+								className="w-28 truncate text-micro whitespace-nowrap text-fg-muted max-md:w-auto max-md:min-w-0 max-md:flex-1"
 								title={p.tile}
 							>
 								{p.tile}
@@ -134,7 +134,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 								/>
 							) : null}
 						</div>
-						<span className="font-mono text-[10px] whitespace-nowrap text-fg-muted max-md:ml-auto max-md:text-xs">
+						<span className="font-mono text-micro whitespace-nowrap text-fg-muted max-md:ml-auto">
 							{p.kind === "length"
 								? `(${p.alphaRangeDegOpen[0].toFixed(2)}, ${p.alphaRangeDegOpen[1].toFixed(2)})`
 								: `(${p.alphaRangeDegOpen[0].toFixed(0)}\u00b0, ${p.alphaRangeDegOpen[1].toFixed(0)}\u00b0)`}
@@ -145,7 +145,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 					<button
 						type="button"
 						onClick={() => setExpanded((v) => !v)}
-						className="self-start text-[10px] text-fg-muted underline underline-offset-2 hover:text-accent max-md:min-h-11 max-md:text-xs"
+						className="ta-link-quiet self-start text-micro max-md:min-h-11"
 					>
 						{expanded
 							? `show ${VISIBLE_ROWS} of ${paramCell.params.length}`
@@ -157,7 +157,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 			</div>
 			{/* Discoverability hint for the Command-scrub gesture, kept beside the sliders (not below) so the
 			    panel stays short. The axis→angle mapping is coloured to match each slider's label. */}
-			<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted max-md:hidden">
+			<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-micro text-fg-muted max-md:hidden">
 				<span className="inline-flex items-center gap-1.5 whitespace-nowrap">
 					<Kbd>{metaKey}</Kbd>
 					<span>+ move mouse to deform</span>

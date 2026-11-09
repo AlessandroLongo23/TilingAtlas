@@ -1,9 +1,10 @@
-import { isWithinTolerance, compareVCNames, cycleToMinimumLexicographicalOrder, isEqualOrChiral } from "@/utils";
+import { isWithinTolerance } from "@/utils/math";
+import { compareVCNames, cycleToMinimumLexicographicalOrder, isEqualOrChiral } from "@/utils/utils";
 import { Vector } from "./Vector";
 import { Polygon } from "./polygons/Polygon";
 import { Tiling } from "./Tiling";
 import { VertexConfiguration } from "./algorithm/VertexConfiguration";
-import { tolerance } from "@/stores";
+import { tolerance } from "@/utils/tolerance";
 import { type Reflection } from "./Transform";
 
 export const gyrationOrders: number[] = [6, 4, 3, 2];

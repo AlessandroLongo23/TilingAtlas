@@ -71,6 +71,13 @@ export function parseTegulaSymbol(text: string): DSymbol | null {
 	return new DSymbol(s[0], s[1], s[2], m[0], m[1]);
 }
 
+/** parseTegulaSymbol's inverse: the same compressed form, chambers in their current order. */
+export function formatTegulaSymbol(sym: DSymbol, tag = "1.1"): string {
+	const ops = sym.s.map((s) => s.flatMap((d, c) => (d >= c ? [d + 1] : [])).join(" "));
+	const ms = ([0, 2] as const).map((j) => components(sym, 1, j).map((o) => (j ? sym.m12 : sym.m01)[o[0]]));
+	return `<${tag}:${sym.n}:${ops.join(",")}:${ms.map((m) => m.join(" ")).join(",")}>`;
+}
+
 /** A vertex class or a tile class: the orbifold point at its centre has rotation order v = m / r. */
 /**
  * A vertex class, tile class or edge class, and the point of the orbifold at its centre. Its order v is

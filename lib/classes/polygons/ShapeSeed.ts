@@ -1,4 +1,4 @@
-import { PolygonType } from "@/classes";
+import { PolygonType } from "@/classes/polygons/PolygonType";
 
 export type ShapeSeed = {
 	type: PolygonType;

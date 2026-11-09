@@ -201,9 +201,9 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		faces: e.faces,
 		stats: e.stats,
 	}));
-	writeDataFile(path.join(OUT, `planigon-k${k}.json.gz`), JSON.stringify(rows));
+	writeDataFile(path.join(OUT, `planigon-k${k}.json.br`), JSON.stringify(rows));
 	manifest.k.push({ k, count: rows.length, file: `/planigon/planigon-k${k}.json` });
-	console.log(`  k=${k}: ${rows.length} tilings -> public/planigon/planigon-k${k}.json.gz`);
+	console.log(`  k=${k}: ${rows.length} tilings -> public/planigon/planigon-k${k}.json.br`);
 	byK.get(k).forEach((e, i) => {
 		const sizes = [...new Set(e.faces.map((f) => f.length))].sort((a, b) => a - b);
 		ref.push({
@@ -225,9 +225,9 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		});
 	});
 }
-writeDataFile(path.join(OUT, "manifest.json.gz"), JSON.stringify(manifest, null, 2));
-writeDataFile(path.join(PUB, "reference-atlas-planigon.json.gz"), stringifyAtlas(ref));
-console.log(`  atlas shelf: ${ref.length} entries -> public/reference-atlas-planigon.json.gz`);
+writeDataFile(path.join(OUT, "manifest.json.br"), JSON.stringify(manifest, null, 2));
+writeDataFile(path.join(PUB, "reference-atlas-planigon.json.br"), stringifyAtlas(ref));
+console.log(`  atlas shelf: ${ref.length} entries -> public/reference-atlas-planigon.json.br`);
 console.log(
 	`planigon: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`,
 );

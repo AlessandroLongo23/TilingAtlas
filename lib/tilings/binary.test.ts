@@ -23,7 +23,7 @@ const isIdentity = (M: Su11) => Math.abs(Math.abs(M.a.x) - 1) + Math.abs(M.a.y) 
 
 describe("geodesic binary tiling", () => {
 	it("closes 3.4.3.4.4 at the catalogue's edge", () => {
-		// hyp-k2-3-4-3-4-4__3-4-3-4-4 in public/hyperbolic-developed.json.gz
+		// hyp-k2-3-4-3-4-4__3-4-3-4-4 in public/hyperbolic-developed.json.br
 		expect(REG_EDGE).toBeCloseTo(0.7389979438517287, 12);
 	});
 

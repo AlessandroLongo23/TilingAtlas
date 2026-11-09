@@ -42,11 +42,11 @@ CONVENTIONS (all ported, none guessed):
     period. The period lattice and one fundamental domain of drawn edges are the whole answer.
 
 Validation: developing all 1420 square certificates (k<=3) must reproduce, bijectively up to p4m,
-the 1420 independently enumerated bitmasks in public/freedraw/solutions.json.gz.
+the 1420 independently enumerated bitmasks in public/freedraw/solutions.json.br.
 
 Usage:
-    develop_freedraw.py <dir> --grid square --oracle public/freedraw/solutions.json.gz
-    develop_freedraw.py <dir> --grid 4436 --out public/freedraw/4436-solutions.json.gz  # a .gz --out is gzipped
+    develop_freedraw.py <dir> --grid square --oracle public/freedraw/solutions.json.br
+    develop_freedraw.py <dir> --grid 4436 --out public/freedraw/4436-solutions.json.br  # a .br --out is brotli-compressed
     develop_freedraw.py <dir> --grid triangle --out tri_solutions.json [--oracle tri_k1.json]
 """
 import argparse
@@ -60,7 +60,8 @@ import sys
 from collections import Counter, deque
 
 
-# Every data file under public/ ships gzipped (`x.json.gz`; scripts/atlas/io.mjs is the Node twin).
+# Every data file under public/ ships brotli-compressed (`x.json.br`; scripts/atlas/io.mjs is the Node twin,
+# and holds why quality 10 and a 16 MB window). `.gz`, the format until 2026-11, still reads.
 _CODEC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts", "atlas", "encode.mjs")
 
 
@@ -76,27 +77,34 @@ def _atlas_codec(fn, text):
 
 
 def write_json(path, obj, pack=False, **dump_kwargs):
-    """json.dump to `path`; a `.gz` path is gzipped with mtime=0 so rebuilds are byte-identical. `pack`
-    writes a record list as the atlas container (what every reference-atlas shelf ships as)."""
+    """json.dump to `path`, compressed by its extension: `.br` brotli, `.gz` gzip with mtime=0 so rebuilds
+    are byte-identical. `pack` writes a record list as the atlas container (what every reference-atlas
+    shelf ships as)."""
     path = os.fspath(path)
     text = _atlas_codec("encodeAtlas", json.dumps(obj)) if pack else json.dumps(obj, **dump_kwargs)
-    if not path.endswith(".gz"):
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(text)
-        return
-    # filename="" keeps the name out of the header too, so the bytes depend on the records alone.
-    with open(path, "wb") as raw, gzip.GzipFile("", "wb", 9, raw, mtime=0) as f:
-        f.write(text.encode("utf-8"))
+    data = text.encode("utf-8")
+    if path.endswith(".br"):
+        import brotli
+        data = brotli.compress(data, quality=10, lgwin=24)
+    elif path.endswith(".gz"):
+        data = gzip.compress(data, 9, mtime=0)
+    with open(path, "wb") as f:
+        f.write(data)
 
 
 def read_json(path):
-    """json.load `path`, falling back to `path + '.gz'` when only the gzipped file exists."""
+    """json.load `path`, falling back to `path + '.br'` or `path + '.gz'` when only that file exists."""
     path = os.fspath(path)
-    if not os.path.exists(path) and os.path.exists(path + ".gz"):
-        path += ".gz"
-    with (gzip.open(path, "rt", encoding="utf-8") if path.endswith(".gz")
-          else open(path, encoding="utf-8")) as f:
-        text = f.read()
+    if not os.path.exists(path):
+        path = next((p for p in (path + ".br", path + ".gz") if os.path.exists(p)), path)
+    with open(path, "rb") as f:
+        data = f.read()
+    if path.endswith(".br"):
+        import brotli
+        data = brotli.decompress(data)
+    elif path.endswith(".gz"):
+        data = gzip.decompress(data)
+    text = data.decode("utf-8")
     obj = json.loads(text)
     if isinstance(obj, dict) and obj.get("atlas") == 1 and "records" in obj:
         return json.loads(_atlas_codec("decodeAtlas", text))  # a packed shelf: hand back plain records
@@ -358,8 +366,16 @@ def parse_block(text):
     return b
 
 
+def open_text(path):
+    """A certificate file, plain or gzipped (the Searcher app gzips its own)."""
+    if path.endswith(".gz"):
+        import gzip
+        return gzip.open(path, "rt", encoding="utf-8", errors="replace")
+    return open(path, encoding="utf-8", errors="replace")
+
+
 def parse_file(path):
-    text = open(path, encoding="utf-8", errors="replace").read()
+    text = open_text(path).read()
     return [parse_block(c) for c in text.split("---") if c.strip()]
 
 

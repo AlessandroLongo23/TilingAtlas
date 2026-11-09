@@ -1,25 +1,26 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Check, Copy, Download, ExternalLink, FileDown, Hexagon, LoaderCircle, RotateCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Check, Copy, Download, ExternalLink, FileDown, Hexagon, RotateCw } from "lucide-react";
+import { Button } from "@/design-system/components/button";
+import { Modal } from "@/design-system/components/modal";
+import { Spinner } from "@/design-system/components/spinner";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { AppleIcon, WindowsIcon } from "@/components/icons/os";
 import { downloadPage, OS_NAME, releasePage, type Os } from "@/lib/downloads";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 import type { BrowseNode } from "@/lib/atlas/browse";
 
 // "Open in the Searcher": the shelf's board, handed to the Tiling Searcher through its link scheme
 // (tools/searcher/app/electron/main.ts opens tilingsearcher://board?text=… on its Board page). The boards are
-// public/searcher-boards.json.gz (scripts/build-searcher-boards.ts), each checked against its shelf by the
+// public/searcher-boards.json.br (scripts/build-searcher-boards.ts), each checked against its shelf by the
 // engine before it ships. A browser cannot ask whether an app is installed, so the dialog tries the link and
 // offers the download and a copy of the board beside it, whatever happened.
 
 type Boards = Record<string, string>;
 let boardsLoad: Promise<Boards> | null = null;
 const loadBoards = () =>
-	(boardsLoad ??= fetch("/searcher-boards.json.gz")
+	(boardsLoad ??= fetchData("/searcher-boards.json.br")
 		.then((r) => (r.ok ? shardBody<{ boards: Boards }>(r) : { boards: {} }))
 		.then((j) => j.boards)
 		.catch(() => ({})));
@@ -129,27 +130,27 @@ export function OpenInSearcher({ board }: { board: string | null }) {
 
 	return (
 		<>
-			<Tooltip label="Open in the Tiling Searcher" delay={300}>
+			<Tooltip label="Open in the Tiling Searcher">
 				<button
 					type="button"
 					onClick={() => (setOpen(true), launch())}
 					aria-label="Open in the Tiling Searcher"
 					className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:text-fg"
 				>
-					<Hexagon size={16} />
+					<Hexagon className="size-icon-md" />
 				</button>
 			</Tooltip>
 			<Modal
-				isOpen={open}
+				open={open}
 				onOpenChange={setOpen}
 				title="Open in the Tiling Searcher"
 				description="Opens this shelf's board in the Tiling Searcher, or gets the app if it is not installed."
 				size="sm"
 			>
 				<div className="space-y-5 p-5">
-					<div className="rounded-control border border-line-subtle bg-surface-sunken px-3 py-2.5">
-						<div className="truncate font-mono text-[13px] text-fg">{nameOf(board)}</div>
-						<div className="mt-0.5 text-xs text-fg-muted">
+					<div className="ta-well px-3 py-2.5">
+						<div className="truncate font-mono text-ui text-fg">{nameOf(board)}</div>
+						<div className="mt-0.5 text-small text-fg-muted">
 							{countOf(board, "face")} faces · {countOf(board, "vertex")} vertex lines · k{" "}
 							{/^k (\d+) (\d+)$/m
 								.exec(board)
@@ -159,15 +160,15 @@ export function OpenInSearcher({ board }: { board: string | null }) {
 						</div>
 					</div>
 
-					<p className="flex items-start gap-2 text-sm text-fg-secondary" aria-live="polite">
+					<p className="flex items-start gap-2 text-body text-fg-secondary" aria-live="polite">
 						{state === "opening" ? (
 							<>
-								<LoaderCircle size={16} className="mt-0.5 shrink-0 animate-spin text-fg-muted" aria-hidden />
+								<Spinner size={16} className="mt-0.5" />
 								Opening the Tiling Searcher. If your browser asks, choose Open.
 							</>
 						) : state === "opened" ? (
 							<>
-								<Check size={16} className="mt-0.5 shrink-0 text-success" aria-hidden />
+								<Check className="mt-0.5 size-icon-md shrink-0 text-success" aria-hidden />
 								Sent to the Tiling Searcher: the board is on its Board page, ready to run.
 							</>
 						) : state === "too-long" ? (
@@ -205,10 +206,10 @@ export function OpenInSearcher({ board }: { board: string | null }) {
 							/>
 							<Button variant="secondary" size="sm" icon={FileDown} label="Save as a file" onClick={save} />
 						</div>
-						<p className="text-xs leading-relaxed text-fg-muted">
+						<p className="text-small leading-relaxed text-fg-muted">
 							Paste it on the Searcher&apos;s Board page, in the Text tab, or open the file with Open….{" "}
-							<a href={releasePage} className="inline-flex items-center gap-0.5 hover:text-fg">
-								All platforms <ExternalLink size={11} aria-hidden />
+							<a href={releasePage} className="ta-link-quiet inline-flex items-center gap-0.5">
+								All platforms <ExternalLink className="size-icon-xs" aria-hidden />
 							</a>
 						</p>
 					</section>

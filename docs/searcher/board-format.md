@@ -161,7 +161,8 @@ recount, 10 / 31.
 
 `face a b c x 2` is the face whose corners, read round it, are `a b c a b c`. `x 1` may be omitted.
 `x inf` makes an apeirogon: the word `a b c` repeats forever along it. A digon is `face A2 x 2`, which
-is how marked edges are written today, and that stays the encoding.
+is how Marek's boards mark edges, and the engine and the drawing read it. Quick setup marks edges with
+edge types instead (drawn and hidden sides, below): the same edge systems, and sides of any length.
 
 A face and its mirror image are the same face, so `a b c` also allows `c b a`. The same symbol may
 appear in more than one face; a corner with that symbol may then belong to any of them.
@@ -287,6 +288,17 @@ A row's board keeps the faces that are not optional and the optional faces of it
 face` line for each of those, and keeps only the vertex lines whose corners its faces have. So a row finds the
 tilings that use exactly its optional faces and no other: the question a census asks. Rows come smallest
 subset first, in board order, and are named by their faces (`A12p30,A12p60`), the folder of the row's run too.
+A study's board can change while it goes: Edit board on its page, then Apply to it; More faces per row; or
+Remove on its Faces view. A row whose board comes out the same keeps its check and search, so taking out an
+optional face touches only the rows that hold it. A row whose board changed is searched again, rows the board no
+longer gives leave (their folders stay on disk), and new rows join. A face taken out is kept in study.json with
+what its rows had found, and the census prints it: `# removed B8 on 2026-11-08: 95 rows, none up to k = 12`.
+
+A `require face` line that names only optional faces (Require any on a group of them) narrows the rows: a
+subset holding none of its faces is no row, so two such lines over the stars and over the scaled faces leave
+only the combinations with at least one of each. A row's board leaves such a line out, as its per-face lines
+meet it. A line naming a face that is not optional, every row meets. At most 20 of these lines: the app counts
+the rows by inclusion–exclusion over them.
 
 `vary n 6..10` (or `vary n 6 8 12`) makes a row per value. Below it, `{n}` anywhere in a line is the value and
 `{2n}`, `{n+1}`, `{360/n}` are arithmetic on it, kept exact (`{180-360/n}` at n = 7 is `900/7`, which an angle
@@ -369,7 +381,7 @@ and their counts) and, for a moment after each root, `merge.pending`.
 
 `tilingsearcher://board?text=<the board file as UTF-8, base64url>` opens that board on the app's Board page, as
 Open… would; nothing runs until asked. The installed app claims the scheme (a launch from source does not). The
-atlas's "Open in the Searcher" makes these links from `public/searcher-boards.json.gz`, which
+atlas's "Open in the Searcher" makes these links from `public/searcher-boards.json.br`, which
 `scripts/build-searcher-boards.ts` writes and, with `--check`, tests board by board against each shelf's counts.
 On Windows the link reaches the app as a command-line argument, so one past about 30,000 characters fails there.
 

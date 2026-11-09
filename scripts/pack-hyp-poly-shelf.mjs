@@ -6,15 +6,13 @@
 // ALL THREE FAMILIES, one path: `hp<n>` (ai1's 3.4.n.4), `hpt<n>` ({3,n}) and `hpq<id>` (the a.b.c.d
 // boards). The stem in the filename says which, so a directory of any mixture packs correctly.
 //
-// GZIPPED ON DISK. `public/` is tracked in git and these records are dart arrays — thousands of small
-// repeated integers, which gzip 10-17x. The wire is IDENTICAL either way, because the server already
-// gzips a plain .json on the fly, so storing the compressed bytes costs a viewer nothing and saves the
-// repository an order of magnitude. That is what lets this shelf carry every k Marek enumerated instead
-// of a budgeted prefix. lib/services/atlasCodec.ts `shardBody` reads either form.
+// COMPRESSED ON DISK, as every public/ data file is (scripts/atlas/io.mjs): these records are dart arrays,
+// thousands of small repeated integers, and storing the compressed bytes is what lets this shelf carry
+// every k Marek enumerated instead of a budgeted prefix. lib/services/atlasCodec.ts `shardBody` reads them.
 import fs from "node:fs";
 import path from "node:path";
-import zlib from "node:zlib";
 import { encodeAtlas } from "./atlas/encode.mjs";
+import { dataBytes } from "./atlas/io.mjs";
 
 const args = process.argv.slice(2);
 const write = args.includes("--write");
@@ -57,7 +55,7 @@ for (const dir of dirs) {
 const rows = [];
 let totalRecs = 0,
 	totalRaw = 0,
-	totalGz = 0;
+	totalOut = 0;
 const order = { ai1: 0, ai2: 1, abcd: 2, hybrid: 3 };
 const keys = [...byBoard.keys()].sort((a, b) => {
 	const x = byBoard.get(a),
@@ -78,13 +76,14 @@ for (const key of keys) {
 		if (s.part !== null) parts[s.k] = Math.max(parts[s.k] ?? 0, s.part + 1);
 		label ??= recs[0].family;
 		totalRecs += recs.length;
-		const packed = Buffer.from(JSON.stringify(encodeAtlas(recs)));
-		const gz = zlib.gzipSync(packed, { level: 9 });
-		totalRaw += packed.length;
-		totalGz += gz.length;
+		const packed = JSON.stringify(encodeAtlas(recs));
+		const file = path.join(OUT, `${b.stem}-k${s.k}${s.part === null ? "" : `-p${s.part}`}.json.br`);
+		const bytes = dataBytes(file, packed);
+		totalRaw += Buffer.byteLength(packed);
+		totalOut += bytes.length;
 		if (write) {
 			fs.mkdirSync(OUT, { recursive: true });
-			fs.writeFileSync(path.join(OUT, `${b.stem}-k${s.k}${s.part === null ? "" : `-p${s.part}`}.json.gz`), gz);
+			fs.writeFileSync(file, bytes);
 		}
 	}
 	const ks = Object.keys(counts)
@@ -109,6 +108,6 @@ for (const key of keys) {
 console.log(rows.join("\n"));
 console.log(
 	`\n${rows.length} boards, ${totalRecs.toLocaleString()} tilings, ` +
-		`${(totalRaw / 1e6).toFixed(0)} MB packed -> ${(totalGz / 1e6).toFixed(0)} MB gzipped ` +
-		`(${((totalGz / totalRaw) * 100).toFixed(1)}%)${write ? "  [WRITTEN]" : "  [dry run]"}`,
+		`${(totalRaw / 1e6).toFixed(0)} MB packed -> ${(totalOut / 1e6).toFixed(0)} MB compressed ` +
+		`(${((totalOut / totalRaw) * 100).toFixed(1)}%)${write ? "  [WRITTEN]" : "  [dry run]"}`,
 );

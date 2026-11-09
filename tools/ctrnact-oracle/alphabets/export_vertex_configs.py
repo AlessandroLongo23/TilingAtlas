@@ -21,7 +21,7 @@ import gen_alphabet as ga
 from shapely.geometry import Polygon as ShPoly
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from develop_freedraw import write_json  # noqa: E402  (public/ ships gzipped)
+from develop_freedraw import write_json  # noqa: E402  (public/ ships brotli, .json.br)
 
 # A config is OVERLAP-FREE iff no two of its placed tiles share positive area. Convex tiles (regular +
 # convex isotoxal) are always contained in their own corner wedge, so overlaps only ever come from a star
@@ -137,7 +137,7 @@ def export_palette(name):
         "configs": kept,
     }
     os.makedirs(OUT_DIR, exist_ok=True)
-    dst = os.path.join(OUT_DIR, f"{name}.json.gz")
+    dst = os.path.join(OUT_DIR, f"{name}.json.br")
     write_json(dst, out, separators=(",", ":"))
     kb = os.path.getsize(dst) / 1024
     print(f"  {name}: {len(configs)} enumerated -> {len(kept)} overlap-free shipped "

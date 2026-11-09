@@ -12,14 +12,14 @@ import { Figure, FigureLoading, LiveFigure } from "@/components/about/figure";
 import { ColorsCanvas } from "@/components/colors/colors-canvas";
 import { colorsCatalogueFile, colorsGridOf, type ColorPattern, type ColorsGrid } from "@/lib/colors/pattern";
 import { DEFAULT_COLORS_STYLE } from "@/lib/colors/render";
-import { readAtlas } from "@/lib/services/atlasCodec";
+import { fetchData, readAtlas } from "@/lib/services/atlasCodec";
 
 const cache = new Map<string, Promise<ColorPattern[]>>();
 function loadSlice(grid: ColorsGrid, colors: number, k: number) {
 	const url = colorsCatalogueFile(grid, colors, k);
 	let p = cache.get(url);
 	if (!p) {
-		p = fetch(url)
+		p = fetchData(url)
 			.then((r) => (r.ok ? readAtlas<ColorPattern>(r) : []))
 			.catch(() => []);
 		cache.set(url, p);
@@ -35,7 +35,7 @@ function Panel({ p, marks }: { p: ColorPattern; marks: boolean }) {
 			<LiveFigure label={p.vcs.join(" ")} className="aspect-square w-full border border-line">
 				{(live) => <ColorsCanvas pattern={p} style={style} cells={6} {...live} />}
 			</LiveFigure>
-			<div className="mt-1 truncate text-center font-mono text-[10px] text-fg-muted" title={p.vcs.join("  ")}>
+			<div className="mt-1 truncate text-center font-mono text-micro text-fg-muted" title={p.vcs.join("  ")}>
 				{p.vcs.length > 1 ? `${p.vcs[0]} +${p.vcs.length - 1}` : p.vcs[0]}
 			</div>
 		</div>
@@ -105,7 +105,7 @@ export function ColoringsFigure({
 			) : (
 				<FigureLoading what="colorings" />
 			)}
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				{rows
 					? `${GRID_LABEL[grid]} grid, ${nColors} colors, k = ${k}: ${rows.length === 1 ? "the only coloring" : `${shown.length === rows.length ? "all" : `${shown.length} of`} ${rows.length.toLocaleString("en-US")} colorings`}${grid === "ts" ? " of tilings that mix the two shapes" : ""}.`
 					: " "}

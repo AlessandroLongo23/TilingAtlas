@@ -13,11 +13,11 @@ import {
 import { Check, Diamond, Magnet, Pause, Play, SkipBack, Trash2, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useIsPresent, useReducedMotion } from "motion/react";
-import { ToolbarReveal } from "@/components/ui/floating-toolbar";
+import { ToolbarReveal } from "@/design-system/components/floating-toolbar";
 import { CameraPathOverlay } from "@/components/camera-path-overlay";
 import { AnimationExportModal } from "@/components/animation-export-modal";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { KEY_EPS, useAnimation } from "@/stores/animation";
 import { flatDriver } from "@/lib/render/flatCamera";
 import {
@@ -31,7 +31,8 @@ import {
 import { captureFrame, playSurfaceColor } from "@/lib/render/capture";
 import { MAX_DPR, measureBox } from "@/lib/render/canvasSize";
 import { DEFAULT_CURVE, distanceTimes, viewAtTime } from "@/lib/render/viewPath";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { curvePath, SpeedCurveEditor } from "@/components/speed-curve-editor";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
@@ -325,19 +326,19 @@ export function AnimationTimeline({
 				<Button size="icon" variant="secondary" icon={SkipBack} aria-label="Go to start" onClick={() => seek(0)} />
 				<Button
 					size="sm"
-					classes="shrink-0 whitespace-nowrap"
+					className="shrink-0 whitespace-nowrap"
 					variant="primary"
 					icon={playing ? Pause : Play}
 					label={playing ? "Pause" : "Play"}
 					onClick={() => setPlaying((p) => !p)}
 					disabled={keys.length === 0}
 				/>
-				<span className="shrink-0 text-xs whitespace-nowrap text-fg-muted tabular-nums">
+				<span className="shrink-0 text-small whitespace-nowrap text-fg-muted tabular-nums">
 					{fmt(time)} / {fmt(duration)}
 				</span>
 				<Button
 					size="sm"
-					classes="shrink-0 whitespace-nowrap"
+					className="shrink-0 whitespace-nowrap"
 					variant="secondary"
 					icon={Diamond}
 					label={keyAtPlayhead ? "Update keyframe" : "Add keyframe"}
@@ -346,7 +347,7 @@ export function AnimationTimeline({
 				<ToolbarReveal show={selected != null}>
 					<Button
 						size="icon"
-						classes="shrink-0"
+						className="shrink-0"
 						variant="ghost"
 						icon={Trash2}
 						aria-label="Delete keyframe"
@@ -357,22 +358,25 @@ export function AnimationTimeline({
 					/>
 				</ToolbarReveal>
 				<div className="ml-auto flex shrink-0 items-center gap-3">
-					<button
-						type="button"
-						aria-pressed={snap}
-						onClick={() => set({ snap: !snap })}
-						title="Snap keyframes dragged on the canvas to vertices, edge midpoints and tile centres, and their turn to the tiling's directions. Hold Alt to drag freely."
-						className="flex shrink-0 items-center gap-1.5 rounded px-1.5 py-1 text-xs whitespace-nowrap text-fg-muted transition-colors hover:text-fg aria-pressed:bg-surface-sunken aria-pressed:text-fg"
-					>
-						<Magnet size={14} />
-						Snap
-					</button>
-					<span title="Space the keyframes so the camera keeps one pace, between 0 and the end marker">
-						<Checkbox label="Time by distance" checked={byDistance} onCheckedChange={(v) => set({ byDistance: v })} />
-					</span>
+					<Tooltip label="Snap keyframes dragged on the canvas to vertices, edge midpoints and tile centres, and their turn to the tiling's directions. Hold Alt to drag freely.">
+						<Button
+							size="sm"
+							className="shrink-0 whitespace-nowrap"
+							variant="ghost"
+							icon={Magnet}
+							label="Snap"
+							pressed={snap}
+							onClick={() => set({ snap: !snap })}
+						/>
+					</Tooltip>
+					<Tooltip label="Space the keyframes so the camera keeps one pace, between 0 and the end marker">
+						<span>
+							<Checkbox label="Time by distance" checked={byDistance} onCheckedChange={(v) => set({ byDistance: v })} />
+						</span>
+					</Tooltip>
 					<Button
 						size="sm"
-						classes="shrink-0 whitespace-nowrap"
+						className="shrink-0 whitespace-nowrap"
 						variant="primary"
 						icon={Check}
 						label="Done"
@@ -382,14 +386,7 @@ export function AnimationTimeline({
 						}}
 						disabled={keys.length === 0}
 					/>
-					<button
-						type="button"
-						aria-label="Close timeline"
-						onClick={toggle}
-						className="text-fg-muted transition-colors hover:text-fg"
-					>
-						<X size={16} />
-					</button>
+					<Button size="icon" variant="ghost" icon={X} aria-label="Close timeline" onClick={toggle} />
 				</div>
 			</div>
 
@@ -407,7 +404,7 @@ export function AnimationTimeline({
 						<div className="pointer-events-none absolute inset-x-0 top-0 h-5 border-b border-line">
 							{Array.from({ length: Math.floor(span / tick) + 1 }, (_, i) => i * tick).map((t) => (
 								<div key={t} className="absolute top-0 h-full border-l border-line" style={{ left: xOf(t) }}>
-									<span className="ml-1 text-[10px] text-fg-muted tabular-nums">{t}s</span>
+									<span className="ml-1 text-micro text-fg-muted tabular-nums">{t}s</span>
 								</div>
 							))}
 						</div>
@@ -425,32 +422,34 @@ export function AnimationTimeline({
 							if (end == null || end <= tShown(k)) return [];
 							const w = xOf(end) - xOf(tShown(k));
 							return [
-								<button
-									key={k.id}
-									type="button"
-									title="Speed curve of this move"
-									className={cn(
-										"absolute bottom-0 h-7 rounded-sm border transition-colors",
-										seg === k.id ? "border-accent bg-accent/15" : "border-transparent bg-accent/5 hover:bg-accent/10",
-									)}
-									style={{ left: xOf(tShown(k)) + 1, width: Math.max(0, w - 2) }}
-									onPointerDown={(e) => e.stopPropagation()}
-									onClick={() => setSeg(seg === k.id ? null : k.id)}
-								>
-									<svg width={Math.max(0, w - 4)} height={22} className="pointer-events-none mx-auto block">
-										<path
-											d={curvePath(k.curve ?? DEFAULT_CURVE, Math.max(0, w - 4), 22)}
-											fill="none"
-											className="stroke-accent"
-											strokeWidth={1.5}
-										/>
-									</svg>
-								</button>,
+								<Tooltip key={k.id} label="Speed curve of this move">
+									{/* ds-check: keep (a timeline glyph: the strip is the move, sized to its span, drawing its curve) */}
+									<button
+										type="button"
+										aria-label="Speed curve of this move"
+										className={cn(
+											"absolute bottom-0 h-7 rounded-tag border transition-colors",
+											seg === k.id ? "border-accent bg-accent/15" : "border-transparent bg-accent/5 hover:bg-accent/10",
+										)}
+										style={{ left: xOf(tShown(k)) + 1, width: Math.max(0, w - 2) }}
+										onPointerDown={(e) => e.stopPropagation()}
+										onClick={() => setSeg(seg === k.id ? null : k.id)}
+									>
+										<svg width={Math.max(0, w - 4)} height={22} className="pointer-events-none mx-auto block">
+											<path
+												d={curvePath(k.curve ?? DEFAULT_CURVE, Math.max(0, w - 4), 22)}
+												fill="none"
+												className="stroke-accent"
+												strokeWidth={1.5}
+											/>
+										</svg>
+									</button>
+								</Tooltip>,
 							];
 						})}
 
 						{keys.length === 0 ? (
-							<p className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-xs text-fg-muted">
+							<p className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-small text-fg-muted">
 								Set up the view on the canvas, then press Add keyframe. Move the playhead, change the view, add another.
 							</p>
 						) : null}
@@ -464,9 +463,9 @@ export function AnimationTimeline({
 							>
 								{first.thumb ? (
 									// eslint-disable-next-line @next/next/no-img-element
-									<img src={first.thumb} alt="" className="h-14 w-auto rounded border border-dashed border-line" />
+									<img src={first.thumb} alt="" className="h-14 w-auto rounded-tag border border-dashed border-line" />
 								) : null}
-								<span className="block text-center text-[10px] text-fg-muted">
+								<span className="block text-center text-micro text-fg-muted">
 									{ending === "drift" ? "+1 period" : "loop"}
 								</span>
 							</div>
@@ -496,18 +495,18 @@ export function AnimationTimeline({
 											alt={`Keyframe at ${fmt(k.t)}`}
 											draggable={false}
 											className={cn(
-												"h-14 w-auto rounded border",
+												"h-14 w-auto rounded-tag border",
 												selected === k.id ? "border-accent ring-2 ring-accent/40" : "border-line",
 											)}
 										/>
 									) : (
-										<div className="h-14 w-20 animate-pulse rounded border border-line bg-surface-sunken" />
+										<div className="h-14 w-20 animate-pulse rounded-tag border border-line bg-surface-sunken" />
 									)}
 									<Diamond
-										size={12}
 										className={cn(
+											"size-icon-xs",
 											"mt-1",
-											selected === k.id ? "fill-accent text-accent" : "fill-fg-muted text-fg-muted",
+											selected === k.id ? "fill-accent text-fg-accent" : "fill-fg-muted text-fg-muted",
 										)}
 									/>
 								</motion.div>
@@ -548,7 +547,7 @@ export function AnimationTimeline({
 							transition={{ duration: reduce ? 0 : DOCK_MS / 1000, ease: EASE }}
 						>
 							<div className="flex w-max flex-col gap-1 px-3 py-2">
-								<div className="flex items-center justify-between gap-2 text-[11px] text-fg-muted">
+								<div className="flex items-center justify-between gap-2 text-caption text-fg-muted">
 									<span>
 										Speed, move {segIndex + 1} → {keys[segIndex + 1] ? segIndex + 2 : "end"}
 									</span>
@@ -558,7 +557,7 @@ export function AnimationTimeline({
 										onClick={() => setSeg(null)}
 										className="hover:text-fg"
 									>
-										<X size={12} />
+										<X className="size-icon-xs" />
 									</button>
 								</div>
 								<SpeedCurveEditor

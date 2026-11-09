@@ -111,7 +111,7 @@ export function CylinderCircuit({ layer, fills, hovered, onHover }: Props) {
 					cy={d.y}
 					r={dots.length > 120 ? 3 : 6}
 					fill="var(--color-fg)"
-					stroke="var(--color-bg)"
+					stroke="var(--color-surface-base)"
 					strokeWidth={1.2}
 				/>
 			))}

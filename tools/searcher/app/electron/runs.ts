@@ -15,7 +15,7 @@ import type { Estimate, OutFile, RaiseRule, Rule, Run, RunOptions } from "../src
 /** The environment that forces `rule` on tilesearch and tileestimate. */
 export const ruleEnv = (rule?: Rule): Record<string, string> =>
 	rule === "fewest" ? { TILESEARCH_FAIL_FIRST: "1" } : rule === "face" ? { TILESEARCH_FACE_FIRST: "1" } : {};
-import { parse } from "../src/board";
+import { engineText, parse } from "../src/board";
 
 export const MIN_FREE_BYTES = 10 * 2 ** 30;
 const LOG_LINES = 2000;
@@ -32,46 +32,71 @@ const read = (f: string) => {
 	}
 };
 
-// Tilings per certificate file, counted when the window shows a run's files (never at startup: the output
-// folder can hold gigabytes), one file at a time, then only over the bytes appended since: the engine only
-// appends, except when it undoes a merge cut short, which shrinks the file and recounts it. A run keeps its
-// counts in tilings.json, so they are counted once.
-const counted = new Map<string, { bytes: number; n: number }>();
+// Tilings per certificate file, and how many have each number of face orbits, counted when the window shows a
+// run's files or tilings (never at startup: the output folder can hold gigabytes), one file at a time, then only
+// over the bytes appended since: the engine only appends, except when it undoes a merge cut short, which shrinks
+// the file and recounts it. A run keeps its counts in tilings.json, so they are counted once. `bytes` is the size
+// counted; `from`, where its last complete certificate ended, is where the next count of a plain file starts.
+// A count kept before 9 November 2026 has no `faces`, and is counted again.
+type Count = { bytes: number; n: number; faces?: Record<number, number>; from?: number };
+const counted = new Map<string, Count>();
 const counting = new Set<string>();
-const MARK = Buffer.from("Number of vertices");
+
+/**
+ * Every complete certificate in a certificate file, from byte `from` of a plain file (a gzipped one is read
+ * whole), with its face orbits: the lines that start with a corner, as `1/0(A3) - *0'/1'(A3) - …` does, one per
+ * orbit. `visit` gets the certificate's text when it asks, and answers false to stop. Answers the bytes read and
+ * the offset past the last line that left no certificate open.
+ */
+export async function eachCertificate(
+	p: string,
+	from: number,
+	visit: (faces: number, text: () => string) => boolean | void,
+): Promise<{ bytes: number; end: number }> {
+	const gz = p.endsWith(".gz");
+	const file = fs.createReadStream(p, gz ? {} : { start: from });
+	let [at, end, faces] = [gz ? 0 : from, gz ? 0 : from, 0];
+	let lines: Buffer[] = [];
+	let carry: Buffer = Buffer.alloc(0);
+	try {
+		for await (const got of gz ? file.pipe(zlib.createGunzip()) : file) {
+			const chunk = carry.length ? Buffer.concat([carry, got as Buffer]) : (got as Buffer);
+			let i = 0;
+			for (let nl; (nl = chunk.indexOf(10, i)) >= 0; i = nl + 1) {
+				const c = chunk[i];
+				if (c === 0x2d && chunk[i + 1] === 0x2d && chunk[i + 2] === 0x2d) {
+					// "---" closes the certificate
+					const mine = lines;
+					if (visit(faces, () => Buffer.concat(mine).toString("utf8")) === false) return { bytes: at + nl + 1, end: at + nl + 1 };
+					[lines, faces] = [[], 0];
+				} else if (nl - i > 1 || (nl - i === 1 && c !== 0x0d)) {
+					// a line with text (a lone \r is a blank line written on Windows); a digit or * starts a face orbit
+					lines.push(chunk.subarray(i, nl + 1));
+					if ((c >= 0x30 && c <= 0x39) || c === 0x2a) faces++;
+				}
+				if (!lines.length) end = at + nl + 1;
+			}
+			at += i;
+			carry = chunk.subarray(i);
+		}
+	} finally {
+		file.destroy();
+	}
+	return { bytes: at + carry.length, end };
+}
+
 async function countTilings(p: string, bytes: number) {
 	if (counting.has(p)) return;
 	counting.add(p);
 	try {
-		if (p.endsWith(".gz")) {
-			// a compressed file no longer grows: counted once, through gunzip
-			let n = 0;
-			let carry = Buffer.alloc(0);
-			for await (const got of fs.createReadStream(p).pipe(zlib.createGunzip())) {
-				const chunk = Buffer.concat([carry, got as Buffer]);
-				for (let i = chunk.indexOf(MARK); i >= 0; i = chunk.indexOf(MARK, i + 1)) n++;
-				carry = chunk.subarray(Math.max(0, chunk.length - MARK.length + 1));
-			}
-			return void counted.set(p, { bytes, n });
-		}
+		// a compressed file no longer grows, and is read whole; a plain one from where its last count ended
+		const gz = p.endsWith(".gz");
 		const had = counted.get(p);
-		const from = had && had.bytes <= bytes ? had.bytes : 0;
-		let n = from ? had!.n : 0;
-		// a mark that started before `from` and ended after it was not counted then
-		let pos = Math.max(0, from - MARK.length + 1);
-		const fh = await fs.promises.open(p, "r");
-		const buf = Buffer.alloc(1 << 20);
-		let carry = Buffer.alloc(0);
-		try {
-			for (let got; (got = (await fh.read(buf, 0, buf.length, pos)).bytesRead); pos += got) {
-				const chunk = Buffer.concat([carry, buf.subarray(0, got)]);
-				for (let i = chunk.indexOf(MARK); i >= 0; i = chunk.indexOf(MARK, i + 1)) n++;
-				carry = chunk.subarray(Math.max(0, chunk.length - MARK.length + 1));
-			}
-		} finally {
-			await fh.close();
-		}
-		counted.set(p, { bytes: pos, n });
+		const on = !gz && had?.faces && typeof had.from === "number" && had.bytes <= bytes ? had : null;
+		const faces: Record<number, number> = { ...on?.faces };
+		let n = on?.n ?? 0;
+		const read = await eachCertificate(p, on?.from ?? 0, (f) => void (n++, (faces[f] = (faces[f] ?? 0) + 1)));
+		counted.set(p, gz ? { bytes, n, faces } : { bytes: read.bytes, n, faces, from: read.end });
 	} catch {
 		// unreadable: not tried again until its size changes
 		counted.set(p, { bytes, n: -1 });
@@ -358,11 +383,14 @@ export class RunFolder {
 		if (this.countingFiles) return;
 		this.countingFiles = true;
 		try {
-			for (const f of this.files) if (counted.get(f.path)?.bytes !== f.bytes) await countTilings(f.path, f.bytes);
+			for (const f of this.files) {
+				const c = counted.get(f.path);
+				if (c?.bytes !== f.bytes || (c.n >= 0 && !c.faces)) await countTilings(f.path, f.bytes);
+			}
 			const keep = Object.fromEntries(
 				this.files.flatMap((f) => {
 					const c = counted.get(f.path);
-					return c && c.n >= 0 ? [[f.name, [c.bytes, c.n]]] : [];
+					return c && c.n >= 0 ? [[f.name, [c.bytes, c.n, c.faces, c.from]]] : [];
 				}),
 			);
 			fs.writeFileSync(path.join(this.out, "tilings.json"), JSON.stringify(keep));
@@ -386,8 +414,12 @@ export class RunFolder {
 		if (!this.countsRead && names.includes("tilings.json")) {
 			this.countsRead = true;
 			try {
-				const kept = JSON.parse(read(path.join(this.out, "tilings.json"))) as Record<string, [number, number]>;
-				for (const [name, [bytes, n]] of Object.entries(kept)) counted.set(path.join(this.out, name), { bytes, n });
+				const kept = JSON.parse(read(path.join(this.out, "tilings.json"))) as Record<
+					string,
+					[number, number, Count["faces"]?, number?]
+				>;
+				for (const [name, [bytes, n, faces, from]] of Object.entries(kept))
+					counted.set(path.join(this.out, name), { bytes, n, faces, from });
 			} catch {}
 		}
 		if (!names.includes("latest.txt")) this.latest = null;
@@ -415,6 +447,7 @@ export class RunFolder {
 					edges: Number(m[4]),
 					bytes,
 					tilings: c && c.n >= 0 && c.bytes === bytes ? c.n : null,
+					faces: (c && c.n >= 0 && c.bytes === bytes && c.faces) || null,
 				};
 			})
 			.filter((f): f is OutFile => f !== null)
@@ -448,7 +481,14 @@ export class RunFolder {
 		this.options = options;
 		if (options.k) this.kRange = options.k;
 		const windows = process.platform === "win32";
-		const args = ["input.board", "--threads", String(options.threads), "--progress"];
+		let input: string;
+		try {
+			input = this.engineInput();
+		} catch (e) {
+			this.state = "failed";
+			return (this.note = `Cannot search this board: ${(e as Error).message}`);
+		}
+		const args = [input, "--threads", String(options.threads), "--progress"];
 		if (options.k) args.push("--k", String(options.k[0]), String(options.k[1]));
 		// --nice is setpriority, which Windows lacks; there the app lowers the process priority itself
 		if (options.nice && !windows) args.push("--nice", String(options.nice));
@@ -509,10 +549,20 @@ export class RunFolder {
 		return null;
 	}
 
+	/** The board file the engines read: input.board, or for a tile-orbit search (`search faces`) the board with
+	 *  faces and vertices swapped, written beside it as engine.board. */
+	private engineInput(): string {
+		const text = read(path.join(this.dir, "input.board"));
+		const swapped = engineText(text);
+		if (swapped === text) return "input.board";
+		fs.writeFileSync(path.join(this.dir, "engine.board"), swapped);
+		return "engine.board";
+	}
+
 	/** Estimate what is left: the roots not yet in roots.done, whose tilings it adds to theirs. */
 	private startEstimator(exe: string) {
 		const done = path.join(this.out, "roots.done");
-		const args = ["input.board", "--k", String(this.kRange[0]), String(this.kRange[1])];
+		const args = [this.engineInput(), "--k", String(this.kRange[0]), String(this.kRange[1])];
 		args.push("--seconds", String(ESTIMATE_SECONDS), "--threads", "1");
 		if (fs.existsSync(done)) args.push("--skip", done);
 		const base = { ...this.counts }; // a stopped run's counts are its finished roots' (readDisk)
@@ -580,6 +630,14 @@ export class RunFolder {
 			const st = fs.statSync(f);
 			fs.writeFileSync(f, JSON.stringify(this.options, null, "\t") + "\n");
 			fs.utimesSync(f, st.atime, st.mtime);
+		} catch {}
+	}
+
+	/** A new priority for its engine while it runs: the system lets it go down, and refuses it going up. */
+	renice(nice: number) {
+		if (this.state !== "running" || !this.child?.pid) return;
+		try {
+			os.setPriority(this.child.pid, Math.min(19, nice));
 		} catch {}
 	}
 

@@ -386,9 +386,9 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		faces: e.faces,
 		stats: e.stats,
 	}));
-	writeDataFile(path.join(OUT, `penrose-k${k}.json.gz`), stringifyAtlas(rows));
+	writeDataFile(path.join(OUT, `penrose-k${k}.json.br`), stringifyAtlas(rows));
 	manifest.k.push({ k, count: rows.length, file: `/penrose/penrose-k${k}.json` });
-	console.log(`  k=${k}: ${rows.length} tilings -> public/penrose/penrose-k${k}.json.gz`);
+	console.log(`  k=${k}: ${rows.length} tilings -> public/penrose/penrose-k${k}.json.br`);
 	byK.get(k).forEach((e, i) => {
 		const isKite = e.faces.map((f) => matches(profile(f), KITE));
 		const kites = isKite.filter(Boolean).length,
@@ -424,16 +424,16 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		});
 	});
 }
-writeDataFile(path.join(OUT, "manifest.json.gz"), JSON.stringify(manifest, null, 2));
+writeDataFile(path.join(OUT, "manifest.json.br"), JSON.stringify(manifest, null, 2));
 // k<=3 eager, deeper tiers as lazy shards — the split the mixed, scaled, period and tri45 shelves all
 // use. The whole shelf as one eager file is 18.7 MB on every page load; the eager tier is ~0.5 MB.
 const eager = ref.filter((r) => r.k <= 3);
-writeDataFile(path.join(PUB, "reference-atlas-penrose.json.gz"), stringifyAtlas(eager));
-console.log(`  atlas shelf: ${eager.length} entries (k<=3, eager) -> public/reference-atlas-penrose.json.gz`);
+writeDataFile(path.join(PUB, "reference-atlas-penrose.json.br"), stringifyAtlas(eager));
+console.log(`  atlas shelf: ${eager.length} entries (k<=3, eager) -> public/reference-atlas-penrose.json.br`);
 for (const k of [...new Set(ref.filter((r) => r.k > 3).map((r) => r.k))].sort((a, b) => a - b)) {
 	const rows = ref.filter((r) => r.k === k);
-	writeDataFile(path.join(PUB, `reference-atlas-penrose-k${k}.json.gz`), stringifyAtlas(rows));
-	console.log(`               ${rows.length} entries -> public/reference-atlas-penrose-k${k}.json.gz (lazy)`);
+	writeDataFile(path.join(PUB, `reference-atlas-penrose-k${k}.json.br`), stringifyAtlas(rows));
+	console.log(`               ${rows.length} entries -> public/reference-atlas-penrose-k${k}.json.br (lazy)`);
 }
 console.log(
 	`penrose: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`,

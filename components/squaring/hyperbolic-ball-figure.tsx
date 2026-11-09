@@ -139,7 +139,7 @@ export function HyperbolicBallFigure({ layer, mode, geometry, hovered, onHover }
 							cy={toY(d.y)}
 							r={dots.length > 120 ? 4 : 7}
 							fill={voltageColor(layer.potential[d.v])}
-							stroke="var(--color-bg)"
+							stroke="var(--color-surface-base)"
 							strokeWidth={1.2}
 						/>
 					))

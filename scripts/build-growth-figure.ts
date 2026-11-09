@@ -185,7 +185,7 @@ const out = {
 	level1,
 };
 
-const outPath = value("--out") ?? path.join(process.cwd(), "public", "defense", "growth-k3.json.gz");
+const outPath = value("--out") ?? path.join(process.cwd(), "public", "defense", "growth-k3.json.br");
 writeDataFile(outPath, JSON.stringify(out));
 const kb = (fs.statSync(outPath).size / 1024).toFixed(1);
 console.log(

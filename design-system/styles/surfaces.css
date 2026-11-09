@@ -1,0 +1,201 @@
+/* SURFACES: the section label, the floating panel, the card, the well, the inline link, the scroll fade, and
+   the dialog's entrance and exit (Modal). */
+
+/* THE section label, on every sidebar and the landing page's eyebrows: mono caps, wide tracking,
+   muted. One style so a panel reads as one system (2026-09-24: there had been six). */
+.ta-label {
+  font-family: var(--font-mono);
+  font-size: var(--type-micro-size);
+  line-height: var(--type-micro-line);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--type-label-tracking);
+  color: var(--color-text-muted);
+}
+/* A panel floating over a canvas (info popovers, the edge/shape controls, the editor's bars, the
+   canvas buttons): near-opaque paper, a hairline ring and a soft drop, the same object as the
+   FloatingToolbar. One class so every overlay on every canvas is the same material. */
+.ta-float {
+  background-color: color-mix(in oklab, var(--color-surface-raised) 95%, transparent);
+  border-radius: var(--radius-overlay);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(var(--blur-float));
+}
+/* In the components layer, unlike the ta-* classes above: a card or a link takes per-site states on top
+   (a clickable card's hover border), and utilities can only override what sits in a layer. */
+@layer components {
+  /* THE field: a text box, a search box, a select's trigger, a combobox's input group. Raised paper, the
+     control radius, a hairline and a small drop; focus inks the edge in the accent and rings it. */
+  .ta-field {
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-raised);
+    transition:
+      border-color var(--duration-feedback) var(--ease-feedback),
+      box-shadow var(--duration-feedback) var(--ease-feedback);
+  }
+  .ta-field:is(:focus-visible, :has(:focus-visible)) {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow:
+      var(--shadow-raised),
+      0 0 0 2px oklch(from var(--color-accent) l c h / 0.4);
+  }
+  /* THE card: a block of content on the page (a result, a run, a settings group, a panel of a tool). Paper,
+     the surface radius (radius-surface is "cards, panels"; the overlay radius is for popovers and dialogs)
+     and one hairline. A clickable card adds its own hover. */
+  .ta-card {
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-surface);
+  }
+  /* THE well: the tinted frame around a figure, a preview or a placeholder, set into the page instead of
+     lifted off it. */
+  .ta-well {
+    background-color: color-mix(in oklab, var(--color-surface-overlay) 30%, transparent);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-surface);
+  }
+  /* THE quotation: a definition or a passage set off from the text around it by a rule at its left, not a box.
+     The words are in the secondary ink at a reading measure, and a line under them (the source) stays inside
+     the rule. */
+  .ta-quote {
+    border-left: 2px solid var(--color-border-default);
+    padding-left: calc(var(--space-unit) * 4);
+    max-width: 72ch;
+    color: var(--color-text-secondary);
+  }
+  /* THE inline link: accent text over a faint accent underline that darkens under the pointer. The underline
+     is what tells a link from the words around it to someone who cannot see the hue (WCAG 1.4.1). The quiet
+     one sits in muted text, underlined in the same ink. Both work on <a>, <Link> and a text <button>. */
+  .ta-link {
+    color: var(--color-text-accent);
+    text-decoration-line: underline;
+    text-decoration-color: oklch(from var(--color-text-accent) l c h / 0.35);
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .ta-link:hover {
+    text-decoration-color: currentColor;
+  }
+  .ta-link-quiet {
+    color: var(--color-text-muted);
+    text-decoration-line: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .ta-link-quiet:hover {
+    color: var(--color-text-primary);
+  }
+}
+/* A scroll region whose content runs past its bottom edge: the last 24px fade out, so a cut-off
+   control reads as "more below" and not as clipped. Pair it with bottom padding on the content. */
+.ta-scroll-fade {
+  /* ds-check: keep (a mask: only the alpha of #000 counts, never its colour) */
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--ta-fade-end)), transparent);
+}
+/* Where the browser has scroll timelines, the fade clears over the last 48px of travel, so a panel
+   scrolled to its end shows its last row whole. Bottom only: a top fade would wash out the catalogue
+   tree's pinned headers. A panel that does not scroll has no active timeline and keeps the fade, which
+   its bottom padding absorbs. (`animation-timeline` after the shorthand, which would reset it.) */
+@property --ta-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 24px;
+}
+@keyframes ta-scroll-end {
+  to {
+    --ta-fade-end: 0px;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .ta-scroll-fade {
+    animation: ta-scroll-end linear both;
+    animation-timeline: scroll(self);
+    animation-range: calc(100% - 48px) 100%;
+  }
+}
+
+/* <Modal>'s enter and exit (design-system/components/modal.tsx). Radix keeps a closing dialog mounted until its
+   animation ends, so the exit is real. On a desktop the dialog grows from 96% and fades, from its own
+   centre (`transform` composes with the `translate` the centring utilities set). On a phone it is a
+   sheet: it rises from the bottom edge and drops back down. The exit is quicker than the entrance —
+   leaving is never what the reader is waiting on. */
+@keyframes ta-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes ta-dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes ta-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+.ta-dialog[data-state="open"] {
+  animation: ta-dialog-in var(--duration-floating) var(--ease-floating);
+}
+.ta-dialog[data-state="closed"] {
+  animation: ta-dialog-out var(--duration-floating-exit) var(--ease-floating-exit) forwards;
+}
+.ta-overlay[data-state="open"] {
+  animation: ta-fade-in var(--duration-floating) var(--ease-feedback);
+}
+.ta-overlay[data-state="closed"] {
+  animation: ta-fade-out var(--duration-floating-exit) var(--ease-floating-exit) forwards;
+}
+@media (width < theme(--breakpoint-md)) {
+  .ta-dialog[data-state="open"] {
+    animation: ta-sheet-in var(--duration-travel) var(--ease-travel);
+  }
+  .ta-dialog[data-state="closed"] {
+    animation: ta-sheet-out var(--duration-travel-exit) var(--ease-travel) forwards;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-dialog[data-state],
+  .ta-overlay[data-state] {
+    animation: none;
+  }
+}
+
+/* A phone (docs/mobile/DESIGN.md). Reduced motion needs no rule here: travel finishes at once (semantic.css),
+   and the scrim's fade moves nothing. */
+@media (width < theme(--breakpoint-md)) {
+  /* Modal sheets rise from the bottom edge; their scrim fades in under them. */
+  .ta-sheet-in {
+    animation: ta-sheet-in var(--duration-travel) var(--ease-travel);
+  }
+  .ta-backdrop-in {
+    animation: ta-fade-in var(--duration-floating) var(--ease-feedback);
+  }
+  /* The phone menu slides in from the right edge. */
+  .ta-panel-in {
+    animation: ta-panel-in var(--duration-travel) var(--ease-travel);
+  }
+}
+
+@keyframes ta-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes ta-panel-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+

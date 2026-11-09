@@ -11,7 +11,7 @@ import {
 	renderTilingToContext,
 } from "@/lib/utils/renderTiling";
 import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
-import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
+import { ThumbnailSkeleton } from "@/design-system/components/thumbnail-skeleton";
 import { cn } from "@/lib/utils/cn";
 
 interface EncodedTiling {
@@ -22,7 +22,12 @@ interface EncodedTiling {
 interface TilingThumbnailProps {
 	encodedTiling?: EncodedTiling;
 	polygons?: RawPolygon[];
-	translationalCell?: TranslationalCellData | null;
+	/**
+	 * The cell, or a function giving it. A function is called inside the queued draw, so a cell derived on
+	 * first read (the atlas records' lazy renderCell, an exact reconstruction of ~14 ms) is built one card
+	 * per frame as cards come into view, not in the render of every card on the page at once.
+	 */
+	translationalCell?: TranslationalCellData | null | (() => TranslationalCellData | null);
 	/** Target pixels per polygon edge — keeps unit length consistent across cards. */
 	pxPerEdge?: number;
 	/**
@@ -67,7 +72,7 @@ function latticePxPerEdge(cell: TranslationalCellData, W: number, H: number, per
 export function TilingThumbnail({
 	encodedTiling,
 	polygons: rawPolygons,
-	translationalCell = null,
+	translationalCell: cellSource = null,
 	pxPerEdge = 22,
 	fit,
 	periodsAcross,
@@ -89,7 +94,7 @@ export function TilingThumbnail({
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		if (!translationalCell && !encodedTiling && !rawPolygons) return;
+		if (!cellSource && !encodedTiling && !rawPolygons) return;
 
 		let disposed = false;
 		// A draw sitting in the queue, and the size of the last draw that landed ("" until one does).
@@ -111,6 +116,7 @@ export function TilingThumbnail({
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 			try {
+				const translationalCell = typeof cellSource === "function" ? cellSource() : cellSource;
 				let polys: RawPolygon[] | undefined;
 				if (!translationalCell) {
 					if (rawPolygons) {
@@ -191,11 +197,11 @@ export function TilingThumbnail({
 			ro.disconnect();
 			cancelJob?.();
 		};
-	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, fit, periodsAcross, hueOffset, outline]);
+	}, [encodedTiling, rawPolygons, cellSource, pxPerEdge, fit, periodsAcross, hueOffset, outline]);
 
 	if (hasError) {
 		return (
-			<div className="flex h-full w-full items-center justify-center rounded bg-surface-raised text-[10px] text-fg-disabled">
+			<div className="flex h-full w-full items-center justify-center rounded-tag bg-surface-raised text-micro text-fg-muted">
 				err
 			</div>
 		);
@@ -215,7 +221,7 @@ export function TilingThumbnail({
 			<ThumbnailSkeleton done={drawn} />
 			<canvas
 				ref={canvasRef}
-				className={cn("relative block h-full w-full rounded", drawn ? "ta-fade-in" : "opacity-0")}
+				className={cn("relative block h-full w-full rounded-tag", drawn ? "ta-fade-in" : "opacity-0")}
 			/>
 			{showBar ? (
 				<div
@@ -223,7 +229,7 @@ export function TilingThumbnail({
 					className="ta-fade-in pointer-events-none absolute right-2 bottom-1.5 flex flex-col items-center text-fg-muted select-none"
 					style={{ width: unit.px }}
 				>
-					<span className="mb-[3px] font-mono text-[9px] leading-none max-md:text-xs">1</span>
+					<span className="mb-0.5 font-mono text-micro leading-none">1</span>
 					{/* End serifs turn a bare rule into a ruler: they mark where the unit starts and stops. */}
 					<span className="relative h-[5px] w-full">
 						<span className="absolute inset-x-0 top-1/2 border-t border-current" />

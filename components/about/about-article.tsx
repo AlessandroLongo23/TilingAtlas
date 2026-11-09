@@ -32,7 +32,7 @@ type Tag = Record<string, string | undefined>;
 
 function Missing({ what }: { what: string }) {
 	return (
-		<div className="not-prose flex aspect-square items-center justify-center border border-line p-4 text-center text-xs text-fg-muted">
+		<div className="not-prose flex aspect-square items-center justify-center border border-line p-4 text-center text-small text-fg-muted">
 			{what}
 		</div>
 	);
@@ -127,7 +127,7 @@ export function AboutArticlePage({
 			<AboutDataContext value={data}>
 				<div className="relative min-h-0 w-full flex-1">
 					<ArticleCorner />
-					<div ref={root} className="@container relative h-full w-full max-md:[&_h1]:pr-14">
+					<div ref={root} className="@container relative h-full w-full max-md:[&_h1]:pr-corner">
 						<ArticleIndex root={root} active={active} content={data.content} section={section} article={article} />
 						<MarkdownRenderer
 							content={data.content}

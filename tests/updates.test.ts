@@ -22,7 +22,7 @@ function atlasIds(): Set<string> {
 	const dir = path.join(process.cwd(), "public");
 	const ids = new Set<string>();
 	for (const name of readdirSync(dir)) {
-		if (!/^reference-atlas.*\.json(\.gz)?$/.test(name)) continue;
+		if (!/^reference-atlas.*\.json(\.br)?$/.test(name)) continue;
 		try {
 			// decodeAtlas, not a bare JSON.parse: the shelves are moving to the packed container format
 			// ({atlas, dict, records}), and a packed file read as an array yields no ids at all — which

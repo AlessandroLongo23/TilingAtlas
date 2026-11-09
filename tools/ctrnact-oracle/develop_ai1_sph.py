@@ -283,7 +283,7 @@ def run(source, n, out_prefix, ks=None, report_path=None):
             r["id"] = f"sp{n}-{k}-{i:05d}"
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json.gz"
+            path = f"{out_prefix}-k{k}.json.br"
             fd.write_json(path, recs, separators=(",", ":"))
             written.append((path, len(recs), os.path.getsize(path)))
 

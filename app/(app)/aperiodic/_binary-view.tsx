@@ -10,7 +10,7 @@
 // same tiles (n = 2 has both), so the camera keeps its tile.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { HypCamera, stepLocal } from "@/lib/render/hypCamera";
 import { DISK_PAD_PX, diskFrame } from "@/lib/render/diskFrame";
 import { useDiskInput } from "@/lib/render/diskInput";
@@ -151,7 +151,7 @@ export function BinaryView({ header }: { header: React.ReactNode }) {
 						}}
 					/>
 					{geodesic && (
-						<p className="text-[11px] leading-relaxed text-fg-muted">
+						<p className="text-caption leading-relaxed text-fg-muted">
 							The dual is regular triangles and squares, every vertex 3.4.3.4.4, at the edge of the three periodic k = 2
 							tilings of that type in the hyperbolic catalogue. The tiles are congruent pentagons.
 						</p>

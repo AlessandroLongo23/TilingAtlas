@@ -59,12 +59,17 @@ const nextConfig: NextConfig = {
 	//   NEXT_DIST_DIR=.next-prod pnpm build && NEXT_DIST_DIR=.next-prod PORT=3001 pnpm start
 	// Unset, this is exactly the default.
 	distDir: process.env.NEXT_DIST_DIR || ".next",
+	// BENCH_SOURCEMAPS=1 ships browser source maps with a local build, so a profile of it reads in module and
+	// function names and each chunk can be sized by the modules in it. Never set for a deployment.
+	productionBrowserSourceMaps: process.env.BENCH_SOURCEMAPS === "1",
 	// Expose SvelteKit-style PUBLIC_* env vars to the browser. Next.js only
 	// auto-inlines NEXT_PUBLIC_*; listing them here makes them available to
 	// client-side code via `process.env.PUBLIC_*`.
 	env: {
 		PUBLIC_SUPABASE_URL: process.env.PUBLIC_SUPABASE_URL,
 		PUBLIC_SUPABASE_ANON_KEY: process.env.PUBLIC_SUPABASE_ANON_KEY,
+		// https://data.thetilingatlas.com on Vercel; unset locally, so development reads public/ (fetchData).
+		PUBLIC_DATA_URL: process.env.PUBLIC_DATA_URL ?? "",
 	},
 	// public/ holds hundreds of MB of atlas JSON, served statically from the CDN — it is NOT needed
 	// inside any serverless function at runtime. Keep it out of every function's file trace. Without
@@ -83,11 +88,17 @@ const nextConfig: NextConfig = {
 	},
 	async headers() {
 		return [
-			// Root-level shelf files: reference-atlas.json.gz and every -<shelf>[-k<n>] shard beside it.
-			{ source: "/:file(reference-atlas.*\\.json\\.gz)", headers: ATLAS_CACHE },
-			{ source: "/:file(hyperbolic-developed.*\\.json\\.gz)", headers: ATLAS_CACHE },
+			// Root-level shelf files: reference-atlas.json.br and every -<shelf>[-k<n>] shard beside it.
+			{ source: "/:file(reference-atlas.*\\.json\\.br)", headers: ATLAS_CACHE },
+			{ source: "/:file(hyperbolic-developed.*\\.json\\.br)", headers: ATLAS_CACHE },
 			// Per-shelf directories.
 			...ATLAS_DIRS.map((dir) => ({ source: `/${dir}/:file*`, headers: ATLAS_CACHE })),
+			// Chrome asks for the icon again each time a page rewrites its URL (every filter and every tiling
+			// step), and at max-age=0 each ask was a round trip. The link carries a content hash, so a day is safe.
+			{
+				source: "/favicon.ico",
+				headers: [{ key: "Cache-Control", value: DEV ? "no-cache" : "public, max-age=86400" }],
+			},
 		];
 	},
 	// /substitutions and /multigrid merged into /aperiodic (2026-07-27); they are now two views of one

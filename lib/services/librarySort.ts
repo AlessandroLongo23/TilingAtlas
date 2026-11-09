@@ -7,7 +7,7 @@ import { vcsOf } from "@/lib/services/vertexConfig";
 // view carries (symmetry under H², ℓ in the plane) is not offered. A tiling WITHOUT the value always goes
 // last, whichever the direction, so flipping the order never floods the top of the page with blanks.
 
-export type SortKey = "catalogue" | "k" | "m" | "tiles" | "polygon" | "symmetry" | "edge" | "vertex";
+export type SortKey = "catalogue" | "k" | "eo" | "to" | "m" | "tiles" | "polygon" | "symmetry" | "edge" | "vertex";
 export type SortDir = "asc" | "desc";
 
 /** Order of the point group: how much symmetry a wallpaper group has, p1 = 1 up to p6m = 12. */
@@ -46,6 +46,8 @@ const largestPolygon = (t: ReferenceTiling) => {
 /** Each key's value for a tiling, numeric or textual; undefined when the tiling does not carry it. */
 const VALUE: Record<Exclude<SortKey, "catalogue">, (t: ReferenceTiling) => number | string | undefined> = {
 	k: (t) => t.k,
+	eo: (t) => t.edgeOrbits,
+	to: (t) => t.faceOrbits,
 	m: distinctConfigsOf,
 	tiles: (t) => polygonSpeciesOf(t).length || undefined,
 	polygon: largestPolygon,
@@ -57,6 +59,8 @@ const VALUE: Record<Exclude<SortKey, "catalogue">, (t: ReferenceTiling) => numbe
 export const SORT_LABEL: Record<SortKey, string> = {
 	catalogue: "Catalogue order",
 	k: "Vertex orbits (k)",
+	eo: "Edge orbits (e)",
+	to: "Tile orbits (t)",
 	m: "Distinct configurations (m)",
 	tiles: "Tile types",
 	polygon: "Largest polygon",
@@ -69,6 +73,8 @@ export const SORT_LABEL: Record<SortKey, string> = {
 export const SORT_DEFAULT_DIR: Record<SortKey, SortDir> = {
 	catalogue: "asc",
 	k: "asc",
+	eo: "asc",
+	to: "asc",
 	m: "asc",
 	tiles: "asc",
 	polygon: "desc",

@@ -28,13 +28,12 @@ export function ResetViewButton({
 			type="button"
 			onClick={onClick}
 			aria-label="Reset view"
-			title="Reset view"
 			className={cn(
-				"ta-float z-30 hidden size-11 items-center justify-center text-fg-secondary transition-colors hover:text-fg max-md:flex max-md:touch-pan-x max-md:touch-pan-y",
+				"ta-float z-chrome hidden size-11 items-center justify-center text-fg-secondary transition-colors hover:text-fg max-md:flex max-md:touch-pan-x max-md:touch-pan-y",
 				className,
 			)}
 		>
-			<LocateFixed size={18} />
+			<LocateFixed className="size-icon-lg" />
 		</button>
 	);
 }

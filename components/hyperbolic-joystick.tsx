@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { drivePlayPan } from "@/lib/render/playView";
 import { useGamepadState } from "@/lib/stores/gamepad";
-import { VelocityPad } from "@/components/ui/velocity-pad";
+import { VelocityPad } from "@/design-system/components/velocity-pad";
 
 // Joystick for travelling through a hyperbolic disk: hold the knob toward where you want to go and the
 // view glides that way; let go and it coasts to a stop. It writes the pan target the p5 input layer
@@ -48,7 +48,7 @@ export function HyperbolicJoystick() {
 				size={96}
 				springBack
 				knobLabel={pad ? "L" : undefined}
-				ariaLabel="Travel through the disk: hold a direction"
+				aria-label="Travel through the disk: hold a direction"
 			/>
 		</div>
 	);

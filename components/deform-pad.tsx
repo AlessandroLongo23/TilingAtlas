@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { BasisPad } from "@/components/ui/basis-pad";
+import { BasisPad } from "@/design-system/components/basis-pad";
 import type { Mat2 } from "@/lib/render/flatView";
 import { useConfiguration } from "@/stores/configuration";
 

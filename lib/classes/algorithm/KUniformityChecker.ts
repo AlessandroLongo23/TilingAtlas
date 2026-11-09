@@ -43,6 +43,15 @@ export type VertexOrbitsResult = {
 	orbitOf: (v: Cyclotomic) => number | null;
 };
 
+/** The orbits of one kind of feature (edges by midpoint, tiles by centroid); see `edgeFaceOrbits`. */
+export type FeatureOrbits = {
+	count: number;
+	/** Per orbit: how many symmetries (one per coset of the translations) fix a representative. */
+	stabilizers: number[];
+	/** Orbit id of a feature point (any lattice translate of one), null for anything else. */
+	orbitOf: (z: Cyclotomic) => number | null;
+};
+
 export class KUniformityChecker {
 	/**
 	 * True number of vertex-transitivity classes of the periodic tiling DEFINED by a fundamental
@@ -307,6 +316,83 @@ export class KUniformityChecker {
 			return null;
 		};
 		return { orbits, syms, reps, repOrbit, block: patch, orbitOf };
+	}
+
+	/**
+	 * Edge and tile orbits, from the symmetries `vertexOrbits` verified. An edge is keyed by its midpoint and a
+	 * tile by its centroid (the vertex mean, which every symmetry preserves), each reduced modulo the lattice
+	 * exactly: floats only choose the integer shift. Null unless the cell is edge-to-edge (every side shared
+	 * by two tiles) and two exact checks pass: V − E + F = 0 over translation classes (the torus), and
+	 * Σ1/|G_v| − Σ1/|G_e| + Σ1/|G_f| = 0 over orbits, the Euler characteristic of the quotient orbifold, which
+	 * is zero for every wallpaper group. |G_x| counts the symmetries fixing x, one per coset of the translations.
+	 */
+	edgeFaceOrbits(
+		cellPolygons: Polygon[],
+		u: Cyclotomic,
+		v: Cyclotomic,
+		vertices: VertexOrbitsResult,
+	): { edges: FeatureOrbits; faces: FeatureOrbits } | null {
+		const uV = u.toVector(),
+			vV = v.toVector(),
+			det = uV.x * vV.y - uV.y * vV.x;
+		// the lattice translate of z with coordinates in [0, 1); the 1e-9 keeps an exactly integral coordinate
+		// on one side whatever the float noise
+		const reduce = (z: Cyclotomic): Cyclotomic => {
+			const p = z.toVector();
+			const a = Math.floor((p.x * vV.y - p.y * vV.x) / det + 1e-9);
+			const b = Math.floor((uV.x * p.y - uV.y * p.x) / det + 1e-9);
+			return a === 0 && b === 0 ? z : z.sub(u.scaleRational(BigInt(a), 1n).add(v.scaleRational(BigInt(b), 1n)));
+		};
+		const cosets = new Map<string, TilingSymmetry>();
+		for (const g of vertices.syms) cosets.set(`${g.reflect}:${g.r}:${reduce(g.T).key()}`, g);
+		const group = [...cosets.values()];
+		const image = (z: Cyclotomic, g: TilingSymmetry) => (g.reflect ? z.conj().mulZeta(g.r) : z.mulZeta(g.r)).add(g.T);
+
+		const orbitsOf = (points: Cyclotomic[]): (FeatureOrbits & { classes: number }) | null => {
+			const index = new Map<string, number>();
+			const reps: Cyclotomic[] = [];
+			for (const z of points) {
+				const r = reduce(z);
+				const key = r.key();
+				if (!index.has(key)) (index.set(key, reps.length), reps.push(r));
+			}
+			const parent = reps.map((_, i) => i);
+			const find = (x: number): number => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+			const fixes = reps.map(() => 0);
+			for (let i = 0; i < reps.length; i++)
+				for (const g of group) {
+					const j = index.get(reduce(image(reps[i], g)).key());
+					if (j === undefined) return null; // a symmetry sent a feature off the tiling: inconsistent cell
+					parent[find(i)] = find(j);
+					if (j === i) fixes[i]++;
+				}
+			const ids = new Map<number, number>();
+			const stabilizers: number[] = [];
+			const repOrbit = reps.map((_, i) => {
+				const root = find(i);
+				if (!ids.has(root)) (ids.set(root, ids.size), stabilizers.push(fixes[i]));
+				return ids.get(root)!;
+			});
+			return {
+				count: ids.size,
+				stabilizers,
+				classes: reps.length,
+				orbitOf: (z) => {
+					const j = index.get(reduce(z).key());
+					return j === undefined ? null : repOrbit[j];
+				},
+			};
+		};
+		if (!cellPolygons.every((p) => p.exactHalfways && p.exactCentroid)) return null;
+		const corners = orbitsOf(cellPolygons.flatMap((p) => p.exactVertices!));
+		const edges = orbitsOf(cellPolygons.flatMap((p) => p.exactHalfways!));
+		const faces = orbitsOf(cellPolygons.map((p) => p.exactCentroid!));
+		if (!corners || !edges || !faces || faces.classes !== cellPolygons.length) return null;
+		const sides = cellPolygons.reduce((s, p) => s + p.exactVertices!.length, 0);
+		if (2 * edges.classes !== sides || corners.classes - edges.classes + faces.classes !== 0) return null;
+		const weight = (o: FeatureOrbits) => o.stabilizers.reduce((s, n) => s + 1 / n, 0);
+		if (Math.abs(weight(corners) - weight(edges) + weight(faces)) > 1e-9) return null;
+		return { edges, faces };
 	}
 
 	/** Exact test: a − b = m·u + n·v for integers m,n (m,n guessed from a float solve, verified exactly). */

@@ -362,12 +362,12 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		faces: e.real,
 		stats: e.stats,
 	}));
-	const file = path.join(OUT, `t45-k${k}.json.gz`);
+	const file = path.join(OUT, `t45-k${k}.json.br`);
 	writeDataFile(file, stringifyAtlas(rows));
 	manifest.k.push({ k, count: rows.length, file: `/tri45/t45-k${k}.json` });
-	console.log(`  k=${k}: ${rows.length} tilings -> public/tri45/t45-k${k}.json.gz`);
+	console.log(`  k=${k}: ${rows.length} tilings -> public/tri45/t45-k${k}.json.br`);
 }
-writeDataFile(path.join(OUT, "manifest.json.gz"), JSON.stringify(manifest, null, 2));
+writeDataFile(path.join(OUT, "manifest.json.br"), JSON.stringify(manifest, null, 2));
 
 // The atlas shelf itself. These are plain Euclidean tilings with polygon cells, so they need no new
 // renderer: `renderCell = { cellPolygons, basis }` is the shape the flat p5 canvas already draws, the
@@ -424,12 +424,12 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 // period). The whole shelf as one eager file is 7 MB on every page load; the eager tier is ~300 KB.
 const PUB = path.join(process.cwd(), "public");
 const eager = ref.filter((r) => r.k <= 2);
-writeDataFile(path.join(PUB, "reference-atlas-tri45.json.gz"), stringifyAtlas(eager));
-console.log(`  atlas shelf: ${eager.length} entries (k<=2, eager) -> public/reference-atlas-tri45.json.gz`);
+writeDataFile(path.join(PUB, "reference-atlas-tri45.json.br"), stringifyAtlas(eager));
+console.log(`  atlas shelf: ${eager.length} entries (k<=2, eager) -> public/reference-atlas-tri45.json.br`);
 for (const k of [...new Set(ref.filter((r) => r.k > 2).map((r) => r.k))].sort((a, b) => a - b)) {
 	const rows = ref.filter((r) => r.k === k);
-	writeDataFile(path.join(PUB, `reference-atlas-tri45-k${k}.json.gz`), stringifyAtlas(rows));
-	console.log(`               ${rows.length} entries -> public/reference-atlas-tri45-k${k}.json.gz (lazy)`);
+	writeDataFile(path.join(PUB, `reference-atlas-tri45-k${k}.json.br`), stringifyAtlas(rows));
+	console.log(`               ${rows.length} entries -> public/reference-atlas-tri45-k${k}.json.br (lazy)`);
 }
 console.log(
 	`tri45: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`,

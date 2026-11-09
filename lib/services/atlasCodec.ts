@@ -218,41 +218,64 @@ function unpackRecords<T>(records: unknown[], tables: Tables): T[] {
 			// LAZY, for the same reason the derived cells are: expanding a 29,500-record shelf up front
 			// is millions of array allocations for the ~25 tilings a page actually draws.
 			// enumerable: the builder round-trip re-encodes these records with Object.keys. See above.
-			defineLazyRenderCell(out, () => expandCell(packed, geom), true);
+			defineLazy(out, "renderCell", () => expandCell(packed, geom), true);
 		}
 		return out as T;
 	});
 }
 
+/** Bytes through the runtime's DecompressionStream. `new Response(buf).body` and not a Blob stream: only
+ *  the former exists in the Node/undici runtime the tests and server-side reads use. */
+const inflate = (buf: ArrayBuffer, format: string) =>
+	new Response(new Response(buf).body!.pipeThrough(new DecompressionStream(format as CompressionFormat))).text();
+
+let nativeBrotli: boolean | undefined;
+/** Brotli text. Node 24, Safari 18.4 and Firefox 147 decode it natively; Chrome (149, 2026-11) does not, and
+ *  there the WASM decoder loads on first use, so no other browser downloads it. */
+async function unbrotli(buf: ArrayBuffer): Promise<string> {
+	if (nativeBrotli === undefined) {
+		try {
+			new DecompressionStream("brotli" as CompressionFormat);
+			nativeBrotli = true;
+		} catch {
+			nativeBrotli = false;
+		}
+	}
+	if (nativeBrotli) return inflate(buf, "brotli");
+	const brotli = await (await import("brotli-dec-wasm")).default;
+	return new TextDecoder().decode(brotli.decompress(new Uint8Array(buf)));
+}
+
+/** Fetch a shipped data file by its path under public/ (`/frames/index.json.br`). Production builds read it
+ *  from the R2 bucket behind PUBLIC_DATA_URL (scripts/data-sync.mjs uploads it, and no deployment carries
+ *  the data); without that variable, from this site's own public/. */
+export const fetchData = (path: string, ...init: [RequestInit?]): Promise<Response> =>
+	fetch(`${process.env.PUBLIC_DATA_URL ?? ""}${path}`, ...init);
+
 /**
- * Read a shard body, transparently un-gzipping one stored as `.json.gz`.
+ * Read a shard body, decompressing one stored as `.json.br` (brotli) or `.json.gz` (gzip, the format until
+ * 2026-11).
  *
- * WHY A SHARD WOULD BE STORED COMPRESSED. `public/` is tracked in git and already ~1.3 GB, and these
- * files are dart arrays — thousands of small repeated integers, which gzip 10-17x. Serving them plain
- * costs nothing on the wire (the server gzips on the fly) but costs that factor in the REPOSITORY, in
- * every clone and in the deploy. Storing the compressed bytes makes disk size mean what the wire
- * already meant, which is what lets a corpus the size of `abcdtest` ship whole.
+ * WHY A SHARD IS STORED COMPRESSED. Every kept deployment and every clone holds `public/`, and these files
+ * are dart arrays and cells, thousands of repeated integers. Storing the compressed bytes makes disk size
+ * mean what the wire already meant. Brotli with a 16 MB window sees repeats between records far apart in
+ * a file, which gzip's 32 KB window cannot: measured 2026-11-09, about twice as small as gzip.
  *
- * SNIFFED, NOT DECLARED, because who decompresses is not ours to choose. If a server or CDN labels the
- * response `Content-Encoding: gzip`, `fetch` unwraps it before we see it and the body is already JSON;
- * if it serves the bytes verbatim (the usual case for `.gz`), it is not. Testing the two-byte gzip
- * magic covers both, and covers a future CDN changing its mind without a code change here.
+ * SNIFFED, NOT DECLARED, because who decompresses is not ours to choose. A server or CDN that labels the
+ * response `Content-Encoding` has `fetch` unwrap it before we see it, so the body may already be JSON.
+ * Gzip has a two-byte magic; brotli has none, but the writers (scripts/atlas/io.mjs, write_json) always
+ * use a 16 MB window, which makes the first byte's low nibble 0xF, never `{` or `[`.
  */
 export async function shardBody<T = unknown>(res: Response): Promise<T> {
 	// `res.url?` and not `res.url`: a Response built by hand (the shard tests) has no url, and the right
-	// answer there is the behaviour every caller had before gzipped shards existed.
-	if (!res.url?.endsWith(".gz")) return res.json() as Promise<T>;
+	// answer there is the behaviour every caller had before compressed shards existed.
+	const br = res.url?.endsWith(".br");
+	if (!br && !res.url?.endsWith(".gz")) return res.json() as Promise<T>;
 	const buf = await res.arrayBuffer();
 	const head = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
-	if (!(head[0] === 0x1f && head[1] === 0x8b)) return JSON.parse(new TextDecoder().decode(buf)) as T;
-	if (typeof DecompressionStream === "undefined") {
-		throw new Error(`${res.url}: gzipped shard needs DecompressionStream, which this runtime lacks`);
-	}
-	// `new Response(buf).body` rather than `new Blob([buf]).stream()`: both are standard in a browser,
-	// but only the former exists in the Node/undici runtime the tests and any server-side read use.
-	const body = new Response(buf).body;
-	if (!body) throw new Error(`${res.url}: gzipped shard has no readable body`);
-	return JSON.parse(await new Response(body.pipeThrough(new DecompressionStream("gzip"))).text()) as T;
+	if (head[0] === 0x1f && head[1] === 0x8b) return JSON.parse(await inflate(buf, "gzip")) as T;
+	if (!br || head[0] === 0x7b || head[0] === 0x5b) return JSON.parse(new TextDecoder().decode(buf)) as T;
+	return JSON.parse(await unbrotli(buf)) as T;
 }
 
 /** `fetch(url).then(readAtlas)` — the shelf loaders' one-liner. Throws on a non-OK response. */
@@ -272,13 +295,15 @@ export async function fetchAtlas<T>(
 	url: string,
 	{ missing = "throw" }: { missing?: "empty" | "throw" } = {},
 ): Promise<T[]> {
-	const res = await fetch(url);
+	const res = await fetchData(url);
 	if (res.status === 404 && missing === "empty") return [];
 	return readAtlas<T>(res);
 }
 
 /**
- * Install a lazy `renderCell` that derives on first read and then collapses to a plain value.
+ * Install a lazy property that derives on first read and then collapses to a plain value. Used for
+ * `renderCell`, and for the `family` label of the edge-pattern shelves, whose labels need each pattern's
+ * face analysis: 170,000 of them built at once were 1.2 s of the Edge patterns chip.
  *
  * NON-ENUMERABLE, and that is the whole point. React 19's DEV build logs every component render
  * through `logComponentRender` -> `addObjectDiffToProperties`, which walks props with `for...in` and
@@ -301,23 +326,22 @@ export async function fetchAtlas<T>(
  * FILE, and a rebuild would ship shelves with no geometry. Its expansion is array copying rather than
  * the ℤ[ζ₂₄] reconstruction that caused the stall, so leaving it visible costs little.
  */
-export function defineLazyRenderCell<T extends object, C>(
+export function defineLazy<T extends object, V>(
 	target: T,
-	compute: (self: T) => C,
+	key: string,
+	compute: (self: T) => V,
 	enumerable = false,
 ): void {
-	Object.defineProperty(target, "renderCell", {
+	Object.defineProperty(target, key, {
 		configurable: true,
 		enumerable,
 		get(this: T) {
-			const cell = compute(this);
-			Object.defineProperty(this, "renderCell", {
-				value: cell,
-				writable: true,
-				enumerable,
-				configurable: true,
-			});
-			return cell;
+			const value = compute(this);
+			Object.defineProperty(this, key, { value, writable: true, enumerable, configurable: true });
+			return value;
 		},
 	});
 }
+
+/** True while `key` on `target` is a lazy property that has not been read yet. */
+export const isLazy = (target: object, key: string) => !!Object.getOwnPropertyDescriptor(target, key)?.get;

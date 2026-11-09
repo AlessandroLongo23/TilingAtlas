@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import path from "node:path";
-import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolids";
+import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolidsAll";
 import { planarMapFromFaces, eulerCharacteristic, isThreeConnected, type PlanarMap } from "./planarMap";
 import { allSquarings, squaringFrom, type Squaring } from "./smith";
 import { bouwkampCode, isPerfect, isSimple, order, smithGraphOf, tiledArea, tilesExactly } from "./classify";

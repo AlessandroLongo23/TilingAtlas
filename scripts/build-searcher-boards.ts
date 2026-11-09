@@ -1,6 +1,6 @@
 // The Tiling Searcher board behind each atlas shelf, for "Open in the Searcher" (components/atlas/open-in-searcher.tsx).
 //
-//   pnpm tsx scripts/build-searcher-boards.ts            # writes public/searcher-boards.json.gz
+//   pnpm tsx scripts/build-searcher-boards.ts            # writes public/searcher-boards.json.br
 //   pnpm tsx scripts/build-searcher-boards.ts --check    # also runs the engine on every board, k <= 3 or so,
 //                                                          and compares its census with the shelf's counts
 //
@@ -315,5 +315,5 @@ if (check) {
 	);
 }
 
-writeDataFile("public/searcher-boards.json.gz", JSON.stringify({ version: 1, checked: check, boards }));
+writeDataFile("public/searcher-boards.json.br", JSON.stringify({ version: 1, checked: check, boards }));
 console.log(`${Object.keys(boards).length} boards written${check ? `, ${failed.length} dropped` : ""}`);

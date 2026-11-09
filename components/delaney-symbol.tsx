@@ -360,14 +360,10 @@ function Panel({
 
 	return (
 		<figure className="m-0 flex min-w-[14rem] flex-1 flex-col items-center gap-1">
-			<div
-				ref={host}
-				className="bg-surface-base relative w-full overflow-hidden rounded-2xl border border-line"
-				style={{ aspectRatio: aspect }}
-			>
+			<div ref={host} className="ta-well relative w-full overflow-hidden rounded-sheet" style={{ aspectRatio: aspect }}>
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
-			<figcaption className="max-w-[26rem] text-center text-[clamp(0.6rem,0.85vh+0.2vw,0.86rem)] leading-snug text-fg-muted">
+			<figcaption className="max-w-[26rem] text-center text-[clamp(0.6rem,0.85vh+0.2vw,0.86rem)] leading-tight text-fg-muted">
 				{caption}
 			</figcaption>
 		</figure>

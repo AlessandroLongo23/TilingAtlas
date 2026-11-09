@@ -16,7 +16,7 @@ import {
 	snapCss,
 	useDockSheet,
 	useSheet,
-} from "@/components/ui/bottom-sheet";
+} from "@/design-system/components/bottom-sheet";
 
 interface PageSidebarProps {
 	children: ReactNode;
@@ -122,7 +122,7 @@ export function PageSidebar({
 	return (
 		<div
 			className={cn(
-				"h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out",
+				"h-full shrink-0 overflow-hidden transition-[width] motion-glide",
 				collapsed ? "w-0" : "w-80",
 				// The phone sheet is position:fixed, so it escapes this clip box; the box itself takes no
 				// room and the page's canvas or content gets the full width.
@@ -146,10 +146,10 @@ export function PageSidebar({
 				className={cn(
 					"flex h-full w-80 shrink-0 flex-col overflow-hidden border-line-subtle bg-surface-chrome",
 					side === "right" ? "border-l" : "border-r",
-					"max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:w-full max-md:overscroll-contain max-md:rounded-t-2xl max-md:border-x-0 max-md:focus:outline-none",
+					"max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:w-full max-md:overscroll-contain max-md:rounded-t-sheet max-md:border-x-0 max-md:focus:outline-none",
 					dock
 						? cn(
-								"max-md:z-40 max-md:h-[var(--sheet-h)] max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-6px_24px_oklch(0_0_0/0.14)]",
+								"max-md:z-sheet max-md:h-[var(--sheet-h)] max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-sheet",
 								target === "hidden" ? "max-md:border-t-0" : "max-md:border-t",
 							)
 						: cn(
@@ -171,7 +171,7 @@ export function PageSidebar({
 							label={label}
 						/>
 						<div className="flex h-11 min-w-0 shrink-0 items-center gap-2 px-4">
-							{peek ?? <span className="truncate text-[15px] font-semibold text-fg">{label}</span>}
+							{peek ?? <span className="truncate text-title font-semibold text-fg">{label}</span>}
 						</div>
 					</div>
 				) : (

@@ -6,9 +6,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Hexagon } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { ShelfArticleNav } from "@/components/about/shelf-article-nav";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/design-system/components/badge";
+import { Button } from "@/design-system/components/button";
+import { Input } from "@/design-system/components/input";
 import { loadHyperbolicPolyShard } from "@/lib/services/referenceAtlas";
 import { hypPolyKGaps } from "@/lib/tilings/hyp-poly";
 import {
@@ -72,8 +72,8 @@ export function VertexClient() {
 			<main className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
 				<div className="mx-auto flex max-w-3xl flex-col gap-5">
 					<div className="flex items-center gap-3">
-						<Hexagon size={18} className="text-accent" />
-						<h1 className="text-base font-semibold text-fg">Vertex figure lookup</h1>
+						<Hexagon className="size-icon-lg text-fg-accent" />
+						<h1 className="text-title font-semibold text-fg">Vertex figure lookup</h1>
 					</div>
 
 					<form onSubmit={submit} className="flex items-end gap-2">
@@ -90,18 +90,18 @@ export function VertexClient() {
 
 					<div className="flex flex-wrap gap-1.5">
 						{EXAMPLES.map((ex) => (
-							<button
+							<Button
 								key={ex}
 								type="button"
+								size="sm"
+								className="font-mono text-small"
+								label={ex}
 								onClick={() => go(ex)}
-								className="rounded-control border border-line px-2 py-1 font-mono text-xs text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:inline-flex max-md:min-h-11 max-md:items-center"
-							>
-								{ex}
-							</button>
+							/>
 						))}
 					</div>
 
-					{result && "error" in result ? <p className="text-sm text-danger">{result.error}</p> : null}
+					{result && "error" in result ? <p className="text-body text-danger">{result.error}</p> : null}
 					{result && "report" in result ? <Report report={result.report} /> : null}
 				</div>
 			</main>
@@ -114,13 +114,13 @@ function Report({ report }: { report: FigureReport }) {
 	const word = figure.join(".");
 	return (
 		<div className="flex flex-col gap-5">
-			<section className="flex flex-col gap-2 rounded-lg border border-line bg-surface-overlay/30 p-4">
+			<section className="ta-card flex flex-col gap-2 p-4">
 				<div className="flex flex-wrap items-center gap-2">
-					<span className="font-mono text-lg text-fg">{word}</span>
+					<span className="font-mono text-heading text-fg">{word}</span>
 					<Badge tone="accent">{geometry}</Badge>
 					<Badge mono>valence {figure.length}</Badge>
 				</div>
-				<p className="text-sm text-fg-secondary">
+				<p className="text-body text-fg-secondary">
 					In the flat plane these corners sum to {flatAngleSum(figure).toFixed(2)}°
 					{geometry === GEOMETRIES.EUCLIDEAN
 						? ", exactly 360°, so the figure closes in the Euclidean plane."
@@ -128,7 +128,7 @@ function Report({ report }: { report: FigureReport }) {
 							? ", less than 360°, so the figure closes on the sphere."
 							: `, more than 360°, so it closes only in the hyperbolic plane, at edge length ℓ = ${edge!.toFixed(6)}.`}
 				</p>
-				<p className="text-sm text-fg-secondary">
+				<p className="text-body text-fg-secondary">
 					<span className="font-medium text-fg">
 						{uniform === 0 ? "No uniform tiling." : `${uniform} uniform tiling${uniform === 1 ? "" : "s"}.`}
 					</span>{" "}
@@ -143,7 +143,7 @@ function Report({ report }: { report: FigureReport }) {
 				boards.length ? (
 					boards.map((m) => <BoardCard key={`${word}-${m.board.id}`} m={m} word={word} />)
 				) : (
-					<p className="text-sm text-fg-muted">
+					<p className="text-body text-fg-muted">
 						No board in the hyperbolic catalogue carries this figure yet. The 4-valent boards cover figures over polygon
 						sizes 3 to 11.
 					</p>
@@ -166,12 +166,12 @@ function BoardCard({ m, word }: { m: BoardMatch; word: string }) {
 	const gaps = hypPolyKGaps(board);
 	const prefix = board.family === "abcd" ? "hpq" : "hp";
 	return (
-		<section className="flex flex-col gap-3 rounded-lg border border-line p-4">
+		<section className="ta-card flex flex-col gap-3 p-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="font-mono text-sm text-fg">{board.label}</span>
+				<span className="font-mono text-body text-fg">{board.label}</span>
 				<Badge>{FAMILY_NAME[board.family]}</Badge>
 			</div>
-			<p className="text-sm text-fg-secondary">
+			<p className="text-body text-fg-secondary">
 				{board.family === "abcd"
 					? `Tilings in which every vertex is some cyclic order of ${own}.`
 					: `Every tiling by ${alphabet.join(", ")}-gons at this edge length, whatever figures they use. Vertex multisets that close here: ${multisets.join(", ")}.`}
@@ -181,10 +181,10 @@ function BoardCard({ m, word }: { m: BoardMatch; word: string }) {
 			</p>
 
 			{lowest === undefined ? (
-				<p className="text-sm text-fg-muted">The corpus has no tilings on this board.</p>
+				<p className="text-body text-fg-muted">The corpus has no tilings on this board.</p>
 			) : (
 				<>
-					<p className="text-sm text-fg-secondary">
+					<p className="text-body text-fg-secondary">
 						<span className="font-medium text-fg">Lowest k on this board: {lowest}.</span>
 						{empty.length ? ` Nothing at k = ${range(empty)}.` : ""}
 						{gaps.length ? ` Also nothing at k = ${gaps.join(", ")}.` : ""}
@@ -194,16 +194,16 @@ function BoardCard({ m, word }: { m: BoardMatch; word: string }) {
 					</p>
 					<div className="flex flex-wrap gap-1.5">
 						{ks.map((k) => (
-							<Link
+							<Button
 								key={k}
 								href={`/catalogue/view?tiling=${prefix}${board.id}-${k}-00001`}
-								className="rounded-control border border-line px-2 py-1 font-mono text-xs text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:inline-flex max-md:min-h-11 max-md:items-center"
-							>
-								k={k} · {board.counts[k].toLocaleString("en-US")}
-							</Link>
+								size="xs"
+								className="font-mono"
+								label={`k=${k} · ${board.counts[k].toLocaleString("en-US")}`}
+							/>
 						))}
 					</div>
-					<p className="text-xs text-fg-muted">
+					<p className="text-small text-fg-muted">
 						An empty k means the corpus holds nothing there. Marek&apos;s drop does not record how far each board was
 						searched, so it is not a proof that none exist.
 					</p>
@@ -212,7 +212,7 @@ function BoardCard({ m, word }: { m: BoardMatch; word: string }) {
 			{lowest !== undefined ? <FigureScan m={m} word={word} /> : null}
 			<Link
 				href={`/catalogue?geo=hyperbolic&dec=tilings&board=${sub}`}
-				className="text-sm text-accent hover:underline"
+				className="ta-link text-body"
 				aria-label={`Open the ${board.label} board in the library (figure ${word})`}
 			>
 				Open the board in the library
@@ -256,7 +256,7 @@ function FigureScan({ m, word }: { m: BoardMatch; word: string }) {
 		h ? (
 			<>
 				{what}: lowest k = {h.k}, {h.count.toLocaleString("en-US")} tiling{h.count === 1 ? "" : "s"} there (
-				<Link href={`/catalogue/view?tiling=${h.first}`} className="text-accent hover:underline">
+				<Link href={`/catalogue/view?tiling=${h.first}`} className="ta-link">
 					open the first
 				</Link>
 				).
@@ -273,7 +273,7 @@ function FigureScan({ m, word }: { m: BoardMatch; word: string }) {
 			</div>
 		);
 	return (
-		<div className="flex flex-col gap-1 text-sm text-fg-secondary">
+		<div className="flex flex-col gap-1 text-body text-fg-secondary">
 			{scan.state === "running" ? (
 				<p className="text-fg-muted">
 					Reading k = {scan.k} of {last}…

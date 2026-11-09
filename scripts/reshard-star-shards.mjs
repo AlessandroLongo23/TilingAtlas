@@ -24,7 +24,7 @@ import path from "node:path";
 import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const PUBLIC = path.join(process.cwd(), "public");
-const BASE = path.join(PUBLIC, "reference-atlas.json.gz");
+const BASE = path.join(PUBLIC, "reference-atlas.json.br");
 /** Only the star catalogue moves. The regular tiers are already sharded by the build script. */
 const MOVES = (t) => t.source === "ctrnact-star" && t.k >= 8;
 
@@ -52,7 +52,7 @@ for (const t of moving) {
 console.log(`base ${path.basename(BASE)}: ${base.length} -> ${kept.length} entries (${mb(BASE)} MB before)`);
 
 for (const k of [...byK.keys()].sort((a, b) => a - b)) {
-	const shardPath = path.join(PUBLIC, `reference-atlas-k${k}.json.gz`);
+	const shardPath = path.join(PUBLIC, `reference-atlas-k${k}.json.br`);
 	const existing = fs.existsSync(shardPath) ? read(shardPath) : [];
 	const have = new Set(existing.map((t) => t.id));
 	const added = byK.get(k).filter((t) => !have.has(t.id));

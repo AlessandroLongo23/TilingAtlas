@@ -4,10 +4,12 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { GIFEncoder, applyPalette, quantize, type Palette } from "gifenc";
 
-import { Modal } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { Modal } from "@/design-system/components/modal";
+import { Button } from "@/design-system/components/button";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { SectionHeading } from "@/design-system/components/section-heading";
+import { Notice } from "@/design-system/components/notice";
+import { Spinner } from "@/design-system/components/spinner";
 import { ASPECTS, download, type AspectId } from "@/components/export-image-modal";
 import { useAnimation, type Ending } from "@/stores/animation";
 import { moveLength, type CameraDriver, type Pose } from "@/lib/render/cameraPose";
@@ -130,7 +132,10 @@ export function AnimationExportModal({
 				if (token.stale) return null;
 				setProgress(`${verb} ${i + 1} / ${frameCount}`);
 				const { data, w, h } = await grab(i);
-				enc.writeFrame(applyPalette(data, palette), w, h, { palette: i === 0 ? palette : undefined, delay: 1000 / FPS });
+				enc.writeFrame(applyPalette(data, palette), w, h, {
+					palette: i === 0 ? palette : undefined,
+					delay: 1000 / FPS,
+				});
 			}
 			enc.finish();
 			return new Blob([enc.bytes() as BlobPart], { type: "image/gif" });
@@ -188,7 +193,7 @@ export function AnimationExportModal({
 
 	return (
 		<Modal
-			isOpen={open}
+			open={open}
 			onOpenChange={(o) => {
 				if (!o && !saving) onClose();
 			}}
@@ -199,27 +204,27 @@ export function AnimationExportModal({
 			<div className="p-4">
 				<div className="flex flex-col gap-6 md:flex-row">
 					<div className="flex min-w-0 flex-col gap-2 md:flex-1">
-						<div className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-md border border-line bg-surface-raised/60 md:min-h-[340px]">
+						<div className="ta-well relative flex min-h-[260px] items-center justify-center overflow-hidden md:min-h-[340px]">
 							{preview ? (
 								// eslint-disable-next-line @next/next/no-img-element
 								<img src={preview} alt="Animation preview" className="max-h-[340px] max-w-full object-contain" />
 							) : !canRender ? (
-								<p className="max-w-xs px-4 text-center text-sm text-fg-muted">
+								<p className="max-w-xs px-4 text-center text-body text-fg-muted">
 									Add a second keyframe, or choose Drift, to have something to animate.
 								</p>
 							) : null}
 							{progress ? (
-								<p className="absolute right-2 bottom-2 flex items-center gap-1.5 rounded bg-surface-raised/90 px-2 py-1 text-xs text-fg-muted tabular-nums">
-									<Loader2 size={12} className="animate-spin" />
+								<p className="absolute right-2 bottom-2 flex items-center gap-1.5 rounded-tag bg-surface-raised/90 px-2 py-1 text-small text-fg-muted tabular-nums">
+									<Spinner size={12} />
 									{progress}
 								</p>
 							) : null}
 						</div>
-						<p className="text-xs text-fg-muted tabular-nums">
+						<p className="text-small text-fg-muted tabular-nums">
 							{frameCount} frames · {(frameCount / FPS).toFixed(1)} s · {FPS} fps · GIF
 						</p>
 						{fastest > STROBE_PX ? (
-							<p className="text-xs text-warning">
+							<p className="text-small text-warning">
 								The fastest frame moves the picture {Math.round(fastest)} px. Above about {STROBE_PX} px a frame the
 								pattern can strobe; give that move more time, or turn on Time by distance.
 							</p>
@@ -229,17 +234,17 @@ export function AnimationExportModal({
 					<div className="flex shrink-0 flex-col gap-5 md:w-72">
 						<div className="flex flex-col gap-2">
 							<SectionHeading>After the last keyframe</SectionHeading>
-							<ButtonGroup
+							<OptionWall
 								options={ENDINGS.map((e) => ({ value: e.value, label: e.label }))}
 								selected={ending}
 								onChange={(v) => set({ ending: v })}
 							/>
-							<p className="text-xs text-fg-muted">{ENDINGS.find((e) => e.value === ending)?.note}</p>
+							<p className="text-small text-fg-muted">{ENDINGS.find((e) => e.value === ending)?.note}</p>
 						</div>
 
 						<div className="flex flex-col gap-2">
 							<SectionHeading>Frame</SectionHeading>
-							<ButtonGroup
+							<OptionWall
 								options={ASPECTS.map((a) => ({ value: a.value, label: a.label }))}
 								selected={aspect}
 								onChange={setAspect}
@@ -248,21 +253,17 @@ export function AnimationExportModal({
 
 						<div className="flex flex-col gap-2">
 							<SectionHeading>Size</SectionHeading>
-							<ButtonGroup
+							<OptionWall
 								options={SIZES.map((n) => ({ value: n, label: `${n}px` }))}
 								selected={size}
 								onChange={setSize}
 							/>
-							<p className="text-xs text-fg-muted">Long edge in pixels.</p>
+							<p className="text-small text-fg-muted">Long edge in pixels.</p>
 						</div>
 					</div>
 				</div>
 
-				{error ? (
-					<p className="mt-4 rounded-md border border-danger/30 bg-danger-subtle px-3 py-2 text-sm text-danger">
-						{error}
-					</p>
-				) : null}
+				{error ? <Notice className="mt-4">{error}</Notice> : null}
 
 				<div className="mt-5 flex items-center justify-end gap-2 border-t border-line pt-4 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-surface-raised max-md:px-4 max-md:pb-4">
 					<Button

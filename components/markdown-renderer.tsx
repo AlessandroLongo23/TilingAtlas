@@ -18,14 +18,21 @@ import { cn } from "@/lib/utils/cn";
 // display:none on desktop. Wrap WHOLE paragraphs (the pair back to back, the paragraph repeated in
 // each): a tag boundary in mid-line splits the text run, which shifts the antialiasing of the next
 // glyphs by a fraction of a pixel, and the desktop page should render exactly as it did without them.
+//
+// A table and a displayed formula scroll sideways when they are wider than a phone, so both take focus: a
+// keyboard can only scroll what it can focus (WCAG 2.1.1).
 const BASE_COMPONENTS = {
 	table: ({ node, ...props }) => {
 		void node; // react-markdown's syntax-tree node, which must not reach the DOM as an attribute
 		return (
-			<div className="max-md:mb-6 max-md:overflow-x-auto max-md:overscroll-x-contain">
+			<div tabIndex={0} className="max-md:mb-6 max-md:overflow-x-auto max-md:overscroll-x-contain">
 				<table {...props} />
 			</div>
 		);
+	},
+	span: ({ node, ...props }) => {
+		void node;
+		return <span tabIndex={props.className === "katex-display" ? 0 : undefined} {...props} />;
 	},
 	"desktop-only": ({ children }: { children?: ReactNode }) => <span className="max-md:hidden">{children}</span>,
 	"phone-only": ({ children }: { children?: ReactNode }) => <span className="hidden max-md:inline">{children}</span>,
@@ -113,15 +120,15 @@ export function MarkdownRenderer({
 			className={cn("scrollbar-hide h-full w-full overflow-y-auto bg-surface", "markdown-content")}
 		>
 			{/* Phone: a 20px gutter and room under the last paragraph for the floating Contents pill. */}
-			<div className="mx-auto max-w-[728px] px-6 py-6 text-base leading-[1.65] max-md:px-5 max-md:pb-28 md:py-10">
+			<div className="mx-auto max-w-[728px] px-6 py-6 text-reading max-md:px-5 max-md:pb-28 md:py-10">
 				{header}
 				<article
 					className={cn(
 						// Headings. h1 is the article title, once, at the top. Sections are separated by space alone.
-						"[&_h1]:mt-0 [&_h1]:mb-4 [&_h1]:text-[36px] [&_h1]:leading-tight [&_h1]:font-[650] [&_h1]:tracking-[-0.02em] [&_h1]:text-balance [&_h1]:text-fg max-md:[&_h1]:text-[30px]",
-						"[&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:cursor-pointer [&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-fg",
-						"[&_h3]:mt-8 [&_h3]:mb-2 [&_h3]:cursor-pointer [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-fg",
-						"[&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:cursor-pointer [&_h4]:text-base [&_h4]:font-semibold [&_h4]:text-fg",
+						"[&_h1]:mt-0 [&_h1]:mb-4 [&_h1]:text-display [&_h1]:leading-tight [&_h1]:font-[650] [&_h1]:tracking-tight [&_h1]:text-balance [&_h1]:text-fg max-md:[&_h1]:text-display",
+						"[&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:cursor-pointer [&_h2]:text-headline [&_h2]:leading-tight [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-fg",
+						"[&_h3]:mt-8 [&_h3]:mb-2 [&_h3]:cursor-pointer [&_h3]:text-heading [&_h3]:font-semibold [&_h3]:text-fg",
+						"[&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:cursor-pointer [&_h4]:text-title [&_h4]:font-semibold [&_h4]:text-fg",
 						// Phone: a jump from the Contents sheet lands a heading clear of the reading-progress line.
 						"max-md:[&_:is(h2,h3,h4)]:scroll-mt-4",
 						// Body
@@ -130,14 +137,14 @@ export function MarkdownRenderer({
 						"[&_ol]:mb-4 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:text-fg-secondary",
 						"[&_li]:mb-2",
 						"[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-line-focus [&_blockquote]:pl-4 [&_blockquote]:text-fg-muted [&_blockquote]:italic",
-						"[&_code]:rounded [&_code]:bg-surface-overlay [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-sm [&_code]:text-fg",
-						"[&_pre]:mb-6 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-line [&_pre]:bg-surface-overlay/50 [&_pre]:p-4",
+						"[&_code]:rounded-tag [&_code]:bg-surface-overlay [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-body [&_code]:text-fg",
+						"[&_pre]:mb-6 [&_pre]:overflow-x-auto [&_pre]:rounded-control [&_pre]:border [&_pre]:border-line [&_pre]:bg-surface-overlay/50 [&_pre]:p-4",
 						"[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-fg-secondary",
-						"[&_a]:text-accent [&_a]:underline hover:[&_a]:text-accent",
+						"[&_a]:text-fg-accent [&_a]:underline hover:[&_a]:text-fg-accent",
 						"[&_hr]:my-8 [&_hr]:border-line",
-						"[&_img]:mx-auto [&_img]:mt-4 [&_img]:block [&_img]:h-auto [&_img]:w-1/3 [&_img]:max-w-full [&_img]:overflow-hidden [&_img]:rounded-lg [&_img]:border [&_img]:border-line [&_img]:bg-surface-overlay/30 max-md:[&_img]:w-full",
+						"[&_img]:mx-auto [&_img]:mt-4 [&_img]:block [&_img]:h-auto [&_img]:w-1/3 [&_img]:max-w-full [&_img]:overflow-hidden [&_img]:rounded-surface [&_img]:border [&_img]:border-line [&_img]:bg-surface-overlay/30 max-md:[&_img]:w-full",
 						// Tables
-						"[&_table]:mb-6 [&_table]:w-full [&_table]:border-collapse [&_table]:bg-surface-overlay/20 max-md:[&_table]:mb-0 max-md:[&_table]:text-[15px]",
+						"[&_table]:mb-6 [&_table]:w-full [&_table]:border-collapse [&_table]:bg-surface-overlay/20 max-md:[&_table]:mb-0 max-md:[&_table]:text-reading",
 						"[&_th]:border [&_th]:border-line [&_th]:bg-surface-overlay [&_th]:p-2 [&_th]:text-left [&_th]:text-fg-secondary",
 						"[&_td]:border [&_td]:border-line [&_td]:p-2 [&_td]:text-center [&_td]:align-middle [&_td]:text-fg-secondary",
 						"[&_tr:nth-child(even)]:bg-surface-overlay/10 [&_tr:nth-child(odd)]:bg-surface-overlay/30",

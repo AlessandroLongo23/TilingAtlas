@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
 import { drawFreedraw, fitView, thumbnailCells } from "@/lib/freedraw/render";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
+import type { ShapeRanks } from "@/lib/render/tileShapes";
 import { useConfiguration } from "@/stores/configuration";
 
 // The two views a PARAMETRIC edge shelf needs, written once.
@@ -45,8 +46,11 @@ export interface BuiltShelfPattern {
 export function ParametricEdgesCanvas({
 	built,
 	unbuildable,
+	shapeRanks,
 }: {
 	built: BuiltShelfPattern | null;
+	/** The board's colour order for tile shapes (lib/render/tileShapes.ts), so a shape keeps its colour. */
+	shapeRanks?: ShapeRanks;
 	/** What to say when the BOARD itself could not be solved here — degenerate angles, a closure that
 	 *  does not close. Distinct from a board that solved but whose period could not be recovered, which
 	 *  this component reports from `built.reason`. */
@@ -71,13 +75,13 @@ export function ParametricEdgesCanvas({
 	// the part a neighbouring tile can see, and the only part that has to agree.
 	const arcRule = useMemo(() => ({ wiring: arcWiring, twist: (arcTwist ? 1 : 0) as 0 | 1 }), [arcWiring, arcTwist]);
 	const style = useMemo(
-		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule }),
-		[fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule],
+		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule, shapeRanks }),
+		[fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule, shapeRanks],
 	);
 
 	if (!built?.pattern) {
 		return (
-			<div className="flex h-full w-full items-center justify-center px-8 text-center text-xs text-fg-muted">
+			<div className="flex h-full w-full items-center justify-center px-8 text-center text-small text-fg-muted">
 				{unbuildable ?? `No period could be built here — ${built?.reason ?? "the develop found none"}.`}
 			</div>
 		);

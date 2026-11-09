@@ -1,4 +1,4 @@
-// Builds the squared-tori shelf: public/squarings/torus/*.json.gz + index.json.gz.
+// Builds the squared-tori shelf: public/squarings/torus/*.json.br + index.json.br.
 //
 // Companion to build-squaring-shelf.ts, one genus up. Where that script sweeps a polyhedron's edges
 // for battery choices, this one sweeps a periodic tiling's homology classes, because on a torus the
@@ -462,9 +462,9 @@ function main(): void {
 
 	if (existsSync(OUT)) rmSync(OUT, { recursive: true });
 	mkdirSync(OUT, { recursive: true });
-	for (const s of shards) writeDataFile(path.join(OUT, `${s.id}.json.gz`), JSON.stringify(s));
+	for (const s of shards) writeDataFile(path.join(OUT, `${s.id}.json.br`), JSON.stringify(s));
 	const index: TorusIndex = { classLimit: CLASS_LIMIT, entries };
-	writeDataFile(path.join(OUT, "index.json.gz"), JSON.stringify(index));
+	writeDataFile(path.join(OUT, "index.json.br"), JSON.stringify(index));
 
 	const perfectRecords = entries.filter((e) => e.perfect > 0).length;
 	console.log(

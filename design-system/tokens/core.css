@@ -1,0 +1,143 @@
+/* CORE TOKENS: raw values, the one place a literal colour, size, duration or curve is written.
+   Never referenced by a component or a call site. semantic.css and themed.css give each value a role, and
+   only those role names are public. A core value that no role references is deleted, not kept in case. */
+
+:root {
+	/* ─── Colour ───────────────────────────────────────────────────────────────────────────────────
+	   oklch throughout, so steps are even in lightness and a translucent tint is `oklch(from … / a)`.
+	   A higher step is darker. Steps between the hundreds (450, 875) exist because a role needed them:
+	   the dark theme's surfaces sit close together, and the phone's text has a contrast floor. */
+
+	--palette-white: oklch(1 0 0);
+	--palette-black: oklch(0 0 0);
+
+	/* Neutral: the page, the panels and the ink. Warm and nearly achromatic at the light end (H 90),
+	   cool at the dark end (H 270), so paper reads as paper and ink as ink. 800 to 950 are the dark
+	   theme's surfaces. */
+	--palette-neutral-50: oklch(0.985 0.001 90);
+	--palette-neutral-100: oklch(0.962 0.002 90);
+	--palette-neutral-150: oklch(0.945 0.002 90);
+	--palette-neutral-200: oklch(0.928 0.003 90);
+	--palette-neutral-300: oklch(0.885 0.004 90);
+	--palette-neutral-400: oklch(0.72 0.006 270);
+	--palette-neutral-450: oklch(0.62 0.008 270);
+	--palette-neutral-500: oklch(0.56 0.008 270);
+	--palette-neutral-550: oklch(0.5 0.008 270);
+	--palette-neutral-600: oklch(0.44 0.008 270);
+	--palette-neutral-700: oklch(0.33 0.008 270);
+	--palette-neutral-800: oklch(0.24 0.005 270);
+	--palette-neutral-850: oklch(0.205 0.005 270);
+	--palette-neutral-875: oklch(0.185 0.005 270);
+	--palette-neutral-900: oklch(0.17 0.005 270);
+	--palette-neutral-925: oklch(0.16 0.004 270);
+	--palette-neutral-950: oklch(0.135 0.004 270);
+
+	/* Ultramarine: the accent. The tile palette spends every hue on light pastels, so the accent stands
+	   apart by depth and chroma, not by hue. Light theme 500 to 700, dark theme 300 to 450. */
+	--palette-ultramarine-300: oklch(0.68 0.17 264);
+	--palette-ultramarine-350: oklch(0.63 0.18 264);
+	--palette-ultramarine-400: oklch(0.58 0.19 264);
+	--palette-ultramarine-450: oklch(0.54 0.19 264);
+	--palette-ultramarine-500: oklch(0.5 0.19 264);
+	--palette-ultramarine-600: oklch(0.45 0.19 264);
+	--palette-ultramarine-700: oklch(0.41 0.18 264);
+
+	/* Red: danger, the one status that keeps a hue. */
+	--palette-red-400: oklch(0.7 0.17 27);
+	--palette-red-500: oklch(0.62 0.2 27);
+	--palette-red-600: oklch(0.54 0.2 27);
+
+	/* Amber: the hazard tape, and the attention signal. */
+	--palette-amber-400: oklch(0.81 0.16 75);
+	--palette-amber-500: oklch(0.76 0.165 75);
+
+	/* Green: the positive signal only (a run with new results, a check that passed). */
+	--palette-green-400: oklch(0.755 0.16 150);
+	--palette-green-500: oklch(0.685 0.17 150);
+
+	/* ─── Type ─────────────────────────────────────────────────────────────────────────────────────
+	   Sizes and line heights are named by their pixel value and written in rem, so the scale follows the
+	   reader's font setting while the names stay readable. The steps in use are listed in semantic.css. */
+
+	--font-family-sans: var(--font-geist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	--font-family-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+	--font-size-10: 0.625rem;
+	--font-size-11: 0.6875rem;
+	--font-size-12: 0.75rem;
+	--font-size-13: 0.8125rem;
+	--font-size-14: 0.875rem;
+	--font-size-15: 0.9375rem;
+	--font-size-16: 1rem;
+	--font-size-18: 1.125rem;
+	--font-size-24: 1.5rem;
+	--font-size-32: 2rem;
+	--font-size-72: 4.5rem;
+
+	--line-height-12: 0.75rem;
+	--line-height-14: 0.875rem;
+	--line-height-16: 1rem;
+	--line-height-18: 1.125rem;
+	--line-height-20: 1.25rem;
+	--line-height-22: 1.375rem;
+	--line-height-24: 1.5rem;
+	--line-height-26: 1.625rem;
+	--line-height-30: 1.875rem;
+	--line-height-38: 2.375rem;
+
+	--letter-spacing-n025: -0.025em;
+	--letter-spacing-n020: -0.02em;
+	--letter-spacing-n010: -0.01em;
+	--letter-spacing-0: 0em;
+	--letter-spacing-040: 0.04em;
+	--letter-spacing-120: 0.12em;
+
+	--font-weight-400: 400;
+	--font-weight-500: 500;
+	--font-weight-600: 600;
+
+	/* ─── Dimension ────────────────────────────────────────────────────────────────────────────────
+	   The 4px grid: every padding, margin and gap is a multiple of the unit (Tailwind's p-3 is 3 units).
+	   Sizes are named by their pixel value, in rem so they follow the reader's font setting. */
+	--space-unit: 0.25rem;
+
+	--size-12: 0.75rem;
+	--size-14: 0.875rem;
+	--size-16: 1rem;
+	--size-18: 1.125rem;
+	--size-24: 1.5rem;
+	--size-28: 1.75rem;
+	--size-32: 2rem;
+	--size-36: 2.25rem;
+	--size-44: 2.75rem;
+
+	/* ─── Radius ─── px on purpose: a corner does not grow with the text. */
+	--radius-2: 2px;
+	--radius-4: 4px;
+	--radius-6: 6px;
+	--radius-8: 8px;
+	--radius-12: 12px;
+	--radius-16: 16px;
+	--radius-full: 9999px;
+
+	/* ─── Motion ───────────────────────────────────────────────────────────────────────────────────
+	   Durations named by their length; curves by their shape. design-system/motion.ts mirrors these for
+	   code that animates from JavaScript, and a test keeps the two equal. */
+	--duration-40: 40ms;
+	--duration-70: 70ms;
+	--duration-120: 120ms;
+	--duration-150: 150ms;
+	--duration-200: 200ms;
+	--duration-240: 240ms;
+	--duration-360: 360ms;
+	--duration-600: 600ms;
+	--duration-1000: 1000ms;
+	--duration-1600: 1600ms;
+
+	--curve-standard: cubic-bezier(0.4, 0, 0.2, 1);
+	--curve-out: cubic-bezier(0, 0, 0.2, 1);
+	/* A steep start and a long settle. */
+	--curve-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+	/* Vaul's drawer curve. */
+	--curve-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}

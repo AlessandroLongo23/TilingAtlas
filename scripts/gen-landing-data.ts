@@ -63,7 +63,7 @@ const PAYLOAD_OUT = path.join(process.cwd(), "lib", "services", "landing-data.ge
 const DEVELOPED_PATCHES_IN = ["hyperbolic-developed.json", "hyperbolic-developed-stars.json"].map((f) =>
 	path.join(process.cwd(), "public", f),
 );
-const HERO_INDEX_OUT = path.join(process.cwd(), "public", "hero-index.json.gz");
+const HERO_INDEX_OUT = path.join(process.cwd(), "public", "hero-index.json.br");
 const HERO_CELLS_DIR = path.join(process.cwd(), "public", "hero-cells");
 
 // Ids must be safe both as a filename and a URL path segment. Every real atlas id is [A-Za-z0-9._-]
@@ -159,7 +159,7 @@ async function main(): Promise<void> {
 	await rm(HERO_CELLS_DIR, { recursive: true, force: true }); // drop ids that left the atlas
 	await mkdir(HERO_CELLS_DIR, { recursive: true });
 	writeDataFile(HERO_INDEX_OUT, `${JSON.stringify(safe.map((s) => s.id))}\n`);
-	writeAll(safe.map((s) => [path.join(HERO_CELLS_DIR, `${s.id}.json.gz`), JSON.stringify(s)]));
+	writeAll(safe.map((s) => [path.join(HERO_CELLS_DIR, `${s.id}.json.br`), JSON.stringify(s)]));
 
 	const { euclidean, hyperbolic, spherical, total } = payload.counts;
 	console.log(

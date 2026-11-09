@@ -8,6 +8,7 @@ import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import type { Darts } from "@/lib/render/hyperbolicDevelopClient";
 import type { HypFamily } from "@/lib/render/hypStarFamily";
 import type { PerPixelDrawParams } from "@/lib/render/hyperbolicPerPixelGL";
+import type { ShapeRanks } from "@/lib/render/tileShapes";
 import { loadDevelopedPatch } from "@/lib/tilings/hyp-developed";
 
 /** Everything a disk reads off a record. Every hyperbolic shelf supplies it as it is. */
@@ -23,6 +24,9 @@ export interface HypDiskTiling {
 	/** A star family's free point angle (hypStarFamily.ts). The hyp-poly shelf uses the field for a plain
 	 *  label, hence the string; starFamilyOf tells them apart. */
 	family?: HypFamily | string;
+	/** Edge systems: the board's colour order for tile shapes (lib/render/tileShapes.ts), so a shape keeps its
+	 *  colour across the board's tilings. Without it the shapes are numbered as each tiling meets them. */
+	shapeRanks?: ShapeRanks;
 }
 
 export const starFamilyOf = (t: HypDiskTiling): HypFamily | undefined =>
@@ -38,7 +42,7 @@ export const resolveHypTiling = (s: HypDiskSource): Promise<HypDiskTiling | null
  * How the faces are painted.
  * - `tiling`: every face is a tile, filled by its polygon size (the shared hue ramp); the Islamic
  *   construction applies.
- * - `edges`: an edge system: one backdrop hue, drawn edges bold over the faint undrawn scaffold.
+ * - `edges`: an edge system: each tile filled with its shape's hue, drawn edges bold over the faint scaffold.
  * - `colors`: a colouring: each face takes its colour index through the colourings palette.
  */
 export type HypDiskMode = "tiling" | "edges" | "colors";

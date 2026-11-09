@@ -1,6 +1,5 @@
 export * from "./constants";
 export * from "./configuration";
-export * from "./modalState";
 export * from "./screenshotPreview";
 export * from "./vertexTypes";
 export * from "./debug";

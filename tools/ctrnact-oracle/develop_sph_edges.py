@@ -825,7 +825,7 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, pro
                 continue
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
             stem = os.path.join(os.path.dirname(out_prefix), f"x{entry['id']}")
-            path = f"{stem}-k{k}.json.gz"
+            path = f"{stem}-k{k}.json.br"
             payload = {
                 "board": entry["id"],
                 "config": entry["label"],
@@ -914,7 +914,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source", nargs="?", help="certificate directory (or a single .txt)")
     ap.add_argument("--board", default="443", choices=sorted(BOARDS))
-    ap.add_argument("--out", help="output prefix; writes <prefix>-k<k>.json.gz")
+    ap.add_argument("--out", help="output prefix; writes <prefix>-k<k>.json.br")
     ap.add_argument("--report")
     ap.add_argument("--ks", help="comma-separated k values to decode (default: all present)")
     ap.add_argument("--limit", type=int)

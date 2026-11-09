@@ -1,5 +1,8 @@
-import { GenericPolygon, PolygonType, Vector } from "@/classes";
-import { getAngleAtVertex, isWithinTolerance, map, toDegrees } from "@/utils";
+import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { Vector } from "@/classes/Vector";
+import { getAngleAtVertex, toDegrees } from "@/utils/geometry";
+import { isWithinTolerance, map } from "@/utils/math";
 
 export class EquilateralPolygon extends GenericPolygon {
 	constructor(n: number) {

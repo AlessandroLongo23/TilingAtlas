@@ -3,7 +3,9 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useSyncExternalStore } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Button } from "@/design-system/components/button";
+import { Tooltip } from "@/design-system/components/tooltip";
+import { cn } from "@/lib/utils/cn";
 
 type Theme = "light" | "dark";
 
@@ -75,34 +77,44 @@ export function ThemeToggle({ variant = "icon" }: { variant?: "icon" | "row" }) 
 				type="button"
 				onClick={toggle}
 				aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-				className="flex h-12 w-full items-center gap-3 rounded-control px-3 text-left text-[15px] text-fg hover:bg-surface-overlay"
+				className="flex h-12 w-full items-center gap-3 rounded-control px-3 text-left text-reading text-fg"
 			>
-				{theme === "dark" ? <Moon size={18} strokeWidth={1.75} /> : <Sun size={18} strokeWidth={1.75} />}
+				{theme === "dark" ? (
+					<Moon className="size-icon-lg" strokeWidth={1.75} />
+				) : (
+					<Sun className="size-icon-lg" strokeWidth={1.75} />
+				)}
 				<span className="flex-1">Theme</span>
-				<span className="text-[13px] text-fg-muted">{theme === "dark" ? "Dark" : "Light"}</span>
+				<span className="text-ui text-fg-muted">{theme === "dark" ? "Dark" : "Light"}</span>
 			</button>
 		);
 	}
 
 	return (
-		<Tooltip label="Toggle theme" shortcut="Shift + T" side="left" delay={0}>
-			<button
-				type="button"
+		<Tooltip label="Toggle theme" shortcut="Shift + T" side="left" delay="instant">
+			<Button
+				variant="ghost"
+				size="icon"
+				icon={ThemeGlyph}
 				onClick={toggle}
 				aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-				className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none"
-			>
-				<span className="relative block h-4 w-4">
-					<Sun
-						strokeWidth={1.75}
-						className="absolute inset-0 h-4 w-4 scale-100 rotate-0 transition-all duration-500 dark:scale-0 dark:-rotate-90"
-					/>
-					<Moon
-						strokeWidth={1.75}
-						className="absolute inset-0 h-4 w-4 scale-0 rotate-90 transition-all duration-500 dark:scale-100 dark:rotate-0"
-					/>
-				</span>
-			</button>
+			/>
 		</Tooltip>
+	);
+}
+
+/** The sun and the moon in one glyph, crossing over on the `dark` class; Button's icon slot sizes it. */
+function ThemeGlyph({ className }: { className?: string }) {
+	return (
+		<span className={cn("relative block", className)}>
+			<Sun
+				strokeWidth={1.75}
+				className="absolute inset-0 size-full scale-100 rotate-0 transition-all motion-settle dark:scale-0 dark:-rotate-90"
+			/>
+			<Moon
+				strokeWidth={1.75}
+				className="absolute inset-0 size-full scale-0 rotate-90 transition-all motion-settle dark:scale-100 dark:rotate-0"
+			/>
+		</span>
 	);
 }

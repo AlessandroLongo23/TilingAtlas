@@ -14,14 +14,14 @@ import {
 	SquareDashed,
 	Undo2,
 } from "lucide-react";
-import { InfoDot } from "@/components/ui/info-dot";
-import { ToolbarButton } from "@/components/ui/floating-toolbar";
-import { Tooltip } from "@/components/ui/tooltip";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { ToolbarButton } from "@/design-system/components/floating-toolbar";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import type { PeriodMode, StudioTool } from "@/lib/studio/types";
 import { useConfiguration } from "@/stores/configuration";
 import { canRedo, canReset, canUndo, useStudio } from "@/stores/studio";
-import { SegIndicator } from "@/components/ui/seg-indicator";
+import { SegIndicator } from "@/design-system/components/seg-indicator";
 
 // The editor's controls. They are not a bar of their own: /play's canvas toolbar takes them in while
 // `studioActive` is up (AL, 2026-09-24), so editing ADDS to the toolbar and link, export and fullscreen
@@ -134,7 +134,7 @@ export function StudioHistory({ parts = "all" }: { parts?: "all" | "undo-redo" |
 						disabled={!undoable}
 						onClick={() => useStudio.getState().undo()}
 					>
-						<Undo2 size={16} />
+						<Undo2 className="size-icon-md" />
 					</ToolbarButton>
 					<ToolbarButton
 						label="Redo"
@@ -142,7 +142,7 @@ export function StudioHistory({ parts = "all" }: { parts?: "all" | "undo-redo" |
 						disabled={!redoable}
 						onClick={() => useStudio.getState().redo()}
 					>
-						<Redo2 size={16} />
+						<Redo2 className="size-icon-md" />
 					</ToolbarButton>
 				</>
 			) : null}
@@ -152,7 +152,7 @@ export function StudioHistory({ parts = "all" }: { parts?: "all" | "undo-redo" |
 					disabled={!resettable}
 					onClick={() => useStudio.getState().reset()}
 				>
-					<RotateCcw size={16} />
+					<RotateCcw className="size-icon-md" />
 				</ToolbarButton>
 			) : null}
 		</>
@@ -216,7 +216,7 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 				aria-disabled={disabledReason ? true : undefined}
 				onClick={() => !disabledReason && useStudio.getState().set({ periodMode: m })}
 				className={
-					"ta-tab h-7 px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors " +
+					"ta-tab h-7 px-2.5 text-ui font-medium whitespace-nowrap transition-colors " +
 					(periodMode === m
 						? "text-fg"
 						: disabledReason
@@ -230,7 +230,7 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 		// A disabled option keeps its hover, so the reason it is unavailable is one hover away (one tap on a
 		// phone, where the tap has nothing else to do).
 		return disabledReason ? (
-			<Tooltip label={disabledReason} side="top" delay={0} tapToOpen>
+			<Tooltip label={disabledReason} side="top" delay="instant" tapToOpen>
 				{button}
 			</Tooltip>
 		) : (
@@ -250,7 +250,7 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 				onClick={() => useStudio.getState().set({ showLattice: !showLattice })}
 				className="w-auto gap-1.5 px-2.5 max-md:w-auto"
 			>
-				<SquareDashed size={15} />
+				<SquareDashed className="size-icon-md" />
 				Period cell
 			</ToolbarButton>
 			<span className="px-1">

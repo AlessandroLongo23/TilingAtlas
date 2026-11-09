@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { polyhedronForId, useSolidsLoaded } from "@/lib/render/sphericalSolids";
 import { solidEdges } from "@/lib/render/sphericalGeometry";
 import { buildIcoFreedraw, type IcoMode, type IcoPattern } from "@/lib/render/icoFreedraw";
 import { applyStudioMaterials } from "@/lib/render/sphericalLook";
 import { mountSpinningThumb, thumbPhase } from "@/lib/render/sphereThumbStage";
-import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
+import { ThumbnailSkeleton } from "@/design-system/components/thumbnail-skeleton";
 
 // A slowly turning preview of ONE Platonic-solid freedraw pattern, for the catalogue grid on /freedraw
 // (spherical), the star and Schwarz shelves, and the /play sidebar. Same geometry builder as the
@@ -63,6 +63,8 @@ export function SphereFreedrawThumbnail({
 	const [failed, setFailed] = useState(false);
 	const specKey = `${solidId}-${pattern.id}-${mode}-${keepRadius ? "r" : ""}-${showGrid ? "g" : ""}-${showCrossings ? "x" : ""}-${showEdges === false ? "e0" : ""}`;
 	const ready = readyKey === specKey;
+	// A non-convex or genus solid is not drawable until its shelf loads; the build re-runs when it does.
+	const solidsLoaded = useSolidsLoaded();
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -94,11 +96,11 @@ export function SphereFreedrawThumbnail({
 			onFail: () => setFailed(true),
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [specKey, size]);
+	}, [specKey, size, solidsLoaded]);
 
 	if (failed) {
 		return (
-			<div className="flex h-full w-full items-center justify-center rounded bg-surface-raised text-[10px] text-fg-disabled">
+			<div className="flex h-full w-full items-center justify-center rounded-tag bg-surface-raised text-micro text-fg-muted">
 				sphere
 			</div>
 		);
@@ -112,7 +114,7 @@ export function SphereFreedrawThumbnail({
 				width={size}
 				height={size}
 				aria-label={`${solidId} freedraw ${pattern.id}`}
-				className={`relative block h-full w-full rounded object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
+				className={`relative block h-full w-full rounded-tag object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
 			/>
 		</div>
 	);

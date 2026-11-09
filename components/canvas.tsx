@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { useDebug, debugManager, updateDebugStore } from "@/stores/debug";
@@ -60,11 +61,9 @@ import {
 	resetPlayViewFully,
 } from "@/lib/render/playView";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
-import { TilingInfo } from "./tiling-info";
-import type { TilingSpec } from "@/lib/services/tilingSpec";
-import { PieChart } from "./pie-chart";
-import { Input } from "./ui/input";
-import { ColorPad } from "./ui/color-pad";
+import { Input } from "@/design-system/components/input";
+import { ColorPad } from "@/design-system/components/color-pad";
+import { Notice } from "@/design-system/components/notice";
 import { WallpaperGroupDiagrams } from "./wallpaper-group-diagram";
 import { useP5 } from "@/lib/hooks/useP5";
 import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "@/lib/render/symmetryOverlay";
@@ -80,6 +79,9 @@ import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { diskFrame } from "@/lib/render/diskFrame";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
+// Chart.js, for the debug timing pie only: fetched when debug mode draws it.
+const PieChart = dynamic(() => import("./pie-chart").then((m) => m.PieChart), { ssr: false });
+
 interface CanvasProps {
 	width?: number;
 	height?: number;
@@ -90,8 +92,8 @@ interface CanvasProps {
 	paramCell?: ParametricCellData | null;
 	symmetryData?: SymmetryData | null;
 	orbitData?: OrbitData | null;
-	/** Geometry-aware spec for the info card (built in the play client). Null while loading. */
-	spec?: TilingSpec | null;
+	/** The vertex configurations of the drawn tiling, for the Info tab's thumbnails. */
+	onVcs?: (vcs: Tiling["vcs"]) => void;
 	showTilingRuleInput?: boolean;
 	/**
 	 * Does `translationalCell` describe real tile polygons? False for the classes that carry a throwaway
@@ -295,7 +297,7 @@ export function Canvas({
 	paramCell = null,
 	symmetryData = null,
 	orbitData = null,
-	spec = null,
+	onVcs,
 	showTilingRuleInput = true,
 	cellHasTiles = true,
 }: CanvasProps) {
@@ -416,6 +418,7 @@ export function Canvas({
 		setCanvasError(msg);
 	};
 	const [vcs, setVcs] = useState<Tiling["vcs"]>([]);
+	useEffect(() => onVcs?.(vcs), [vcs, onVcs]);
 
 	const debugEnabled = useDebug((s) => s.isEnabled);
 	const debugPhases = useDebug((s) => s.timingData.phases.length);
@@ -724,6 +727,20 @@ export function Canvas({
 				// disables the checkbox, so a persisted ON flag never shows a meaningless one-color overlay.
 				const orbitData = propsRef.current.orbitData;
 				const orbitMode = (cfg.showVertexOrbits || !!orbitData?.force) && !cfg.isIslamic && orbitData != null;
+				// Which partition the overlay draws (configuration.orbitMode). Edges and tiles need the orbit data to
+				// carry them, and the symmetry panel's hover (force) is always dots; anything else falls back to vertices.
+				const feature = !orbitMode
+					? null
+					: orbitData?.force
+						? "vertex"
+						: cfg.orbitMode === "edge" && orbitData?.edges
+							? "edge"
+							: cfg.orbitMode === "face" && orbitData?.faces
+								? "face"
+								: "vertex";
+				// p5 draws the overlay itself only off the shader (skipFill: EuclideanCanvas owns it) and outside the
+				// selection transition. In tile mode it paints the tiles, so the plain tile pass is skipped.
+				const p5Overlay = feature != null && !scaleOf && !skipFill;
 				const opacity = orbitMode ? 0.3 : 1;
 				// Under the flat shader (M3), EuclideanCanvas owns the orbit dots and the tile dim. Publish the
 				// mouse-world so it can hit-test the hovered orbit, and skip p5's own dot draw below (skipFill).
@@ -732,14 +749,17 @@ export function Canvas({
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
 				// skipFill ⇒ the flat WebGL renderer owns the fill AND (M1b) the points; p5 draws neither, so
 				// pass showPolygonPoints false to suppress its dot loop (the shader draws the dots instead).
-				else tiling.show(p5, cfg.showPolygonPoints && !skipFill, opacity, cfg.circlePacking, cull, scaleOf, skipFill);
+				else if (!(p5Overlay && feature === "face"))
+					tiling.show(p5, cfg.showPolygonPoints && !skipFill, opacity, cfg.circlePacking, cull, scaleOf, skipFill);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
 				// selection transition (scaleOf active) so they don't float off the shrinking outline, and when
 				// the shader owns them (skipFill — M3). `k` (orbit count) sets the equidistant hue spacing.
-				if (orbitMode && !scaleOf && !skipFill) {
-					const k = propsRef.current.orbitData?.k ?? 1;
-					tiling.drawVertexOrbits(p5, k, cull, hoverWorld, orbitHoverScalesRef.current);
+				if (p5Overlay && feature === "vertex")
+					tiling.drawVertexOrbits(p5, orbitData?.k ?? 1, cull, hoverWorld, orbitHoverScalesRef.current);
+				else if (p5Overlay && (feature === "edge" || feature === "face")) {
+					const count = (feature === "edge" ? orbitData?.edges?.count : orbitData?.faces?.count) ?? 1;
+					tiling.drawFeatureOrbits(p5, feature, count, cull, hoverWorld, orbitHoverScalesRef.current);
 				}
 			};
 
@@ -1305,7 +1325,7 @@ export function Canvas({
 	);
 
 	return (
-		<div ref={rootRef} className="bg-surface-base relative h-full w-full">
+		<div ref={rootRef} className="relative h-full w-full bg-surface">
 			{euclideanShaderActive ? (
 				<EuclideanCanvas
 					translationalCell={translationalCell as unknown as FlatCellData | null}
@@ -1330,24 +1350,23 @@ export function Canvas({
 			) : null}
 			<div
 				ref={containerRef}
-				className="relative z-[1] cursor-pointer touch-none"
+				className="relative z-1 cursor-pointer touch-none"
 				role="application"
 				onContextMenu={(e) => e.preventDefault()}
 			/>
-			<div className="absolute top-4 left-4 z-20 max-md:top-3 max-md:left-3">
-				<TilingInfo spec={spec} vcs={vcs} />
-			</div>
 
 			{showSymmetryInfo ? (
 				// On a phone the corner belongs to CornerControls (12px in, 44px buttons), so the badge sits
 				// 8px under them, smaller, with 44px diagrams.
-				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 rounded-xl bg-surface-raised/95 px-3 py-2 text-right shadow-sm ring-1 ring-line-subtle max-md:top-[calc(--spacing(3)+--spacing(11)+--spacing(2))] max-md:right-3 max-md:gap-1.5 max-md:px-2 max-md:py-1.5">
+				<div className="ta-float absolute top-4 right-4 z-20 flex flex-col items-end gap-2 px-3 py-2 text-right max-md:top-[calc(--spacing(3)+--spacing(11)+--spacing(2))] max-md:right-3 max-md:gap-1.5 max-md:px-2 max-md:py-1.5">
 					<div className="flex flex-col items-end gap-1">
-						<span className="text-sm leading-none font-bold text-fg">
+						<span className="text-body leading-none font-semibold text-fg">
 							Group <span className="font-mono">{symmetryData.group}</span>
 							<span className="ml-1.5 font-mono font-normal text-fg-muted">{symmetryData.orbifold}</span>
 						</span>
-						<span className="text-xs leading-none text-fg-muted capitalize">{symmetryData.latticeShape} lattice</span>
+						<span className="text-small leading-none text-fg-muted capitalize">
+							{symmetryData.latticeShape} lattice
+						</span>
 					</div>
 					{/* The SAME Wikipedia cell diagram(s) the library sidebar shows, inline and always visible —
 					    no hover needed. Smaller square than the sidebar tooltip so the HUD stays compact. */}
@@ -1363,8 +1382,8 @@ export function Canvas({
 
 			{showTilingRuleInput && !translationalCell ? (
 				<div className="absolute right-[50%] bottom-8 z-20 w-80 translate-x-[50%]">
-					<div className="flex w-full flex-col items-center justify-center gap-3 rounded-lg bg-surface-overlay/90 p-2 pt-3">
-						<label htmlFor="tilingRule" className="text-center text-lg leading-none font-bold text-fg">
+					<div className="ta-float flex w-full flex-col items-center justify-center gap-3 p-2 pt-3">
+						<label htmlFor="tilingRule" className="text-center text-heading leading-none font-semibold text-fg">
 							Tiling Rule
 						</label>
 						<Input
@@ -1383,7 +1402,7 @@ export function Canvas({
 			) : null}
 
 			{canvasError ? (
-				<div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-8 text-center text-sm text-fg">
+				<div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-8 text-center text-body text-fg">
 					{canvasError}
 				</div>
 			) : null}
@@ -1392,7 +1411,9 @@ export function Canvas({
 				<div className="absolute right-4 bottom-4 z-20 w-96">
 					<PieChart />
 					{debugPhases === 0 ? (
-						<div className="mt-2 rounded-lg bg-warning-subtle p-3 text-sm text-fg">No timing data available.</div>
+						<Notice tone="warning" className="mt-2">
+							No timing data available.
+						</Notice>
 					) : null}
 				</div>
 			) : null}

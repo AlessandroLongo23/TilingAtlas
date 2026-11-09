@@ -1,8 +1,9 @@
 import type P5 from "p5";
 import { useConfiguration } from "@/stores/configuration";
 import { fillAmountToSatPct, tileFill } from "@/lib/render/tilePalette";
-import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex, isWithinTolerance } from "@/utils";
-import { Vector } from "@/classes";
+import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex } from "@/utils/geometry";
+import { isWithinTolerance } from "@/utils/math";
+import { Vector } from "@/classes/Vector";
 import { Cyclotomic } from "../Cyclotomic";
 import type { CyclotomicRing } from "../Cyclotomic";
 import { tolerance } from "@/utils/tolerance";
@@ -52,6 +53,10 @@ export class Polygon {
 	/** Orbit id per vertex (index-aligned to `vertices`); -1 = not a tiling vertex. Set by
 	 *  buildTilingFromCell for the vertex-orbit overlay; undefined when no orbit data is available. */
 	orbitOfCorner?: number[];
+	/** Edge orbit per side (side k runs from vertex k to k + 1) and the tile's own orbit, for the Orbits
+	 *  overlay's edge and tile modes; -1 for none, undefined when the tiling has no such orbits. */
+	edgeOrbitOfSide?: number[];
+	faceOrbit?: number;
 
 	constructor(n: number = 3) {
 		this.n = n;

@@ -18,7 +18,7 @@
 // K4 up to S4, which is the count of tournaments on 4 nodes, OEIS A000568(4) = 4.
 //
 //   pnpm tsx scripts/bubble-sphere-verify.ts [solidId ...]
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { polyhedronForId } from "@/lib/render/sphericalSolidsAll";
 import type { Vec3 } from "@/lib/render/platonicSolids";
 
 const EPS = 1e-6;

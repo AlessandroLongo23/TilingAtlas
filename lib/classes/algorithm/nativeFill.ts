@@ -28,7 +28,7 @@ const os = getBuiltin<typeof import("node:os")>("node:os");
 const path = getBuiltin<typeof import("node:path")>("node:path");
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import { Cyclotomic } from "@/classes/Cyclotomic";
-import type { Polygon } from "@/classes";
+import type { Polygon } from "@/classes/polygons/Polygon";
 import type { FillCtx } from "./PeriodSolver";
 
 const US = String.fromCharCode(0x1f); // allowed-VC-name separator (matches bench-tf / fill-server)

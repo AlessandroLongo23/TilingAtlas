@@ -1,5 +1,7 @@
-import { Vector, StarPolygon, StarVertexTypes, PolygonType } from "@/classes";
-import { toDegrees } from "@/utils";
+import { Vector } from "@/classes/Vector";
+import { StarPolygon, StarVertexTypes } from "@/classes/polygons/StarPolygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { toDegrees } from "@/utils/geometry";
 
 export class StarParametricPolygon extends StarPolygon {
 	constructor(n: number, alpha: number, startsWith: StarVertexTypes = StarVertexTypes.OUTER) {

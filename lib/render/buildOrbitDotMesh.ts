@@ -6,19 +6,26 @@
 // (not a tiling vertex, e.g. a star dent) are skipped, exactly as drawVertexOrbits skips them.
 
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
+import { buildCellMesh } from "@/lib/render/buildCellMesh";
+import { ORBIT_MARK_FLOATS } from "@/lib/render/flatTilingGL";
+import type { OrbitSegment, OrbitTile } from "@/lib/render/orbitHover";
 import { parseBaseCell, type TranslationalCellData } from "@/lib/utils/renderTiling";
 
 export interface OrbitDotMesh {
-	// Per orbit dot a 6-vertex quad (billboarded to a screen-constant disk in the shader).
-	pos: Float32Array; // 2 floats/vert — the vertex world position (shared with the fill's lattice)
-	corner: Float32Array; // 2 floats/vert — unit-quad corner in [-1,1] (SDF disk + rim in the shader)
-	orbit: Float32Array; // 1 float/vert — orbit id; drives the hue (id*360/k) and the hover-grow lookup
-	vertexCount: number; // = pos.length / 2
+	// Per dot a 6-vertex quad of ORBIT_MARK_FLOATS floats a vertex (OrbitMarkPass): position, the same
+	// position as the mark's other end, the unit-quad corner, and the orbit id.
+	marks: Float32Array;
+	vertexCount: number; // = marks.length / ORBIT_MARK_FLOATS
 	k: number; // orbit count (hue spacing); from orbitData.k
 	force: boolean; // drawn whatever the Vertex orbits toggle says (orbitData.force)
 	// The distinct dots (one per emitted quad), for the CPU hover hit-test: the mouse world position is
 	// reduced modulo the lattice and matched against these base-cell dots to find the hovered orbit.
 	dots: { x: number; y: number; orbit: number }[];
+	// Edge mode: a round-capped bar per polygon side (in the same mark layout); tile mode: an orbit id per
+	// fill vertex (buildCellMesh's order). Each with the orbit count and the base cell's edges or tiles for
+	// the hover hit-test. Null when the orbit data has no edge or tile orbits (not edge-to-edge).
+	edges: { marks: Float32Array; count: number; features: OrbitSegment[] } | null;
+	faces: { orbit: Float32Array; count: number; features: OrbitTile[] } | null;
 }
 
 const QUAD: readonly [number, number][] = [
@@ -29,6 +36,15 @@ const QUAD: readonly [number, number][] = [
 	[1, 1],
 	[-1, 1],
 ];
+
+/** Six mark vertices per segment (a dot is a segment of length 0). */
+function marksOf(segs: OrbitSegment[]): Float32Array {
+	const out = new Float32Array(segs.length * 6 * ORBIT_MARK_FLOATS);
+	let i = 0;
+	for (const s of segs)
+		for (const [qx, qy] of QUAD) out.set([s.ax, s.ay, s.bx, s.by, qx, qy, s.orbit], i++ * ORBIT_MARK_FLOATS);
+	return out;
+}
 
 export function buildOrbitDotMesh(
 	cell: TranslationalCellData | null,
@@ -51,20 +67,42 @@ export function buildOrbitDotMesh(
 	for (const d of orbitData.extra ?? []) dots.push(d);
 	if (dots.length === 0) return null;
 
-	const pos = new Float32Array(dots.length * 6 * 2);
-	const corner = new Float32Array(dots.length * 6 * 2);
-	const orbit = new Float32Array(dots.length * 6);
-	let vi = 0;
-	for (const d of dots) {
-		for (const [qx, qy] of QUAD) {
-			pos[vi * 2] = d.x;
-			pos[vi * 2 + 1] = d.y;
-			corner[vi * 2] = qx;
-			corner[vi * 2 + 1] = qy;
-			orbit[vi] = d.orbit;
-			vi++;
-		}
+	// Edges: every side of every polygon, so each edge of the tiling is drawn twice (once per tile it
+	// bounds), like the dots.
+	let edges: OrbitDotMesh["edges"] = null;
+	if (orbitData.edges) {
+		const segs: OrbitSegment[] = [];
+		for (const poly of base.polys)
+			poly.vertices.forEach((a, k) => {
+				const b = poly.vertices[(k + 1) % poly.vertices.length];
+				const o = orbitData.edges!.at((a.x + b.x) / 2, (a.y + b.y) / 2);
+				if (o >= 0) segs.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, orbit: o });
+			});
+		edges = { marks: marksOf(segs), count: orbitData.edges.count, features: segs };
+	}
+	// Tiles: one orbit per polygon, spread over its fill vertices through the cell mesh's own tile index.
+	let faces: OrbitDotMesh["faces"] = null;
+	const fillTile = orbitData.faces ? buildCellMesh(cell)?.fillTile : undefined;
+	if (orbitData.faces && fillTile) {
+		const tiles = base.polys.map((poly) => {
+			const n = poly.vertices.length;
+			const cx = poly.vertices.reduce((s, v) => s + v.x, 0) / n;
+			const cy = poly.vertices.reduce((s, v) => s + v.y, 0) / n;
+			return { ring: poly.vertices, cx, cy, orbit: orbitData.faces!.at(cx, cy) };
+		});
+		const orbit = new Float32Array(fillTile.length / 2);
+		for (let v = 0; v < orbit.length; v++) orbit[v] = tiles[fillTile[v * 2]].orbit;
+		faces = { orbit, count: orbitData.faces.count, features: tiles.filter((t) => t.orbit >= 0) };
 	}
 
-	return { pos, corner, orbit, vertexCount: vi, k: Math.max(1, orbitData.k), force: !!orbitData.force, dots };
+	const marks = marksOf(dots.map((d) => ({ ax: d.x, ay: d.y, bx: d.x, by: d.y, orbit: d.orbit })));
+	return {
+		marks,
+		vertexCount: marks.length / ORBIT_MARK_FLOATS,
+		k: Math.max(1, orbitData.k),
+		force: !!orbitData.force,
+		dots,
+		edges,
+		faces,
+	};
 }

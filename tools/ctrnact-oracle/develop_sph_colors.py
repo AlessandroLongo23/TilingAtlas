@@ -381,7 +381,7 @@ def run_solid(source, solid_id, out_prefix, ncolors=3, surjective=False, limit=N
             r["name"] = r["id"]
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json.gz"
+            path = f"{out_prefix}-k{k}.json.br"
             fd.write_json(path, recs, separators=(",", ":"))
             written.append((path, len(recs), os.path.getsize(path)))
     return solid, rho, by_k, failures, fail_examples, n_certs, dropped, written
@@ -438,7 +438,7 @@ def main():
     ap.add_argument("--solid", choices=sorted(SOLIDS))
     ap.add_argument("--all", action="store_true", help="decode every solid; source is the platonic root")
     ap.add_argument("--colors", type=int, default=3)
-    ap.add_argument("--out", help="output DIRECTORY; writes <solid>-k<k>.json.gz")
+    ap.add_argument("--out", help="output DIRECTORY; writes <solid>-k<k>.json.br")
     ap.add_argument("--report")
     ap.add_argument("--surjective", action="store_true")
     ap.add_argument("--limit", type=int)

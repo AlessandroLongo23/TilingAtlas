@@ -1,4 +1,6 @@
-import { Polygon, PolygonType, Vector } from "@/classes";
+import { Polygon } from "@/classes/polygons/Polygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { Vector } from "@/classes/Vector";
 
 export interface GeneratorParameters {
 	[PolygonType.REGULAR]?: {

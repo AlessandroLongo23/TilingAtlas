@@ -5,7 +5,9 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Badge } from "@/design-system/components/badge";
+import { Button } from "@/design-system/components/button";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { useUpdates } from "@/stores/updates";
 import { unseenSince } from "@/lib/updates/unseen";
 
@@ -61,39 +63,37 @@ export function UpdatesButton({ variant = "icon", onOpen }: { variant?: "icon" |
 					onOpen?.();
 					open();
 				}}
-				className="flex h-12 w-full items-center gap-3 rounded-control px-3 text-left text-[15px] text-fg hover:bg-surface-overlay"
+				className="flex h-12 w-full items-center gap-3 rounded-control px-3 text-left text-reading text-fg"
 			>
-				<ScrollText size={18} strokeWidth={1.75} />
+				<ScrollText className="size-icon-lg" strokeWidth={1.75} />
 				<span className="flex-1">What&apos;s new</span>
 				{unseen > 0 ? (
-					<span className="rounded-full bg-accent px-2 text-xs leading-5 text-accent-contrast tabular-nums">
+					<Badge tone="solid" className="tabular-nums">
 						{unseen} new
-					</span>
+					</Badge>
 				) : null}
 			</button>
 		);
 	}
 
 	return (
-		<Tooltip label="What's new" shortcut="Shift + U" side="left" delay={0}>
-			<button
-				type="button"
+		<Tooltip label="What's new" shortcut="Shift + U" side="left" delay="instant">
+			<Button
+				variant="ghost"
+				size="icon"
+				icon={ScrollText}
 				onClick={open}
 				aria-label={unseen > 0 ? `What's new (${unseen} unread)` : "What's new"}
 				aria-current={onUpdates ? "page" : undefined}
-				className={cn(
-					"relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-control transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none",
-					// Lit like an active nav link while the changelog page itself is open.
-					onUpdates ? "bg-surface-overlay text-fg" : "text-fg-muted",
-				)}
+				// Lit like an active nav link while the changelog page itself is open.
+				className={cn("relative", onUpdates && "bg-surface-overlay text-fg")}
 			>
-				<ScrollText size={16} strokeWidth={1.75} />
 				{unseen > 0 ? (
 					// Out at the button's corner, not over the glyph: at top-1 it landed on the scroll's
 					// curl and read as part of the icon, not as a badge.
 					<span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
 				) : null}
-			</button>
+			</Button>
 		</Tooltip>
 	);
 }

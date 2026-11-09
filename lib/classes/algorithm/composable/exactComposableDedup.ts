@@ -29,7 +29,7 @@
 import { Cyclotomic, CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 // Import Polygon from the barrel (not the direct path): loading the barrel initializes Polygon before its
 // subclasses (RegularPolygon etc.), avoiding the Polygon↔barrel circular-init TDZ that a direct import trips.
-import { Polygon } from "@/classes";
+import { Polygon } from "@/classes/polygons/Polygon";
 import { cellsCongruent, primitiveReducedCell, reducedClassKey } from "@/classes/algorithm/TilingCongruence";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 

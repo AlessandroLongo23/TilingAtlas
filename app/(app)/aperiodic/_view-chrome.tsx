@@ -13,8 +13,8 @@
 // patch — a 5-level Penrose wants a hairline where a bare star seed can take a real line. Zero is off,
 // so the old toggle is still reachable, at one end of a control that also answers "thinner".
 
-import { Kbd } from "@/components/ui/kbd";
-import { Slider } from "@/components/ui/slider";
+import { Kbd } from "@/design-system/components/kbd";
+import { Slider } from "@/design-system/components/slider";
 import type { AperiodicView } from "@/lib/hooks/useAperiodicView";
 import { Section } from "./_controls";
 
@@ -43,11 +43,11 @@ export function ViewFooter({
 					id="aperiodic-rotation"
 					label="Rotation"
 					hint={
-						<span className="inline-flex items-center gap-1 text-[10px] whitespace-nowrap text-fg-muted">
+						<span className="inline-flex items-center gap-1 text-micro whitespace-nowrap text-fg-muted">
 							<Kbd>Shift</Kbd>
 							{/* Kbd hides on a phone, which would leave "+ scroll" dangling; a finger twists. */}
 							<span className="max-md:hidden">+ scroll</span>
-							<span className="max-md:text-xs md:hidden">Twist two fingers</span>
+							<span className="max-md:text-small md:hidden">Twist two fingers</span>
 						</span>
 					}
 					value={view.rotationDeg}

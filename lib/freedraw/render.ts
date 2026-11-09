@@ -14,6 +14,8 @@ import { analyseFaces, classifyFaces, classifyPatchFaces, type FaceAnalysis } fr
 import { coset, gridOf, type FreedrawPattern } from "./pattern";
 import { gridCellArcs, patchTileArcs } from "./patternArcs";
 import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
+import { patchShapeIds, shapeClasses, shapeClassHue, type ShapeRanks } from "@/lib/render/tileShapes";
+import { tileFill } from "@/lib/render/tilePalette";
 
 export interface FreedrawView {
 	/** World coordinates at the canvas centre. */
@@ -111,6 +113,8 @@ export interface FreedrawStyle {
 	showArcs?: boolean;
 	arcRule?: TileRule;
 	dark: boolean;
+	/** The board's colour order for shapes (tileShapes.ts), so a shape keeps its colour across the board. */
+	shapeRanks?: ShapeRanks;
 }
 
 export const DEFAULT_STYLE: FreedrawStyle = {
@@ -172,21 +176,18 @@ const vertexColour = (orbit: number, dark: boolean) => orbitColour(orbit + 3, !d
 const ORBIT_MODE_FILL_ALPHA = 0.4;
 
 /**
- * Golden-angle hue walk, so neighbouring face ids never land on neighbouring hues. The +34° offset
- * keeps face 0 off pure red, which reads as an error state against a dark background.
+ * Golden-angle hue walk, so neighbouring face ids never land on neighbouring hues (shapeClassHue, which the
+ * disk shares). A fill is the atlas's tile palette, as every tiling's is; `dark` gives the deep shade the
+ * orbit dots take against it.
  */
 export function orbitColour(i: number, dark: boolean, alpha = 1): string {
-	const hue = (34 + i * 137.508) % 360;
-	const l = dark ? 36 : 74;
-	return `hsl(${hue.toFixed(1)} 46% ${l}% / ${alpha})`;
+	const hue = shapeClassHue(i);
+	return dark ? `hsl(${hue.toFixed(1)} 46% 36% / ${alpha})` : tileFill(hue, alpha);
 }
 
 /** Finite / strip / unbounded, as three fixed hues so the classification reads at a glance. */
-export function rankColour(rank: 0 | 1 | 2, dark: boolean, alpha = 1): string {
-	const hue = rank === 0 ? 150 : rank === 1 ? 40 : 265;
-	const l = dark ? 32 : 76;
-	return `hsl(${hue} 55% ${l}% / ${alpha})`;
-}
+export const rankColour = (rank: 0 | 1 | 2, alpha = 1): string =>
+	tileFill(rank === 0 ? 150 : rank === 1 ? 40 : 265, alpha);
 
 /** A view centred on the origin showing roughly `cells` grid units across the shorter canvas side. */
 export function fitView(width: number, height: number, cells: number): FreedrawView {
@@ -292,6 +293,9 @@ export function drawFreedraw(
 	// under a curve reads as neither. Suppressed here, once, so every caller agrees without each having
 	// to remember — /play's Cell fill buttons and the browser's chips both go quiet while the arcs are up.
 	if (style.showArcs && style.fillMode !== "none") style = { ...style, fillMode: "none" };
+	// Filled, a pattern is a tiling and draws as one in either theme: the palette's tiles, dark ink. Only bare
+	// lines on the page follow the theme.
+	if (style.fillMode !== "none" && style.dark) style = { ...style, dark: false };
 	if (pattern.patch) {
 		drawPatchPattern(ctx, width, height, pattern, view, style, hover, orbitScales);
 		return;
@@ -321,7 +325,7 @@ export function drawFreedraw(
 		const classes = style.fillMode === "shape" || style.fillMode === "pose" ? classifyFaces(analysis) : null;
 		const fill = analysis.faces.map((f) =>
 			style.fillMode === "rank"
-				? rankColour(f.rank, style.dark, alpha)
+				? rankColour(f.rank, alpha)
 				: orbitColour(classes ? classes[style.fillMode as "shape" | "pose"][f.id] : f.id, style.dark, alpha),
 		);
 		for (let y = span.y0; y <= span.y1; y++) {
@@ -566,13 +570,17 @@ function drawPatchPattern(
 
 	if (style.fillMode !== "none") {
 		const alpha = style.showVertices ? ORBIT_MODE_FILL_ALPHA : 1;
-		// shape/pose merge congruent (resp. identically-posed) tiles from the patch geometry; orbit and
-		// the default keep one hue per tile component; rank colours by finite/strip/unbounded.
-		const classes = style.fillMode === "shape" || style.fillMode === "pose" ? classifyPatchFaces(patch) : null;
+		// shape merges congruent tiles by their boundaries (tileShapes.ts), in the board's colour order when it
+		// has one; pose merges translates; orbit and the default keep one hue per tile component; rank colours
+		// by finite/strip/unbounded.
+		const classes =
+			style.fillMode === "shape"
+				? shapeClasses(patchShapeIds(patch), style.shapeRanks)
+				: style.fillMode === "pose"
+					? classifyPatchFaces(patch).pose
+					: null;
 		const compFill = patch.compRank.map((r, i) =>
-			style.fillMode === "rank"
-				? rankColour(r, style.dark, alpha)
-				: orbitColour(classes ? classes[style.fillMode as "shape" | "pose"][i] : i, style.dark, alpha),
+			style.fillMode === "rank" ? rankColour(r, alpha) : orbitColour(classes ? classes[i] : i, style.dark, alpha),
 		);
 		for (let n = n0; n <= n1; n++) {
 			for (let m = m0; m <= m1; m++) {

@@ -6,6 +6,7 @@ import { useConfiguration } from "@/stores/configuration";
 import { blendedSquaring, exactSquaring, squaringAvailability } from "@/lib/squaring/playSquaring";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
+import { Button } from "@/design-system/components/button";
 
 // The SOURCE tiling, kept in view while the canvas draws its squared torus.
 //
@@ -21,8 +22,8 @@ import { TilingThumbnail } from "@/components/tiling-thumbnail";
 export function SquaringInset({ selected }: { selected: CatalogueTiling | null }) {
 	const on = useConfiguration((s) => s.squaring);
 	const cls = useConfiguration((s) => s.squaringClass);
-	const avail = squaringAvailability(selected);
-	const support = avail.ok ? avail.support : null;
+	const avail = on ? squaringAvailability(selected) : null; // the solves only while squaring is on
+	const support = avail?.ok ? avail.support : null;
 
 	// The same two solves the canvas draws from, and the same rule about which one may be believed: the
 	// blend is a dot product per edge and survives a drag, the exact BigInt solve lands on a deferred
@@ -45,19 +46,19 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 		<div className="ta-float pointer-events-auto absolute top-16 left-4 z-20 w-52 overflow-hidden max-md:w-36">
 			<div className="flex items-center justify-between gap-2 border-b border-line px-2.5 py-1.5">
 				<div className="min-w-0">
-					<p className="truncate text-[10px] leading-none text-fg max-md:text-xs">Squared from</p>
-					<p className="mt-1 truncate font-mono text-[9px] leading-none text-fg-muted max-md:text-[11px]">
+					<p className="truncate text-micro leading-none text-fg">Squared from</p>
+					<p className="mt-1 truncate font-mono text-micro leading-none text-fg-muted max-md:text-caption">
 						{selected?.canonicalKey ?? "this tiling"}
 					</p>
 				</div>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="xs"
+					icon={X}
 					onClick={() => useConfiguration.getState().set({ squaring: false })}
 					aria-label="Turn the squared torus off and go back to the tiling"
-					className="shrink-0 text-fg-muted transition-colors hover:text-fg max-md:-my-2 max-md:-mr-2.5 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
-				>
-					<X className="h-3.5 w-3.5" strokeWidth={1.75} />
-				</button>
+					className="w-6 shrink-0 px-0 max-md:-my-2 max-md:-mr-2.5 max-md:min-w-11"
+				/>
 			</div>
 
 			{/* The same thumbnail the catalogue draws for this record, so the panel and the sidebar entry are
@@ -68,7 +69,7 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 				<TilingThumbnail translationalCell={selected?.renderCell ?? null} periodsAcross={2} />
 			</div>
 
-			<div className="space-y-0.5 border-t border-line px-2.5 py-1.5 font-mono text-[9px] leading-snug text-fg-muted max-md:text-[11px]">
+			<div className="space-y-0.5 border-t border-line px-2.5 py-1.5 font-mono text-micro leading-tight text-fg-muted max-md:text-caption">
 				<p>
 					class{" "}
 					<span className="text-fg">

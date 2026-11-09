@@ -462,7 +462,7 @@ export function sphEdgesLazyShardsForK(k: number): SphEdgesBoard[] {
 	return SPH_EDGES_BOARDS.filter((b) => b.lazyKs.includes(k));
 }
 
-export const sphEdgesShardUrl = (board: string, k: number): string => `/spherical-edges/x${board}-k${k}.json.gz`;
+export const sphEdgesShardUrl = (board: string, k: number): string => `/spherical-edges/x${board}-k${k}.json.br`;
 
 /** The /play sub-axis key — namespaced so it cannot collide with a freedraw grid, a Platonic solid or
  *  the "sps-"/"hyp-"/"spc-" families. */

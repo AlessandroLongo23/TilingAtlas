@@ -3,10 +3,10 @@
 // <ku-counts set="regular|star" caption="…"> — how many tilings there are at each k, on a log scale,
 // with a control that switches what the bars are split by. Click a bar for its number and its source.
 //
-// The numbers are the catalogue's own, counted from the shipped shelves, and for the regular polygons
-// they agree with OEIS A068599 term for term as far as the shelf reaches (k ≤ 10); k = 11 to 13 are the
-// published terms the shelf does not hold yet, drawn hollow. The vertex-type splits are the shelf's
-// per-tiling counts of distinct vertex configurations, whose diagonal reproduces A068600.
+// The numbers are the catalogue's own, counted from the shipped shelves. For the regular polygons they agree
+// with OEIS A068599 term for term as far as it goes (k ≤ 13); k = 14 to 16 are the Atlas's own counts, which
+// nobody else has published. The vertex-type splits are the shelf's per-tiling counts of distinct vertex
+// configurations, whose diagonal reproduces A068600.
 
 import { useState } from "react";
 import { Segmented } from "@/components/shelf";
@@ -19,8 +19,6 @@ interface Row {
 	parts: number[];
 	/** Who found this term, and when, or what the record's status is. */
 	note: string;
-	/** A published count the catalogue does not hold: drawn as an outline. */
-	absent?: boolean;
 }
 interface View {
 	label: string;
@@ -30,7 +28,9 @@ interface View {
 	rows: Row[];
 }
 
-const REGULAR_TOTALS = [11, 20, 61, 151, 332, 673, 1472, 2850, 5960, 11866, 24459, 49794, 103082];
+const REGULAR_TOTALS = [
+	11, 20, 61, 151, 332, 673, 1472, 2850, 5960, 11866, 24459, 49794, 103082, 212631, 445289, 933637,
+];
 const REGULAR_NOTES = [
 	"Johannes Kepler, Harmonices Mundi (1619).",
 	"Otto Krötenheerdt (1969).",
@@ -42,11 +42,14 @@ const REGULAR_NOTES = [
 	"Brian Galebach (2020), confirmed by Marek Čtrnáct (2021).",
 	"Marek Čtrnáct (2021).",
 	"Marek Čtrnáct (2021).",
-	"Marek Čtrnáct (2021). Not yet on the shelf.",
-	"Marek Čtrnáct (2021). Not yet on the shelf.",
-	"Marek Čtrnáct (2021). Not yet on the shelf.",
+	"Marek Čtrnáct (2021).",
+	"Marek Čtrnáct (2021).",
+	"Marek Čtrnáct (2021).",
+	"The Atlas, with Čtrnáct's algorithm (2026). No published count to compare.",
+	"The Atlas, with Čtrnáct's algorithm (2026). No published count to compare.",
+	"The Atlas, with Čtrnáct's algorithm (2026). No published count to compare.",
 ];
-/** Tilings with k orbits by number of distinct vertex configurations m = 1, 2, …, 8. */
+/** Tilings with k orbits by number of distinct vertex configurations m = 1, 2, …, 11. */
 const BY_TYPES: Record<number, number[]> = {
 	1: [11],
 	2: [0, 20],
@@ -58,13 +61,19 @@ const BY_TYPES: Record<number, number[]> = {
 	8: [0, 258, 1037, 795, 537, 203, 20],
 	9: [0, 424, 1992, 1608, 1278, 570, 80, 8],
 	10: [0, 663, 3772, 2979, 2745, 1468, 212, 27],
+	11: [0, 1086, 7171, 5798, 5993, 3711, 647, 46, 1],
+	12: [0, 1607, 13762, 11006, 12309, 9230, 1736, 120, 15],
+	13: [0, 2615, 26662, 21153, 25380, 22270, 4721, 223, 37, 1],
+	14: [0, 4063, 51368, 39820, 52064, 52109, 12662, 422, 90, 4],
+	15: [0, 6414, 100001, 77593, 105095, 121588, 33498, 813, 213, 17, 1],
+	16: [0, 10143, 194861, 149481, 210692, 279926, 86597, 1380, 403, 44, 1],
 };
 
 const regularRows = (split: boolean): Row[] =>
 	REGULAR_TOTALS.map((n, i) => {
 		const k = i + 1;
 		const parts = split && BY_TYPES[k] ? BY_TYPES[k] : [n];
-		return { k, parts, note: REGULAR_NOTES[i], absent: k > 10 };
+		return { k, parts, note: REGULAR_NOTES[i] };
 	});
 
 // Star polygons: "in Myers" are the records that match Joseph Myers's lists (k = 1 in 2004, k = 2 in
@@ -88,8 +97,8 @@ const SETS: Record<string, Record<string, View>> = {
 		count: { label: "Tilings", parts: ["tilings"], rows: regularRows(false) },
 		types: {
 			label: "By vertex types",
-			sub: "m = 1 … 8",
-			parts: ["1 type", "2 types", "3 types", "4 types", "5 types", "6 types", "7 types", "8 types"],
+			sub: "m = 1 … 11",
+			parts: Array.from({ length: 11 }, (_, i) => (i ? `${i + 1} types` : "1 type")),
 			rows: regularRows(true),
 		},
 	},
@@ -127,17 +136,16 @@ const SETS: Record<string, Record<string, View>> = {
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 /** Shades for stacked parts, bottom first: solid ink fading towards the line colour. */
-const SHADE = [1, 0.62, 0.48, 0.38, 0.29, 0.22, 0.16, 0.11];
+const SHADE = [1, 0.62, 0.48, 0.38, 0.29, 0.22, 0.16, 0.11, 0.08, 0.06, 0.05];
 
 export function KuCounts({ set = "regular", caption }: { set?: string; caption?: string }) {
 	const views = SETS[set] ?? SETS.regular;
 	const [viewKey, setViewKey] = useState(Object.keys(views)[0]);
 	const view = views[viewKey] ?? Object.values(views)[0];
 	const [picked, setPicked] = useState<number | null>(null);
-	const held = view.rows.filter((r) => !r.absent);
-	const row = view.rows.find((r) => r.k === picked) ?? held[held.length - 1];
+	const row = view.rows.find((r) => r.k === picked) ?? view.rows[view.rows.length - 1];
 	const max = Math.max(...view.rows.map((r) => r.parts.reduce((a, b) => a + b, 0)));
-	// Log scale from 1, so 11 and 103,082 share one axis and both read.
+	// Log scale from 1, so 11 and 933,637 share one axis and both read.
 	// 86% at most: the count sits above each bar and must stay inside the box.
 	const height = (n: number) => (n <= 0 ? 0 : (Math.log10(n + 1) / Math.log10(max + 1)) * 86);
 	const total = row.parts.reduce((a, b) => a + b, 0);
@@ -157,27 +165,25 @@ export function KuCounts({ set = "regular", caption }: { set?: string; caption?:
 							aria-label={`k = ${r.k}: ${fmt(sum)}`}
 							className="group relative flex h-full min-w-0 flex-1 cursor-pointer flex-col justify-end"
 						>
-							<span className="mb-1 text-center font-mono text-[10px] leading-none text-fg-muted tabular-nums max-sm:hidden">
+							<span className="mb-1 text-center font-mono text-micro leading-none text-fg-muted tabular-nums max-sm:hidden">
 								{fmt(sum)}
 							</span>
 							<span
 								className={cn(
 									"flex w-full flex-col-reverse overflow-hidden",
-									r.absent ? "border border-dashed border-fg-muted" : "",
 									r.k === row.k ? "outline-2 outline-offset-2 outline-fg" : "group-hover:opacity-80",
 								)}
 								style={{ height: `${h}%` }}
 							>
-								{!r.absent &&
-									r.parts.map((p, i) =>
-										p > 0 ? (
-											<span
-												key={i}
-												className="block w-full bg-fg"
-												style={{ flexGrow: p, flexBasis: 0, opacity: SHADE[i] ?? 0.1 }}
-											/>
-										) : null,
-									)}
+								{r.parts.map((p, i) =>
+									p > 0 ? (
+										<span
+											key={i}
+											className="block w-full bg-fg"
+											style={{ flexGrow: p, flexBasis: 0, opacity: SHADE[i] ?? 0.1 }}
+										/>
+									) : null,
+								)}
 							</span>
 						</button>
 					);
@@ -185,12 +191,12 @@ export function KuCounts({ set = "regular", caption }: { set?: string; caption?:
 			</div>
 			<div className="mt-1 flex gap-1 sm:gap-2">
 				{view.rows.map((r) => (
-					<span key={r.k} className="min-w-0 flex-1 text-center font-mono text-[10px] text-fg-muted">
+					<span key={r.k} className="min-w-0 flex-1 text-center font-mono text-micro text-fg-muted">
 						{r.k}
 					</span>
 				))}
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				<span className="font-mono text-fg-secondary">k = {row.k}</span>: {fmt(total)}
 				{view.parts.length > 1 &&
 					` (${row.parts

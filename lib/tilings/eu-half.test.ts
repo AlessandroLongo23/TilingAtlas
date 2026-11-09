@@ -12,7 +12,7 @@ import { readDataText } from "../../scripts/atlas/io.mjs";
 // things, that the classification behind "there are exactly four boards" is written down and checked, and
 // that every row lands in the right folder.
 
-const atlas = "public/reference-atlas-euhalf.json.gz";
+const atlas = "public/reference-atlas-euhalf.json.br";
 const anyShard = existsSync(atlas);
 const eager = (): ReferenceTiling[] => decodeAtlas<ReferenceTiling>(JSON.parse(readDataText(atlas)));
 const shipped = (b: EuHalfBoard) => [...b.eagerKs, ...b.lazyKs].sort((x, y) => x - y);
@@ -191,7 +191,7 @@ describe.skipIf(!anyShard)("shipped rows", () => {
 
 	it("ships a lazy shard for every lazy k, with the declared count", () => {
 		for (const k of [...new Set(EU_HALF_BOARDS.flatMap((b) => b.lazyKs))].sort((a, b) => a - b)) {
-			const f = `public/reference-atlas-euhalf-k${k}.json.gz`;
+			const f = `public/reference-atlas-euhalf-k${k}.json.br`;
 			expect(existsSync(f), f).toBe(true);
 			const rows: ReferenceTiling[] = decodeAtlas<ReferenceTiling>(JSON.parse(readDataText(f)));
 			for (const b of EU_HALF_BOARDS) {

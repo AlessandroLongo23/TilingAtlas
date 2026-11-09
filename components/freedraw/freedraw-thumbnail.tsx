@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import type { FreedrawStyle } from "@/lib/freedraw/render";
+import type { ShapeRanks } from "@/lib/render/tileShapes";
 
 // The freedraw preview used by the /library card and the /play picker — the sibling of
 // HyperbolicThumbnail and SphericalThumbnail, and the only way those two surfaces can show a
@@ -23,6 +25,16 @@ const THUMB_STYLE: Omit<FreedrawStyle, "dark"> = {
 	lineWidth: 1,
 };
 
-export function FreedrawThumbnail({ pattern, cells = 7 }: { pattern: FreedrawPattern; cells?: number }) {
-	return <FreedrawCanvas pattern={pattern} style={THUMB_STYLE} cells={cells} />;
+export function FreedrawThumbnail({
+	pattern,
+	cells = 7,
+	shapeRanks,
+}: {
+	pattern: FreedrawPattern;
+	cells?: number;
+	/** The board's colour order for tile shapes (lib/render/tileShapes.ts). */
+	shapeRanks?: ShapeRanks;
+}) {
+	const style = useMemo(() => (shapeRanks ? { ...THUMB_STYLE, shapeRanks } : THUMB_STYLE), [shapeRanks]);
+	return <FreedrawCanvas pattern={pattern} style={style} cells={cells} />;
 }

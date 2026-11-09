@@ -96,6 +96,9 @@ export async function findRelatives(sym: DSymbol, loaded: readonly CatalogueTili
 	const hit = (id: string, label: string, key: string | null) => {
 		if (key === want && !found.some((r) => r.id === id)) found.push({ id, label });
 	};
+	// The non-convex and genus solids load on first need; a spherical search reads every solid, so it waits for
+	// them here, and the cache below never stores a "no symbol" that only meant "not loaded yet".
+	if (g > 0) await import("@/lib/render/sphericalSolidsAll");
 
 	// What /play has loaded: the Tegula shelf, the spherical solids, and the flat shelves by k and sizes.
 	for (const t of loaded) {

@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
-import { createClient } from "@/lib/supabase/client";
 import { fetchCellCodec } from "@/lib/services/cellCodecService";
-import { orbitsFromExactSource, type OrbitData } from "@/lib/services/orbitsFromExactSource";
+import { orbitsFromCell, orbitsFromExactSource, type OrbitData } from "@/lib/services/orbitsFromExactSource";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { ringOrderOf } from "@/lib/services/starExactCell";
 
@@ -32,11 +31,17 @@ export function useVertexOrbits(tiling: CatalogueTiling | null): OrbitData | nul
 				const ring = CyclotomicRing.create(ringOrderOf(tiling));
 				setActiveRing(ring);
 				if (tiling.exactSource) {
-					const result = orbitsFromExactSource(ring, k, tiling.exactSource);
+					// A regular seed cell reads its orbits off its symbol, in linear time; the exact checker took
+					// seconds on a k = 16 cell and minutes on the large face-homogeneous ones, on the main thread.
+					const fromSymbol =
+						tiling.exactSource.kind === "seed" && tiling.renderCell ? orbitsFromCell(tiling.renderCell) : null;
+					const result = fromSymbol ?? orbitsFromExactSource(ring, k, tiling.exactSource);
 					cache.set(k, result);
 					if (alive) setData(result);
 					return;
 				}
+				// Imported here: only a tiling without an inline exact cell reaches Supabase (see useSymmetryData).
+				const { createClient } = await import("@/lib/supabase/client");
 				const codec = await fetchCellCodec(createClient(), k);
 				if (!codec) {
 					cache.set(k, null);

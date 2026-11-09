@@ -1,7 +1,7 @@
 // What each of /play's nine (geometry x decoration) cells costs to ENTER: JSON requests, bytes, the
-// main-thread blocking the viewer feels, and the heap left behind. The page-load companion to
-// scripts/measure-page-load.mjs, which cannot reach these — /play holds geometry and decoration in
-// React state, not in the URL, so the only honest way to measure a switch is to click it.
+// main-thread blocking the viewer feels, and the heap left behind. Page loads are measured by
+// scripts/bench-journey.mjs, which reaches these only as steps of its journey — /play holds geometry and
+// decoration in React state, not in the URL, so the only honest way to measure a switch is to click it.
 //
 //   node scripts/measure-play-cells.mjs                       # localhost:3000, 9s settle per cell
 //   node scripts/measure-play-cells.mjs http://localhost:3001/play 12000
@@ -29,7 +29,7 @@ const started = new Map();
 cdp.on("Network.requestWillBeSent", (e) => started.set(e.requestId, e.request.url));
 cdp.on("Network.loadingFinished", (e) => {
 	const u = started.get(e.requestId);
-	if (u && /\.json(\.gz)?(\?|$)/.test(u)) {
+	if (u && /\.json(\.br)?(\?|$)/.test(u)) {
 		reqs++;
 		bytes += e.encodedDataLength;
 	}

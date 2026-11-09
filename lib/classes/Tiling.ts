@@ -1,5 +1,7 @@
 import type P5 from "p5";
-import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from "@/classes";
+import { type Polygon } from "@/classes/polygons/Polygon";
+import { Vector } from "@/classes/Vector";
+import { type Gyration, type Reflection, type GlideReflection } from "@/classes/Transform";
 import { fillAmountToSatPct, tileFill } from "@/lib/render/tilePalette";
 import type { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
 import {
@@ -11,7 +13,9 @@ import {
 import { tolerance } from "@/utils/tolerance";
 import { WAVE_MIN_SCALE } from "@/lib/utils/tilingTransition";
 import { useConfiguration } from "@/stores/configuration";
-import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from "@/utils";
+import { sortPointsByAngleAndDistance, deduplicatePolygons } from "@/utils/geometry";
+import { isWithinTolerance } from "@/utils/math";
+import { vertexFigureHue } from "@/utils/vertexFigureHue";
 import {
 	extractFaces,
 	colorFacesAbc,
@@ -27,7 +31,9 @@ import {
 	EMBOSS_MIN_BORDER,
 	type Band,
 } from "@/utils/islamicInterlace";
-import { orbitColor } from "@/lib/utils/orbitColors";
+import { orbitColor, orbitHue } from "@/lib/utils/orbitColors";
+import { ORBIT_EDGE_HIT_PX, stepOrbitScales } from "@/lib/render/orbitHover";
+import { rayCastContains } from "@/lib/utils/canvasPick";
 import { ringColor } from "@/lib/render/hueRing";
 
 export type VCWithOccurrences = { vc: VertexConfiguration; occurrences: number };
@@ -313,6 +319,80 @@ export class Tiling {
 			const d = diameter * s[o];
 			ctx.ellipse(enlarged[i], enlarged[i + 1], d, d);
 		}
+	};
+
+	/** The Orbits overlay's edge and tile modes, p5's counterpart of the shader's orbitTint (flatTilingGL):
+	 *  tiles filled, or edges stroked, in their orbit's colour (node.faceOrbit / node.edgeOrbitOfSide from
+	 *  buildPatchTiling). Hovering a tile or an edge keeps its orbit at full strength and fades the rest;
+	 *  `scales` is the caller's eased state, shared with drawVertexOrbits. In edge mode the caller has drawn
+	 *  the tiles dimmed underneath; in tile mode this draws them. */
+	drawFeatureOrbits = (
+		ctx: P5,
+		mode: "edge" | "face",
+		count: number,
+		cull?: (c: Vector) => boolean,
+		hover?: { x: number; y: number } | null,
+		scales: number[] = [],
+	): void => {
+		const cfg = useConfiguration.getState();
+		const zoom = cfg.controls.zoom;
+		const visible = cull ? this.nodes.filter((n) => cull(n.centroid)) : this.nodes;
+		let hovered = -1;
+		if (hover) {
+			const r2 = (ORBIT_EDGE_HIT_PX / zoom) ** 2;
+			outer: for (const node of visible) {
+				const vs = node.vertices;
+				if (mode === "face") {
+					if (node.faceOrbit != null && rayCastContains(vs, hover.x, hover.y)) {
+						hovered = node.faceOrbit;
+						break;
+					}
+					continue;
+				}
+				for (let k = 0; k < vs.length; k++) {
+					const a = vs[k],
+						b = vs[(k + 1) % vs.length];
+					const ex = b.x - a.x,
+						ey = b.y - a.y;
+					const t = Math.max(0, Math.min(1, ((hover.x - a.x) * ex + (hover.y - a.y) * ey) / (ex * ex + ey * ey || 1)));
+					if ((hover.x - a.x - t * ex) ** 2 + (hover.y - a.y - t * ey) ** 2 <= r2) {
+						hovered = node.edgeOrbitOfSide?.[k] ?? -1;
+						break outer;
+					}
+				}
+			}
+		}
+		stepOrbitScales(scales, count, hovered, count);
+		const fade = Math.min(1, Math.max(0, ...scales.map((x) => x - 1)));
+		const strength = (o: number) => 1 - 0.65 * fade * (1 - Math.min(1, Math.max(0, (scales[o] ?? 1) - 1)));
+		if (mode === "face") {
+			ctx.strokeWeight(Math.max(cfg.lineWidth, 0.5) / zoom);
+			ctx.stroke(0, 0, 0);
+			for (const node of visible) {
+				const o = node.faceOrbit ?? -1;
+				if (o < 0) ctx.noFill();
+				else ctx.fill(tileFill(orbitHue(o, count), strength(o)));
+				ctx.beginShape();
+				for (const v of node.vertices) ctx.vertex(v.x, v.y);
+				ctx.endShape(ctx.CLOSE);
+			}
+			return;
+		}
+		// Round-capped bars, the orbits at rest first and the lifted (hovered) ones over them.
+		const w = (2.5 * Math.max(cfg.lineWidth, 1)) / zoom;
+		ctx.strokeCap(ctx.ROUND);
+		for (const lifted of [false, true])
+			for (const node of visible) {
+				const vs = node.vertices;
+				for (let k = 0; k < vs.length; k++) {
+					const o = node.edgeOrbitOfSide?.[k] ?? -1;
+					if (o < 0 || (scales[o] ?? 1) > 1 !== lifted) continue;
+					ctx.stroke(tileFill(orbitHue(o, count), strength(o)));
+					ctx.strokeWeight(w * (scales[o] ?? 1));
+					const b = vs[(k + 1) % vs.length];
+					ctx.line(vs[k].x, vs[k].y, b.x, b.y);
+				}
+			}
 	};
 
 	/** Star-tiling Islamic fill (A/B/C): the star-body cells (A) keep their source tile's hue; the two

@@ -136,9 +136,9 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 	it("leaves the shape toggle live under the Islamic construction", () => {
 		useConfiguration.setState({ isIslamic: true, sphericalPolyhedron: false });
 		render(<OptionsTab selected={spherical} />);
-		// The toggle's buttons carry the raw value as their aria-label and the capitalised one as text.
-		expect(screen.getByRole("radio", { name: "sphere" })).not.toBeDisabled();
-		fireEvent.click(screen.getByRole("radio", { name: "polyhedron" }));
+		// The shape is an OptionWall: one button per option, named by its label.
+		expect(screen.getByRole("button", { name: "Sphere" })).not.toBeDisabled();
+		fireEvent.click(screen.getByRole("button", { name: "Polyhedron" }));
 		expect(useConfiguration.getState().sphericalPolyhedron).toBe(true);
 		expect(useConfiguration.getState().isIslamic).toBe(false);
 	});

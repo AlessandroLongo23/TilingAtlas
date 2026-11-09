@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Download, CloudUpload, Loader2 } from "lucide-react";
+import { Download, CloudUpload } from "lucide-react";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { uploadTilingScreenshot, dataUrlToWebPBlob } from "@/lib/services/tilingImages";
-import { Modal } from "./ui/modal";
-import { Button } from "./ui/button";
+import { Modal } from "@/design-system/components/modal";
+import { Button } from "@/design-system/components/button";
+import { Notice } from "@/design-system/components/notice";
+import { Spinner } from "@/design-system/components/spinner";
+import { Tooltip } from "@/design-system/components/tooltip";
 
 export function ScreenshotPreviewModal() {
 	const { isOpen, imageDataUrl, filename, rulestring, groupId, allowSupabaseUpload, close } = useScreenshotPreview();
@@ -50,75 +53,73 @@ export function ScreenshotPreviewModal() {
 	};
 
 	return (
-		<Modal isOpen={isOpen} onOpenChange={handleOpenChange} title="Screenshot Preview" maxWidth="max-w-2xl">
+		<Modal open={isOpen} onOpenChange={handleOpenChange} title="Screenshot Preview" maxWidth="max-w-2xl">
 			<div className="space-y-4 p-4">
-				<div className="flex min-h-[280px] justify-center rounded-lg border border-line bg-surface-raised/60 p-4">
+				<div className="ta-well flex min-h-[280px] justify-center p-4">
 					{imageDataUrl ? (
 						// eslint-disable-next-line @next/next/no-img-element
 						<img
 							src={imageDataUrl}
 							alt="Screenshot preview"
-							className="max-h-[320px] max-w-full rounded-md object-contain"
+							className="max-h-[320px] max-w-full rounded-control object-contain"
 						/>
 					) : (
-						<div className="flex items-center justify-center text-fg-muted">
-							<Loader2 size={32} className="animate-spin" />
+						<div className="flex items-center justify-center">
+							<Spinner size={32} label="Loading the screenshot" />
 						</div>
 					)}
 				</div>
 
-				{supabaseError ? (
-					<p className="rounded-md border border-danger/30 bg-danger-subtle px-3 py-2 text-sm text-danger">
-						{supabaseError}
-					</p>
-				) : null}
+				{supabaseError ? <Notice tone="danger">{supabaseError}</Notice> : null}
 
 				<div className="flex flex-col gap-3 pt-2 sm:flex-row">
 					<Button
 						variant="secondary"
 						size="lg"
-						fullWidth
+						className="w-full"
 						onClick={handleSaveLocally}
 						disabled={savingLocal || !imageDataUrl}
 					>
 						{savingLocal ? (
 							<>
-								<Loader2 size={18} className="animate-spin" />
+								<Spinner size={18} className="text-current" />
 								Saving…
 							</>
 						) : (
 							<>
-								<Download size={18} />
+								<Download className="size-icon-lg" />
 								Save Locally
 							</>
 						)}
 					</Button>
 					{allowSupabaseUpload ? (
-						<Button
-							variant="primary"
-							size="lg"
-							fullWidth
-							onClick={handleSaveToSupabase}
-							disabled={savingSupabase || !imageDataUrl || !groupId}
-							title={!groupId ? "This tiling is not in the database" : "Replace the tiling image in Supabase storage"}
-						>
-							{savingSupabase ? (
-								<>
-									<Loader2 size={18} className="animate-spin" />
-									Uploading…
-								</>
-							) : (
-								<>
-									<CloudUpload size={18} />
-									Save to Supabase
-								</>
-							)}
-						</Button>
+						// Disabled without a groupId; the note under the buttons says why.
+						<Tooltip label="Replace the tiling image in Supabase storage">
+							<Button
+								variant="primary"
+								size="lg"
+								className="w-full"
+								onClick={handleSaveToSupabase}
+								disabled={savingSupabase || !imageDataUrl || !groupId}
+							>
+								{savingSupabase ? (
+									<>
+										<Spinner size={18} className="text-current" />
+										Uploading…
+									</>
+								) : (
+									<>
+										<CloudUpload className="size-icon-lg" />
+										Save to Supabase
+									</>
+								)}
+							</Button>
+						</Tooltip>
 					) : null}
 				</div>
 
 				{allowSupabaseUpload && !groupId && imageDataUrl ? (
-					<p className="text-xs text-fg-muted">
+					<p className="text-small text-fg-muted">
 						&ldquo;Save to Supabase&rdquo; is only available for tilings in the database.
 					</p>
 				) : null}

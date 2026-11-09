@@ -428,7 +428,7 @@ export const UPDATES: UpdateEntry[] = [
 			},
 			{
 				kind: "changed",
-				text: "**The whole site has a new look**: Geist type, warm neutral panels, rounded controls, and one blue kept for actions and links.",
+				text: "**The whole site has a new look**: Geist type, warm neutral panels, rounded-tag controls, and one blue kept for actions and links.",
 				href: "/",
 			},
 			{

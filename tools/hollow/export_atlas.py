@@ -1,8 +1,8 @@
 """Export accepted hollow tilings to the Atlas shelf format.
 
 Writes
-  public/hollow/<id>.json.gz        face geometry + translation lattice
-  public/reference-atlas-hollow.json.gz  the shelf index (ReferenceTiling rows)
+  public/hollow/<id>.json.br        face geometry + translation lattice
+  public/reference-atlas-hollow.json.br  the shelf index (ReferenceTiling rows)
 
 A hollow tiling's faces overlap and self-intersect, so there is no cell polygon list
 the flat renderer could consume. What ships instead is the explicit face list of a
@@ -23,7 +23,7 @@ from develop_freedraw import write_json  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_GEO = os.path.join(REPO, "public", "hollow")
-OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json.gz")
+OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json.br")
 
 GMS_BY_ORBIT = {orbit(parse(v)): k for k, v in GMS.items()}
 CONVEX_ORBITS = {orbit(parse(v)) for v in CONVEX11}
@@ -73,7 +73,7 @@ def main(cfgstrs):
         # under the "regular" class. Listing them again here would double-count the
         # catalogue, so they are exported as geometry (for the regression) but not shelved.
         is_convex = ob in CONVEX_ORBITS
-        write_json(os.path.join(OUT_GEO, sid + ".json.gz"), geo, separators=(",", ":"))
+        write_json(os.path.join(OUT_GEO, sid + ".json.br"), geo, separators=(",", ":"))
         if is_convex:
             print("  ok   %-30s density=%-3d faces=%4d convex (geometry only, not shelved)"
                   % (s, geo["density"], len(geo["faces"])), flush=True)

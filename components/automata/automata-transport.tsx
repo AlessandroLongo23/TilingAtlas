@@ -13,12 +13,12 @@
 // rows are `order` alone, so the desktop bar is untouched.
 
 import { Brush, ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw, Shuffle, SkipForward } from "lucide-react";
-import { InfoDot } from "@/components/ui/info-dot";
-import { RangeInput } from "@/components/ui/range-input";
-import { FloatingToolbar, ToolbarButton, ToolbarDivider } from "@/components/ui/floating-toolbar";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { RangeInput } from "@/design-system/components/range-input";
+import { FloatingToolbar, ToolbarButton, ToolbarDivider } from "@/design-system/components/floating-toolbar";
 import { useAutomata } from "@/lib/stores/automata";
 import { cn } from "@/lib/utils/cn";
-import { SwapIcon } from "@/components/ui/swap-icon";
+import { SwapIcon } from "@/design-system/components/swap-icon";
 
 /** Generations per second, on a log-ish ladder — one drag should reach both 1/s and 240/s. */
 const SPEEDS = [1, 2, 4, 8, 12, 20, 30, 45, 60, 90, 120, 180, 240];
@@ -61,13 +61,13 @@ export function AutomataTransport({
 	return (
 		<FloatingToolbar className={cn("bottom-6 max-md:w-[calc(100%-32px)] max-md:flex-wrap", disabled && "opacity-60")}>
 			<ToolbarButton label="Previous tiling" shortcut="←" onClick={onPrev} className={ROW2}>
-				<ChevronLeft size={16} />
+				<ChevronLeft className="size-icon-md" />
 			</ToolbarButton>
 			<ToolbarButton label="Next tiling" shortcut="→" onClick={onNext} className={ROW2}>
-				<ChevronRight size={16} />
+				<ChevronRight className="size-icon-md" />
 			</ToolbarButton>
 			<ToolbarButton label="Random tiling" shortcut="R" onClick={onRandom} className={ROW2}>
-				<Shuffle size={15} />
+				<Shuffle className="size-icon-md" />
 			</ToolbarButton>
 			<span className="contents max-md:hidden">
 				<ToolbarDivider />
@@ -85,13 +85,13 @@ export function AutomataTransport({
 				{running ? "Pause" : "Run"}
 			</ToolbarButton>
 			<ToolbarButton label="Step one generation" shortcut="." onClick={stepOnce} disabled={disabled} className={ROW1}>
-				<SkipForward size={16} />
+				<SkipForward className="size-icon-md" />
 			</ToolbarButton>
 			{/* On a phone the reseed wears dice: a counter-clockwise arrow there would read as the Reset view
 			    button in the corner above it. */}
 			<ToolbarButton label="New random soup" shortcut="N" onClick={() => reseed()} disabled={disabled} className={ROW1}>
-				<RotateCcw size={16} className="max-md:hidden" />
-				<Dices size={16} className="md:hidden" />
+				<RotateCcw className="size-icon-md max-md:hidden" />
+				<Dices className="size-icon-md md:hidden" />
 			</ToolbarButton>
 			{/* Phone only: a finger has no Shift, so painting is a mode. While it is on, a tap flips a tile
 			    and a drag still pans. */}
@@ -102,7 +102,7 @@ export function AutomataTransport({
 				disabled={disabled || !paintAvailable}
 				className={cn("hidden max-md:flex max-md:aria-pressed:bg-fg max-md:aria-pressed:text-fg-inverse", ROW1)}
 			>
-				<Brush size={16} />
+				<Brush className="size-icon-md" />
 			</ToolbarButton>
 			<span className="contents max-md:hidden">
 				<ToolbarDivider />
@@ -119,7 +119,7 @@ export function AutomataTransport({
 					aria-label="Generations per second"
 				/>
 				{/* Tabular width so the bar does not twitch as the number changes under a drag. */}
-				<span className="w-[3.75rem] font-mono text-[11px] text-fg-secondary tabular-nums max-md:shrink-0 max-md:text-xs">
+				<span className="w-[3.75rem] font-mono text-caption text-fg-secondary tabular-nums max-md:shrink-0">
 					{speed} gen/s
 				</span>
 			</label>

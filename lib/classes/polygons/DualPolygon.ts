@@ -1,4 +1,5 @@
-import { Polygon, Vector } from "@/classes";
+import { Polygon } from "@/classes/polygons/Polygon";
+import { Vector } from "@/classes/Vector";
 import { useConfiguration } from "@/stores/configuration";
 import { toDegrees } from "@/lib/utils/geometry";
 

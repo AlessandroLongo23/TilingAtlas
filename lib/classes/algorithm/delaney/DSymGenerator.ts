@@ -310,6 +310,10 @@ export interface GenResult {
 
 export interface GenOptions {
 	maxNodes?: number; // DFS node budget; default very large
+	/** Vertex degrees allowed (default 3-6, the Euclidean regular range). */
+	m12?: number[];
+	/** Keep symbols of any curvature, not only the per-component flat ones: a hyperbolic or spherical census. */
+	anyCurvature?: boolean;
 }
 
 /**
@@ -325,7 +329,8 @@ export function generateCandidateSymbols(
 	const P = [...polygons].sort((a, b) => a - b);
 	const maxNodes = opts.maxNodes ?? 200_000_000;
 	const budget = { nodes: maxNodes };
-	const feasible = makeFeasible(k, feasibleRs(P), feasibleRs(M12_RANGE));
+	const M12 = opts.m12 ?? M12_RANGE;
+	const feasible = makeFeasible(k, feasibleRs(P), feasibleRs(M12));
 
 	let dsetsGenerated = 0;
 	let generated = 0;
@@ -346,7 +351,7 @@ export function generateCandidateSymbols(
 
 		const m01opts = r01.map((r) => P.filter((m) => m % r === 0));
 		if (m01opts.some((o) => o.length === 0)) continue;
-		const m12opts = r12.map((r) => M12_RANGE.filter((m) => m % r === 0));
+		const m12opts = r12.map((r) => M12.filter((m) => m % r === 0));
 		if (m12opts.some((o) => o.length === 0)) continue;
 
 		for (const m01a of cartesian(m01opts)) {
@@ -357,7 +362,7 @@ export function generateCandidateSymbols(
 				c12.forEach((orb, idx) => orb.forEach((c) => (m12[c] = m12a[idx])));
 				const sym = new DSymbol(s0, s1, s2, m01, m12);
 				generated += 1;
-				if (!validate(sym).ok || !perComponentFlat(sym)) continue;
+				if (!validate(sym).ok || (!opts.anyCurvature && !perComponentFlat(sym))) continue;
 				rawCanon.set(sym.canonicalKey(), sym);
 			}
 		}

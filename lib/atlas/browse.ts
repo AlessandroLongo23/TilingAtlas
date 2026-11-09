@@ -21,6 +21,7 @@ import {
 	type TileClass,
 } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { CLASSIFICATIONS } from "@/lib/classifications";
 import type { UnloadedTier } from "@/lib/services/atlasManifest";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { hypPolyBoardOfSub, hypPolyTileCodes } from "@/lib/tilings/hyp-poly";
@@ -45,12 +46,17 @@ interface PolySet {
 }
 
 /** The part of the library filter a node stands for. Applying a node replaces exactly these fields. */
-export type NodeScope = Pick<ReferenceFilter, "tileClass" | "family" | "board" | "sub" | "colorsCount" | "polySet">;
+export type NodeScope = Pick<
+	ReferenceFilter,
+	"tileClass" | "family" | "board" | "sub" | "colorsCount" | "polySet" | "classification"
+>;
 
 export interface BrowseNode {
 	id: string;
-	kind: "class" | "family" | "grid" | "sub" | "row";
+	kind: "class" | "family" | "grid" | "sub" | "row" | "classification";
 	label: string;
+	/** The row's second line, where the k range does not say what it is: a classification's author. */
+	note?: string;
 	count: number;
 	/** Of `count`, how many are in slices not loaded yet. */
 	pending: number;
@@ -278,7 +284,27 @@ export function buildBrowseTree(items: readonly CatalogueTiling[], unloaded: rea
 	return out;
 }
 
-const SCOPE_KEYS = ["tileClass", "family", "board", "sub", "colorsCount", "polySet"] as const;
+/**
+ * The cell's classifications (lib/classifications.ts): proven-complete lists drawn from the shelves above, one
+ * leaf each after the cell's classes. A leaf owns no records, so it has no slices: picking it filters the cell
+ * to its members, and the grid fetches the shards they live in. The count is the source's.
+ */
+export function classificationNodes(cell: string): BrowseNode[] {
+	return CLASSIFICATIONS.filter((c) => c.cell === cell).map((c) => ({
+		id: `x:${c.slug}`,
+		kind: "classification",
+		label: c.title,
+		note: `proved by ${c.by}`,
+		count: c.count,
+		pending: 0,
+		scope: { classification: c.slug },
+		children: [],
+		slices: [],
+		kRange: null,
+	}));
+}
+
+const SCOPE_KEYS = ["tileClass", "family", "board", "sub", "colorsCount", "polySet", "classification"] as const;
 
 /** Does a node's scope match the filter's scope fields? Exactly, except that a link naming a board (or a
  *  sub) may leave its family out: the board implies it, and links shared before the family field existed

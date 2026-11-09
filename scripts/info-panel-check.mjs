@@ -1,11 +1,11 @@
-// The info panel across the atlas: opens each record in /play, pins the panel, measures it and writes a
-// PNG of it. One record per shelf over all three geometries, so a layout change is seen on every kind of
+// The Info tab across the atlas: opens each record in the catalogue's viewer, measures the tab and writes
+// a PNG of it. One record per shelf over all three geometries, so a layout change is seen on every kind of
 // card and not only on the one being worked on.
 //
 //   node scripts/info-panel-check.mjs <outdir> <width> <height> [id ...]      BASE=http://localhost:3000
 //
-// A row is ✓ when the panel ends inside the window and nothing in it is wider than it. "scrolls" means
-// the body is taller than the room it has and scrolls inside the card, which is correct in a short window.
+// A row is ✓ when nothing in the tab is wider than it. "scrolls" means the facts are taller than the
+// window and the tab scrolls, which is correct for a long card.
 import { chromium } from "playwright";
 const [dir, W, H, ...only] = process.argv.slice(2);
 const ALL = [
@@ -53,18 +53,14 @@ const rows = [];
 for (const [id, label] of list) {
 	try {
 		await p.goto(
-			`${process.env.BASE ?? "http://localhost:3000"}/play?source=reference&tiling=${encodeURIComponent(id)}`,
+			`${process.env.BASE ?? "http://localhost:3000"}/catalogue/view?source=reference&tiling=${encodeURIComponent(id)}`,
 			{ waitUntil: "domcontentloaded" },
 		);
 		await p.waitForSelector("canvas", { timeout: 60000 });
 		await p.waitForTimeout(5500);
-		await p.getByRole("button", { name: /Pin tiling information/ }).click();
-		await p.waitForTimeout(700);
 		const m = await p.evaluate(() => {
-			const g = document.querySelector('[aria-label="Tiling information"]');
-			const panel = g && [...g.children].find((c) => c.className.includes("ta-float") && c.tagName === "DIV");
-			if (!panel) return null;
-			const scroll = panel.children[1];
+			const panel = document.querySelector('[aria-label="Tiling information"]');
+			if (!panel?.firstElementChild) return null;
 			const r = panel.getBoundingClientRect();
 			// anything inside the panel wider than the panel is a horizontal overflow
 			const wide = [...panel.querySelectorAll("*")].filter(
@@ -76,11 +72,11 @@ for (const [id, label] of list) {
 				w: Math.round(r.width),
 				h: Math.round(r.height),
 				vh: innerHeight,
-				content: scroll.scrollHeight,
-				room: scroll.clientHeight,
+				content: panel.scrollHeight,
+				room: panel.clientHeight,
 				wide,
 				sections: [...panel.querySelectorAll("h4")].map((h) => h.textContent),
-				title: panel.children[0].textContent.slice(0, 60),
+				title: panel.firstElementChild.firstElementChild?.textContent.slice(0, 60),
 			};
 		});
 		if (!m) {
@@ -88,7 +84,7 @@ for (const [id, label] of list) {
 			continue;
 		}
 		const box = await p.evaluate(() => {
-			const r = document.querySelector('[aria-label="Tiling information"] > div.ta-float').getBoundingClientRect();
+			const r = document.querySelector('[aria-label="Tiling information"]').getBoundingClientRect();
 			return { x: r.x - 6, y: r.y - 6, width: r.width + 12, height: r.height + 12 };
 		});
 		await p.screenshot({
@@ -106,7 +102,7 @@ for (const r of rows)
 	console.log(
 		r.error
 			? `✗ ${r.label}: ${r.error}`
-			: `${r.bottom <= r.vh && !r.wide ? "✓" : "✗"} ${r.label.padEnd(18)} ${String(r.h).padStart(4)}px tall, bottom ${r.bottom}/${r.vh}${r.content > r.room ? `, scrolls (${r.content} in ${r.room})` : ""}${r.wide ? `, ${r.wide} elements overflow sideways` : ""} | ${r.sections.join(" · ")}`,
+			: `${!r.wide ? "✓" : "✗"} ${r.label.padEnd(18)} ${String(r.h).padStart(4)}px tall, bottom ${r.bottom}/${r.vh}${r.content > r.room ? `, scrolls (${r.content} in ${r.room})` : ""}${r.wide ? `, ${r.wide} elements overflow sideways` : ""} | ${r.sections.join(" · ")}`,
 	);
 console.log("page errors:", errors.length, [...new Set(errors)].slice(0, 3));
 await b.close();

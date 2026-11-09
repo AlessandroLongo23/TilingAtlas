@@ -14,7 +14,7 @@
 
 import { cellSides, copyCells, copyPolygons, tileCells, type HeeschGridId, type Polyform } from "@/lib/heesch/data";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 export interface FrameShape extends Polyform {
 	cells: number;
@@ -71,10 +71,10 @@ export interface FrameSetInfo {
 
 const cache = new Map<string, Promise<unknown>>();
 function load<T>(file: string): Promise<T | null> {
-	const url = `/frames/${file}.json.gz`;
+	const url = `/frames/${file}.json.br`;
 	let p = cache.get(url) as Promise<T | null> | undefined;
 	if (!p) {
-		p = fetch(url)
+		p = fetchData(url)
 			.then((res) => (res.ok ? (shardBody(res) as Promise<T>) : null))
 			.catch(() => null);
 		cache.set(url, p);

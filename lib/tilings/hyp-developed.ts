@@ -1,10 +1,10 @@
-// The engine-developed hyperbolic catalogue (public/hyperbolic-developed.json.gz, the star tilings in
-// hyperbolic-developed-stars.json.gz): its record type and its one loader. The disk itself is drawn by
+// The engine-developed hyperbolic catalogue (public/hyperbolic-developed.json.br, the star tilings in
+// hyperbolic-developed-stars.json.br): its record type and its one loader. The disk itself is drawn by
 // the per-pixel walk (lib/render/hyperbolicPerPixelGL.ts).
 
 import type { Darts } from "@/lib/render/hyperbolicDevelopClient";
 import type { HypFamily } from "@/lib/render/hypStarFamily";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 export type { Darts } from "@/lib/render/hyperbolicDevelopClient";
 
@@ -46,10 +46,10 @@ export const isStarPatchId = (id: string) => /\d+s(?=[-_]|$)/.test(id);
 /** One patch by id. The star patches are their own shard (two thirds of the parsed bytes), fetched the
  *  first time a star tiling is opened, so no other hyperbolic view pays for them. */
 export function loadDevelopedPatch(id: string): Promise<CataloguePatch | null> {
-	const url = isStarPatchId(id) ? "/hyperbolic-developed-stars.json.gz" : "/hyperbolic-developed.json.gz";
+	const url = isStarPatchId(id) ? "/hyperbolic-developed-stars.json.br" : "/hyperbolic-developed.json.br";
 	let shard = cache.get(url);
 	if (!shard) {
-		shard = fetch(url)
+		shard = fetchData(url)
 			.then((r) => shardBody(r) as Promise<CataloguePatch[]>)
 			.then((arr) => Object.fromEntries(arr.map((p) => [p.id, p])));
 		cache.set(url, shard);

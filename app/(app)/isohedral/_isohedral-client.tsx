@@ -36,18 +36,20 @@ import { ChevronLeft, ChevronRight, Shuffle, RotateCcw } from "lucide-react";
 import type { AperiodicFrame } from "@/lib/hooks/useAperiodicView";
 import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
-import { Button } from "@/components/ui/button";
-import { InfoDot } from "@/components/ui/info-dot";
+import { Button } from "@/design-system/components/button";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { PeekTitle, showPickOnCanvas } from "@/components/dock-peek";
-import { Kbd } from "@/components/ui/kbd";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Reveal } from "@/components/ui/reveal";
+import { Kbd } from "@/design-system/components/kbd";
+import { Slider } from "@/design-system/components/slider";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { Reveal } from "@/design-system/components/reveal";
+import { SegIndicator } from "@/design-system/components/seg-indicator";
 import { TilingInfo } from "@/components/tiling-info";
 import { InversiveCanvas, MAX_VERTS_PER_PRIM } from "@/components/inversive-canvas";
 import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
 import { useImmersiveShortcuts } from "@/components/fullscreen-toggle";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -315,13 +317,22 @@ export function IsohedralClient() {
 	const edgeNotes = info.edgeShapes.map((k, i) => `${String.fromCharCode(97 + i)} · ${k}: ${EDGE_KIND_NOTE[k]}`);
 	const header = (
 		<div className="flex flex-col gap-1">
-			<h2 className="text-[15px] leading-tight font-semibold text-fg">{title}</h2>
-			<span className="truncate font-mono text-xs text-fg-muted">
+			<h2 className="text-title leading-tight font-semibold text-fg">{title}</h2>
+			<span className="truncate font-mono text-small text-fg-muted">
 				{facts}
 				{info.gs ? null : (
-					<span className="cursor-help underline decoration-dotted underline-offset-2" title={edgeNotes.join("\n")}>
-						{info.edgeShapes.join("")}
-					</span>
+					<Tooltip
+						content={edgeNotes.map((n) => (
+							<p key={n}>{n}</p>
+						))}
+					>
+						<span
+							// ds-check: keep (a dotted term that explains itself under the pointer, not a link)
+							className="cursor-help underline decoration-dotted underline-offset-2"
+						>
+							{info.edgeShapes.join("")}
+						</span>
+					</Tooltip>
 				)}
 			</span>
 		</div>
@@ -361,7 +372,7 @@ export function IsohedralClient() {
 
 	const filterRow = (label: string, values: readonly string[], value: string, onChange: (v: string) => void) => (
 		<div className="grid grid-cols-[4.5rem_1fr] items-center gap-2">
-			<span className="text-xs text-fg-muted">{label}</span>
+			<span className="text-small text-fg-muted">{label}</span>
 			<Segmented cols={5} options={values.map((f) => ({ v: f, label: f }))} value={value} onChange={onChange} />
 		</div>
 	);
@@ -444,7 +455,7 @@ export function IsohedralClient() {
 							/>
 						</div>
 					) : (
-						<p className="text-xs text-fg-muted">No type matches both filters.</p>
+						<p className="text-small text-fg-muted">No type matches both filters.</p>
 					)
 				}
 			>
@@ -475,7 +486,7 @@ export function IsohedralClient() {
 							</Section>
 						) : (
 							<Section label="Parameters · 0">
-								<p className="text-xs text-fg-muted">
+								<p className="text-small text-fg-muted">
 									Fixed. This type constrains its vertices completely, so the tile has no freedom beyond its edges.
 								</p>
 							</Section>
@@ -489,11 +500,7 @@ export function IsohedralClient() {
 									key={i}
 									id={`ih-edge-${i}`}
 									label={`${String.fromCharCode(97 + i)} · ${kind}`}
-									hint={
-										<span className="text-[10px] whitespace-nowrap text-fg-muted max-md:text-xs">
-											{EDGE_KIND_NOTE[kind]}
-										</span>
-									}
+									hint={<span className="text-micro whitespace-nowrap text-fg-muted">{EDGE_KIND_NOTE[kind]}</span>}
 									// Scales the edge's shape; it does not replace it. So this round-trips after
 									// Randomize, which is the whole reason edge state is a template plus an
 									// amplitude — see EdgeShapeState.
@@ -506,21 +513,23 @@ export function IsohedralClient() {
 									format={(v) => (kind === "I" ? "straight" : v.toFixed(2))}
 								/>
 							))}
+							{/* Two actions, not a choice: no option is ever selected, so only the hover pill shows. */}
 							<div className="ta-seg grid grid-cols-2">
+								<SegIndicator />
 								<button
 									type="button"
 									onClick={() => setEdges(randomEdgeStates(info.edgeShapes))}
-									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-inset"
+									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-small text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-inset"
 								>
-									<Shuffle size={12} />
+									<Shuffle className="size-icon-xs" />
 									Randomize
 								</button>
 								<button
 									type="button"
 									onClick={resetShape}
-									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-inset"
+									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-small text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-inset"
 								>
-									<RotateCcw size={12} />
+									<RotateCcw className="size-icon-xs" />
 									Reset
 								</button>
 							</div>
@@ -536,7 +545,7 @@ export function IsohedralClient() {
 						id="ih-rotation"
 						label="Rotation"
 						hint={
-							<span className="inline-flex items-center gap-1 text-[10px] whitespace-nowrap text-fg-muted max-md:text-xs">
+							<span className="inline-flex items-center gap-1 text-micro whitespace-nowrap text-fg-muted">
 								<Kbd>Shift</Kbd>
 								<span className="max-md:hidden">+ scroll</span>
 								<span className="md:hidden">Twist two fingers</span>
@@ -570,7 +579,7 @@ export function IsohedralClient() {
 						onCheckedChange={(v) => setLens(v)}
 					/>
 					<Reveal show={lens}>
-						<div className="pl-7">
+						<div className="pl-indent">
 							<InversiveControls />
 						</div>
 					</Reveal>
@@ -628,7 +637,7 @@ function MarkedControls({
 	return (
 		<>
 			<Section label="Incidence symbol">
-				<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+				<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-small">
 					<dt className="text-fg-muted">Laves net</dt>
 					<dd className="font-mono text-fg-secondary">{gs.laves}</dd>
 					<dt className="text-fg-muted">Tile symbol</dt>
@@ -644,25 +653,25 @@ function MarkedControls({
 					<dt className="text-fg-muted">Aspects</dt>
 					<dd className="font-mono text-fg-secondary tabular-nums">{info.numAspects}</dd>
 				</dl>
-				<p className="text-[10px] leading-relaxed text-fg-disabled max-md:text-xs max-md:text-fg-muted">
+				<p className="text-micro leading-relaxed text-fg-muted">
 					Grünbaum &amp; Shephard 1977, Table 1, columns (2) to (5) and (8). The tile group order, the aspect count and
 					the group are recomputed from the drawn geometry and checked against the table before this page builds.
 				</p>
 			</Section>
 
 			<Section label="Marks">
-				<p className="text-xs leading-relaxed text-fg-secondary">
+				<p className="text-small leading-relaxed text-fg-secondary">
 					{marks === 1
 						? "One mark per tile. This is one of only three types whose induced tile group is trivial, so a single asymmetric motif is the whole decoration."
 						: `${marks} marks per tile, one for each element of ${gs.tileGroup}. The mark itself is asymmetric; the rosette is its orbit under the tile group, and that orbit is what has exactly the symmetry the incidence symbol asks for.`}
 				</p>
-				<p className="text-xs leading-relaxed text-fg-secondary">
+				<p className="text-small leading-relaxed text-fg-secondary">
 					The mark is flat ink, and it carries both facts in its shape: which way it points is the rotation, which way
 					it is handed is the reflection. Colour is left to the tile tints, which already separate the aspects — and an
 					aspect is an orientation class, so tinting the marks too would say the same thing twice in a channel that
 					greyscale and colour blindness lose.
 				</p>
-				<p className="text-[10px] leading-relaxed text-fg-disabled max-md:text-xs max-md:text-fg-muted">
+				<p className="text-micro leading-relaxed text-fg-muted">
 					{MARKED_REASON} — Craig Kaplan
 				</p>
 			</Section>
@@ -680,7 +689,7 @@ function MarkedControls({
 						format={(v) => v.toFixed(3)}
 					/>
 				) : (
-					<p className="text-xs text-fg-muted">
+					<p className="text-small text-fg-muted">
 						Rigid. Every edge is on a mirror, which fixes the tile up to similarity; only the rectangles keep a free
 						ratio.
 					</p>

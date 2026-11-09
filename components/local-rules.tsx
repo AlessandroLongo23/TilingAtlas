@@ -326,10 +326,10 @@ function RulePanel({ rule }: { rule: (typeof RULES)[number] }) {
 			<figcaption className="text-center text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg">
 				{rule.title}
 			</figcaption>
-			<div ref={host} className="bg-surface-base relative aspect-[5/4] w-full rounded-xl border border-line">
+			<div ref={host} className="ta-well relative aspect-[5/4] w-full">
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
-			<div className="text-center text-[clamp(0.56rem,0.78vh+0.15vw,0.76rem)] leading-snug text-fg-muted">
+			<div className="text-center text-[clamp(0.56rem,0.78vh+0.15vw,0.76rem)] leading-tight text-fg-muted">
 				{rule.note}
 			</div>
 		</figure>

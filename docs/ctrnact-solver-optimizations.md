@@ -687,7 +687,7 @@ Studied his rewrite of the same search (epsln/k-uniform-enumeration) and ported 
 | 16 | covering test by congruence closure (`congruence.hpp`) | on | leaf test 2x cheaper |
 | 17 | canonical refinement in simplify, leaf dedup by its hash | on | k<=8: 14,849 -> 5,569 blocks written |
 | 18 | pruner minimality via `congruence.hpp` | on | pruner 9.51 -> 3.70 s at k<=13 |
-| 19 | transposition table over isomorphism classes (`EU_TT_MB`) | off | k<=12: 2.24M -> 1.39M nodes |
+| 19 | transposition table over isomorphism classes (`EU_TT_MB`) | removed, see fix 21 | k<=12: 2.24M -> 1.39M nodes |
 | 20 | dynamic split + shared tables (`EU_FORK` + `EU_SPLIT`) | off | k<=15 on 6 workers: 58.7 s vs his 81.2 s |
 
 Together, k<=12 single core: 30.5 s -> 13.1 s (his: 24.0 s). Fixes 19 and 20 are off because they move
@@ -702,3 +702,32 @@ kill half can never fire here, since a free dart's mirror always holds the partn
 bound per key pair (vacuous for the same reason: every vertex type carries as many K darts as f(K) darts);
 insertion sort for small cells in the refinement (no measurable gain); TT probe margins 1 and 2 (16.8 s and
 14.2 s against 13.1 s at margin 3; 4 and 5 are flat).
+
+---
+
+## Fix 21: orderly generation (`EU_ORDERLY=1`, 2026-11-06)
+
+Every closed configuration, minimal or covering, is built exactly once, from its canonical root: the root
+whose replayed code (the search's own branch moves, read off the configuration) is least. A node is pruned as
+soon as another root of the minimal type has a smaller code at a position both have determined. Narrative in
+`DEVELOPMENT_NOTES.md` ("Orderly generation"), tables in `experiments/results/orderly-generation-2026-11-06.md`.
+
+| palette, one core | nodes | instructions | set |
+|---|---|---|---|
+| regular k<=12 | 2,236,853 -> 682,032 | 2.81x fewer | same (97,648) |
+| domino k<=4 | 263,703 -> 74,021 | 2.57x | same |
+| star24full k<=5 | 4,461,492 -> 2,047,216 | 1.70x | same |
+| ring18 k<=3 / star24full k<=3 | | 1.14x / 1.20x | same |
+| trihex k<=3 / tetromino k<=2 | | 1.03x / 1.09x | same |
+| bubble-sq k<=2 / composite-convex k<=2 / isotox-cmp8-2 k<=1 | | 0.91x / 0.91x / 0.77x | same |
+
+"Same" = the default and orderly raw outputs pruned together keep exactly the count of either alone. The gain
+grows with k (regular node ratio 2.05x at k<=8, 3.28x at k<=12); at k<=2 on large alphabets there are few
+repeats to remove and the replays cost up to 23%. Off by default because it writes a different labelled copy
+of each tiling, which moves ctrnact-* serials. It replaces fix 19: better wherever either helps, and the
+transposition table merges nodes regardless of root, so the two cannot be combined.
+
+**Measured and rejected (do not retry):** a bound at the stall (prune when every move the stalled dart could
+still make is smaller): 9% fewer nodes and no time under the first move order, nothing under the adopted one.
+Move order: five measured, all exact; fresh vertex before placed dart and higher types first is 20% fewer nodes
+than the reverse.

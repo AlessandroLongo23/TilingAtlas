@@ -1,11 +1,13 @@
 // The top of a run's page: how many tilings, how far the search got, and how they spread over k. One short
 // band: the total and the roots, the counts per k as columns, and the facts the run has (a fact it lacks is
 // left out, never shown as a dash).
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { AnimatedNumber } from "@/components/ui/animated-number";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Tooltip } from "@/components/ui/tooltip";
+import { useMemo, type ReactNode } from "react";
+import { Button } from "@/design-system/components/button";
+import { AnimatedNumber } from "@/design-system/components/animated-number";
+import { Field } from "@/design-system/components/field";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { ColumnChart, type Column } from "@/design-system/components/column-chart";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { tileFill } from "@/lib/render/tilePalette";
 import { cn } from "@/lib/utils/cn";
 import { polygonHue } from "@/lib/utils/renderTiling";
@@ -19,9 +21,8 @@ import { approx, bytes, duration, estimatedTotal, RULE_NAME, when } from "./runs
 const n = (x: number) => x.toLocaleString("en");
 export const percent = (x: number) =>
 	x >= 0.995 ? "99%" : x < 0.01 ? `${+(x * 100).toFixed(1)}%` : `${Math.round(x * 100)}%`;
-const compact = (x: number) => (x < 1e4 ? n(x) : x < 1e6 ? `${+(x / 1e3).toFixed(1)}K` : `${+(x / 1e6).toFixed(1)}M`);
 
-export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; onPick: (k: number) => void }) {
+export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; onPick: (k: number | "all") => void }) {
 	const live = run.state === "running";
 	const est = run.estimate && run.state !== "finished" ? run.estimate : null;
 	const ks = Array.from({ length: Math.max(0, run.kmax - run.kmin + 1) }, (_, i) => run.kmin + i);
@@ -67,16 +68,15 @@ export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; on
 	// One band, short enough that the tilings below fit on the first screen: the total and the roots, the
 	// counts per k, and the facts in two columns. On a narrow window the three stack.
 	return (
-		<section className="grid shrink-0 grid-cols-[minmax(200px,260px)_minmax(0,1fr)_minmax(240px,320px)] overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm max-xl:grid-cols-[minmax(200px,260px)_minmax(0,1fr)]">
+		<section className="ta-card grid shrink-0 grid-cols-[minmax(200px,260px)_minmax(0,1fr)_minmax(240px,320px)] overflow-hidden shadow-raised max-xl:grid-cols-[minmax(200px,260px)_minmax(0,1fr)]">
 			<div className="flex flex-col justify-between gap-3 border-r border-line-subtle p-4">
-				<div>
-					<div className="ta-label">Tilings</div>
+				<Field label="Tilings">
 					<AnimatedNumber
 						value={total}
-						className="mt-1.5 block text-[32px] leading-none font-semibold tracking-[-0.02em] text-fg"
+						className="block text-display leading-none font-semibold tracking-tight text-fg"
 					/>
 					{/* one line, never two: a wrap here would change the band's height mid-run and resize everything below */}
-					<div className="mt-1.5 flex h-5 items-center gap-1 text-sm whitespace-nowrap text-fg-secondary">
+					<div className="flex h-5 items-center gap-1 text-body whitespace-nowrap text-fg-secondary">
 						{expected ? (
 							<>
 								<span className="min-w-0 truncate">of {approx(expected)} expected</span>
@@ -92,31 +92,38 @@ export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; on
 							<>{ks.length === 1 ? `k = ${run.kmin}` : `k = ${run.kmin} to ${run.kmax}`}</>
 						)}
 					</div>
-				</div>
+				</Field>
 				{/* room for the tallest state (patch, caption, work bar), so the band keeps its height as a run goes */}
 				<div className="flex min-h-[116px] flex-col justify-end">
 					<Roots run={run} />
 				</div>
 			</div>
 			<KChart run={run} ks={ks} selected={k} onPick={onPick} folded={folded?.perK} />
-			{/* equal columns, so a live value growing a digit never shifts the facts after it */}
-			<dl className="grid grid-cols-2 content-start gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
-				{facts.map((f) => (
-					<div key={f.label} className="min-w-0">
-						<dt className="ta-label">{f.label}</dt>
-						<dd className="mt-1 truncate text-sm font-medium text-fg tabular-nums" title={f.sub}>
-							{f.value}
-							{f.sub ? <span className="ml-1.5 text-xs font-normal text-fg-muted">{f.sub}</span> : null}
-						</dd>
-					</div>
-				))}
-				{run.state === "finished" ? <Families run={run} /> : null}
-			</dl>
+			<Facts facts={facts}>{run.state === "finished" ? <Families run={run} /> : null}</Facts>
 		</section>
 	);
 }
 
-type Fact = { label: string; value: string; sub?: string };
+export type Fact = { label: string; value: string; sub?: string; title?: string };
+
+/** A band's facts, a label over each value and its note muted after it: a run's, a study's, a find run's. Equal
+ *  columns, so a live value growing a digit never shifts the facts after it. */
+export function Facts({ facts, children }: { facts: Fact[]; children?: ReactNode }) {
+	return (
+		<dl className="grid grid-cols-2 content-start gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
+			{facts.map((f) => (
+				<div key={f.label} className="min-w-0">
+					<dt className="ta-label">{f.label}</dt>
+					<dd className="mt-1 truncate text-body font-medium text-fg tabular-nums" title={f.title ?? f.sub}>
+						{f.value}
+						{f.sub ? <span className="ml-1.5 text-small font-normal text-fg-muted">{f.sub}</span> : null}
+					</dd>
+				</div>
+			))}
+			{children}
+		</dl>
+	);
+}
 
 /**
  * The run with each star family shown once (families.ts, fold.ts): on request, since it reads every
@@ -141,12 +148,12 @@ function Families({ run }: { run: Run }) {
 					for k = 1 to 4, the atlas&rsquo;s own counts.
 				</InfoDot>
 			</dt>
-			<dd className="mt-1 text-sm font-medium text-fg">
+			<dd className="mt-1 text-body font-medium text-fg">
 				{v ? (
 					<Tooltip label={rows.map(([k, r]) => `k = ${k}: ${n(r.tilings)} → ${n(r.folded)}`).join(" · ")}>
 						<span>
 							{n(v.families)}
-							<span className="ml-1.5 text-xs font-normal text-fg-muted">
+							<span className="ml-1.5 text-small font-normal text-fg-muted">
 								{v.families ? "shown once each" : "no family has two members"}
 								{v.unread ? ` · ${n(v.unread)} unread` : ""}
 								{v.pinnedGroups ? ` · ${n(v.pinnedGroups)} groups do not flex` : ""}
@@ -154,7 +161,7 @@ function Families({ run }: { run: Run }) {
 						</span>
 					</Tooltip>
 				) : fold && "all" in fold ? (
-					<span className="text-xs font-normal text-fg-muted tabular-nums">
+					<span className="text-small font-normal text-fg-muted tabular-nums">
 						Folding {n(fold.done)} of {n(fold.all)}
 					</span>
 				) : (
@@ -198,7 +205,7 @@ const STAGES: Record<string, string> = {
 	rank: "Ordering roots",
 	find: "Stepping stones",
 };
-const LINE = "flex h-5 items-center gap-1.5 text-xs whitespace-nowrap text-fg-secondary";
+const LINE = "flex h-5 items-center gap-1.5 text-small whitespace-nowrap text-fg-secondary";
 
 /** Before the first root: what the engine is preparing, with its count when it has one. */
 function Stage({ stage }: { stage: NonNullable<Run["stage"]> }) {
@@ -207,7 +214,7 @@ function Stage({ stage }: { stage: NonNullable<Run["stage"]> }) {
 			<div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
 				<div
 					className={cn(
-						"h-full rounded-full bg-accent transition-[width] duration-500",
+						"h-full rounded-full bg-accent transition-[width] motion-settle",
 						!stage.all && "w-1/3 animate-pulse",
 					)}
 					style={stage.all ? { width: `${(stage.done / stage.all) * 100}%` } : undefined}
@@ -280,7 +287,7 @@ function Roots({ run }: { run: Run }) {
 				<div className="space-y-1.5">
 					<div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
 						<div
-							className="h-full rounded-full bg-accent transition-[width] duration-500"
+							className="h-full rounded-full bg-accent transition-[width] motion-settle"
 							style={{ width: `${work.share * 100}%` }}
 						/>
 					</div>
@@ -309,7 +316,7 @@ function Roots({ run }: { run: Run }) {
 				{all ? (
 					<div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
 						<div
-							className="h-full rounded-full bg-accent transition-[width] duration-500"
+							className="h-full rounded-full bg-accent transition-[width] motion-settle"
 							style={{ width: `${(done / all) * 100}%` }}
 						/>
 					</div>
@@ -341,7 +348,7 @@ function Roots({ run }: { run: Run }) {
 							strokeWidth={0.06}
 							strokeLinejoin="round"
 							className={cn(
-								"transition-[fill,stroke] duration-500",
+								"transition-[fill,stroke] motion-settle",
 								state === "now" && "animate-pulse fill-accent",
 								state === "todo" && "fill-transparent stroke-line",
 							)}
@@ -361,14 +368,10 @@ function Roots({ run }: { run: Run }) {
 
 // ── counts per k ──
 
-const PLOT = 112; // px: the columns' room, the tallest one's label included
-const HEAD = 18; // px of it kept above the tallest column for its label
-
 /**
- * Tilings per k as columns on a log scale: counts grow about twofold per k, so on a linear one every k
- * but the last few is a sliver. Gridlines at the powers of ten carry the scale; each column's value sits
- * on its cap. While an estimate stands, a pale column behind each count is its expected total. The k the
- * browser below shows is the accent column, and clicking a column opens that k there.
+ * Tilings per k as columns (ColumnChart). While an estimate stands, a pale column behind each count is its
+ * expected total. The k the browser below shows is the accent column, and clicking a column opens that k there;
+ * clicking the accent column again opens every k at once (the browser has no k picker of its own).
  */
 export function KChart({
 	run,
@@ -381,149 +384,42 @@ export function KChart({
 	run: Run;
 	ks: number[];
 	selected: number | null;
-	onPick: (k: number) => void;
+	/** A column clicked: its k, or "all" when it was the picked one. */
+	onPick: (k: number | "all") => void;
 	/** Per k, the count with each family once, when the run has been folded. */
 	folded?: Map<number, { tilings: number; folded: number }>;
 	/** The highest k whose count is final (a study's whole board): the columns past it are pale, so far. */
 	complete?: number;
 }) {
 	const est = run.estimate && run.state !== "finished" ? run.estimate : null;
-	const rows = ks.map((k) => {
+	const columns = ks.map((k): Column => {
 		const found = folded?.get(k)?.folded ?? run.counts[k];
 		const e = est ? estimatedTotal(est, k) : null;
-		return { k, found, e, files: run.files.some((f) => f.k === k), part: complete !== undefined && k > complete };
+		const part = complete !== undefined && k > complete;
+		const all = run.counts[k];
+		return {
+			x: k,
+			count: found,
+			behind: e?.[0],
+			part,
+			disabled: !run.files.some((f) => f.k === k),
+			tip: `k = ${k}: ${found === undefined ? "none yet" : `${n(found)} tiling${found === 1 ? "" : "s"}`}${part ? " so far, not every row searched to here" : ""}${folded && all !== found ? ` with each family once, of ${n(all)}` : ""}${e ? `, ${approx(e)} expected` : ""}${k === selected ? ". Click again for every k" : ""}`,
+		};
 	});
-	const top = Math.max(10, ...rows.map((r) => Math.max(r.found ?? 0, r.e?.[0] ?? 0)));
-	const L = Math.log10(1 + top);
-	const y = (v: number) => (v > 0 ? Math.max(2, (Math.log10(1 + v) / L) * (PLOT - HEAD)) : 0);
-	const ticks = Array.from({ length: Math.floor(Math.log10(top)) }, (_, i) => 10 ** (i + 1));
-	const full = ks.length <= 12;
-	// many k: label the axis every `step` k so the labels never touch, and print a count only where it fits
-	const plot = useRef<HTMLDivElement>(null);
-	const [width, setWidth] = useState(0);
-	useEffect(() => {
-		const el = plot.current;
-		if (!el) return;
-		const ro = new ResizeObserver(() => setWidth(el.clientWidth));
-		ro.observe(el);
-		return () => ro.disconnect();
-	}, []);
-	const col = width ? width / rows.length : Infinity;
-	const CHAR = 7; // px per character at 11px mono, with a little air
-	const kw = String(ks[ks.length - 1] ?? 1).length * CHAR + 6;
-	const step = [1, 2, 5, 10, 20, 50, 100].find((s) => s * col >= kw) ?? 100;
-	// the selected k is always labelled, so the ticks too close to it give way
-	const tick = (k: number) =>
-		k === selected || (k % step === 0 && (selected === null || Math.abs(k - selected) * col >= kw));
-	// columns grow from the rail once, when the panel first shows
-	const [grown, setGrown] = useState(false);
-	useEffect(() => {
-		const f = requestAnimationFrame(() => setGrown(true));
-		return () => cancelAnimationFrame(f);
-	}, []);
-
 	return (
 		<div className="flex min-w-0 flex-col justify-between gap-2 p-4">
 			<div className="flex items-baseline justify-between gap-3">
 				<span className="ta-label">Tilings per k{folded ? ", each family once" : ""}</span>
-				<span className="font-mono text-[11px] text-fg-muted">
-					{est || rows.some((r) => r.part && r.found) ? (
+				<span className="font-mono text-caption text-fg-muted">
+					{est || columns.some((c) => c.part && c.count) ? (
 						<span className="mr-3 inline-flex items-center gap-1.5">
-							<span className="h-2 w-2 rounded-[2px] bg-fg/10" /> {est ? "expected" : "incomplete"}
+							<span className="h-2 w-2 rounded-mark bg-fg/10" /> {est ? "expected" : "incomplete"}
 						</span>
 					) : null}
 					log scale
 				</span>
 			</div>
-			<div className="grid grid-cols-[2.25rem_minmax(0,1fr)]">
-				<div className="relative" style={{ height: PLOT }}>
-					{ticks.map((t) => (
-						<span
-							key={t}
-							className="absolute right-2 translate-y-1/2 font-mono text-[10px] text-fg-muted tabular-nums"
-							style={{ bottom: y(t) }}
-						>
-							{compact(t)}
-						</span>
-					))}
-				</div>
-				{/* the rail is the zero line and the k axis at once */}
-				<div className="relative border-b border-line" style={{ height: PLOT }}>
-					{ticks.map((t) => (
-						<div key={t} className="absolute inset-x-0 border-t border-line-subtle/70" style={{ bottom: y(t) }} />
-					))}
-					<div ref={plot} className="absolute inset-0 flex">
-						{rows.map((r, i) => {
-							const on = r.k === selected;
-							const text = r.found === undefined ? "" : full ? n(r.found) : compact(r.found);
-							const label = on || text.length * CHAR <= col ? text : "";
-							const all = run.counts[r.k];
-							const tip = `k = ${r.k}: ${r.found === undefined ? "none yet" : `${n(r.found)} tiling${r.found === 1 ? "" : "s"}`}${r.part ? " so far, not every row searched to here" : ""}${folded && all !== r.found ? ` with each family once, of ${n(all)}` : ""}${r.e ? `, ${approx(r.e)} expected` : ""}`;
-							return (
-								<Tooltip key={r.k} label={tip} delay={120}>
-									<button
-										type="button"
-										disabled={!r.files}
-										onClick={() => onPick(r.k)}
-										aria-label={tip}
-										aria-pressed={on}
-										className="group relative h-full min-w-0 flex-1 cursor-pointer outline-none disabled:cursor-default"
-									>
-										{r.e ? (
-											<span
-												className="absolute bottom-0 left-1/2 w-[min(24px,62%)] -translate-x-1/2 rounded-t-[4px] bg-fg/10 transition-[height] duration-700 ease-[var(--ease-out-strong)]"
-												style={{ height: grown ? y(r.e[0]) : 0, transitionDelay: `${i * 25}ms` }}
-											/>
-										) : null}
-										<span
-											className={cn(
-												"absolute bottom-0 left-1/2 w-[min(24px,62%)] -translate-x-1/2 rounded-t-[4px] transition-[height,background-color] duration-700 ease-[var(--ease-out-strong)]",
-												on
-													? "bg-accent"
-													: r.part
-														? "bg-fg/10 group-hover:bg-fg/25 group-focus-visible:bg-fg/25"
-														: "bg-fg/30 group-hover:bg-fg/50 group-focus-visible:bg-fg/50",
-											)}
-											style={{ height: grown ? y(r.found ?? 0) : 0, transitionDelay: `${i * 25}ms` }}
-										/>
-										<span
-											className={cn(
-												"absolute left-1/2 -translate-x-1/2 font-mono text-[11px] whitespace-nowrap tabular-nums transition-[bottom,opacity] duration-700 ease-[var(--ease-out-strong)]",
-												on ? "font-medium text-fg" : "text-fg-secondary",
-												grown ? "opacity-100" : "opacity-0",
-											)}
-											style={{
-												bottom: (grown ? y(Math.max(r.found ?? 0, r.e?.[0] ?? 0)) : 0) + 5,
-												transitionDelay: `${i * 25}ms`,
-											}}
-										>
-											{label}
-										</span>
-										<span className="absolute inset-x-1 inset-y-0 rounded-md ring-accent/50 group-focus-visible:ring-2" />
-									</button>
-								</Tooltip>
-							);
-						})}
-					</div>
-				</div>
-				<span className="pt-2 pr-2 text-right font-mono text-[11px] text-fg-muted">k</span>
-				<div className="flex h-6 pt-2">
-					{rows.map((r) => (
-						<span key={r.k} className="relative min-w-0 flex-1">
-							{tick(r.k) ? (
-								<span
-									className={cn(
-										"absolute left-1/2 -translate-x-1/2 font-mono text-[11px] tabular-nums",
-										r.k === selected ? "font-medium text-fg" : "text-fg-muted",
-									)}
-								>
-									{r.k}
-								</span>
-							) : null}
-						</span>
-					))}
-				</div>
-			</div>
+			<ColumnChart columns={columns} selected={selected} onPick={(k) => onPick(k === selected ? "all" : k)} axis="k" />
 		</div>
 	);
 }

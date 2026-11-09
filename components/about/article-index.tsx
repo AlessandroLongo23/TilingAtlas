@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils/cn";
 
 const entry = (on: boolean) =>
 	cn(
-		"-ml-px block border-l py-1.5 pl-3.5 text-[13px] leading-snug transition-colors",
+		"-ml-px block border-l py-1.5 pl-3.5 text-ui leading-tight transition-colors",
 		on ? "border-fg font-medium text-fg" : "border-transparent text-fg-muted hover:text-fg",
 	);
 
@@ -89,7 +89,7 @@ export function ArticleIndex({
 								href={articleHref(section, a)}
 								aria-current={a === article ? "page" : undefined}
 								className={cn(
-									"block py-1 text-[13px] leading-snug transition-colors",
+									"block py-1 text-ui leading-tight transition-colors",
 									a === article ? "font-medium text-fg" : "text-fg-muted hover:text-fg",
 								)}
 							>
@@ -110,9 +110,9 @@ export function ArticleIndex({
 export function ArticleSiblings({ section, article }: { section: AboutSection; article: AboutArticle }) {
 	if (section.articles.length < 2) return null;
 	return (
-		<nav aria-label={`About ${section.topic}`} className="not-prose mb-8 max-md:pr-14 @7xl:hidden">
+		<nav aria-label={`About ${section.topic}`} className="not-prose mb-8 max-md:pr-corner @7xl:hidden">
 			<p className="ta-label mb-2 text-fg-muted">About {section.topic}</p>
-			<ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] max-md:text-sm">
+			<ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-ui max-md:text-body">
 				{section.articles.map((a) => (
 					<li key={a.slug}>
 						<Link

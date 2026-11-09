@@ -18,7 +18,7 @@ const SHELF = path.join(process.cwd(), "public", "squarings", "torus");
 
 const records = (): TorusRecord[] =>
 	readdirSync(SHELF)
-		.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("index."))
+		.filter((f) => /\.json(\.br)?$/.test(f) && !f.startsWith("index."))
 		.map((f) => JSON.parse(readDataText(path.join(SHELF, f))) as TorusRecord);
 
 const index = (): TorusIndex => JSON.parse(readDataText(path.join(SHELF, "index.json"))) as TorusIndex;

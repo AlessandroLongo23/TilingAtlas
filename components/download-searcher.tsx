@@ -2,8 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Button } from "@/design-system/components/button";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { AppleIcon, WindowsIcon } from "@/components/icons/os";
 import { downloadPage, OS_NAME, releasePage, type Os } from "@/lib/downloads";
 
@@ -27,8 +27,8 @@ const FOR: Record<Os, string> = { mac: "macOS (Apple silicon)", windows: "Window
 
 /**
  * The Tiling Searcher's download, for the visitor's OS. `nav`: a compact button for the header's right corner,
- * shown only where there is an installer to give. `hero`: the landing page's button, with a line naming
- * the platform and a link to the others.
+ * shown only where there is an installer to give. `hero`: the landing page's button, beside "Start exploring" in
+ * its row, and under the row a line naming the platform with a link to the others.
  */
 export function DownloadSearcher({ variant }: { variant: "nav" | "hero" }) {
 	const os = useOs();
@@ -38,37 +38,42 @@ export function DownloadSearcher({ variant }: { variant: "nav" | "hero" }) {
 	if (variant === "nav") {
 		if (!os || !url) return null;
 		return (
-			<Tooltip label={`Download the Tiling Searcher for ${FOR[os]}`} side="left" delay={0}>
+			<Tooltip label={`Download the Tiling Searcher for ${FOR[os]}`} side="left" delay="instant">
 				<Button
 					href={url}
+					// The page only starts a download: prefetching it bought nothing and cost every page seven requests.
+					prefetch={false}
 					variant="secondary"
 					size="sm"
 					icon={ICON[os]}
-					// the name only where the section links leave room for it; the icon and tooltip otherwise
+					// the name only where the section links leave room for it; the icon and tooltip otherwise.
+					// ds-check: keep (1380px is where the nav measured room for the name, between xl and 2xl)
 					label={<span className="sr-only min-[1380px]:not-sr-only">The Tiling Searcher</span>}
-					classes="mr-1.5"
+					className="mr-1.5"
 				/>
 			</Tooltip>
 		);
 	}
 
+	// A fragment: the button joins the hero's row of actions, and the line takes a row of its own under them.
 	return (
-		<div className="flex flex-col gap-2">
+		<>
 			<Button
 				href={url ?? releasePage}
+				prefetch={false}
 				variant="secondary"
 				size="md"
 				icon={os && url ? ICON[os] : Download}
 				label={os && url ? `Download the Tiling Searcher for ${OS_NAME[os]}` : "Download the Tiling Searcher"}
-				classes="w-fit max-md:w-full"
+				className="max-md:w-full"
 			/>
-			<p className="max-w-md text-[13px] leading-snug text-fg-muted">
+			<p className="max-w-md basis-full text-ui leading-tight text-fg-muted">
 				Run your own searches: pick the tiles, choose k, and the desktop app finds every tiling.{" "}
 				{os && url ? `For ${FOR[os]}. ` : "For macOS and Windows. "}
-				<a href={releasePage} className="text-fg-secondary underline-offset-2 hover:text-fg hover:underline">
+				<a href={releasePage} className="ta-link-quiet">
 					All platforms
 				</a>
 			</p>
-		</div>
+		</>
 	);
 }

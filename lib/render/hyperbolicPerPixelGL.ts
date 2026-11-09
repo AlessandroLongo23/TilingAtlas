@@ -5,7 +5,13 @@
 // sampled, so a stroke is as sharp at the rim as at the centre. The Islamic construction is the one
 // thing sampled: a small layer per polygon size, read in the tile's own frame (hyperbolicIslamic.ts).
 
-import { depthShadeK, EDGE_PATTERN_HUE, EDGE_SCALE, su11ApplyInverse, su11Mul, type Su11 } from "@/lib/render/hyperbolic";
+import {
+	depthShadeK,
+	EDGE_SCALE,
+	su11ApplyInverse,
+	su11Mul,
+	type Su11,
+} from "@/lib/render/hyperbolic";
 import { STRAP_RANGE } from "@/lib/render/hyperbolicIslamic";
 import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
 import { chartFrame, ISLAMIC_MARGIN, toHalf, WALK_APEIROGON, type WalkTiling } from "@/lib/render/hyperbolicWalk";
@@ -77,6 +83,18 @@ ${TILE_PALETTE_GLSL}
 
 // sinh of the signed distance from w past the geodesic of outward hyperboloid normal n (≤ 0 inside)
 float past(vec3 n, vec2 w) { float r2 = dot(w, w); return (2.0 * dot(n.xy, w) - n.z * (1.0 + r2)) / (1.0 - r2); }
+// a disk point in the Klein model, where geodesics are straight
+vec2 kleinOf(vec2 p) { return 2.0 * p / (1.0 + dot(p, p)); }
+// the distance from w to the side a → b of a face that is no convex polygon (n its geodesic, as past takes it):
+// to the geodesic when the foot lands between a and b, else to the nearer end. With a moved to the origin the
+// angle at a is plain to see, and an obtuse one puts the foot past a.
+vec2 toOrigin(vec2 a, vec2 z) { return cdiv(z - a, vec2(1.0, 0.0) - cmul(cconj(a), z)); }
+float hdist(vec2 p, vec2 q) { vec2 d = p - q; return acosh(1.0 + 2.0 * dot(d, d) / max((1.0 - dot(p, p)) * (1.0 - dot(q, q)), 1e-12)); }
+float segDist(vec2 a, vec2 b, vec3 n, vec2 w) {
+	if (dot(toOrigin(a, b), toOrigin(a, w)) < 0.0) return hdist(a, w);
+	if (dot(toOrigin(b, a), toOrigin(b, w)) < 0.0) return hdist(b, w);
+	return asinh(abs(past(n, w)));
+}
 // the same for side k of an apeirogon, in the half-plane where its vertices are i + k·st
 float pastHoro(vec2 z, float k, float st) {
 	float R = sqrt(st * st * 0.25 + 1.0);
@@ -136,8 +154,8 @@ void main() {
 	vec2 va = uView.xy, vb = uView.zw;
 	vec2 w = su11(cconj(va), -vb, z); // inverse view: a -> conj(a), b -> -b
 
-	// What the walk hands to the colouring below. tileKey is the corner count on a plain tiling and the
-	// colour index on a colouring; hypD and hypS are hyperbolic distances to the nearest drawn and
+	// What the walk hands to the colouring below. tileKey is a plain tile's hue as a place on the polygon
+	// ramp (its corner count when regular) and the colour index on a colouring; hypD and hypS are hyperbolic distances to the nearest drawn and
 	// undrawn edge; (ma, mb) is the isometry from the frame the walk ended in back to the anchor's.
 	float tileKey = 0.0, hypD = 1e3, hypS = 1e3;
 	vec2 edgeG = vec2(0.0); // materials: the outward gradient of the nearest drawn side's distance, w frame
@@ -157,6 +175,9 @@ void main() {
 	// the chart of the frame it came in by: the side it crossed, or the anchor's (hyperbolicWalk.ts)
 	vec2 chartIn = uAnchorChart;
 	vec2 hz = texelFetch(uWalk, ivec2(0, f), 0).x == 1.0 ? toChart(chartIn, w) : vec2(0.0, 1.0);
+	// a straight walk through faces of kind 4 (hyperbolicWalk.ts WALK_POLYGON): where it came in, and where it leaves
+	bool haveEntry = false;
+	vec2 entry = vec2(0.0), leave = vec2(0.0);
 	for (int it = 0; it < 96; it++) {
 		hd = texelFetch(uWalk, ivec2(0, f), 0);
 		int S = int(hd.y);
@@ -181,6 +202,46 @@ void main() {
 				if (d1 * d2 >= 0.0 && abs(d1) <= abs(d2)) { j = i; break; }
 			}
 			s = past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w);
+		} else if (hd.x == 4.0) {
+			// along the chord from where the walk came in (else the frame's centre, inside the face) to w, the
+			// first side met is the one to cross; none means w is in the face (hyperbolicWalk.ts locate)
+			vec2 p = haveEntry ? kleinOf(entry) : vec2(0.0);
+			vec2 k = kleinOf(w) - p;
+			float first = 2.0;
+			j = -1;
+			// which side of the chord's line each corner is on, worked out once per corner: a side is crossed when its
+			// ends disagree, so a chord through a corner crosses exactly one of the two sides there (in float32 a
+			// test of each side's own parameter range could miss both)
+			vec2 a = kleinOf(texelFetch(uWalk, ivec2(3, f), 0).zw) - p;
+			bool la = k.x * a.y - k.y * a.x >= 0.0;
+			for (int i = 0; i < ${MAX_SLOTS}; i++) {
+				if (i >= S) break;
+				vec2 b = kleinOf(texelFetch(uWalk, ivec2(3 + 3 * ((i + 1) % S), f), 0).zw) - p;
+				bool lb = k.x * b.y - k.y * b.x >= 0.0;
+				if (la != lb) {
+					vec2 e = b - a;
+					float t = (a.x * e.y - a.y * e.x) / (k.x * e.y - k.y * e.x);
+					// t > 1e-4: the side it came in by, which the chord starts on, in float32
+					if (t > 1e-4 && t <= 1.0 && t < first) { first = t; j = i; }
+				}
+				a = b;
+				la = lb;
+			}
+			if (j >= 0) {
+				vec2 q = p + first * k;
+				leave = q / (1.0 + sqrt(max(0.0, 1.0 - dot(q, q))));
+				// past the side's geodesic by construction (the chord meets it once, leaving): near the rim float32 can
+				// round that to nothing, which must not stop the walk
+				s = max(past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w), 1e-6);
+			}
+			// a point within 1e-3 of the side it would cross (well under a pixel) stays: in float32 the two faces would
+			// hand it back and forth until the step cap, and it lies under the side's stroke from either
+			if (j >= 0) {
+				vec2 a = texelFetch(uWalk, ivec2(3 + 3 * j, f), 0).zw;
+				vec2 b = texelFetch(uWalk, ivec2(3 + 3 * ((j + 1) % S), f), 0).zw;
+				if (segDist(a, b, texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w) < 1e-3) j = -1;
+			}
+			if (j < 0) { j = 0; s = -1.0; }
 		} else {
 			for (int i = 0; i < ${MAX_SLOTS}; i++) {
 				if (i >= S) break;
@@ -211,6 +272,8 @@ void main() {
 			ta = cmul(M.xy, Q.xy) + cmul(M.zw, cconj(Q.zw));
 			tb = cmul(M.xy, Q.zw) + cmul(M.zw, cconj(Q.xy));
 		}
+		haveEntry = hd.x == 4.0;
+		if (haveEntry) entry = su11(M.xy, M.zw, leave);
 		w = su11(M.xy, M.zw, w);
 		vec2 na = cmul(ma, cconj(ta)) - cmul(mb, cconj(tb));
 		vec2 nb = cmul(mb, ta) - cmul(ma, tb);
@@ -234,7 +297,22 @@ void main() {
 	tileKey = uEdgeMode > 0.5 ? info.x : hd.w;
 	bool reaimed = !inside; // past the step cap, within a few px of the rim: the last face's colour, no stroke
 	bool depthPerPixel = hd.x == 1.0; // an apeirogon has no centre to shade by
-	if (inside) {
+	if (hd.x == 4.0) {
+		// no convex polygon: the nearest side can be any, and a side's geodesic runs on through the face past a
+		// reflex corner, so each side is measured as a segment. Also past the step cap: in float32 a point on a
+		// side can be handed back and forth between its two faces until then, and it ends in one of them
+		// (elsewhere, near the rim, the last face is far and draws no stroke)
+		int S = int(hd.y);
+		for (int i = 0; i < ${MAX_SLOTS}; i++) {
+			if (i >= S) break;
+			vec3 n = texelFetch(uWalk, ivec2(4 + 3 * i, f), 0).xyz;
+			float dist = segDist(texelFetch(uWalk, ivec2(3 + 3 * i, f), 0).zw, texelFetch(uWalk, ivec2(3 + 3 * ((i + 1) % S), f), 0).zw, n, w);
+			if (texelFetch(uWalk, ivec2(3 + 3 * i, f), 0).y > 0.5) {
+				if (uMaterial > 0.5 && dist < hypD) edgeG = pastGrad(n, w);
+				hypD = min(hypD, dist);
+			} else hypS = min(hypS, dist);
+		}
+	} else if (inside) {
 		// The side faced and its two neighbours: near a corner the nearest DRAWN edge can be the
 		// next side round, and on a triangle these three are all there is.
 		int S = int(hd.y);
@@ -290,16 +368,13 @@ void main() {
 	if (uEdgeMode > 0.5) {
 		float orbit = tileKey;
 		float dim = 1.0 - uDepthK * r2;
-		// EDGE patterns take ONE hue for the whole disk, so the fill is a smooth radial gradient and nothing
-		// but the strokes draws the tiling. It used to hue by merged-tile orbit, which on a record with every
-		// edge drawn gives one colour per tile and paints the base polygons into the fill — the board is then
-		// legible whether or not the grid is on, and the disk reads as a mosaic instead of a gradient. The
-		// Schwarz boards looked right only by accident: their records leave every edge undrawn, so all faces
-		// merge into a single orbit and the old formula happened to return one colour.
-		// COLOURINGS keep the palette: there the colours ARE the catalogued object, not a backdrop.
+		// EDGE patterns fill each tile with the hue of its SHAPE (tileShapes.ts, in the walk's colour slot),
+		// as the plane's freedraw does on Shape: congruent tiles share a hue, so one shape reads as one colour
+		// wherever it falls. (By merged-tile orbit, the fill painted every base polygon of an all-drawn record
+		// its own colour; by shape, those polygons are one class and one hue.) COLOURINGS keep the palette.
 		vec3 tileCol = uColorsMode > 0.5
 			? uPalette[int(clamp(orbit, 0.0, 7.0))]
-			: tileFillAt(${EDGE_PATTERN_HUE}.0 + uHueOffset, uTileSat);
+			: tileFillAt(orbit + uHueOffset, uTileSat);
 		vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
 		// The depth shade lights the INK as well as the paper — see the note on ink in the tile branch.
 		float ink = uShowFill > 0.5 ? dim : 1.0;
@@ -386,7 +461,7 @@ void main() {
 				vec3 edge = vec3(0.140, 0.125, 0.109);
 				if (uIslamicStyle > 3.5) {
 					// Emboss: a raised ribbon lit from the upper left. The distance's gradient points away
-					// from the strand; its sign against the light picks highlight or shadow. It is taken
+					// from the strand; its sign against the light picks highlight or shadow-raised. It is taken
 					// from the layer and carried to the screen, not from dFdx: neighbouring pixels can lie
 					// in different tiles, where a screen derivative is noise. Every map on the way is
 					// conformal, so a gradient turns by the argument of the map's derivative.

@@ -65,7 +65,7 @@ export function IsohedralSidebar({
 				<div className="flex shrink-0 flex-col gap-2 px-3.5 py-4">
 					<div className="flex items-baseline justify-between">
 						<span className="ta-label">Type</span>
-						<span className="font-mono text-[11px] text-fg-muted tabular-nums max-md:text-xs">
+						<span className="font-mono text-caption text-fg-muted tabular-nums">
 							{typeCount === totalCount ? `${totalCount} types` : `${typeCount} of ${totalCount}`}
 						</span>
 					</div>

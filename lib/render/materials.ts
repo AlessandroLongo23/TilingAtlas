@@ -321,7 +321,7 @@ vec2 cconj(vec2 a) { return vec2(a.x, -a.y); }
 // x mod n as a slot index. GLSL's mod is x - n * floor(x / n), and a GPU whose division is a multiply
 // by a reciprocal can put x / n a hair under a whole number, which makes mod return n itself: one slot
 // past the row. Seen on Firefox on Windows as faces flooding their neighbours, on apeirogon rows of 3 sides.
-// Both x and n are whole numbers, so the remainder is rounded, never truncated: 0.9999999 is 1, not 0.
+// Both x and n are whole numbers, so the remainder is rounded-tag, never truncated: 0.9999999 is 1, not 0.
 int imod(float x, float n) { int r = int(floor(x - n * floor(x / n) + 0.5)), N = int(n + 0.5); return r >= N ? r - N : r < 0 ? r + N : r; }
 `;
 
@@ -409,7 +409,7 @@ int sizeStep(Surf s, float n) {
 }
 // fade a pattern of frequency k (per hyperbolic unit) out before it aliases
 float band(Surf s, float k) { return 1.0 - smoothstep(0.25, 0.5, k * s.fp); }
-// A rounded edge a few px wide can only alias: at a corner the nearest side, and so the normal, jumps,
+// A rounded-tag edge a few px wide can only alias: at a corner the nearest side, and so the normal, jumps,
 // and a highlight there flickers pixel by pixel as the tile moves. Below a few px it flattens out.
 float relief(Surf s, float widthH) { return smoothstep(1.5, 4.0, widthH * s.conf); }
 // reflection of a soft window over the floor, displaced by the normal
@@ -459,7 +459,7 @@ vec3 marbleAlbedo(vec2 p, float seed, int kind, float fp) {
 	c = mix(c, vein, clamp(v1 * vs + v2 * 0.3 * vs, 0.0, 1.0));
 	return c * (0.94 + 0.12 * fract(seed * 13.7)); // slabs from one block still differ a little
 }
-// Slabs in grout. A rounded arris (the slab's eased edge) tilts the normal toward the joint, which breaks
+// Slabs in grout. A rounded-tag arris (the slab's eased edge) tilts the normal toward the joint, which breaks
 // the reflection at every slab.
 vec3 shadeMarble(Surf s) {
 	// the stones in the scans' contrast order: Carrara, nero, rosso, verde, giallo
@@ -621,7 +621,7 @@ vec3 shadeCobble(Surf s) {
 	vec3 base, speck;
 	sett(sizeStep(s, 5.0), base, speck);
 	float gw = max(s.halfW * 1.6, 1.0);
-	// the rounded shoulder's width, hyperbolic: a share of the stone's size, which e + |p| measures along
+	// the rounded-tag shoulder's width, hyperbolic: a share of the stone's size, which e + |p| measures along
 	// this pixel's way in (continuous, unlike any one side's inradius)
 	float eH = max(s.edgeH - gw * s.fp, 0.0);
 	float rd = min(0.16, 0.4 * (eH + length(s.p)));
@@ -646,7 +646,7 @@ vec3 shadeCobble(Surf s) {
 	float dif = max(dot(n, L), 0.0) / L.z;
 	float spec = pow(max(dot(n, normalize(L + VIEW)), 0.0), 30.0) * 0.12 * smoothstep(0.5, 1.0, x);
 	vec3 col = c * (0.3 + 0.7 * dif) * mix(0.55, 1.0, smoothstep(0.0, 0.6, x)) + spec;
-	// the joint: sand and dirt, greening with moss in places, deep in shadow
+	// the joint: sand and dirt, greening with moss in places, deep in shadow-raised
 	vec3 jc = mix(vec3(0.30, 0.27, 0.22), vec3(0.19, 0.25, 0.12), smoothstep(0.05, 0.35, fbm(s.p * 4.0 + 3.0, s.fp * 4.0, 3)));
 	jc *= 0.75 + 0.35 * gnoise(s.p * 50.0) * band(s, 50.0);
 	return mix(col, jc * 0.7, joint(s, gw));
@@ -759,12 +759,12 @@ vec3 shadeScanned(Surf s, int fam) {
 		else {
 			Pbr g = scanAt(s, uSurfSlots, fam == 0 ? 3.0 : 1.6, vec2(1.0, 0.0), vec2(h2, h1)); // the filler, last
 			g.n = normalize(mix(vec3(0.0, 0.0, 1.0), g.n, 0.6));
-			// the filler sits in the shadow of the walls; the darkest strip runs along them
+			// the filler sits in the shadow-raised of the walls; the darkest strip runs along them
 			g.ao *= mix(0.25, 1.0, smoothstep(0.0, 0.9 * jw + 1.0, -e));
 			if (fam == 0) g.albedo *= 0.55; // a dark grout: a pale one between dark slabs reads as a drawn line
 			else g.albedo *= 0.62; // sand in the joint is damp and in shade
 			jc = litPbr(s, g);
-			// the wall on this side casts a shadow across the joint when the lamp is behind it
+			// the wall on this side casts a shadow-raised across the joint when the lamp is behind it
 			vec2 Lxy = normalize(vec2(-0.7, 0.9) - s.z);
 			float behind = smoothstep(0.0, 0.6, dot(s.inward, Lxy));
 			jc *= 1.0 - (fam == 2 ? 0.65 : 0.4) * behind * (1.0 - smoothstep(0.0, (fam == 2 ? 1.4 : 1.0) * jw, -e));

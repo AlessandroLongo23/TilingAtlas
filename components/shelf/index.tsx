@@ -17,8 +17,8 @@
 // take more configuration than the twenty lines each shell costs.
 
 import type { ReactNode } from "react";
+import { OptionWall } from "@/design-system/components/option-wall";
 import { cn } from "@/lib/utils/cn";
-import { SegIndicator } from "@/components/ui/seg-indicator";
 
 /**
  * A labelled control group, captioned with the shared `.ta-label` (globals.css).
@@ -71,7 +71,7 @@ export function RingGlyph({ rings, size = 22 }: { rings: { x: number; y: number 
 /** The facts block a shelf sidebar ends on: a definition list, no prose. */
 export function Details({ rows }: { rows: [string, ReactNode][] }) {
 	return (
-		<dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1.5 text-xs">
+		<dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1.5 text-small">
 			{rows.map(([k, v]) => (
 				<div key={k} className="contents">
 					<dt className="text-fg-muted">{k}</dt>
@@ -96,6 +96,8 @@ export interface SegmentedOption {
 	/** Genuinely unavailable: not clickable at all. */
 	disabled?: boolean;
 	title?: string;
+	/** The name a screen reader says, for an option whose label is a drawing. */
+	ariaLabel?: string;
 }
 
 /**
@@ -117,37 +119,22 @@ export function Segmented({
 	cols?: number;
 	fill?: boolean;
 }) {
-	const r = fill ? options.length % cols || cols : cols;
-	const lastRow = options.length - (options.length % cols || cols);
+	// The library's OptionWall in the shelves' option shape: one segmented control for the whole app.
 	return (
-		<div className="ta-seg grid" style={{ gridTemplateColumns: `repeat(${cols * r}, minmax(0, 1fr))` }}>
-			<SegIndicator />
-			{options.map((o, i) => {
-				const active = value === o.v;
-				return (
-					<button
-						key={o.v}
-						type="button"
-						disabled={o.disabled}
-						aria-pressed={active}
-						title={o.title}
-						onClick={() => onChange(o.v)}
-						style={{ gridColumn: `span ${fill && i >= lastRow ? cols : r}` }}
-						className={cn(
-							"ta-tab flex min-h-7 cursor-pointer flex-col items-center justify-center px-1 py-1 transition-colors",
-							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
-							active ? "text-fg" : "text-fg-muted hover:text-fg",
-							o.dim && !active && "text-fg-disabled hover:text-fg-muted",
-							o.disabled && "pointer-events-none cursor-not-allowed opacity-50",
-						)}
-					>
-						<span className="text-center text-xs leading-tight font-medium text-balance">{o.label}</span>
-						{o.sub ? (
-							<span className="font-mono text-[11px] leading-tight text-fg-muted tabular-nums">{o.sub}</span>
-						) : null}
-					</button>
-				);
-			})}
-		</div>
+		<OptionWall
+			columns={cols}
+			fill={fill}
+			options={options.map((o) => ({
+				value: o.v,
+				label: o.label,
+				sub: o.sub,
+				dim: o.dim,
+				disabled: o.disabled,
+				title: o.title,
+				ariaLabel: o.ariaLabel,
+			}))}
+			selected={value}
+			onChange={onChange}
+		/>
 	);
 }

@@ -48,22 +48,22 @@ export function SquaringExampleCard({ record, caption }: SquaringExampleCardProp
 						<PolyhedronWire record={record} size={84} hovered={hovered} onHover={setHovered} compact />
 					</div>
 					<div className="flex min-w-0 flex-1 flex-col gap-1">
-						<span className="text-xs leading-tight text-fg">{record.name}</span>
-						<span className="font-mono text-[11px] leading-tight text-fg-muted">
+						<span className="text-small leading-tight text-fg">{record.name}</span>
+						<span className="font-mono text-caption leading-tight text-fg-muted">
 							{s.width} x {s.height} · order {s.order}
 						</span>
-						<span className="font-mono text-[10px] leading-tight text-fg-muted max-md:text-xs">
+						<span className="font-mono text-micro leading-tight text-fg-muted">
 							{s.perfect ? "perfect" : `${s.distinct} sizes`} · {s.simple ? "simple" : "compound"}
 						</span>
 						<Link
 							href={`/catalogue/about/squared-rectangles/pipeline?solid=${encodeURIComponent(record.id)}`}
-							className="mt-0.5 flex w-fit items-center gap-1 border border-line px-2 py-1 text-[10px] text-fg-muted transition-colors hover:border-accent hover:text-fg max-md:min-h-11 max-md:px-3 max-md:text-[13px]"
+							className="mt-0.5 flex w-fit items-center gap-1 border border-line px-2 py-1 text-micro text-fg-muted transition-colors hover:border-accent hover:text-fg max-md:min-h-11 max-md:px-3 max-md:text-ui"
 						>
-							All four stages <ArrowUpRight size={11} />
+							All four stages <ArrowUpRight className="size-icon-xs" />
 						</Link>
 					</div>
 				</div>
-				{caption ? <span className="text-[11px] leading-snug text-fg-muted max-md:text-[13px]">{caption}</span> : null}
+				{caption ? <span className="text-caption leading-tight text-fg-muted max-md:text-ui">{caption}</span> : null}
 			</figcaption>
 		</figure>
 	);

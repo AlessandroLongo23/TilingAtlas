@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataJson } from "../../scripts/atlas/io.mjs";
 import {
 	hypPolyBoardKs,
 	hypPolyBoardLabel,
@@ -21,19 +21,16 @@ import {
 // matches the files, and the two different kinds of missing k (the corpus has none / this shelf did not
 // ship it) stay distinguishable.
 
-// The abcd shards are stored gzipped (703 MB of packed JSON to 48 MB, in a git-tracked public/), so a
-// reader here has to gunzip exactly as atlasCodec's `shardBody` does in the browser.
+// The shards are stored compressed (scripts/atlas/io.mjs), so a reader here decompresses as atlasCodec's
+// `shardBody` does in the browser.
 const shardOf = (b: HypPolyBoard, k: number): HypPolyPattern[] | null => {
 	const files = hypPolyShardUrls(b.id, k).map((u) => `public${u}`);
 	if (!files.every((f) => existsSync(f))) return null;
-	return files.flatMap((f) => {
-		const text = f.endsWith(".gz") ? gunzipSync(readFileSync(f)).toString("utf8") : readFileSync(f, "utf8");
-		return decodeAtlas<HypPolyPattern>(JSON.parse(text));
-	});
+	return files.flatMap((f) => decodeAtlas<HypPolyPattern>(readDataJson(f)));
 };
 
 // Through `hypPolyShardUrls`, not a literal path: every shard on this shelf became `.json.gz` on
-// 2026-08-31, and a hardcoded ".json" here turned the whole `shards` block into 9 silent skips.
+// 2026-08-31 (and `.json.br` on 2026-11-09), and a hardcoded ".json" here turned the whole `shards` block into 9 silent skips.
 const anyShard = existsSync(`public${hypPolyShardUrls("7", 1)[0]}`);
 const ai1 = HYP_POLY_BOARDS.filter((b) => b.family === "ai1");
 const ai2 = HYP_POLY_BOARDS.filter((b) => b.family === "ai2");

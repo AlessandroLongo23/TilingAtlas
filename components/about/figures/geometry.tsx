@@ -8,7 +8,7 @@
 import { useId, useMemo, useState, type ComponentType } from "react";
 import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
 import { Segmented } from "@/components/shelf";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { polygonHue, type RawPolygon } from "@/lib/utils/renderTiling";
 import { GeoNobleFamily, GeoSolid } from "@/components/about/figures/geometry/solid";
 import { vertexFigure, type Geometry, type VertexFigure } from "@/components/about/figures/geometry/vertex";
@@ -112,11 +112,11 @@ export function GeoVertex({ start, caption }: { start?: string; caption?: string
 				/>
 			</div>
 			<div className="mt-3 border-t border-line pt-3 text-center">
-				<div className="text-[11px] tracking-wide text-fg-muted uppercase">{ns.length ? ns.join(".") : "empty"}</div>
-				<div className="font-mono text-sm text-fg tabular-nums">
+				<div className="ta-label">{ns.length ? ns.join(".") : "empty"}</div>
+				<div className="font-mono text-body text-fg tabular-nums">
 					{fmt(f.flatSum)} {ns.length >= 3 && <span className="text-fg-muted">· {WHERE[f.geometry]}</span>}
 				</div>
-				<p className="mx-auto mt-1 max-w-xl text-sm text-fg-secondary">{verdict(ns, f)}</p>
+				<p className="mx-auto mt-1 max-w-xl text-body text-fg-secondary">{verdict(ns, f)}</p>
 			</div>
 		</Figure>
 	);

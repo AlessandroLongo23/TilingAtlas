@@ -1,4 +1,4 @@
-import type { Vector } from "@/classes";
+import type { Vector } from "@/classes/Vector";
 
 export const ISLAMIC_NOISE = {
 	spatialScale: 0.05,

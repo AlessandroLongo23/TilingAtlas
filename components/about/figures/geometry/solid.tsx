@@ -16,14 +16,14 @@ import { Figure } from "@/components/about/figure";
 import { InCardGrid } from "@/components/about/card-grid";
 import { cn } from "@/lib/utils/cn";
 import { Segmented } from "@/components/shelf";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { CardDoneChip } from "@/components/card-done-chip";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
 import { useTouchGestures } from "@/lib/render/touchGestures";
 import { ZOOM_CARD_FACTOR, ZOOM_CARD_PX_PER_NOTCH, wheelDeltaPx } from "@/lib/render/viewControls";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/design-system/components/slider";
 import type { Polyhedron } from "@/lib/render/platonicSolids";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { useSolid } from "@/lib/render/sphericalSolids";
 import { buildFlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { applyStudioMaterials, installLookRig } from "@/lib/render/sphericalLook";
 import {
@@ -78,13 +78,17 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 		const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
 		camera.position.set(0, 0, CAMERA_DISTANCE);
 		camera.lookAt(0, 0, 0);
-		const rig = installLookRig(renderer, scene, "tiling", 1024);
+		// Lights and the studio environment come with the first draw: building the environment map renders a
+		// room and links its shaders, which is the bulk of a figure's cost and wasted on one never scrolled to.
+		let rig: ReturnType<typeof installLookRig> | null = null;
 		const holder = new THREE.Group();
 		const rest = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.42, -0.6, 0));
 		holder.quaternion.copy(rest);
 		scene.add(holder);
 		let solid: ReturnType<typeof buildFlatSolid> = null;
-		let visible = true;
+		// Off until the observer's first report: the first draw links the shaders (about 190 ms a figure), and an
+		// article of solids paid it for every figure at load, below the fold included.
+		let visible = false;
 		let dirty = true;
 		let shown: Polyhedron | null | undefined;
 		setSolidRef.current = (p) => {
@@ -120,6 +124,7 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 			if (!dirty) return;
 			dirty = false;
 			drawn = now;
+			rig ??= installLookRig(renderer, scene, "tiling", 1024);
 			rig.follow(camera);
 			renderer.render(scene, camera);
 		};
@@ -137,10 +142,13 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 		resize();
 		const ro = new ResizeObserver(resize);
 		ro.observe(host);
-		const io = new IntersectionObserver(([e]) => {
-			visible = e.isIntersecting;
-			dirty = true;
-		});
+		const io = new IntersectionObserver(
+			([e]) => {
+				visible = e.isIntersecting;
+				dirty = true;
+			},
+			{ rootMargin: "200px" },
+		);
 		io.observe(host);
 
 		// Drag: horizontal motion turns about the vertical axis, vertical motion tips it toward you.
@@ -197,7 +205,7 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 			host.removeEventListener("wheel", wheel);
 			solid?.dispose();
 			setSolidRef.current = null;
-			rig.dispose();
+			rig?.dispose();
 			renderer.dispose();
 			canvas.remove();
 		};
@@ -216,7 +224,9 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 	}, [poly]);
 
 	if (failed)
-		return <div className="flex h-48 items-center justify-center text-sm text-fg-muted">This figure needs WebGL.</div>;
+		return (
+			<div className="flex h-48 items-center justify-center text-body text-fg-muted">This figure needs WebGL.</div>
+		);
 	return (
 		<div className="relative mx-auto aspect-square w-full max-w-[340px]">
 			<div
@@ -233,7 +243,7 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 				<CardDoneChip active={active} onDone={deactivate} />
 			</div>
 			{!poly && (
-				<div className="absolute inset-0 flex items-center justify-center text-sm text-fg-muted">
+				<div className="absolute inset-0 flex items-center justify-center text-body text-fg-muted">
 					No solid for these values.
 				</div>
 			)}
@@ -297,8 +307,8 @@ function Stats({ poly, inCard = false }: { poly: Polyhedron; inCard?: boolean })
 	const s = useMemo(() => solidStats(poly), [poly]);
 	const cell = (k: string, v: string) => (
 		<div className="flex flex-col items-center px-2">
-			<span className="text-[11px] tracking-wide text-fg-muted uppercase">{k}</span>
-			<span className="font-mono text-sm text-fg tabular-nums">{v}</span>
+			<span className="ta-label">{k}</span>
+			<span className="font-mono text-body text-fg tabular-nums">{v}</span>
 		</div>
 	);
 	return (
@@ -320,7 +330,7 @@ export function GeoSolid({ solids, labels, caption }: { solids?: string; labels?
 		.filter(Boolean);
 	const names = (labels ?? "").split("|").map((s) => s.trim());
 	const [id, setId] = useState(ids[0] ?? "");
-	const poly = useMemo(() => polyhedronForId(id), [id]);
+	const poly = useSolid(id);
 	const inGrid = useContext(InCardGrid);
 	// A cell of a card grid: the solid, its name and its counts, framed like the cards beside it.
 	if (inGrid)
@@ -328,7 +338,7 @@ export function GeoSolid({ solids, labels, caption }: { solids?: string; labels?
 			<figure className="not-prose m-0 flex flex-col border border-line bg-surface-raised">
 				<SolidView poly={poly} />
 				<figcaption className="border-t border-line px-3 py-2.5">
-					{names[0] && <span className="font-mono text-xs text-fg">{names[0]}</span>}
+					{names[0] && <span className="font-mono text-small text-fg">{names[0]}</span>}
 					{poly && <Stats poly={poly} inCard />}
 				</figcaption>
 			</figure>

@@ -6,8 +6,10 @@ import { HyperbolicBallFigure } from "./hyperbolic-ball-figure";
 import { CylinderCircuit } from "./cylinder-circuit";
 import { SquaredCylinderFigure } from "./squared-cylinder-figure";
 import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-board";
-import { RangeInput } from "@/components/ui/range-input";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { RangeInput } from "@/design-system/components/range-input";
+import { Button } from "@/design-system/components/button";
+import { Notice } from "@/design-system/components/notice";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 import { GEOMETRIES } from "@/lib/vocabulary";
 
 // One hyperbolic tiling becoming one squared cylinder, in the same four stages as the other two.
@@ -56,7 +58,7 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 	useEffect(() => {
 		if (shardCache.has(entry.id)) return;
 		let live = true;
-		fetch(cylinderShardUrl(entry.id))
+		fetchData(cylinderShardUrl(entry.id))
 			.then((r) => (r.ok ? shardBody<CylinderRecord>(r) : Promise.reject(new Error(String(r.status)))))
 			.then((data: CylinderRecord) => {
 				shardCache.set(entry.id, data);
@@ -90,20 +92,14 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 
 	if (error)
 		return (
-			<div className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">
+			<Notice tone={error === "stale" ? "warning" : "danger"} className="p-4">
 				{error === "stale" ? (
 					<>
 						<p>
 							This page is holding an older list: <span className="font-mono text-fg">{entry.id}</span> is no longer in
 							the shelf.
 						</p>
-						<button
-							type="button"
-							onClick={() => window.location.reload()}
-							className="mt-3 border border-line px-2 py-1 text-[11px] transition-colors hover:text-fg"
-						>
-							Reload the page
-						</button>
+						<Button size="sm" className="mt-3" label="Reload the page" onClick={() => window.location.reload()} />
 					</>
 				) : (
 					<p>
@@ -111,9 +107,9 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 						<code className="font-mono">pnpm tsx scripts/build-cylinder-shelf.ts</code>.
 					</p>
 				)}
-			</div>
+			</Notice>
 		);
-	if (!record || !layer) return <p className="p-4 text-sm text-fg-muted">Loading…</p>;
+	if (!record || !layer) return <p className="p-4 text-body text-fg-muted">Loading…</p>;
 
 	const idx = entry.radii.indexOf(layer.radius);
 	const prev = idx > 0 ? entry.conductance[idx - 1] : null;
@@ -125,11 +121,11 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 				control={
 					<RailPanel label="control" title="The ball radius" hint="Grow the ball and watch the circumference settle.">
 						<div className="flex items-baseline justify-between gap-2">
-							<p className="font-mono text-base leading-none text-fg">r = {layer.radius}</p>
-							<p className="font-mono text-base leading-none text-fg">
+							<p className="font-mono text-reading leading-none text-fg">r = {layer.radius}</p>
+							<p className="font-mono text-reading leading-none text-fg">
 								{layer.circumference.toFixed(4)}
 								{prev !== null ? (
-									<span className={layer.circumference > prev ? "text-accent" : "text-fg-muted"}>
+									<span className={layer.circumference > prev ? "text-fg-accent" : "text-fg-muted"}>
 										{" "}
 										{layer.circumference > prev ? "↑" : "↓"}
 									</span>
@@ -146,7 +142,7 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 							className="mt-2 w-full"
 							aria-label="ball radius"
 						/>
-						<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px] max-md:text-xs">
+						<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-micro">
 							<Fact label="squares" value={String(layer.squares.length)} />
 							<Fact label="walk" value={hyperbolic ? "transient" : "recurrent"} />
 							<Fact label="ball" value={`V ${layer.counts.vertices} · E ${layer.counts.edges}`} />

@@ -1,0 +1,386 @@
+/* CONTROLS: the range track and the interval slider (RangeInput, Slider, IntervalSlider), the segmented control
+   (OptionWall, Tabs, Pagination), the hover pill (HoverPill) and the keycap's press (Kbd). */
+
+/* Tracked range (2026-07-22) — the .ta-range successor used by <RangeInput>. The track, fill,
+   tick marks and thumb are ordinary DOM elements; the native input lies transparent on top and
+   keeps every pointer, keyboard and a11y behaviour. Position is one inherited custom property,
+   --f (0..1), so the fill and thumb can never drift out of sync.
+   Geometry mirrors the native control: a 12px thumb travels centre-6px … centre-(width-6px),
+   which is exactly where the tick marks land. The fill is a full-width bar scaled from the left
+   — off by at most 6px from the true thumb centre, and that error is always hidden underneath
+   the 12px thumb, which is why it can be a composited scaleX instead of an animated width. */
+/* No width here on purpose: unlayered rules beat Tailwind's `@layer utilities`, so a width in
+   this block would silently override the w-* class a caller passes (as .ta-range did). Width
+   comes from RangeInput's className, which defaults to w-full. */
+/* A size container, so .ta-track-travel below can ride on container units. See the note there. */
+.ta-track {
+  position: relative;
+  display: block;
+  height: 14px;
+  cursor: pointer;
+  container-type: inline-size;
+}
+.ta-track-line,
+.ta-track-fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+}
+.ta-track-line {
+  background: var(--color-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--color-border-subtle);
+}
+.ta-track-fill {
+  background: var(--color-text-primary);
+  transform-origin: left center;
+  transform: scaleX(var(--f, 0));
+}
+/* The thumb's carrier. It is THUMB-SIZED and travels the container's own width minus the thumb, which
+   is the only form of this that does not overflow: a full-track-width box translated by a fraction of
+   its own width sticks out past the track by exactly that fraction — invisible and pointer-inert, but
+   real SCROLLABLE overflow, so the sidebar gained a phantom horizontal scroll that GREW WITH THE VALUE
+   (AL saw it on the face-opacity slider, 2026-08-25). That was diagnosed and fixed once already, on
+   2026-07-23, but only inside .ta-ival — the single-thumb track it was copied from kept the bug for
+   another month. Fixed here now, where both spellings of the track read it. */
+.ta-track-travel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 100%;
+  pointer-events: none;
+  transform: translateX(calc(var(--f, 0) * (100cqi - 12px)));
+}
+.ta-track-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-thumb);
+  box-shadow:
+    0 0 0 1px var(--color-border-strong),
+    var(--shadow-handle);
+}
+/* Stepped values would otherwise jump the thumb a whole interval at a time. The glide is capped
+   at one step of travel, so it smooths the jump without ever trailing the pointer by more. */
+.ta-track-fill,
+.ta-track-travel {
+  transition: transform var(--duration-feedback) var(--ease-feedback);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-track-fill,
+  .ta-track-travel {
+    transition: none;
+  }
+}
+.ta-track-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  opacity: 0;
+  cursor: inherit;
+}
+.ta-track-input::-webkit-slider-runnable-track {
+  height: 2px;
+  background: transparent;
+}
+.ta-track-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: none;
+  background: transparent;
+}
+.ta-track-input::-moz-range-track {
+  height: 2px;
+  background: transparent;
+}
+.ta-track-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+/* The thumb answers the pointer: it swells a little under hover and more while held, on a ring of the
+   accent, so a drag feels taken hold of. Scale only (the travel transform is on the carrier). */
+.ta-track-thumb,
+.ta-ival-thumb {
+  transition:
+    scale var(--duration-feedback) var(--ease-feedback),
+    box-shadow var(--duration-feedback) var(--ease-feedback);
+}
+@media (hover: hover) {
+  .ta-track:hover .ta-track-thumb,
+  .ta-ival-thumb:hover {
+    scale: 1.15;
+  }
+}
+.ta-track:has(.ta-track-input:active) .ta-track-thumb,
+.ta-ival-thumb:active {
+  scale: 1.3;
+  box-shadow:
+    0 0 0 1px var(--color-border-strong),
+    0 0 0 5px color-mix(in oklab, var(--color-accent) 18%, transparent),
+    var(--shadow-handle);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-track-thumb,
+  .ta-ival-thumb {
+    transition: none;
+  }
+}
+.ta-track:has(.ta-track-input:disabled) .ta-track-thumb {
+  scale: none;
+}
+.ta-track:has(.ta-track-input:focus-visible) .ta-track-thumb {
+  outline: 2px solid oklch(from var(--color-accent) l c h / 0.5);
+  outline-offset: 2px;
+}
+.ta-track:has(.ta-track-input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* IntervalSlider (2026-07-23) — the dual-thumb .ta-track. Same track, ticks and thumb metrics; the
+   differences are the fill (the selected span runs --lo→--hi instead of 0→--f) and the thumbs being
+   the focusable controls themselves (no native input can express the coincident-handle drag rule),
+   so the focus ring keys on the thumb, not on a hidden input. touch-action:none lets the track own
+   horizontal touch drags instead of fighting the sidebar scroll. */
+.ta-ival {
+  touch-action: none;
+}
+.ta-ival-fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+  background: var(--color-text-primary);
+  transform-origin: left center;
+  /* translateX %s resolve against the untransformed box, so this is start=lo, span=hi−lo. Like
+     .ta-track-fill it is full-track-width based (thumb centres travel inset 6px); the ≤6px end
+     error hides under the 12px thumbs. */
+  transform: translateX(calc(var(--lo, 0) * 100%)) scaleX(calc(var(--hi, 1) - var(--lo, 0)));
+  transition: transform var(--duration-feedback) var(--ease-feedback);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-ival-fill {
+    transition: none;
+  }
+}
+.ta-ival-thumb {
+  pointer-events: auto;
+}
+.ta-ival-thumb:focus-visible {
+  outline: 2px solid oklch(from var(--color-accent) l c h / 0.5);
+  outline-offset: 2px;
+}
+.ta-ival-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* THE segmented control (2026-09-24). `.ta-seg` is the rounded grey track (named apart from .ta-track, the range slider); each `.ta-tab` inside
+   it is transparent until selected, when it lifts to a white pill with a hairline ring and a soft
+   drop. Every "pick one of N" in the app is this: the tab pairs, the geometry/decoration pickers,
+   every OptionWall. State comes off the attributes the controls already publish (Radix data-state,
+   aria-pressed, aria-checked), so nothing threads a prop. The gap is set here, unlayered, so it beats whatever
+   gap-px utility a call site still carries from the wall era. */
+.ta-seg {
+  background-color: var(--color-surface-sunken);
+  /* Concentric with its options: the track's corner is the option's plus the inset between them. */
+  border-radius: calc(var(--radius-control) + 2px);
+  padding: 3px;
+  gap: 2px;
+}
+.ta-tab {
+  border-radius: var(--radius-control);
+  background-color: transparent;
+}
+.ta-tab:hover:not([data-state="active"]):not([aria-pressed="true"]):not([aria-checked="true"]) {
+  background-color: color-mix(in oklab, var(--color-tab-on) 55%, transparent);
+}
+.ta-tab[data-state="active"],
+.ta-tab[aria-pressed="true"],
+.ta-tab[aria-checked="true"],
+.ta-seg-ind,
+.ta-tab-on {
+  background-color: var(--color-tab-on);
+  box-shadow:
+    0 0 0 1px var(--color-tab-ring),
+    var(--shadow-handle);
+}
+/* `.ta-tab-on` is that selected surface on its own, for a fill that is not a tab (a sliding NavActivePill, a
+   tree's open row), so it never has to be copied. It takes no part in the lift below: these rules are
+   unlayered, so a position here would beat the utilities that place the fill (`absolute`, `-z-10`). */
+.ta-tab[data-state="active"],
+.ta-tab[aria-pressed="true"],
+.ta-tab[aria-checked="true"] {
+  position: relative;
+  z-index: 1;
+}
+/* The sliding pill (<SegIndicator>). It sits under the tabs, so every tab is lifted over it; while the
+   track carries data-ind the selected tab drops its own fill and the pill paints it. Width and height
+   travel too, so the pill reshapes between options of different widths and across a wall's rows. */
+.ta-seg {
+  position: relative;
+}
+.ta-seg-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-control);
+  pointer-events: none;
+  opacity: 0;
+  transition-property: transform, width, height;
+  transition-duration: var(--duration-glide);
+  transition-timing-function: var(--ease-glide);
+}
+.ta-seg[data-ind] > .ta-seg-ind {
+  opacity: 1;
+}
+.ta-seg[data-ind] > .ta-tab {
+  position: relative;
+  z-index: 1;
+}
+.ta-seg[data-ind] > .ta-tab:is([data-state="active"], [aria-pressed="true"], [aria-checked="true"]) {
+  background-color: transparent;
+  box-shadow: none;
+}
+/* A press sinks the option a hair, so a click is felt before the pill arrives. */
+.ta-tab {
+  transition-property: color, background-color, scale;
+  transition-duration: var(--duration-feedback);
+  transition-timing-function: var(--ease-feedback);
+}
+.ta-tab:active:not(:disabled) {
+  scale: 0.97;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-tab:active:not(:disabled) {
+    scale: none;
+  }
+}
+
+/* <HoverPill>: one hover highlight per row of controls. Every other child is lifted over it, and while it
+   shows (data-pill) the controls drop their own hover fill so there is one highlight, not two. A
+   pressed toggle and the current page keep theirs. */
+.ta-pill-host > :not(.ta-hover-pill, .ta-seg-ind) {
+  position: relative;
+  z-index: 1;
+}
+/* In a segmented control the hover pill is a softened copy of the selection pill, cornered like it, and
+   the options drop the hover fill they paint for themselves while it shows. */
+.ta-seg > .ta-hover-pill {
+  border-radius: var(--radius-control);
+  background-color: color-mix(in oklab, var(--color-tab-on) 55%, transparent);
+}
+.ta-seg[data-pill] > .ta-tab:hover:not([data-state="active"]):not([aria-pressed="true"]):not([aria-checked="true"]) {
+  background-color: transparent;
+}
+/* The current link holds the sliding active fill (NavActivePill). One layer down, so the fill passes under
+   the other links' labels when it slides to an earlier link. */
+.ta-pill-host > [aria-current] {
+  z-index: 0;
+}
+.ta-hover-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  /* HoverPill copies the radius of the item under it; this is the fallback before it has one. */
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-overlay);
+  pointer-events: none;
+  opacity: 0;
+  transition-property: transform, width, height, opacity;
+  transition-duration: var(--duration-glide), var(--duration-glide), var(--duration-glide), var(--duration-feedback);
+  transition-timing-function: var(--ease-glide), var(--ease-glide), var(--ease-glide), var(--ease-feedback);
+}
+.ta-pill-host[data-pill] > .ta-hover-pill {
+  opacity: 1;
+}
+.ta-pill-host[data-pill] :is(button, a):not([aria-pressed="true"], [aria-current], [data-pill-skip]):hover {
+  background-color: transparent;
+}
+/* A list's highlighted option (the Dropdown, the ContextMenu) gives way to the pill while the pointer drives it. */
+.ta-pill-host[data-pill] :is([role="option"], [role="menuitem"])[data-highlighted] {
+  background-color: transparent;
+}
+
+/* A keycap whose key was just pressed dips and inks for a moment (UiProviders). */
+@keyframes ta-kbd-hit {
+  0%,
+  30% {
+    translate: 0 1px;
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong);
+    background-color: var(--color-surface-sunken);
+  }
+}
+.ta-kbd-hit {
+  animation: ta-kbd-hit var(--duration-glide) var(--ease-feedback);
+}
+
+/* A phone (docs/mobile/DESIGN.md). */
+@media (width < theme(--breakpoint-md)) {
+  /* Segmented cells: 40px inside a 3px-padded track makes the group 46px, over the 44px touch floor. */
+  .ta-tab {
+    min-height: 40px;
+  }
+
+  /* Sliders: a 24px thumb on a 44px-tall hit strip. Every width that encodes the thumb (the travel
+     box, the native thumb the transparent input measures with) moves together, so the drawn thumb
+     still sits exactly where the native value lands. IntervalSlider reads the thumb's width from the
+     DOM for the same reason.
+     Touch: a vertical swipe that starts on a slider scrolls the sheet (pan-y) and leaves the value
+     alone. The native input takes no presses here; RangeInput's track moves the value only once a
+     finger has gone sideways, or on a tap (design-system/components/range-input.tsx). */
+  .ta-track {
+    height: var(--control-touch);
+    touch-action: pan-y;
+  }
+  .ta-track-input {
+    pointer-events: none;
+  }
+  .ta-track-travel {
+    width: 24px;
+    transform: translateX(calc(var(--f, 0) * (100cqi - 24px)));
+  }
+  .ta-track-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -12px;
+  }
+  .ta-track-input::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  .ta-track-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  .ta-ival {
+    touch-action: pan-y;
+  }
+}

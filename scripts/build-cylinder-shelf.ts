@@ -1,4 +1,4 @@
-// Builds the squared-cylinder shelf: public/squarings/cylinder/*.json.gz + index.json.gz.
+// Builds the squared-cylinder shelf: public/squarings/cylinder/*.json.br + index.json.br.
 //
 // Third of three, after build-squaring-shelf.ts (sphere) and build-torus-shelf.ts (genus 1). The
 // hyperbolic case has no closed surface to divide by, so what gets squared is a ball with its boundary
@@ -166,9 +166,9 @@ function main(): void {
 
 	if (existsSync(OUT)) rmSync(OUT, { recursive: true });
 	mkdirSync(OUT, { recursive: true });
-	for (const r of records) writeDataFile(path.join(OUT, `${r.id}.json.gz`), JSON.stringify(r));
+	for (const r of records) writeDataFile(path.join(OUT, `${r.id}.json.br`), JSON.stringify(r));
 	const index: CylinderIndex = { entries };
-	writeDataFile(path.join(OUT, "index.json.gz"), JSON.stringify(index));
+	writeDataFile(path.join(OUT, "index.json.br"), JSON.stringify(index));
 	console.log(
 		`\nwrote ${records.length} squared-cylinder records · ` +
 			`${records.reduce((a, r) => a + r.layers.length, 0)} radii · ` +

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataJson } from "../scripts/atlas/io.mjs";
 import {
 	hypBarycenter,
 	su11Apply,
@@ -16,7 +15,7 @@ import { WALK_APEIROGON, buildWalk, reanchor, snapPoint, walkPoint } from "@/lib
 
 type Rec = { id: string; config: string; edge: number; darts: Darts };
 const shard = (dir: string, name: string) =>
-	decodeAtlas(JSON.parse(gunzipSync(readFileSync(`public/${dir}/${name}.json.gz`)).toString())) as Rec[];
+	decodeAtlas(readDataJson(`public/${dir}/${name}.json.br`)) as Rec[];
 const meta = (r: Rec) => ({ id: r.id, name: r.id, config: r.config, edge: r.edge });
 const kindOf = (t: ReturnType<typeof buildWalk>, f: number) => t.data[f * t.width * 4];
 const sidesOf = (t: ReturnType<typeof buildWalk>, f: number) => t.data[f * t.width * 4 + 3];

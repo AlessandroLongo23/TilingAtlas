@@ -50,7 +50,7 @@ const IN_PATHS = [
 	path.join(ROOT, "experiments", "results", "ctrnact-mixed-families-k3.cells.json"),
 	path.join(ROOT, "experiments", "results", "ctrnact-mixed-families-k4.cells.json"),
 ];
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json.gz");
+const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json.br");
 /**
  * The star × scaled crossing — rigid tilings that use a star species AND a side-2 regular tile.
  *
@@ -247,7 +247,7 @@ function main(): void {
 	const shardKs = [...new Set(final.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
 	writeDataFile(OUT_PATH, stringifyAtlas(main_) + "\n");
 	for (const k of shardKs) {
-		const p = OUT_PATH.replace(/\.json\.gz$/, `-k${k}.json.gz`);
+		const p = OUT_PATH.replace(/\.json\.br$/, `-k${k}.json.br`);
 		writeDataFile(
 			p,
 			JSON.stringify(
@@ -261,7 +261,7 @@ function main(): void {
 		);
 	}
 	for (const f of fs.readdirSync(path.dirname(OUT_PATH))) {
-		const m = /^reference-atlas-mixed-k(\d+)\.json(\.gz)?$/.exec(f);
+		const m = /^reference-atlas-mixed-k(\d+)\.json(\.br)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) fs.unlinkSync(path.join(path.dirname(OUT_PATH), f));
 	}
 

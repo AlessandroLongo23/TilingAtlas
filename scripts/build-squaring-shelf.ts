@@ -17,7 +17,7 @@
 import { mkdirSync, readdirSync } from "node:fs";
 import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 import path from "node:path";
-import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolids";
+import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolidsAll";
 import { PLATONIC_SOLIDS } from "@/lib/render/platonicSolids";
 import { ARCHIMEDEAN_SOLIDS } from "@/lib/render/archimedeanSolids";
 import { PRISM_ANTIPRISM_SOLIDS } from "@/lib/render/prismSolids";
@@ -86,7 +86,7 @@ function readShelf(dir: string, source: "sph-poly" | "sph-half"): Candidate[] {
 	const base = path.join(process.cwd(), "public", dir);
 	let files: string[];
 	try {
-		files = [...new Set(readdirSync(base).map((f) => f.replace(/\.gz$/, "")))].filter(
+		files = [...new Set(readdirSync(base).map((f) => f.replace(/\.br$/, "")))].filter(
 			(f) => f.endsWith(".json") && f !== "manifest.json",
 		);
 	} catch {
@@ -132,7 +132,7 @@ function readStars(): Candidate[] {
 	const base = path.join(process.cwd(), "public", "spherical-star");
 	let files: string[];
 	try {
-		files = [...new Set(readdirSync(base).map((f) => f.replace(/\.gz$/, "")))].filter((f) => f.endsWith(".json"));
+		files = [...new Set(readdirSync(base).map((f) => f.replace(/\.br$/, "")))].filter((f) => f.endsWith(".json"));
 	} catch {
 		console.warn("  (public/spherical-star not present — skipping)");
 		return [];
@@ -269,10 +269,10 @@ function main() {
 	});
 
 	for (const shard of shards) {
-		writeDataFile(path.join(OUT_DIR, `${shard.id}.json.gz`), JSON.stringify(shard));
+		writeDataFile(path.join(OUT_DIR, `${shard.id}.json.br`), JSON.stringify(shard));
 	}
 	const manifest: SquaringManifest = { polyhedra: corpus.length, squarings: totalSquarings, entries };
-	writeDataFile(path.join(OUT_DIR, "manifest.json.gz"), JSON.stringify(manifest, null, "\t"));
+	writeDataFile(path.join(OUT_DIR, "manifest.json.br"), JSON.stringify(manifest, null, "\t"));
 
 	// ---- the curated four-stage set --------------------------------------------------------------
 	console.log(`\nBuilding the pipeline set (best squaring of order <= ${PIPELINE_MAX_ORDER})…`);
@@ -303,7 +303,7 @@ function main() {
 			continue; // unreachable: fail() exits, but it keeps the narrowing honest for the checker
 		}
 		const record: PipelineRecord = built.record;
-		writeDataFile(path.join(PIPELINE_DIR, `${c.id}.json.gz`), JSON.stringify(record));
+		writeDataFile(path.join(PIPELINE_DIR, `${c.id}.json.br`), JSON.stringify(record));
 
 		pipelineEntries.push({
 			id: c.id,
@@ -329,7 +329,7 @@ function main() {
 	// Perfect first, then by how many distinct sizes survive: the list doubles as the finding.
 	pipelineEntries.sort((a, b) => Number(b.perfect) - Number(a.perfect) || b.distinct - a.distinct || a.order - b.order);
 	const index: PipelineIndex = { maxOrder: PIPELINE_MAX_ORDER, entries: pipelineEntries };
-	writeDataFile(path.join(PIPELINE_DIR, "index.json.gz"), JSON.stringify(index, null, "\t"));
+	writeDataFile(path.join(PIPELINE_DIR, "index.json.br"), JSON.stringify(index, null, "\t"));
 	console.log(
 		`  ${pipelineEntries.length} curated, ${pipelineEntries.filter((e) => e.perfect).length} of them perfect.`,
 	);

@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Reveal } from "@/components/ui/reveal";
+import { Button } from "@/design-system/components/button";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { Reveal } from "@/design-system/components/reveal";
 import { surfaceOf } from "@/lib/services/shelfRegistry";
 import { classAngle, snapClass, sqSectorAt } from "@/lib/squaring/torusSqDomains";
 import {
@@ -13,6 +13,7 @@ import {
 	blendedSquaring,
 	CLASS_LIMIT,
 	REFUSAL_TEXT,
+	squaringRefusal,
 	squaringAvailability,
 } from "@/lib/squaring/playSquaring";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
@@ -38,11 +39,13 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 	const setCfg = cfg.set;
 	const [hovered, setHovered] = useState<number | null>(null);
 
-	const avail = squaringAvailability(selected);
-	const support = avail.ok ? avail.support : null;
+	// The toggle reads the cheap refusal; the support (exact solves, seconds on a large cell) only while it is on.
+	const refused = squaringRefusal(selected);
+	const avail = cfg.squaring && !refused ? squaringAvailability(selected) : null;
+	const support = avail?.ok ? avail.support : null;
 	// `=== false` and not `!avail.ok`: this project compiles with `strict: false`, under which a boolean
 	// discriminant only narrows against the literal. Same idiom as the rest of lib/squaring.
-	const refusal = avail.ok === false ? REFUSAL_TEXT[avail.reason] : null;
+	const refusal = refused ? REFUSAL_TEXT[refused] : avail?.ok === false ? REFUSAL_TEXT[avail.reason] : null;
 	const cls = cfg.squaringClass;
 
 	// The blend, not the exact solve: this drives the wall colours only, and it has to survive a drag.
@@ -62,12 +65,12 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 			<Checkbox
 				id="squaring"
 				label="Squared torus"
-				checked={cfg.squaring && !!support}
-				disabled={!support}
+				checked={cfg.squaring && !refusal}
+				disabled={!!refusal}
 				onCheckedChange={(v) => setCfg({ squaring: v })}
 				hint={
 					<InfoDot label="What a squared torus is">
-						{support ? (
+						{!refusal ? (
 							<>
 								<p>
 									Glue the translation cell&apos;s opposite sides and the tiling becomes a graph on a torus. A harmonic
@@ -80,16 +83,16 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 								</p>
 							</>
 						) : (
-							<p>{refusal ?? REFUSAL_TEXT.quotient}</p>
+							<p>{refusal}</p>
 						)}
 					</InfoDot>
 				}
 			/>
 			{support ? (
 				<Reveal show={cfg.squaring}>
-					<div className="space-y-2 pl-7">
+					<div className="space-y-2 pl-indent">
 						<div className="flex items-baseline justify-between gap-2">
-							<span className="font-mono text-[11px] leading-none text-fg">
+							<span className="font-mono text-caption leading-none text-fg">
 								{Number.isInteger(cls[0]) && Number.isInteger(cls[1])
 									? `(${cls[0]}, ${cls[1]})`
 									: `${(((Math.atan2(cls[1], cls[0]) * 180) / Math.PI + 360) % 360).toFixed(1)}°`}
@@ -119,7 +122,7 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 							fills={fills}
 						/>
 						{support.domains.locked.length > 0 ? (
-							<p className="text-[10px] leading-snug text-fg-muted">
+							<p className="text-micro leading-tight text-fg-muted">
 								{support.domains.locked.length === 1
 									? "One pair of squares is"
 									: `${support.domains.locked.length} pairs of squares are`}{" "}

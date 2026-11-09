@@ -13,8 +13,8 @@ import {
 	WallBar,
 	WallGroup,
 } from "@/components/freedraw/filter-wall";
-import { OptionWall } from "@/components/ui/option-wall";
-import { Pagination } from "@/components/ui/pagination";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Pagination } from "@/design-system/components/pagination";
 import {
 	cellCount,
 	colorCountOf,
@@ -29,7 +29,7 @@ import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { requestViewReset } from "@/lib/render/touchGestures";
 import { serializePlayState } from "@/lib/services/playUrlState";
-import { readAtlas } from "@/lib/services/atlasCodec";
+import { fetchData, readAtlas } from "@/lib/services/atlasCodec";
 
 // The colored-tiling workbench: the /freedraw layout (filter band over a paginated thumbnail grid
 // with a detail pane). One catalogue per grid × palette size, so the band is one toolbar row of grid,
@@ -61,7 +61,7 @@ const kOptions = (grid: ColorsGrid, colors: number) =>
 // Thumbnails per page — every mounted thumbnail is a live canvas; square k=6 alone is 21k entries.
 const PAGE_SIZE = 240;
 
-const fileFor = (grid: ColorsGrid, colors: number, k: number) => `${colorsCatalogue(grid, colors).prefix}${k}.json.gz`;
+const fileFor = (grid: ColorsGrid, colors: number, k: number) => `${colorsCatalogue(grid, colors).prefix}${k}.json.br`;
 const filesFor = (grid: ColorsGrid, colors: number, k: number): string[] =>
 	k === 0 ? kRange(grid, colors).map((kk) => fileFor(grid, colors, kk)) : [fileFor(grid, colors, k)];
 
@@ -71,7 +71,7 @@ const catalogueCache = new Map<string, ColorPattern[]>();
 const loadFile = (url: string): Promise<void> =>
 	catalogueCache.has(url)
 		? Promise.resolve()
-		: fetch(url)
+		: fetchData(url)
 				.then((r) => (r.ok ? readAtlas<ColorPattern>(r) : []))
 				.catch(() => [] as ColorPattern[])
 				.then((d) => {
@@ -318,7 +318,7 @@ export function ColorsClient() {
 							<div className="ta-label mb-1.5">colored vertex figures</div>
 							<ul className="space-y-1">
 								{selected.vcs.map((vc, i) => (
-									<li key={i} className="font-mono text-xs text-fg-secondary">
+									<li key={i} className="font-mono text-small text-fg-secondary">
 										{vc}
 									</li>
 								))}

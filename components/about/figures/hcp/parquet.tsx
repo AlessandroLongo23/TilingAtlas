@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/design-system/components/slider";
 import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
 import type { EdgeProfile, Pt } from "@/lib/render/parquetStrip";

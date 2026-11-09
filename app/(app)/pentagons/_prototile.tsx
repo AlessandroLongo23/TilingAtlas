@@ -64,7 +64,7 @@ export function PrototileInspector({
 	const cy = pts.reduce((a, p) => a + p.y, 0) / pts.length;
 
 	return (
-		<div className="flex flex-col items-center gap-2 rounded-surface border border-line-subtle bg-surface-raised p-2">
+		<div className="ta-card flex flex-col items-center gap-2 p-2">
 			<svg
 				viewBox={`0 0 ${BOX_W} ${BOX_H}`}
 				className="w-full"
@@ -129,7 +129,7 @@ export function PrototileInspector({
 			</svg>
 
 			{/* The type's conditions as chips, with the current numbers substituted in on the right. */}
-			<dl className="flex w-full flex-col gap-1 font-mono text-[11px] tabular-nums">
+			<dl className="flex w-full flex-col gap-1 font-mono text-caption tabular-nums">
 				{type.constraints.map((c) => (
 					<div
 						key={c.text}

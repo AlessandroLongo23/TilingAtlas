@@ -3,9 +3,11 @@
 import { Combobox } from "@base-ui/react/combobox";
 import { Check, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { OptionWall } from "@/components/ui/option-wall";
+import { OptionWall } from "@/design-system/components/option-wall";
 import { compactVC, parseVC, type VcMode } from "@/lib/services/vertexConfig";
 import { cn } from "@/lib/utils/cn";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { POPUP, POPUP_ITEM } from "@/design-system/components/popup";
 
 const MODE_OPTIONS: { value: VcMode; label: string; title: string }[] = [
 	{ value: "all", label: "Contains all", title: "Every chosen configuration occurs in the tiling" },
@@ -67,7 +69,7 @@ export function VcFilter({
 					return whole ? vc === whole : vc.includes(dotted(q));
 				}}
 			>
-				<Combobox.InputGroup className="flex min-h-8 w-full cursor-text flex-wrap items-center gap-1 rounded-control border border-line bg-surface-raised px-1.5 py-1 shadow-sm transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40 max-md:min-h-11">
+				<Combobox.InputGroup className="ta-field flex min-h-8 w-full cursor-text flex-wrap items-center gap-1 px-1.5 py-1 max-md:min-h-11">
 					<Combobox.Chips className="contents">
 						<Combobox.Value>
 							{(value: string[]) => (
@@ -76,14 +78,14 @@ export function VcFilter({
 										<Combobox.Chip
 											key={vc}
 											aria-label={vc}
-											className="flex h-6 items-center gap-0.5 rounded bg-surface-sunken pr-0.5 pl-1.5 font-mono text-[12px] text-fg outline-none data-highlighted:bg-surface-overlay"
+											className="flex h-6 items-center gap-0.5 rounded-tag bg-surface-sunken pr-0.5 pl-1.5 font-mono text-small text-fg outline-none data-highlighted:bg-surface-overlay"
 										>
 											{compactVC(vc)}
 											<Combobox.ChipRemove
 												aria-label={`Remove ${vc}`}
-												className="flex size-5 cursor-pointer items-center justify-center rounded text-fg-muted hover:bg-surface-overlay hover:text-fg"
+												className="flex size-5 cursor-pointer items-center justify-center rounded-tag text-fg-muted hover:bg-surface-overlay hover:text-fg"
 											>
-												<X size={11} />
+												<X className="size-icon-xs" />
 											</Combobox.ChipRemove>
 										</Combobox.Chip>
 									))}
@@ -99,7 +101,7 @@ export function VcFilter({
 										}}
 										placeholder={value.length ? "Add…" : "e.g. 3.4.6.4 or 3^2.4.3.4"}
 										aria-label="Vertex configuration"
-										className="h-6 min-w-16 flex-1 bg-transparent px-1 font-mono text-[12px] text-fg outline-none placeholder:font-sans placeholder:text-[13px] placeholder:text-fg-muted max-md:text-base"
+										className="h-6 min-w-16 flex-1 bg-transparent px-1 font-mono text-small text-fg outline-none placeholder:font-sans placeholder:text-ui placeholder:text-fg-muted max-md:text-reading"
 									/>
 								</>
 							)}
@@ -107,10 +109,16 @@ export function VcFilter({
 					</Combobox.Chips>
 				</Combobox.InputGroup>
 				<Combobox.Portal>
-					<Combobox.Positioner className="z-[var(--z-tooltip)] outline-none" sideOffset={4}>
-						<Combobox.Popup className="max-h-[min(var(--available-height),22rem)] w-[var(--anchor-width)] origin-[var(--transform-origin)] overflow-y-auto overscroll-contain rounded-lg bg-surface-raised p-1 shadow-lg ring-1 ring-line-subtle transition-[scale,opacity] duration-150 ease-out data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0">
+					<Combobox.Positioner className="z-popup outline-none" sideOffset={4}>
+						<Combobox.Popup
+							className={cn(
+								POPUP,
+								"relative max-h-[min(var(--available-height),22rem)] w-[var(--anchor-width)] overflow-y-auto overscroll-contain",
+							)}
+						>
+							<HoverPill />
 							<Combobox.Empty>
-								<p className="px-2 py-2 text-xs text-fg-muted">
+								<p className="px-2 py-2 text-small text-fg-muted">
 									{typed
 										? `No tiling in view has ${compactVC(typed)}.`
 										: "Type a vertex figure, corners joined by dots or commas."}
@@ -118,16 +126,12 @@ export function VcFilter({
 							</Combobox.Empty>
 							<Combobox.List>
 								{(vc: string) => (
-									<Combobox.Item
-										key={vc}
-										value={vc}
-										className="grid cursor-default grid-cols-[14px_1fr_auto] items-center gap-2 rounded-md px-2 py-1.5 text-[12px] outline-none select-none data-highlighted:bg-surface-overlay"
-									>
+									<Combobox.Item key={vc} value={vc} className={cn(POPUP_ITEM, "grid grid-cols-[14px_1fr_auto]")}>
 										<Combobox.ItemIndicator>
-											<Check size={12} className="text-fg" />
+											<Check className="size-icon-xs text-fg" />
 										</Combobox.ItemIndicator>
 										<span className="col-start-2 font-mono text-fg">{compactVC(vc)}</span>
-										<span className={cn("font-mono text-[11px] text-fg-muted tabular-nums")}>
+										<span className={cn("font-mono text-caption text-fg-muted tabular-nums")}>
 											{counts.get(vc)?.toLocaleString("en-US")}
 										</span>
 									</Combobox.Item>

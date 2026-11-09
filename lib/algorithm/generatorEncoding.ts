@@ -1,4 +1,5 @@
-import { Vector, type Gyration, type Reflection } from "@/classes";
+import { Vector } from "@/classes/Vector";
+import { type Gyration, type Reflection } from "@/classes/Transform";
 
 export type EncodedGyration = { type: "gyration"; center: { x: number; y: number }; order: number };
 export type EncodedReflection = {

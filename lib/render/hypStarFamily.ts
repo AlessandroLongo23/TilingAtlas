@@ -31,7 +31,9 @@ export function starDent(n: number, alpha: number, l: number, sphere = false): n
 	return 2 * (Math.atan2(y, x) + Math.asin(Math.cos(A) / Math.hypot(x, y)));
 }
 
-function turns(d: Darts, pts: number[], l: number): number[] {
+/** Every dart's turn from what its corner is (`starKind`), its face's side count (lvert) and the star points:
+ *  also how a star hybrid board's records get their angles, shipped as kinds and one point (hyp-poly.ts). */
+export function starTurns(d: Darts, pts: number[], l: number): number[] {
 	const kinds = d.starKind!;
 	return d.rneig.map((r, h) => {
 		const k = kinds[h];
@@ -86,7 +88,7 @@ export function familyMember(
 	// x = [edge, every point but the slider's]; `full` puts the slider's back in its slot.
 	const full = (x: number[], aj: number) => [...x.slice(1, j + 1), aj, ...x.slice(j + 1)];
 	const res = (x: number[], aj: number) => {
-		const t = turns(d, full(x, aj), x[0]);
+		const t = starTurns(d, full(x, aj), x[0]);
 		return cycles.map((c, i) => wraps[i] * c.reduce((s, h) => s + t[h], 0) - 2 * Math.PI);
 	};
 	let x = [p.edge, ...pts.slice(0, j), ...pts.slice(j + 1)];
@@ -116,7 +118,7 @@ export function familyMember(
 		}
 		if (!(x[0] > 0)) return null;
 	}
-	const t = turns(d, full(x, a1), x[0]);
+	const t = starTurns(d, full(x, a1), x[0]);
 	if (t.some((v, h) => d.starKind![h] === 2 && !(v > Math.PI))) return null;
 	return { darts: { ...d, alpha: t }, edge: x[0] };
 }

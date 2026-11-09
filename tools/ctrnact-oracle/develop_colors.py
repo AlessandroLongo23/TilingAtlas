@@ -30,8 +30,8 @@ quotients (rotations only / + mirror / + color relabel / + both) and reports whi
 Marek's block counts a bijection -- the same empirical method that settled freedraw chirality.
 
 Usage:
-    develop_colors.py <dir> --out ../../public/colors/squares-2.json.gz --log <path>
-    develop_colors.py <dir> --colors 3 --surjective --out ../../public/colors/squares-3.json.gz
+    develop_colors.py <dir> --out ../../public/colors/squares-2.json.br --log <path>
+    develop_colors.py <dir> --colors 3 --surjective --out ../../public/colors/squares-3.json.br
 """
 import argparse
 import itertools

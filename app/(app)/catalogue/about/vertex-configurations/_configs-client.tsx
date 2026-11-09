@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { Grid3x3, Loader2, X } from "lucide-react";
+import { Grid3x3, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { ShelfArticleNav } from "@/components/about/shelf-article-nav";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Button } from "@/components/ui/button";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Button } from "@/design-system/components/button";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { Badge } from "@/design-system/components/badge";
+import { Spinner } from "@/design-system/components/spinner";
 import { useMobileSheet } from "@/stores/mobileSheet";
-import { Pagination } from "@/components/ui/pagination";
+import { Pagination } from "@/design-system/components/pagination";
 import { VertexConfigCard } from "@/components/vertex-config-card";
 import { CONFIG_PALETTES, loadPaletteConfigs, type PaletteConfigs, type TileKind } from "@/lib/configs/vertexConfigs";
 
@@ -15,9 +18,6 @@ import { CONFIG_PALETTES, loadPaletteConfigs, type PaletteConfigs, type TileKind
 // handful of tiles) and "the tilings" (the Library). Each card fans a config's tiles around the vertex so
 // the counts become something you can scroll. Only realizable (non-overlapping) figures are shipped.
 const PAGE_SIZE = 24;
-// The dark accent is a fill colour, 3.4:1 as text on the dark panel. On a phone, accent text in the dark
-// theme takes the same hue lifted past 4.5:1.
-const ACCENT_TEXT = "max-md:dark:text-[oklch(from_var(--color-accent)_0.72_c_h)]";
 const KIND_LABEL: Record<TileKind, { label: string; cls: string }> = {
 	regular: { label: "regular", cls: "text-fg-secondary" },
 	"convex-isotoxal": { label: "convex isotoxal", cls: "text-fg-muted" },
@@ -80,7 +80,7 @@ export function ConfigsClient() {
 				mobileFooter={
 					<Button
 						variant="primary"
-						fullWidth
+						className="w-full"
 						label={data ? `Show ${data.counts.configs.toLocaleString("en-US")} configs` : "Show configs"}
 						onClick={() => useMobileSheet.getState().setOpen(false)}
 					/>
@@ -94,30 +94,30 @@ export function ConfigsClient() {
 					</div>
 					<div className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto max-md:order-1 max-md:flex-none max-md:overflow-visible">
 						<div className="flex items-center justify-between px-3 pt-3 max-md:hidden">
-							<span className="text-xs font-medium tracking-wider text-fg-muted uppercase">Palette</span>
+							<span className="ta-label">Palette</span>
 						</div>
-						<div className="flex flex-col gap-4 p-3 text-sm">
-							<section className="flex flex-col gap-1.5">
+						<div className="flex flex-col gap-4 p-3 text-body">
+							<section className="relative flex flex-col gap-1.5">
+								<HoverPill />
 								{CONFIG_PALETTES.map((p) => {
 									const active = p.name === paletteName;
 									return (
+										// ds-check: keep (selection cards: a name and a blurb each, too tall for an OptionWall cell)
 										<button
 											key={p.name}
+											type="button"
+											aria-pressed={active}
 											onClick={() => selectPalette(p.name)}
-											className={`flex flex-col items-start gap-0.5 rounded-md border px-2.5 py-2 text-left transition-colors max-md:min-h-11 max-md:py-2.5 ${
-												active
-													? "border-accent/40 bg-accent-subtle"
-													: "border-line hover:border-line-strong hover:bg-surface-overlay/50"
+											className={`flex flex-col items-start gap-0.5 rounded-control border px-2.5 py-2 text-left transition-colors max-md:min-h-11 max-md:py-2.5 ${
+												active ? "border-accent/40 bg-accent-subtle" : "border-line hover:border-line-strong"
 											}`}
 										>
 											<span
-												className={`text-xs font-medium max-md:text-sm ${active ? `text-accent ${ACCENT_TEXT}` : "text-fg-secondary"}`}
+												className={`text-small font-medium max-md:text-body ${active ? "text-fg-accent" : "text-fg-secondary"}`}
 											>
 												{p.label}
 											</span>
-											<span className="text-[10px] leading-tight text-fg-disabled max-md:text-xs max-md:text-fg-muted">
-												{p.blurb}
-											</span>
+											<span className="text-micro leading-tight text-fg-muted">{p.blurb}</span>
 										</button>
 									);
 								})}
@@ -125,9 +125,8 @@ export function ConfigsClient() {
 
 							{/* A phone always shows three columns, so there is nothing for this to set there. */}
 							<section className="flex flex-col gap-2 border-t border-line-subtle pt-3 max-md:hidden">
-								<h3 className="text-xs font-medium tracking-wider text-fg-muted uppercase">Columns</h3>
-								<ButtonGroup
-									variant="chip"
+								<h3 className="ta-label">Columns</h3>
+								<OptionWall
 									options={[4, 5, 6, 8].map((c) => ({ value: c, label: `${c}` }))}
 									selected={columns}
 									onChange={setColumns}
@@ -138,25 +137,27 @@ export function ConfigsClient() {
 				</div>
 			</PageSidebar>
 
-			<main className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
+			<main tabIndex={0} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
 				<div className="mb-4 flex flex-wrap items-center gap-3">
-					<Grid3x3 size={18} className="text-accent" />
-					<h1 className="text-base font-semibold text-fg">Vertex configurations</h1>
+					<Grid3x3 className="size-icon-lg text-fg-accent" />
+					<h1 className="text-title font-semibold text-fg">Vertex configurations</h1>
 					{data ? (
-						<span className="border border-line bg-surface-overlay px-2 py-0.5 font-mono text-xs text-fg-muted">
-							{data.counts.tiles} tiles · {data.counts.classes} corners ·{" "}
-							<span className={`text-accent ${ACCENT_TEXT}`}>{data.counts.configs.toLocaleString()} configs</span>
-						</span>
+						<Badge mono>
+							<span>
+								{data.counts.tiles} tiles · {data.counts.classes} corners ·{" "}
+								<span className="text-fg-accent">{data.counts.configs.toLocaleString()} configs</span>
+							</span>
+						</Badge>
 					) : null}
 				</div>
 
 				{loading ? (
-					<div className="flex items-center justify-center gap-2 py-16 text-sm text-fg-muted">
-						<Loader2 size={16} className="animate-spin" /> loading {meta?.label} configs…
+					<div className="flex items-center justify-center gap-2 py-16 text-body text-fg-muted">
+						<Spinner size={16} /> loading {meta?.label} configs…
 					</div>
 				) : error ? (
-					<div className="flex items-center justify-center gap-2 py-16 text-sm text-danger">
-						<X size={16} /> {error}
+					<div className="flex items-center justify-center gap-2 py-16 text-body text-danger">
+						<X className="size-icon-md" /> {error}
 					</div>
 				) : data ? (
 					<>
@@ -174,21 +175,18 @@ export function ConfigsClient() {
 								const idx = (page - 1) * PAGE_SIZE + i;
 								const kinds = kindsOf(cfg.polys);
 								return (
-									<div
-										key={idx}
-										className="group flex flex-col overflow-hidden rounded-lg border border-line bg-surface-overlay/30"
-									>
+									<div key={idx} className="ta-card group flex flex-col overflow-hidden">
 										<div className="relative aspect-square bg-surface-raised">
 											<VertexConfigCard config={cfg} />
 										</div>
 										<div className="flex flex-col gap-0.5 px-2 py-1.5">
 											<p
-												className="truncate font-mono text-[10px] text-fg-secondary max-md:text-xs max-md:break-all max-md:whitespace-normal"
+												className="truncate font-mono text-micro text-fg-secondary max-md:break-all max-md:whitespace-normal"
 												title={cfg.word}
 											>
 												{cfg.word}
 											</p>
-											<p className="text-[9px] leading-tight text-fg-disabled max-md:text-xs max-md:text-fg-muted">
+											<p className="text-micro leading-tight text-fg-muted">
 												{cfg.corners.length} corners
 												{kinds.length > 1 ? (
 													<span className="text-fg-muted"> · mixed</span>

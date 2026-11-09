@@ -36,7 +36,7 @@ import { writeDataFile } from "./atlas/io.mjs";
 const ROOT = path.resolve(__dirname, "..");
 const IN_DIR = path.join(ROOT, "experiments", "period-oracle");
 const PUBLIC_DIR = path.join(ROOT, "public");
-const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-period.json.gz");
+const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-period.json.br");
 const FAMILIES_PATH = path.join(IN_DIR, "ctrnact-period-families.cells.json");
 const RANGE_PLAN_PATH = path.join(IN_DIR, "period-range-plan.json");
 /** Intrinsic parametric cells, keyed on the canonical map. See the attach step at the end of main(). */
@@ -88,7 +88,7 @@ const QUOTIENT_FAMILIES_PATHS: { cells: string; dedup?: string }[] = [
 const QUOTIENT_MIN_K = 1;
 const LOG_PATH = path.join(ROOT, "experiments", "results", "period-atlas-build.log");
 const MAIN_MAX_K = 2; // k≤2 eager with the base atlas; each higher k gets its own lazy shard
-const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-period-k${k}.json.gz`);
+const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-period-k${k}.json.br`);
 
 const INPUTS: { k: number; files: string[] }[] = [
 	{ k: 1, files: ["ctrnact-period3-k1.cells.json"] },
@@ -662,7 +662,7 @@ function main(): void {
 		log(`  shard k=${k}: ${entries.length} tilings → ${path.relative(ROOT, p)}  (${sizeKB(p)} KB)`);
 	}
 	for (const f of fs.readdirSync(PUBLIC_DIR)) {
-		const m = /^reference-atlas-period-k(\d+)\.json(\.gz)?$/.exec(f);
+		const m = /^reference-atlas-period-k(\d+)\.json(\.br)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) fs.unlinkSync(path.join(PUBLIC_DIR, f));
 	}
 

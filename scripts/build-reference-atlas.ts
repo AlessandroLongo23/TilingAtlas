@@ -32,6 +32,7 @@ import { stringifyAtlas } from "./atlas/encode.mjs";
 import { writeDataFile } from "./atlas/io.mjs";
 import { stripDerivableRenderCells } from "@/lib/services/renderCellDerive";
 import { annotatePolygonFacets } from "@/lib/services/polygonFacets";
+import { ctrnactAttribution } from "./atlas/attribution";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -42,7 +43,7 @@ const withStars = !argv.includes("--no-stars");
 const ROOT = process.cwd();
 // Served as a STATIC asset (public/) so the browser lazy-fetches it only when the Reference shelf is
 // opened — keeps the /library initial payload small (the certified catalogue only).
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas.json.gz");
+const OUT_PATH = path.join(ROOT, "public", "reference-atlas.json.br");
 const LOG_DIR = path.join(ROOT, "experiments", "results");
 const LOG_PATH = path.join(LOG_DIR, "reference-atlas-build.log");
 
@@ -115,12 +116,7 @@ function attribute(t: ReferenceTiling): { discoverer: string; certification: "pr
 		const disc = k === 1 ? "Kepler" : k === 2 ? "Krötenheerdt" : k === 3 ? "Chavey" : "Brian Galebach";
 		return { discoverer: disc, certification: k <= 3 ? "proven" : "reproduced" };
 	}
-	if (t.source === "ctrnact") {
-		return {
-			discoverer: k <= 14 ? "Marek Čtrnáct" : "Alessandro Longo",
-			certification: k <= 14 ? "reproduced" : "candidate",
-		};
-	}
+	if (t.source === "ctrnact") return ctrnactAttribution(k);
 	if (t.source === "myers") return { discoverer: "Joseph Myers", certification: "reproduced" };
 	// ctrnact-star: candidates / previews / new-at-k≥2 out-of-ring are Longo; the rest reproduce Myers
 	if (MYERS_OVERFLAGGED.has(t.id)) return { discoverer: "Joseph Myers", certification: "reproduced" };
@@ -395,7 +391,7 @@ function writeHigherKShards(): void {
 			t.certification = a.certification;
 		}
 		entries.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-		const outPath = path.join(ROOT, "public", `reference-atlas-k${k}.json.gz`);
+		const outPath = path.join(ROOT, "public", `reference-atlas-k${k}.json.br`);
 		// Facets first: both are read off renderCell, and the strip is what deletes it.
 		annotatePolygonFacets(entries as never);
 		stripDerivableRenderCells(entries as never);
@@ -729,15 +725,23 @@ function main(): void {
 	const shardsWritten = !argv.includes("--no-ctrnact") && !argv.includes("--no-shards");
 	const enrichTargets = [
 		OUT_PATH,
-		...(shardsWritten ? [8, 9, 10].map((k) => path.join(ROOT, "public", `reference-atlas-k${k}.json.gz`)) : []),
+		...(shardsWritten ? [8, 9, 10].map((k) => path.join(ROOT, "public", `reference-atlas-k${k}.json.br`)) : []),
 	];
 	console.log("\n=== enriching atlas: vertex-type classification + exact wallpaper symmetry ===");
-	execSync(
-		`pnpm tsx ${JSON.stringify(path.join("scripts", "enrich-reference-atlas.ts"))} ${enrichTargets
-			.map((f) => JSON.stringify(f))
-			.join(" ")}`,
-		{ stdio: "inherit", cwd: ROOT },
-	);
+	const enrich = (flags: string) =>
+		execSync(
+			`pnpm tsx ${JSON.stringify(path.join("scripts", "enrich-reference-atlas.ts"))} ${flags} ${enrichTargets
+				.map((f) => JSON.stringify(f))
+				.join(" ")}`,
+			{ stdio: "inherit", cwd: ROOT },
+		);
+	enrich("");
+	// Edge and tile orbits, for the same reason: a rebuild without them would quietly blank the cards'
+	// e and t and /library's edge-orbit axis. About an hour on 8 cores; --no-orbits skips it.
+	if (!argv.includes("--no-orbits")) {
+		console.log("\n=== enriching atlas: edge and tile orbits ===");
+		enrich("--orbits");
+	}
 }
 
 main();

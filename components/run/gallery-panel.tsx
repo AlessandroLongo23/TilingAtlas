@@ -2,16 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { fmMotion } from "@/design-system/motion";
 import { createClient } from "@/lib/supabase/client";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/design-system/components/badge";
 import { InspectorDrawer } from "@/components/run/inspector-drawer";
 import { fetchFoundTilings, type FoundTiling } from "@/lib/services/runsService";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
-import { cn } from "@/lib/utils/cn";
+import { OptionWall } from "@/design-system/components/option-wall";
 
 type SortKey = "seed" | "found" | "size";
-const SORTS: Record<SortKey, string> = { seed: "Seed #", found: "Found", size: "Cell size" };
+const SORTS: { value: SortKey; label: string }[] = [
+	{ value: "seed", label: "Seed #" },
+	{ value: "found", label: "Found" },
+	{ value: "size", label: "Cell size" },
+];
 
 function polyCount(t: FoundTiling): number {
 	const rc = t.render_cell as { cellPolygons?: unknown[] } | null;
@@ -72,26 +77,14 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 	const selected = useMemo(() => tilings.find((t) => t.canonical_key === selectedKey) ?? null, [tilings, selectedKey]);
 
 	if (tilings.length === 0) {
-		return <div className="py-10 text-center text-sm text-fg-disabled">No cells mirrored yet.</div>;
+		return <div className="py-10 text-center text-body text-fg-muted">No cells mirrored yet.</div>;
 	}
 
 	return (
 		<div>
-			<div className="mb-3 flex items-center justify-end gap-1 text-[11px]">
-				<span className="mr-1 text-fg-disabled">sort</span>
-				{(Object.keys(SORTS) as SortKey[]).map((k) => (
-					<button
-						key={k}
-						type="button"
-						onClick={() => setSort(k)}
-						className={cn(
-							"rounded px-2 py-0.5 transition-colors max-md:min-h-11 max-md:px-3 max-md:text-xs",
-							sort === k ? "bg-accent-subtle text-accent" : "text-fg-muted hover:bg-surface-overlay/50 hover:text-fg",
-						)}
-					>
-						{SORTS[k]}
-					</button>
-				))}
+			<div className="mb-3 flex items-center justify-end gap-1 text-caption">
+				<span className="mr-1 text-fg-muted">sort</span>
+				<OptionWall options={SORTS} selected={sort} onChange={setSort} />
 			</div>
 
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -102,7 +95,7 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 							layout
 							initial={{ opacity: 0, scale: 0.9 }}
 							animate={{ opacity: 1, scale: 1 }}
-							transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+							transition={fmMotion("glide")}
 							role="button"
 							tabIndex={0}
 							onClick={() => setSelectedKey(t.canonical_key)}
@@ -112,19 +105,19 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 									setSelectedKey(t.canonical_key);
 								}
 							}}
-							className="group cursor-pointer overflow-hidden rounded-lg border border-line bg-surface-overlay/30 transition-colors hover:border-accent/60 focus:outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/40"
+							className="ta-card group cursor-pointer overflow-hidden transition-colors hover:border-accent/60 focus:outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/40"
 						>
 							<div className="aspect-square bg-surface-raised">
 								{t.render_cell ? (
 									<TilingThumbnail translationalCell={t.render_cell as TranslationalCellData} pxPerEdge={18} />
 								) : (
-									<div className="flex h-full w-full items-center justify-center text-[10px] text-fg-disabled">
+									<div className="flex h-full w-full items-center justify-center text-micro text-fg-muted">
 										k={t.k}
 									</div>
 								)}
 							</div>
 							<div className="flex items-center justify-between gap-1 px-2 py-1.5">
-								<span className="truncate font-mono text-[10px] text-fg-muted">seed #{t.seed_idx ?? "?"}</span>
+								<span className="truncate font-mono text-micro text-fg-muted">seed #{t.seed_idx ?? "?"}</span>
 								{t.canonical_key === newestKey ? <Badge tone="accent">new</Badge> : null}
 							</div>
 						</motion.div>

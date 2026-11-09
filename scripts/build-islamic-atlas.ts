@@ -34,9 +34,9 @@ import {
 } from "./islamic/lib";
 
 const ROOT = process.cwd();
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas-islamic.json.gz");
+const OUT_PATH = path.join(ROOT, "public", "reference-atlas-islamic.json.br");
 const LOG_PATH = path.join(ROOT, "experiments", "results", "islamic-atlas-build.log");
-const ATLAS_PATH = path.join(ROOT, "public", "reference-atlas.json.gz");
+const ATLAS_PATH = path.join(ROOT, "public", "reference-atlas.json.br");
 
 const logLines: string[] = [];
 function log(msg = ""): void {

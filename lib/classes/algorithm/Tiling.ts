@@ -1,5 +1,6 @@
-import { SeedConfiguration, type Polygon } from "@/classes";
-import type { Gyration, Reflection } from "@/classes";
+import { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
+import { type Polygon } from "@/classes/polygons/Polygon";
+import type { Gyration, Reflection } from "@/classes/Transform";
 import type { FullSeedConfiguration } from "./SeedConfiguration";
 import { encodeGenerator, decodeGenerator } from "@/lib/algorithm/generatorEncoding";
 import type { EncodedGeneratorRaw } from "@/lib/algorithm/generatorEncoding";

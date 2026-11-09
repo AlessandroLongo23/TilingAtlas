@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { chooseBound, applyBound, quantize } from "@/components/ui/interval-slider";
+import { chooseBound, applyBound, quantize } from "@/design-system/components/interval-slider";
 import { hyperbolicFacetsOf, matchesReferenceFilters, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 
 // The IntervalSlider's pointer contract, isolated as pure functions. The tricky case (AL's spec,

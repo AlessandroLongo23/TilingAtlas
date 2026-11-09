@@ -1,4 +1,4 @@
-import { Cyclotomic, CyclotomicRing } from "@/classes";
+import { Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import { exactPolygonsOverlap } from "@/classes/algorithm/exact/exactOverlap";
 

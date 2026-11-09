@@ -12,7 +12,7 @@
  * the quantity `docs/SMALLK_W_BOUND.md` proves the bound on (measured maxima 5, 6, 7 for k = 1, 2, 3).
  * Writing it out means the slide cannot drift from the arithmetic: regenerate and the figure follows.
  *
- * Output: public/defense/period-figure.json.gz
+ * Output: public/defense/period-figure.json.br
  */
 import path from "node:path";
 import { CyclotomicRing, Cyclotomic, setActiveRing } from "@/classes/Cyclotomic";
@@ -109,8 +109,8 @@ const out = {
 	t2: { chain: c2, weight: c2.length, xy: [T2.toVector().x, T2.toVector().y] },
 	polys,
 };
-writeDataFile(path.join(process.cwd(), "public", "defense", "period-figure.json.gz"), JSON.stringify(out));
+writeDataFile(path.join(process.cwd(), "public", "defense", "period-figure.json.br"), JSON.stringify(out));
 console.log(
 	`${wanted}: |T1| = ${c1.length} [${c1.join(", ")}], |T2| = ${c2.length} [${c2.join(", ")}], ${polys.length} tiles`,
 );
-console.log("wrote public/defense/period-figure.json.gz");
+console.log("wrote public/defense/period-figure.json.br");

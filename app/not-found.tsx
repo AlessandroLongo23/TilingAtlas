@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Home, Library } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { ErrorScreen } from "@/components/error-screen";
 
 export default function NotFound() {

@@ -20,10 +20,10 @@ import {
 	type AperiodicFrame,
 	type HomeBox,
 } from "@/lib/hooks/useAperiodicView";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RangeInput } from "@/components/ui/range-input";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { Button } from "@/design-system/components/button";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { RangeInput } from "@/design-system/components/range-input";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -440,7 +440,7 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 					{offsets.map((g, j) => (
 						<div key={j} className="flex items-center gap-2">
 							<span
-								className="w-6 shrink-0 font-mono text-[11px] tabular-nums"
+								className="w-6 shrink-0 font-mono text-caption tabular-nums"
 								style={{ color: `hsl(${famHue(j, n)} 55% 50%)` }}
 							>
 								γ{sub(j)}
@@ -448,7 +448,7 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 							<div className="min-w-0 flex-1">
 								<RangeInput min={0} max={1} step={0.001} value={g} onChange={(v) => setOffset(j, v)} />
 							</div>
-							<span className="w-8 shrink-0 text-right font-mono text-[11px] text-fg-muted tabular-nums">
+							<span className="w-8 shrink-0 text-right font-mono text-caption text-fg-muted tabular-nums">
 								{g.toFixed(2)}
 							</span>
 						</div>
@@ -534,7 +534,7 @@ const sub = (j: number) =>
 
 function PanelTag({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="ta-float pointer-events-none absolute top-4 left-4 px-2.5 py-1 text-xs text-fg-secondary">
+		<div className="ta-float pointer-events-none absolute top-4 left-4 px-2.5 py-1 text-small text-fg-secondary">
 			{children}
 		</div>
 	);

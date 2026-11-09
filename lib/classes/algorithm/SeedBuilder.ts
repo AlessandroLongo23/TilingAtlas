@@ -3,7 +3,8 @@ import { VertexConfiguration } from "./VertexConfiguration";
 import { Vector } from "../Vector";
 import { Cyclotomic, zetaIndexFromAngle } from "../Cyclotomic";
 import type { Polygon } from "../polygons/Polygon";
-import { deduplicatePolygons, isWithinTolerance, isWithinAngularTolerance } from "@/utils";
+import { deduplicatePolygons } from "@/utils/geometry";
+import { isWithinTolerance, isWithinAngularTolerance } from "@/utils/math";
 
 type PlacedVC = {
 	center: Vector;

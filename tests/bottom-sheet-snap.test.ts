@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickSnap } from "@/components/ui/bottom-sheet";
+import { pickSnap } from "@/design-system/components/bottom-sheet";
 
 // Resting heights of peek / half / full on a 664px-tall phone.
 const SNAPS = [68, 332, 616];

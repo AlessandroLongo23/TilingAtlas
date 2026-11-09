@@ -12,7 +12,7 @@ import {
 	type HeroCell,
 } from "@/lib/render/errorSpecimen";
 import { ERROR_SPECIMENS } from "@/lib/render/errorSpecimens";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // The shell behind app/error.tsx, app/not-found.tsx and the Tiling Searcher's download page
 // (app/searcher/download/[os]): a 3 × 3 wall of specimens with the message in
@@ -75,7 +75,7 @@ const drawSeed = () => sample(ERROR_SPECIMENS, SLOTS);
  * eight pictures however little of this worked.
  */
 async function drawLive(signal: AbortSignal): Promise<ErrorSpecimen[]> {
-	const res = await fetch(HERO_INDEX_URL, { signal });
+	const res = await fetchData(HERO_INDEX_URL, { signal });
 	if (!res.ok) throw new Error(`hero index: HTTP ${res.status}`);
 	const ids = (await shardBody(res)) as string[];
 	const wanted = sample(
@@ -86,7 +86,7 @@ async function drawLive(signal: AbortSignal): Promise<ErrorSpecimen[]> {
 	const live = await Promise.all(
 		wanted.map(async (id) => {
 			try {
-				const cell = await fetch(heroCellUrl(id), { signal });
+				const cell = await fetchData(heroCellUrl(id), { signal });
 				if (!cell.ok) return null;
 				return liveSpecimen((await shardBody(cell)) as HeroCell, pickPresentation(Math.random), Math.random);
 			} catch {
@@ -135,7 +135,7 @@ function TilingTile({ spec }: { spec: ErrorSpecimen }) {
 				// sliver spikes off the screen.
 				strokeLinejoin="round"
 				strokeLinecap="round"
-				className="absolute inset-0 h-full w-full opacity-95 saturate-[0.88] transition-[filter,opacity] duration-300 group-hover:opacity-100 group-hover:saturate-100"
+				className="absolute inset-0 h-full w-full opacity-95 saturate-[0.88] transition-[filter,opacity] motion-glide group-hover:opacity-100 group-hover:saturate-100"
 			>
 				{spec.paths.map((path, i) => (
 					<path
@@ -151,7 +151,7 @@ function TilingTile({ spec }: { spec: ErrorSpecimen }) {
 				))}
 			</svg>
 			{/* The specimen names itself on hover, in the caption style the hero uses. */}
-			<span className="absolute bottom-1.5 left-1.5 rounded border border-line bg-surface/80 px-1.5 py-0.5 font-mono text-[10px] text-fg-secondary opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+			<span className="absolute bottom-1.5 left-1.5 rounded-tag border border-line bg-surface/80 px-1.5 py-0.5 font-mono text-micro text-fg-secondary opacity-0 backdrop-blur-float transition-opacity group-hover:opacity-100">
 				{spec.label}
 			</span>
 		</Link>
@@ -217,11 +217,11 @@ export function ErrorScreen({ eyebrow, title, body, detail, actions }: ErrorScre
 			{/* overflow-y-auto: on sm+ this cell is a fixed third of the viewport, and error.message is
 			    whatever was thrown — a long one scrolls instead of spilling over its neighbours. */}
 			<div className="col-span-3 col-start-1 row-start-2 flex flex-col justify-center overflow-y-auto bg-surface p-6 sm:col-span-1 sm:col-start-2 md:p-8">
-				<p className="font-mono text-[10px] tracking-wider text-fg-muted uppercase">{eyebrow}</p>
-				<h1 className="mt-2 text-2xl font-semibold tracking-tight text-balance md:text-3xl">{title}</h1>
-				<p className="mt-3 text-sm leading-relaxed text-fg-secondary">{body}</p>
+				<p className="ta-label">{eyebrow}</p>
+				<h1 className="mt-2 text-headline font-semibold tracking-tight text-balance md:text-display">{title}</h1>
+				<p className="mt-3 text-body leading-relaxed text-fg-secondary">{body}</p>
 				{detail ? (
-					<div className="mt-4 border-l-2 border-line-strong pl-3 font-mono text-xs break-words text-fg-secondary">
+					<div className="mt-4 border-l-2 border-line-strong pl-3 font-mono text-small break-words text-fg-secondary">
 						{detail}
 					</div>
 				) : null}

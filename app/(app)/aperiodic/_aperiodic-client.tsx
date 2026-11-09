@@ -13,7 +13,7 @@ import { MultigridView } from "./_multigrid-view";
 import { PatchView } from "./_patch-view";
 import { BinaryView } from "./_binary-view";
 import { APERIODIC_VIEWS, DEFAULT_VIEW, isViewId, type AperiodicViewId } from "./_views";
-import { Dropdown } from "@/components/ui/dropdown";
+import { Dropdown } from "@/design-system/components/dropdown";
 
 // The aperiodic shelf. Every construction here refuses a translational cell, which is exactly what
 // the rest of the atlas is built on — so each arrives as its own engine, not as a lattice of
@@ -69,12 +69,12 @@ export function AperiodicClient() {
 					pickedAtFull.current = useMobileSheet.getState().snap === "full";
 					setView(v);
 				}}
-				ariaLabel="Construction"
-				className="h-11 shrink-0 rounded-full pr-3 pl-4 text-sm font-medium"
+				aria-label="Construction"
+				className="h-11 shrink-0 rounded-full pr-3 pl-4 text-body font-medium"
 				face={
 					<>
 						Construction
-						<ChevronDown size={16} className="text-fg-muted" />
+						<ChevronDown className="size-icon-md text-fg-muted" />
 					</>
 				}
 			/>
@@ -84,8 +84,8 @@ export function AperiodicClient() {
 	const header = (
 		<>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-[15px] leading-tight font-semibold text-fg">{active.label}</h1>
-				<p className="truncate text-xs text-fg-muted" title={active.blurb}>
+				<h1 className="text-title leading-tight font-semibold text-fg">{active.label}</h1>
+				<p className="truncate text-small text-fg-muted" title={active.blurb}>
 					{active.group} · {active.blurb}
 				</p>
 			</div>

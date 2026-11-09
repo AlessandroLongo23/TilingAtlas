@@ -139,7 +139,7 @@ export function sphPolyKGaps(b: SphPolyBoard): number[] {
 	return out;
 }
 
-export const sphPolyShardUrl = (n: string | number, k: number): string => `/spherical-poly/sp${n}-k${k}.json.gz`;
+export const sphPolyShardUrl = (n: string | number, k: number): string => `/spherical-poly/sp${n}-k${k}.json.br`;
 
 /** The /play sub-axis key — namespaced against the spherical-freedraw solids, "sps-", "spc-", "spe-". */
 export const sphPolySub = (p: SphPolyPattern): string => `spp-${p.base}`;

@@ -53,8 +53,8 @@ const IN_PATHS = [
 ];
 const MAIN_MAX_K = 2;
 const PUBLIC_DIR = path.join(ROOT, "public");
-const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-isotoxal.json.gz");
-const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-isotoxal-k${k}.json.gz`);
+const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-isotoxal.json.br");
+const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-isotoxal-k${k}.json.br`);
 const LOG_PATH = path.join(ROOT, "experiments", "results", "isotoxal-atlas-build.log");
 // Dedup/merge pass (scripts/scan-family-joins.py → scripts/merge-plan.ts). Scanned over the WHOLE corpus,
 // not per shard: a duplicate pair could straddle the eager/lazy split, and the census needs one view.
@@ -162,7 +162,7 @@ function main(): void {
 	}
 	// Drop any orphaned isotoxal shard from a prior build (a k that no longer has entries).
 	for (const f of fs.readdirSync(PUBLIC_DIR)) {
-		const m = /^reference-atlas-isotoxal-k(\d+)\.json(\.gz)?$/.exec(f);
+		const m = /^reference-atlas-isotoxal-k(\d+)\.json(\.br)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) {
 			fs.unlinkSync(path.join(PUBLIC_DIR, f));
 			log(`  removed stale shard ${f}`);

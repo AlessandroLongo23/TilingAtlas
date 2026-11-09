@@ -55,11 +55,11 @@ export function PieChart() {
 
 	return (
 		<div className="ta-float h-64 w-full overflow-hidden">
-			<div className="flex items-center justify-between border-b border-line px-4 py-2 text-xs font-medium text-fg-secondary">
+			<div className="flex items-center justify-between border-b border-line px-4 py-2 text-small font-medium text-fg-secondary">
 				<div className="flex items-center gap-2">
 					{currentPath.length > 0 ? (
 						<button className="flex items-center gap-1 text-fg-muted hover:text-fg" onClick={navigateBack}>
-							<ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
+							<ArrowLeft aria-hidden="true" className="size-icon-sm" />
 							<span>Back</span>
 						</button>
 					) : (

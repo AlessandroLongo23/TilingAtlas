@@ -15,7 +15,7 @@ import {
 	type HypDiskSource,
 	type HypDiskTiling,
 } from "@/lib/render/hypDisk";
-import { DiskThumbnail } from "@/components/ui/disk-thumbnail";
+import { DiskThumbnail } from "@/design-system/components/disk-thumbnail";
 
 // Static Poincaré-disk preview for every hyperbolic shelf: ONE frame of the same per-pixel renderer and
 // the same style (lib/render/hypDisk.ts) as the interactive canvas, so a card fills to the rim and matches
@@ -25,7 +25,7 @@ import { DiskThumbnail } from "@/components/ui/disk-thumbnail";
 function bakeDisk(t: HypDiskTiling, mode: HypDiskMode, size: number, s: HypDiskSettings): string | null {
 	const host = ensureDiskRenderer(size);
 	if (!host || !t.darts) return null;
-	const walk = buildWalk(t.darts, t.edge, { allDrawn: allEdgesDrawn(mode) });
+	const walk = buildWalk(t.darts, t.edge, { allDrawn: allEdgesDrawn(mode), shapeRanks: t.shapeRanks });
 	host.renderer.setWalk(walk);
 	const dark = document.documentElement.classList.contains("dark");
 	host.renderer.draw({

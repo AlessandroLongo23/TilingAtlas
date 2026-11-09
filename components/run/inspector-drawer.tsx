@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/design-system/components/slider";
+import { Modal } from "@/design-system/components/modal";
+import { Badge } from "@/design-system/components/badge";
 import { polygonHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { FoundTiling } from "@/lib/services/runsService";
-import { CopyButton } from "@/components/ui/copy-button";
+import { CopyButton } from "@/design-system/components/copy-button";
 
 interface RenderCell {
 	cellPolygons?: { n: number; vertices: number[][] }[];
@@ -32,22 +32,23 @@ function fmtClock(iso: string): string {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
 	return (
-		<div className="rounded-lg border border-line-subtle bg-surface-raised/50 px-3 py-2">
-			<div className="text-[10px] tracking-wide text-fg-disabled uppercase">{label}</div>
-			<div className="mt-0.5 text-sm text-fg">{children}</div>
+		<div className="ta-card px-3 py-2">
+			<div className="ta-label">{label}</div>
+			<div className="mt-0.5 text-body text-fg">{children}</div>
 		</div>
 	);
 }
 
 /**
- * Click-a-card inspector. Renders a single found tiling large, with a zoom control, the polygon
- * composition (legend coloured to match the render), and the full canonical key. Display-only — it
- * reads the float render_cell mirror, never the claim path. Selection is keyed by canonical_key so
- * live refetches keep the open cell in sync.
+ * Click-a-card inspector, in the library's Modal (focus trap, Esc, a sheet on a phone). Renders a single
+ * found tiling large, with a zoom control, the polygon composition (legend coloured to match the render),
+ * and the full canonical key. Display-only — it reads the float render_cell mirror, never the claim path.
+ * Selection is keyed by canonical_key so live refetches keep the open cell in sync.
  */
-export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | null; onClose: () => void }) {
-	const open = tiling != null;
-	const closeRef = useRef<HTMLButtonElement | null>(null);
+export function InspectorDrawer({ tiling: next, onClose }: { tiling: FoundTiling | null; onClose: () => void }) {
+	// The last cell shown stays rendered while the dialog animates out.
+	const [tiling, setTiling] = useState(next);
+	if (next && next !== tiling) setTiling(next);
 	const [zoom, setZoom] = useState(40);
 
 	// reset zoom each time a different cell opens (adjusted during render, keyed on the canonical key)
@@ -58,129 +59,79 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 		if (tiling) setZoom(40);
 	}
 
-	// ESC to close, scroll-lock + initial focus while open
-	useEffect(() => {
-		if (!open) return;
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("keydown", onKey);
-		const prev = document.body.style.overflow;
-		document.body.style.overflow = "hidden";
-		const t = setTimeout(() => closeRef.current?.focus(), 0);
-		return () => {
-			document.removeEventListener("keydown", onKey);
-			document.body.style.overflow = prev;
-			clearTimeout(t);
-		};
-	}, [open, onClose]);
-
 	const rc = (tiling?.render_cell ?? null) as RenderCell | null;
 	const comp = useMemo(() => compositionOf(rc), [rc]);
 	const totalPolys = comp.reduce((s, c) => s + c.count, 0);
 
 	return (
-		<AnimatePresence>
-			{open && tiling ? (
-				<motion.div
-					className="fixed inset-0 z-50 flex justify-end"
-					role="dialog"
-					aria-modal="true"
-					aria-label={`Tiling ${tiling.canonical_key}`}
-				>
-					<motion.div
-						className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						transition={{ duration: 0.18 }}
-						onClick={onClose}
-					/>
-					<motion.aside
-						className="relative flex h-full w-full max-w-md flex-col border-l border-line bg-surface-overlay shadow-xl"
-						initial={{ x: "100%" }}
-						animate={{ x: 0 }}
-						exit={{ x: "100%" }}
-						transition={{ type: "tween", duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-					>
-						<header className="flex shrink-0 items-center gap-2 border-b border-line-subtle px-4 py-3">
-							<h2 className="text-sm font-medium text-fg">Inspector</h2>
-							<span className="font-mono text-xs text-fg-muted">· seed #{tiling.seed_idx ?? "?"}</span>
-							<div className="flex-1" />
-							<button
-								ref={closeRef}
-								type="button"
-								onClick={onClose}
-								className="rounded-md p-1 text-fg-secondary transition-colors hover:bg-surface-overlay/70 hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
-								title="Close (Esc)"
-							>
-								<X size={16} />
-							</button>
-						</header>
-
-						<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-							<div className="aspect-square w-full overflow-hidden rounded-lg border border-line bg-surface-raised">
-								{rc ? (
-									<TilingThumbnail translationalCell={rc as TranslationalCellData} pxPerEdge={zoom} />
-								) : (
-									<div className="flex h-full w-full items-center justify-center text-xs text-fg-disabled">
-										no render mirror
-									</div>
-								)}
+		<Modal
+			open={next != null}
+			onOpenChange={(open) => {
+				if (!open) onClose();
+			}}
+			title={`Inspector · seed #${tiling?.seed_idx ?? "?"}`}
+			description="One found tiling, large, with its polygon composition and canonical key."
+			size="sm"
+		>
+			{tiling ? (
+				<div className="flex flex-col gap-4 p-4 md:max-h-[75vh] md:overflow-y-auto">
+					<div className="ta-well aspect-square w-full overflow-hidden">
+						{rc ? (
+							<TilingThumbnail translationalCell={rc as TranslationalCellData} pxPerEdge={zoom} />
+						) : (
+							<div className="flex h-full w-full items-center justify-center text-small text-fg-muted">
+								no render mirror
 							</div>
+						)}
+					</div>
 
-							<Slider label="zoom" value={zoom} onChange={setZoom} min={14} max={96} step={2} unit="px/edge" />
+					<Slider label="zoom" value={zoom} onChange={setZoom} min={14} max={96} step={2} unit="px/edge" />
 
-							<div className="grid grid-cols-2 gap-2">
-								<Field label="k-uniform">{tiling.k}</Field>
-								<Field label="polygons / cell">{totalPolys}</Field>
-								<Field label="seed">#{tiling.seed_idx ?? "?"}</Field>
-								<Field label="first seen">
-									<span className="font-mono text-xs tabular-nums">{fmtClock(tiling.first_seen_at)}</span>
-								</Field>
-							</div>
+					<div className="grid grid-cols-2 gap-2">
+						<Field label="k-uniform">{tiling.k}</Field>
+						<Field label="polygons / cell">{totalPolys}</Field>
+						<Field label="seed">#{tiling.seed_idx ?? "?"}</Field>
+						<Field label="first seen">
+							<span className="font-mono text-small tabular-nums">{fmtClock(tiling.first_seen_at)}</span>
+						</Field>
+					</div>
 
-							<div>
-								<div className="mb-1.5 text-[10px] tracking-wide text-fg-disabled uppercase">composition</div>
-								<div className="flex flex-wrap gap-1.5">
-									{comp.length === 0 ? (
-										<span className="text-xs text-fg-disabled">—</span>
-									) : (
-										comp.map((c) => (
-											<span
-												key={c.n}
-												className="inline-flex items-center gap-1.5 rounded-control border border-line-subtle bg-surface-raised/60 py-1 pr-2 pl-1.5 text-xs"
-											>
-												<span
-													className="inline-block size-3 rounded-[3px] border border-black/30"
-													style={{ background: tileFill(polygonHue(c.n), TILE_FILL_ALPHA) }}
-												/>
-												<span className="text-fg-secondary">{ngonName(c.n)}</span>
-												<span className="font-mono text-fg-muted tabular-nums">×{c.count}</span>
-											</span>
-										))
-									)}
-								</div>
-							</div>
-
-							<div>
-								<div className="mb-1.5 text-[10px] tracking-wide text-fg-disabled uppercase">canonical key</div>
-								<div className="flex items-center gap-1.5 rounded-lg border border-line-subtle bg-surface-raised/50 px-3 py-2">
-									<code className="min-w-0 flex-1 font-mono text-[11px] break-all text-fg-secondary">
-										{tiling.canonical_key}
-									</code>
-									<CopyButton text={tiling.canonical_key} />
-								</div>
-							</div>
-
-							<p className="text-[10px] leading-relaxed text-fg-disabled">
-								Display-only view of the float render mirror. The exact cell (cell_codec) and the certified digest live
-								on the local scout — the site never produces them.
-							</p>
+					<div>
+						<div className="ta-label mb-1.5">composition</div>
+						<div className="flex flex-wrap gap-1.5">
+							{comp.length === 0 ? (
+								<span className="text-small text-fg-muted">—</span>
+							) : (
+								comp.map((c) => (
+									<Badge key={c.n} tone="line" className="gap-1.5 py-1 pr-2 pl-1.5 text-small">
+										<span
+											className="inline-block size-3 rounded-tag border border-black/30"
+											style={{ background: tileFill(polygonHue(c.n), TILE_FILL_ALPHA) }}
+										/>
+										{ngonName(c.n)}
+										<span className="font-mono text-fg-muted tabular-nums">×{c.count}</span>
+									</Badge>
+								))
+							)}
 						</div>
-					</motion.aside>
-				</motion.div>
+					</div>
+
+					<div>
+						<div className="ta-label mb-1.5">canonical key</div>
+						<div className="ta-card flex items-center gap-1.5 px-3 py-2">
+							<code className="min-w-0 flex-1 font-mono text-caption break-all text-fg-secondary">
+								{tiling.canonical_key}
+							</code>
+							<CopyButton text={tiling.canonical_key} />
+						</div>
+					</div>
+
+					<p className="text-micro leading-relaxed text-fg-muted">
+						Display-only view of the float render mirror. The exact cell (cell_codec) and the certified digest live on
+						the local scout — the site never produces them.
+					</p>
+				</div>
 			) : null}
-		</AnimatePresence>
+		</Modal>
 	);
 }

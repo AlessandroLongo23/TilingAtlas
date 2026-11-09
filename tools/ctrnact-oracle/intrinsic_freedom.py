@@ -162,7 +162,7 @@ def freedom(polys, basis, tol=1e-7):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shelf", default=None, help="a built shelf .json.gz (its -k*.json.gz shards are included)")
+    ap.add_argument("--shelf", default=None, help="a built shelf .json.br (its -k*.json.br shards are included)")
     ap.add_argument("--id", action="append", default=[], help="only these ids")
     ap.add_argument("--gate", action="store_true",
                     help="check every parametric entry has intrinsic dimension >= its shipped P")

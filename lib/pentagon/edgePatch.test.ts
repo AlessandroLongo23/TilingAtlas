@@ -7,7 +7,7 @@ import { buildPentEdgePatch } from "./edgePatch";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataText } from "../../scripts/atlas/io.mjs";
 
-const shard = (k: number) => `public/pentagon-edges/pe1-k${k}.json.gz`;
+const shard = (k: number) => `public/pentagon-edges/pe1-k${k}.json.br`;
 const KS = [2, 4, 6, 8, 10].filter((k) => existsSync(shard(k)));
 const read = (k: number): PentEdgeRecord[] => decodeAtlas<PentEdgeRecord>(JSON.parse(readDataText(shard(k))));
 

@@ -1,11 +1,14 @@
 // The top of a find run's page (tilesearch --find): whether a tiling meeting every required set was found,
 // what is proven, and the steps that got there. A find run proves existence; it never counts, so the
 // enumeration band (tilings per k, roots, estimate) has no place here.
-import { Check, Clock, LoaderCircle, Minus } from "lucide-react";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Check, Clock, Minus } from "lucide-react";
+import { Badge } from "@/design-system/components/badge";
+import { Field } from "@/design-system/components/field";
+import { Spinner } from "@/design-system/components/spinner";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { cn } from "@/lib/utils/cn";
 import type { FindStep, Run } from "./bridge";
+import { Facts, type Fact } from "./overview";
 import { duration, when } from "./runs";
 
 /** What a find run has come to, in a few words: for the run list and the page's heading. */
@@ -29,11 +32,11 @@ export function FindMark({ run }: { run: Run }) {
 	const k = foundAt(run);
 	if (k)
 		return (
-			<span className="flex items-center gap-1 font-mono text-xs font-medium text-fg tabular-nums">
-				<Check className="h-3.5 w-3.5 text-success" aria-label="found" />k {k}
+			<span className="flex items-center gap-1 font-mono text-small font-medium text-fg tabular-nums">
+				<Check className="size-icon-sm text-success" aria-label="found" />k {k}
 			</span>
 		);
-	if (run.state === "finished") return <span className="font-mono text-xs text-fg-muted">none</span>;
+	if (run.state === "finished") return <span className="font-mono text-small text-fg-muted">none</span>;
 	return null;
 }
 
@@ -49,8 +52,7 @@ function result(s: FindStep): string {
 
 function Mark({ s }: { s: FindStep }) {
 	const cls = "h-3.5 w-3.5 shrink-0";
-	if (s.state === "running")
-		return <LoaderCircle className={cn(cls, "animate-spin text-accent")} aria-label="running" />;
+	if (s.state === "running") return <Spinner label="running" className="text-fg-accent" />;
 	if (s.found) return <Check className={cn(cls, "text-success")} aria-label="found" />;
 	if (s.state === "timed") return <Clock className={cn(cls, "text-fg-muted")} aria-label="time limit" />;
 	return <Minus className={cn(cls, "text-fg-muted")} aria-label="none" />;
@@ -66,7 +68,7 @@ function StepRow({ s, targets }: { s: FindStep; targets: string[] }) {
 				? `All sets · ${s.name === "union-all" ? "all pair tilings" : `pair tilings with ${s.name.slice(6)}`}`
 				: `Sets ${pairName(s)} · tilings so far`;
 	return (
-		<li className="flex items-center gap-2 text-xs">
+		<li className="flex items-center gap-2 text-small">
 			<Mark s={s} />
 			<span
 				className="min-w-0 flex-1 truncate text-fg"
@@ -104,7 +106,7 @@ export function FindOverview({ run }: { run: Run }) {
 				: run.state === "failed"
 					? "Failed"
 					: "Stopped";
-	const facts: { label: string; value: string; sub?: string }[] = [];
+	const facts: Fact[] = [];
 	facts.push({ label: live ? "Elapsed" : "Search time", value: duration(run.elapsed) });
 	if (run.created) facts.push({ label: "Started", value: when(run.created) });
 	if (run.options)
@@ -122,24 +124,21 @@ export function FindOverview({ run }: { run: Run }) {
 		});
 
 	return (
-		<section className="grid shrink-0 grid-cols-[minmax(200px,260px)_minmax(0,1fr)_minmax(200px,260px)] overflow-hidden rounded-surface border border-line-subtle bg-surface-raised shadow-sm max-xl:grid-cols-[minmax(200px,260px)_minmax(0,1fr)]">
+		<section className="ta-card grid shrink-0 grid-cols-[minmax(200px,260px)_minmax(0,1fr)_minmax(200px,260px)] overflow-hidden shadow-raised max-xl:grid-cols-[minmax(200px,260px)_minmax(0,1fr)]">
 			<div className="flex flex-col gap-3 border-r border-line-subtle p-4">
-				<div>
-					<div className="ta-label flex items-center gap-1.5">
-						Existence
-						<InfoDot side="bottom" label="What a find run proves">
-							A tiling found is a tiling: it meets every required set. When none is found, only the steps on the full
-							board prove anything: each k they searched to the end has no tiling meeting their sets, so none meeting
-							all of them. The steps on smaller boards are shortcuts that can miss.
-						</InfoDot>
-					</div>
-					<div className="mt-1.5 text-[32px] leading-none font-semibold tracking-[-0.02em] text-fg">{title}</div>
-					<div className="mt-1.5 text-sm text-fg-secondary">
+				<Field
+					label="Existence"
+					hint="A tiling found is a tiling: it meets every required set. When none is found, only the steps on the full board prove anything: each k they searched to the end has no tiling meeting their sets, so none meeting all of them. The steps on smaller boards are shortcuts that can miss."
+					hintSide="bottom"
+					hintLabel="What a find run proves"
+				>
+					<div className="text-display leading-none font-semibold tracking-tight text-fg">{title}</div>
+					<div className="text-body text-fg-secondary">
 						{k ? `a tiling at k = ${k}` : `k = ${run.kmin} to ${run.kmax}`}
 					</div>
-				</div>
+				</Field>
 				{proven ? (
-					<p className="text-xs leading-snug text-fg-secondary">
+					<p className="text-small leading-tight text-fg-secondary">
 						<span className="font-medium text-fg">Proven:</span> no tiling meets every set below{" "}
 						<span className="whitespace-nowrap">k = {proven}</span>.
 					</p>
@@ -147,7 +146,7 @@ export function FindOverview({ run }: { run: Run }) {
 				{f?.targets.length ? (
 					<ol className="mt-auto space-y-0.5">
 						{f.targets.map((t, i) => (
-							<li key={i} className="flex gap-2 text-xs">
+							<li key={i} className="flex gap-2 text-small">
 								<span className="w-3 shrink-0 font-mono text-fg-muted">{i + 1}</span>
 								<span className="min-w-0 truncate font-mono text-fg-secondary" title={t}>
 									{t}
@@ -160,56 +159,39 @@ export function FindOverview({ run }: { run: Run }) {
 
 			<div className="min-w-0 space-y-3 p-4">
 				{!f ? (
-					<p className="text-sm text-fg-secondary">
+					<p className="text-body text-fg-secondary">
 						{live ? "Starting the first step." : "This run kept no record of its steps."}
 					</p>
 				) : null}
 				{pairs.length ? (
-					<div>
-						<div className="ta-label">Each two sets, full board</div>
-						<ul className="mt-1.5 flex max-h-24 flex-wrap gap-1 overflow-y-auto">
+					<Field label="Each two sets, full board">
+						<ul className="flex max-h-24 flex-wrap gap-1 overflow-y-auto">
 							{pairs.map((s) => (
 								<li key={s.name}>
 									<Tooltip content={`${s.targets.map((t) => f!.targets[t]).join(" + ")}: ${result(s)}`}>
-										<span
-											className={cn(
-												"inline-flex items-center gap-1 rounded-control border border-line-subtle px-1.5 py-0.5 text-xs tabular-nums",
-												s.found ? "text-fg" : "text-fg-muted",
-											)}
-										>
+										<Badge tone="line" className={cn("tabular-nums", s.found ? "text-fg" : "text-fg-muted")}>
 											<Mark s={s} />
 											{pairName(s)}
 											{s.found ? <span className="text-fg-secondary">k {s.found}</span> : null}
-										</span>
+										</Badge>
 									</Tooltip>
 								</li>
 							))}
 						</ul>
-					</div>
+					</Field>
 				) : null}
 				{rest.length ? (
-					<div>
-						<div className="ta-label">Then</div>
-						<ul className="mt-1.5 max-h-32 space-y-1 overflow-y-auto">
+					<Field label="Then">
+						<ul className="max-h-32 space-y-1 overflow-y-auto">
 							{rest.map((s) => (
 								<StepRow key={s.name} s={s} targets={f!.targets} />
 							))}
 						</ul>
-					</div>
+					</Field>
 				) : null}
 			</div>
 
-			<dl className="grid grid-cols-2 content-start gap-x-5 gap-y-3 border-l border-line-subtle p-4 max-xl:col-span-2 max-xl:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] max-xl:border-t max-xl:border-l-0">
-				{facts.map((x) => (
-					<div key={x.label} className="min-w-0">
-						<dt className="ta-label">{x.label}</dt>
-						<dd className="mt-1 truncate text-sm font-medium text-fg tabular-nums" title={x.sub}>
-							{x.value}
-							{x.sub ? <span className="ml-1.5 text-xs font-normal text-fg-muted">{x.sub}</span> : null}
-						</dd>
-					</div>
-				))}
-			</dl>
+			<Facts facts={facts} />
 		</section>
 	);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SPHERICAL_SOLIDS } from "./sphericalSolids";
+import { SPHERICAL_SOLIDS } from "./sphericalSolidsAll";
 import {
 	faceKindCount,
 	flatSolidTriangles,

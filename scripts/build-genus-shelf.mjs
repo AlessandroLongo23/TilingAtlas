@@ -1,4 +1,4 @@
-// Write the sph-tor-* and sph-gen<g>-* records into public/reference-atlas-spherical.json.gz from the
+// Write the sph-tor-* and sph-gen<g>-* records into public/reference-atlas-spherical.json.br from the
 // rows tools/ctrnact-oracle/gen_genus_shelf.py --emit measures. One shelf per genus, genus 1 upward.
 //
 // SURGICAL, like build-nonconvex-shelf.mjs: the genus rows are replaced in place and every other
@@ -15,7 +15,7 @@ import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ROWS = path.join(ROOT, "tools", "ctrnact-oracle", "genus-atlas-rows.json");
 const HEMI = path.join(ROOT, "tools", "ctrnact-oracle", "hemi-atlas-rows.json");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.br");
 const DISCOVERER = "Čtrnáct engine + develop_euclid, mixed closure, 2026-08-25";
 // The hemipolyhedra are the one shelf here the engine did not find; gen_hemi_shelf.py constructs them
 // from their parent vertex sets and verifies. The attribution says so instead of borrowing the engine's.
@@ -135,4 +135,4 @@ if (!write) {
 }
 atlas.records = out;
 writeDataFile(ATLAS, JSON.stringify(atlas));
-console.log(`wrote public/reference-atlas-spherical.json.gz — ${out.length} records`);
+console.log(`wrote public/reference-atlas-spherical.json.br — ${out.length} records`);

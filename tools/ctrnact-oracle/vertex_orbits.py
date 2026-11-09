@@ -347,7 +347,7 @@ def sample_alphas(rec, n, D=24):
 def as_family(rec):
     """The exporter's record and the shipped shelf entry, in one shape.
 
-    The shelf (`public/reference-atlas-period.json.gz`) nests the symbolic cell under `paramCell` and keeps
+    The shelf (`public/reference-atlas-period.json.br`) nests the symbolic cell under `paramCell` and keeps
     its own widened `region`; the exporter emits the same fields flat. Reading both is what lets the 27
     verified k≤2 entries act as the regression gate for this counter.
     """
@@ -469,7 +469,7 @@ def stamp_records(records, rigid, log, samples=5, D=24, reid=True):
 def galebach_gate(max_k=6, atlas=None):
     """Reproduce Galebach's k on the classical k-uniform catalogue. The counter's licence to operate.
 
-    `public/reference-atlas.json.gz` carries Brian Galebach's enumeration under `source: "galebach"` with the
+    `public/reference-atlas.json.br` carries Brian Galebach's enumeration under `source: "galebach"` with the
     published counts — 11, 20, 61, 151, 332, 673 for k = 1..6 — and those k values come from outside this
     project entirely. A counter that reproduces all 1,248 of them is measuring k-uniformity; one that does
     not is measuring something else, whatever its output looks like on a shelf with no ground truth.
@@ -478,7 +478,7 @@ def galebach_gate(max_k=6, atlas=None):
     """
     root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
     from develop_freedraw import read_json
-    path = atlas or os.path.join(root, "public", "reference-atlas.json.gz")
+    path = atlas or os.path.join(root, "public", "reference-atlas.json.br")
     entries = [x for x in read_json(path)
                if x.get("source") == "galebach" and x["k"] <= max_k]
     from collections import Counter

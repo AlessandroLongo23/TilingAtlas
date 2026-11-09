@@ -37,8 +37,8 @@ export function SquaringOverlay({ selected }: { selected: CatalogueTiling | null
 	const numbers = useConfiguration((s) => s.squaringNumbers);
 	const lattice = useConfiguration((s) => s.squaringLattice);
 
-	const avail = squaringAvailability(selected);
-	const support = avail.ok ? avail.support : null;
+	const avail = on ? squaringAvailability(selected) : null; // the solves only while squaring is on
+	const support = avail?.ok ? avail.support : null;
 
 	// The same squaring the canvas is drawing, resolved the same way: the exact solve when the class is
 	// integral, the blend otherwise. Memoised, never recomputed inside the frame loop.

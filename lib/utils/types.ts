@@ -1,4 +1,4 @@
-import { Vector } from "@/classes";
+import { Vector } from "@/classes/Vector";
 
 export enum TriangleType {
 	EQUILATERAL = "equilateral", // all sides are equal

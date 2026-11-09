@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { LayerHistory } from "@/lib/hooks/useModalLayer";
-import { UiProviders } from "@/components/ui/ui-providers";
+import { UiProviders } from "@/design-system/components/ui-providers";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 

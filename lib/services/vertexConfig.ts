@@ -26,6 +26,15 @@ export function canonicalVC(tokens: readonly string[]): string {
 	return canonicalizeVertexFigure([...tokens], compareToken).join(".");
 }
 
+/** A tiling's vertex types from its per-orbit canonical figures: how many distinct (m), their multiplicities
+ *  descending (partition), and the figures in that order, ties by name (vcs[i] occurs partition[i] times). */
+export function classifyVCs(configKeys: readonly string[]): { m: number; partition: number[]; vcs: string[] } {
+	const counts = new Map<string, number>();
+	for (const key of configKeys) counts.set(key, (counts.get(key) ?? 0) + 1);
+	const order = [...counts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+	return { m: counts.size, partition: order.map(([, n]) => n), vcs: order.map(([vc]) => vc) };
+}
+
 /**
  * Read one vertex figure from any notation the literature and the solvers use: dots or commas, an
  * optional bracket and trailing symmetry flag ("(3,6,4,6)A"), and exponents for repeats ("3^4.6",

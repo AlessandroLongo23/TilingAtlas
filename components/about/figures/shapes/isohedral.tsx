@@ -9,7 +9,7 @@
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/design-system/components/slider";
 import { Figure, OUTLINE, Stage, tileFill } from "@/components/about/figure";
 import { buildCell, buildMarked, type EdgeCurves } from "@/lib/isohedral/build";
 import { buildIsohedralCellMesh } from "@/lib/isohedral/cellMesh";
@@ -85,7 +85,7 @@ export function IsoTypeFigure({ types, caption }: { types?: string; caption?: st
 					/>
 					<Slider label="Bend the edges" value={bend} onChange={setBend} min={-0.5} max={0.5} step={0.01} />
 				</div>
-				<p className="text-center font-mono text-xs text-fg-muted">
+				<p className="text-center font-mono text-small text-fg-muted">
 					{info.label} · edge word {info.edgeWord} · {info.edgeShapes.map((k) => KIND_WORD[k]).join(", ")} ·{" "}
 					{info.numAspects} aspect{info.numAspects === 1 ? "" : "s"}
 					{cell?.degenerate ? " · the outline crosses itself here" : ""}
@@ -215,8 +215,8 @@ export function IsoEdgeFigure({ caption }: { caption?: string }) {
 								<circle cx={0} cy={0} r={0.03} fill="#000" />
 								<circle cx={1} cy={0} r={0.03} fill="#000" />
 							</Stage>
-							<p className="mt-1 text-center font-mono text-sm text-fg">{k}</p>
-							<p className="text-center text-xs leading-snug text-fg-muted">{EDGE_TEXT[k]}</p>
+							<p className="mt-1 text-center font-mono text-body text-fg">{k}</p>
+							<p className="text-center text-small leading-tight text-fg-muted">{EDGE_TEXT[k]}</p>
 						</div>
 					);
 				})}
@@ -279,10 +279,10 @@ export function IsoMarkedFigure({ caption }: { caption?: string }) {
 							step={0.01}
 						/>
 					) : (
-						<p className="text-xs text-fg-muted">This tile is rigid: every angle and side is fixed by the net.</p>
+						<p className="text-small text-fg-muted">This tile is rigid: every angle and side is fixed by the net.</p>
 					)}
 				</div>
-				<p className="text-center font-mono text-xs text-fg-muted">
+				<p className="text-center font-mono text-small text-fg-muted">
 					{pad2(ih)} · net {sup(type.laves)} · tile symbol {type.tileSymbol} · adjacency {type.adjacency} ·{" "}
 					{type.tileGroupOrder} mark{type.tileGroupOrder === 1 ? "" : "s"} per tile · group {type.wallpaper}
 				</p>

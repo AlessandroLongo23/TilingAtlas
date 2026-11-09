@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { prepare, type Box } from "@/lib/render/figureCanvas";
 import { drawWithText, type Api } from "@/lib/render/figureGlyphs";
+import { cn } from "@/lib/utils/cn";
 
 // One framed canvas with a caption above: the chrome every multi-panel engine figure
 // on /defense uses. Kept in one place so a row of three and a row of four cannot drift apart.
@@ -44,15 +45,14 @@ export function FigurePanel({ panel, aspect = "4/3" }: { panel: PanelSpec; aspec
 	return (
 		<figure className="m-0 flex min-w-[10rem] flex-1 flex-col gap-1.5">
 			<figcaption
-				className={`text-center text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg${panel.mono ? "font-mono" : ""}`}
+				className={cn(
+					"text-center text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg",
+					panel.mono && "font-mono",
+				)}
 			>
 				{panel.title}
 			</figcaption>
-			<div
-				ref={host}
-				className="bg-surface-base relative w-full overflow-hidden rounded-xl border border-line"
-				style={{ aspectRatio: aspect }}
-			>
+			<div ref={host} className="ta-well relative w-full overflow-hidden" style={{ aspectRatio: aspect }}>
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
 		</figure>

@@ -9,7 +9,17 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { check, cyclicKey, emptyBoard, parse, readLength, serialize, withRequiredFaces, type Board } from "./board";
 import { arrangements, closingVertices, colorize, decorate, glueLines, sidesMeet, type EdgePreset } from "./corners";
-import { certificatesIn, decode, flatCellWithOverlays, flatPattern, geometry, marksEdges, vertexWords, withSymbols } from "./develop";
+import {
+	certificatesIn,
+	decode,
+	flatCellWithOverlays,
+	flatPattern,
+	geometry,
+	hyperbolicDarts,
+	marksEdges,
+	vertexWords,
+	withSymbols,
+} from "./develop";
 import { keepNew, withFamily } from "./family";
 import { fittingVertices, layable } from "./figures";
 import { problemOf, withDrawnFace, withoutUnitType, type Edge } from "./freeface";
@@ -18,7 +28,7 @@ const ENGINE = join(__dirname, "../..", process.platform === "win32" ? "tilesear
 
 /** Quick setup's edge-types path: type the sides, build the plain vertices that fit, type them into every
  *  edge pattern, add the gluing lines. */
-function setUp(text: string, preset: EdgePreset | null, loose = true): Board {
+function setUp(text: string, preset: EdgePreset, loose = true): Board {
 	const { board, glue, vertices, plain } = decorate(parse(text).board, preset, loose);
 	const words = vertices(fittingVertices(plain, 12)!);
 	return { ...board, vertices: [...words, ...glue].map((word) => ({ word })), permutations: false };
@@ -31,7 +41,9 @@ function run(b: Board, drawTo: number | ((file: string) => boolean) = 2) {
 	writeFileSync(join(dir, "input.board"), serialize(b));
 	execFileSync(ENGINE, ["input.board", "--threads", "8"], { cwd: dir, stdio: "ignore" });
 	const out = join(dir, `solver_${b.name}`);
-	const census = [...readFileSync(join(out, "census.txt"), "utf8").matchAll(/k=\d+ -- (\d+)/g)].map((m) => Number(m[1]));
+	const census = [...readFileSync(join(out, "census.txt"), "utf8").matchAll(/k=\d+ -- (\d+)/g)].map((m) =>
+		Number(m[1]),
+	);
 	const board = parse(readFileSync(join(out, "board.txt"), "utf8")).board;
 	const symbols = Object.fromEntries(
 		readFileSync(join(out, "symbols.txt"), "utf8")
@@ -41,16 +53,26 @@ function run(b: Board, drawTo: number | ((file: string) => boolean) = 2) {
 			.map((l) => l.split(" ")),
 	);
 	let failed = 0;
-	const draw = typeof drawTo === "number" ? (f: string) => Number(/solver_(\d+)_.*\.txt$/.exec(f)?.[1]) <= drawTo : drawTo;
+	const draw =
+		typeof drawTo === "number" ? (f: string) => Number(/solver_(\d+)_.*\.txt$/.exec(f)?.[1]) <= drawTo : drawTo;
 	for (const f of readdirSync(out).filter(draw))
 		for (const c of certificatesIn(readFileSync(join(out, f), "utf8"))) {
 			const text = withSymbols(c, symbols);
 			try {
 				const g = geometry(board, vertexWords(text));
-				if (g.kind !== "plane") throw new Error(g.kind);
+				if (g.kind === "none") throw new Error(g.message);
 				const d = decode(text, board);
-				if (marksEdges(board)) flatPattern(d, board, g.turn, "t");
-				else flatCellWithOverlays(d, board, g.turn);
+				// the disk draws an edge system's edges from each dart's drawn flag (or its digons)
+				if (g.kind === "hyperbolic") {
+					const darts = hyperbolicDarts(d, g, board);
+					if (marksEdges(board) && !darts.drawn && !darts.sizes.includes(2)) throw new Error("edges not marked");
+				} else if (marksEdges(board)) flatPattern(d, board, g.turn, "t");
+				else {
+					const { cell } = flatCellWithOverlays(d, board, g.turn);
+					// a colouring draws as many colours as its certificate's corners carry letters
+					const letters = new Set([...text.matchAll(/@([A-H])/g)].map((m) => m[1]));
+					if (letters.size && new Set(cell.p?.map((t) => t.hue)).size !== letters.size) throw new Error("colours");
+				}
 			} catch {
 				failed++;
 			}
@@ -84,8 +106,20 @@ describe("edge types", () => {
 		expect(run(b)).toEqual({ census: [13, 153, 1254], failed: 0 });
 	});
 
+	it("drawn and hidden sides of the {4,5} grid: the digon encoding's 55, drawn in the disk as edges", () => {
+		// the disk drew these as a colouring, one hue per square variant and no edge (2026-11-09)
+		const sq = { ...emptyBoard(), name: "h45", kmax: 1, angles: [{ sym: "A4" }], faces: [{ word: ["A4"], repeat: 4 }] };
+		const { board, glue, vertices } = decorate(sq, "drawn", false);
+		const b = {
+			...board,
+			vertices: [...vertices([Array(5).fill("A4")]), ...glue].map((word) => ({ word })),
+			permutations: false,
+		};
+		expect(run(b, 1)).toEqual({ census: [55], failed: 0 });
+	});
 	it("reads an edge line back as it was written", () => {
-		const text = "name e\nk 1 2\n\nangle A4 90\nedge ES length sqrt(2) bump\n\nface A4 ES x 4\n\nvertex A4 A4 A4 A4\nvertex ES ES\n\npermutations no\n";
+		const text =
+			"name e\nk 1 2\n\nangle A4 90\nedge ES length sqrt(2) bump\n\nface A4 ES x 4\n\nvertex A4 A4 A4 A4\nvertex ES ES\n\npermutations no\n";
 		const { board, problems } = parse(text);
 		expect(problems).toEqual([]);
 		expect(serialize(board)).toBe(text);
@@ -114,9 +148,16 @@ describe("edge types", () => {
 	});
 
 	it("require face: bubble triangles, squares and hexagons with one of each shape: 6 / 123 / 1,436", () => {
-		let b = setUp("name tshf\nk 1 3\nangle A3 60\nangle A4 90\nangle A6 120\nface A3 x 3\nface A4 x 4\nface A6 x 6\nvertex A3 A3 A3 A3 A3 A3\n", "bubble");
+		let b = setUp(
+			"name tshf\nk 1 3\nangle A3 60\nangle A4 90\nangle A6 120\nface A3 x 3\nface A4 x 4\nface A6 x 6\nvertex A3 A3 A3 A3 A3 A3\n",
+			"bubble",
+		);
 		// one line per shape, any of its variants (the corner names start with the shape's corner)
-		for (const c of ["A3.", "A4.", "A6."]) b = withRequiredFaces(b, b.faces.filter((f) => f.word[0].startsWith(c)));
+		for (const c of ["A3.", "A4.", "A6."])
+			b = withRequiredFaces(
+				b,
+				b.faces.filter((f) => f.word[0].startsWith(c)),
+			);
 		expect(b.require).toHaveLength(3);
 		expect(run(b)).toEqual({ census: [6, 123, 1436], failed: 0 });
 	});
@@ -136,7 +177,8 @@ face C90 EH x 4
 vertex C90 C90 C90 C90
 `;
 		// a 90° corner sits in faces of three shapes, so the overlap test stands aside: sets, every order tried
-		const { board, glue } = decorate(parse(text).board, null);
+		const board = parse(text).board;
+		const glue = glueLines(board);
 		const words = [
 			["C90", "C90", "C90", "C90"],
 			["C90", "C90", "C90", "C45", "C45"],
@@ -184,13 +226,52 @@ describe("lengths drawn as edge types, held to the atlas's edge-typed palettes",
 		expect(serialize(b)).toContain("edge Esqrt2 length sqrt2\n");
 		expect(run(quick(b))).toEqual({ census: [2, 12, 41], failed: 0 });
 	});
+	it("drawn and hidden sides of the 45-45-90 triangle on the (2,4,4) Schwarz board: the sch244 shelf's 111 / 283", () => {
+		// the drawn preset used to take the √2 side's type off with the rest, leaving a triangle of three unit
+		// sides that closes only in the hyperbolic plane; each length now takes the preset's types of its own.
+		// No loose ends, as Marek's edge systems have none (with them: 151 / 354)
+		const tri = drawn(board("sch244", 3), [6, 3, 3], ["1", "sqrt2", "1"]);
+		const { board: b, glue, vertices, plain } = decorate(tri, "drawn", false);
+		expect(serialize(plain)).toBe(serialize({ ...tri, vertices: [] }));
+		expect(serialize(b)).toContain("edge Esqrt2_Ed length sqrt2 drawn\nedge Esqrt2_Eu length sqrt2 hidden\n");
+		expect(b.faces).toHaveLength(6);
+		expect(serialize(decorate(b, "drawn").board)).toBe(serialize(b));
+		// colourings keep the length too
+		expect(colorize(tri, 2).board.faces.every((f) => f.word.includes("Esqrt2"))).toBe(true);
+		// the board's two vertices: four right angles at a square's centre, eight 45° corners at a lattice point
+		const right = plain.angles.find((a) => a.value === "90")!.sym;
+		const words = fittingVertices(plain, 8)!.filter(
+			(w) => w.length === (w[0] === right ? 4 : 8) && new Set(w).size === 1,
+		);
+		expect(words).toHaveLength(2);
+		const schwarz = { ...b, vertices: [...vertices(words), ...glue].map((word) => ({ word })), permutations: false };
+		expect(
+			geometry(
+				schwarz,
+				schwarz.vertices.map((v) => v.word),
+			).kind,
+		).toBe("plane");
+		expect(run(schwarz, 3)).toEqual({ census: [0, 111, 283], failed: 0 });
+	});
 	it("the triangle and the squares at both scales: tri45all's 16 / 161 / 1,132", () => {
 		let b = board("tri45all", 3);
 		for (const [a, l] of [
-			[[6, 3, 3], ["1", "sqrt2", "1"]],
-			[[6, 3, 3], ["sqrt2", "2", "sqrt2"]],
-			[[6, 6, 6, 6], ["1", "1", "1", "1"]],
-			[[6, 6, 6, 6], ["sqrt2", "sqrt2", "sqrt2", "sqrt2"]],
+			[
+				[6, 3, 3],
+				["1", "sqrt2", "1"],
+			],
+			[
+				[6, 3, 3],
+				["sqrt2", "2", "sqrt2"],
+			],
+			[
+				[6, 6, 6, 6],
+				["1", "1", "1", "1"],
+			],
+			[
+				[6, 6, 6, 6],
+				["sqrt2", "sqrt2", "sqrt2", "sqrt2"],
+			],
 		] as [number[], string[]][])
 			b = drawn(b, a, l);
 		expect(run(quick(b))).toEqual({ census: [16, 161, 1132], failed: 0 });
@@ -225,9 +306,15 @@ describe("lengths drawn as edge types, held to the atlas's edge-typed palettes",
 			"name old\nk 1 4\nangle A4\nangle H_135 135\nangle H_90 90\nedge E1 length 1\nedge Esqrt2 length sqrt2\n" +
 				"face A4 x 4\nface H_135 E1 H_90 E1 H_135 E1 H_90 Esqrt2 H_90 E1\nvertex A4 A4 A4 A4\nvertex E1 E1\nvertex Esqrt2 Esqrt2\n",
 		).board;
-		expect(check(old).filter((p) => /needs no type/.test(p.message)).map((p) => p.where)).toEqual([{ kind: "face", index: 0 }]);
+		expect(
+			check(old)
+				.filter((p) => /needs no type/.test(p.message))
+				.map((p) => p.where),
+		).toEqual([{ kind: "face", index: 0 }]);
 		const now = withoutUnitType(old);
-		expect(serialize(now)).toContain("face H_135 H_90 H_135 H_90 Esqrt2 H_90\n\nvertex A4 A4 A4 A4\nvertex Esqrt2 Esqrt2\n");
+		expect(serialize(now)).toContain(
+			"face H_135 H_90 H_135 H_90 Esqrt2 H_90\n\nvertex A4 A4 A4 A4\nvertex Esqrt2 Esqrt2\n",
+		);
 		expect(run(quick(now), 4)).toEqual({ census: [1, 2, 2, 5], failed: 0 });
 	});
 	it("the square and the house to k = 21, both required: the tilings that would not draw", () => {
@@ -249,7 +336,9 @@ function colored(text: string, n: number, every: boolean, labeled = true): Board
 	const { board, vertices, uses, plain } = colorize(parse(text).board, n);
 	const words = vertices(fittingVertices(plain, 12)!);
 	const require = every ? uses(words).map((set) => ({ set: set.map((i) => i + 1) })) : [];
-	return { ...board, vertices: words.map((word) => ({ word })), require, permutations: false, colorsLabeled: labeled };
+	// a side typed by length keeps its type, which glues to itself
+	const all = [...words, ...glueLines(board)];
+	return { ...board, vertices: all.map((word) => ({ word })), require, permutations: false, colorsLabeled: labeled };
 }
 
 describe("colourings", () => {
@@ -269,10 +358,17 @@ describe("colourings", () => {
 		expect(run(colored(squares.replace("k 1 4", "k 1 3"), 2, false, false)).census).toEqual([5, 30, 166]);
 		expect(run(colored(squares.replace("k 1 4", "k 1 2"), 3, true, false)).census).toEqual([3, 58]);
 	});
+	it("the half square in three colours, all used: every tiling drawn in all three", () => {
+		// the walk round each face stepped by the wrong dart's length: with a √2 side no face closed, so none found
+		// its colour and all took the first (2026-11-09)
+		const tri = serialize(drawn({ ...emptyBoard(), name: "c224", kmax: 2 }, [6, 3, 3], ["1", "sqrt2", "1"]));
+		expect(run(colored(tri, 3, true, false))).toEqual({ census: [0, 162], failed: 0 });
+	});
 	it("proper: no two neighbouring squares share a colour", () => {
 		const { vertices } = colorize(parse(squares).board, 2, true);
 		// round a square vertex, two colours alternating: the checkerboard vertex only
-		expect(vertices([["A4", "A4", "A4", "A4"]]).map((w) => cyclicKey(w))).toEqual([cyclicKey(["A4@A", "A4@B", "A4@A", "A4@B"])]);
+		expect(vertices([["A4", "A4", "A4", "A4"]]).map((w) => cyclicKey(w))).toEqual([
+			cyclicKey(["A4@A", "A4@B", "A4@A", "A4@B"]),
+		]);
 	});
 });
-

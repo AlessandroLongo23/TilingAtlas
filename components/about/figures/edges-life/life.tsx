@@ -15,8 +15,8 @@ import { Children, isValidElement, useCallback, useEffect, useMemo, useState, ty
 import { Pause, Play, RotateCcw, SkipForward, Eraser } from "lucide-react";
 import { useAboutData } from "@/components/about/data-context";
 import { Segmented } from "@/components/shelf";
-import { Button } from "@/components/ui/button";
-import { Figure, OUTLINE, svgPoints, tidy, tileFill } from "@/components/about/figure";
+import { Button } from "@/design-system/components/button";
+import { Figure, OUTLINE, svgPoints, tidy, tileFill, FigureSvg } from "@/components/about/figure";
 import { buildPeriodicAdjacency, neighborhoodOf, type PeriodicAdjacency } from "@/lib/automata/adjacency";
 import { buildRuleTable, parseRule, RULE_GROUPS, type Neighborhood, type RuleSemantics } from "@/lib/automata/rule";
 import { availableTopologies, TOPOLOGIES, type TopologyId } from "@/lib/automata/topology";
@@ -250,7 +250,7 @@ export function CaLifeFigure({ rules, caption, children }: { rules?: string; cap
 	if (!board || !cells || !nbrs)
 		return (
 			<Figure caption={caption}>
-				<div className="flex h-48 items-center justify-center text-sm text-fg-muted">
+				<div className="flex h-48 items-center justify-center text-body text-fg-muted">
 					No cell for {current?.id ?? "(none)"}.
 				</div>
 			</Figure>
@@ -265,10 +265,9 @@ export function CaLifeFigure({ rules, caption, children }: { rules?: string; cap
 	const degrees = [...new Map(board.sides.map((s, i) => [s, nbrs[i].length])).entries()].sort((a, b) => a[0] - b[0]);
 	return (
 		<Figure caption={caption}>
-			<svg
+			<FigureSvg
 				viewBox={fitBox(board.polys)}
 				className="mx-auto block max-h-[380px] w-full touch-manipulation select-none"
-				role="img"
 				onPointerLeave={() => setHover(-1)}
 			>
 				<g transform="scale(1,-1)">
@@ -311,7 +310,7 @@ export function CaLifeFigure({ rules, caption, children }: { rules?: string; cap
 						pointerEvents="none"
 					/>
 				</g>
-			</svg>
+			</FigureSvg>
 			<div className="mt-2 flex items-center justify-center gap-1">
 				<Button
 					variant="ghost"
@@ -341,7 +340,7 @@ export function CaLifeFigure({ rules, caption, children }: { rules?: string; cap
 						setState({ key, cells: new Uint8Array(board.n), gen: 0 });
 					}}
 				/>
-				<span className="ml-2 font-mono text-xs text-fg-muted tabular-nums">
+				<span className="ml-2 font-mono text-small text-fg-muted tabular-nums">
 					gen {gen} · {live} live
 				</span>
 			</div>
@@ -382,7 +381,7 @@ export function CaLifeFigure({ rules, caption, children }: { rules?: string; cap
 					/>
 				)}
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				{hover >= 0
 					? `This ${shapeName(board.sides[hover])} has ${nbrs[hover].length} neighbours by ${hood === "edge" ? "shared edge" : "edge or corner"}; ${nbrs[hover].filter((j) => cells[j] === 1).length} of them are live.`
 					: `${degrees
@@ -469,9 +468,9 @@ export function CaSemanticsFigure({
 				/>
 			</div>
 			{/* A grid of divs, not a <table>: the article styles every table full-width at prose size. */}
-			<div className="mt-3 overflow-x-auto">
+			<div tabIndex={0} className="mt-3 overflow-x-auto">
 				<div
-					className="mx-auto grid w-max font-mono text-[11px] tabular-nums sm:text-xs"
+					className="mx-auto grid w-max font-mono text-caption tabular-nums sm:text-small"
 					style={{ gridTemplateColumns: `auto repeat(${width}, minmax(1.6rem, auto))` }}
 				>
 					<div className="border-b border-line px-2 py-1 text-left text-fg-muted">live neighbours</div>
@@ -494,7 +493,7 @@ export function CaSemanticsFigure({
 							return (
 								<div
 									key={`${r.sides}:${r.d}:${c}`}
-									className={`${CELL} ${c > r.d ? "bg-surface-raised" : b || s ? "font-semibold text-fg" : "text-fg-disabled"}`}
+									className={`${CELL} ${c > r.d ? "bg-surface-raised" : b || s ? "font-semibold text-fg" : "text-fg-muted"}`}
 								>
 									{c > r.d ? "" : b && s ? "BS" : b ? "B" : s ? "S" : "·"}
 								</div>
@@ -503,7 +502,7 @@ export function CaSemanticsFigure({
 					])}
 				</div>
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				{note} B: a dead tile with that many live neighbours is born. S: a live one survives.
 			</p>
 		</Figure>
@@ -554,7 +553,7 @@ function Gluing({ topology }: { topology: TopologyId }) {
 		},
 	];
 	return (
-		<svg viewBox={`0 0 ${W + 2 * x0} ${H + 2 * y0}`} className="mx-auto block h-auto w-full max-w-[320px]" role="img">
+		<FigureSvg viewBox={`0 0 ${W + 2 * x0} ${H + 2 * y0}`} className="mx-auto block h-auto w-full max-w-[320px]">
 			<rect x={x0} y={y0} width={W} height={H} fill={fillFor(4)} />
 			{def.id === "plane" && (
 				<text x={x0 + W / 2} y={y0 + H / 2 + 4} textAnchor="middle" fontSize={11} fill="#000">
@@ -573,7 +572,7 @@ function Gluing({ topology }: { topology: TopologyId }) {
 					{s.marks && <path d={s.marks} stroke="#000" strokeWidth={2} fill="none" strokeLinejoin="round" />}
 				</g>
 			))}
-		</svg>
+		</FigureSvg>
 	);
 }
 
@@ -615,7 +614,7 @@ export function CaSurfacesFigure({ caption, children }: { caption?: string; chil
 					/>
 				)}
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				{available.has("klein")
 					? BLURB[shown]
 					: `${current?.title ?? "This tiling"} admits no glide along the seam, so the Möbius band and the Klein bottle are greyed out. ${BLURB[shown]}`}

@@ -34,8 +34,8 @@ const OUT = path.join(ROOT, "lib", "services", "absorbedFamilyAliases.json");
 // Every shelf whose builder can be followed by shelf-dedup.py. A shelf with no `absorbs` anywhere costs
 // one read and contributes nothing, so listing a shelf here early is free.
 const SHELVES = ["mixed", "period", "isotoxal", "composable"];
-// public/ by logical name: `x.json` and `x.json.gz` are one file, read through readDataJson.
-const PUB_FILES = [...new Set(fs.readdirSync(path.join(ROOT, "public")).map((f) => f.replace(/\.gz$/, "")))].sort();
+// public/ by logical name: `x.json` and `x.json.br` are one file, read through readDataJson.
+const PUB_FILES = [...new Set(fs.readdirSync(path.join(ROOT, "public")).map((f) => f.replace(/\.br$/, "")))].sort();
 
 const entriesOf = (file) => {
 	const d = readDataJson(file);

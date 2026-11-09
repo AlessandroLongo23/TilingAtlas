@@ -88,7 +88,7 @@ export function ShowcaseWall() {
 		<figure ref={ref} className="not-prose m-0 w-full" style={cap === null ? undefined : { maxWidth: cap }}>
 			{/* Hairline gaps, not a 2% lane: sixteen tiles reading as one wall is the point, and the
 			    gap is only there so neighbouring tilings do not appear to continue into each other. */}
-			<div className="grid grid-cols-4 gap-[3px]">
+			<div className="grid grid-cols-4 gap-0.5">
 				{ROWS.flatMap((row) =>
 					row.files.map((file, i) => (
 						// Each capture is the card's own <canvas> or <img>, never the `.card-thumb`

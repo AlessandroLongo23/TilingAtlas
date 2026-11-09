@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
-import { SPHERICAL_SOLIDS, polyhedronForId } from "@/lib/render/sphericalSolids";
+import { SPHERICAL_SOLIDS, polyhedronForId } from "@/lib/render/sphericalSolidsAll";
 import { PLATONIC_SOLIDS } from "@/lib/render/platonicSolids";
 import { ARCHIMEDEAN_SOLIDS } from "@/lib/render/archimedeanSolids";
 import { PRISM_ANTIPRISM_SOLIDS } from "@/lib/render/prismSolids";

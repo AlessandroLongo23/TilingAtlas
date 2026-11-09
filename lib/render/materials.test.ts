@@ -8,7 +8,7 @@ import { familyMember } from "@/lib/render/hypStarFamily";
 import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import { readDataText } from "../../scripts/atlas/io.mjs";
 
-const FILES = ["public/hyperbolic-developed.json.gz", "public/hyperbolic-developed-stars.json.gz"];
+const FILES = ["public/hyperbolic-developed.json.br", "public/hyperbolic-developed-stars.json.br"];
 const recs: CataloguePatch[] = FILES.flatMap((f) => (existsSync(f) ? JSON.parse(readDataText(f)) : []));
 const rec = (id: string) => recs.find((r) => r.id === id) as unknown as { darts: Darts; edge: number };
 

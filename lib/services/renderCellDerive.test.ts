@@ -21,7 +21,7 @@ import {
 	type CellShape,
 } from "@/lib/services/renderCellDerive";
 
-const ATLAS = path.join(process.cwd(), "public", "reference-atlas.json.gz");
+const ATLAS = path.join(process.cwd(), "public", "reference-atlas.json.br");
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { AboutCornerButton } from "@/components/about-corner-button";
-import { ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import {
 	SHEET_PANEL,
@@ -10,15 +10,16 @@ import {
 	SheetHeader,
 	SheetTrigger,
 	useSheet,
-} from "@/components/ui/bottom-sheet";
-import { Button } from "@/components/ui/button";
+} from "@/design-system/components/bottom-sheet";
+import { Button } from "@/design-system/components/button";
 import { ResetViewButton } from "@/components/reset-view-button";
-import { OptionWall } from "@/components/ui/option-wall";
+import { OptionWall } from "@/design-system/components/option-wall";
 import type { Tri } from "@/lib/freedraw/filter";
 import { scrollParent } from "@/lib/hooks/useGridArrowNav";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
-import { SegIndicator } from "@/components/ui/seg-indicator";
+import { FoldChevron } from "@/design-system/components/disclosure";
+import { HoverPill } from "@/design-system/components/hover-pill";
 import { GEOMETRIES, type Geometry } from "@/lib/vocabulary";
 
 export type FreedrawGeometry = Geometry;
@@ -61,7 +62,7 @@ export function WallBar({
 	const { active: sheetOpen, swipe, dialogProps } = useSheet(bodyRef, sheet, closeSheet, `${title} filters`);
 	return (
 		<div className="w-full bg-surface-raised px-4 py-2.5 max-md:py-1.5">
-			<div className="flex h-8 items-center gap-2 text-xs max-md:h-11">
+			<div className="flex h-8 items-center gap-2 text-small max-md:h-11">
 				<button
 					type="button"
 					onClick={isPhone ? () => setSheet(true) : toggle}
@@ -69,8 +70,8 @@ export function WallBar({
 					aria-controls={bodyId}
 					className="flex cursor-pointer items-baseline gap-2 text-left max-md:min-h-11 max-md:min-w-0 max-md:flex-col max-md:justify-center max-md:gap-0"
 				>
-					<span className="text-[15px] font-semibold tracking-tight text-fg max-md:truncate">{title}</span>
-					{count != null && <span className="text-[13px] text-fg-muted tabular-nums max-md:truncate">{count}</span>}
+					<span className="text-title font-semibold tracking-tight text-fg max-md:truncate">{title}</span>
+					{count != null && <span className="text-ui text-fg-muted tabular-nums max-md:truncate">{count}</span>}
 				</button>
 				<button
 					type="button"
@@ -80,13 +81,7 @@ export function WallBar({
 					aria-label={open ? "Collapse filters" : "Expand filters"}
 					className="flex cursor-pointer items-center rounded-control p-1 text-fg-muted transition-colors hover:text-fg-secondary max-md:hidden"
 				>
-					<ChevronDown
-						size={14}
-						className={cn(
-							"transition-transform duration-200 ease-out motion-reduce:transition-none",
-							!open && "-rotate-90",
-						)}
-					/>
+					<FoldChevron open={open} size={14} className="text-current" />
 				</button>
 				<div className="ml-auto flex items-center gap-3 max-md:hidden">{top}</div>
 				<SheetTrigger
@@ -106,7 +101,7 @@ export function WallBar({
 				ref={bodyRef}
 				{...dialogProps}
 				className={cn(
-					"grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+					"grid transition-[grid-template-rows] motion-glide motion-reduce:transition-none",
 					SHEET_PANEL,
 					"max-md:bg-surface-raised",
 					sheet ? "ta-sheet-in" : "max-md:hidden",
@@ -114,12 +109,12 @@ export function WallBar({
 				style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
 			>
 				<SheetHeader swipe={swipe} title="Filters" onClose={closeSheet} closeLabel="Close filters">
-					<div className="flex items-center text-xs">{top}</div>
+					<div className="flex items-center text-small">{top}</div>
 				</SheetHeader>
 				<div className="overflow-hidden max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-contain max-md:px-4">
 					<div
 						className={cn(
-							"flex flex-wrap items-start gap-x-8 gap-y-5 pt-3 pb-2 transition duration-200 ease-out motion-reduce:transition-none",
+							"flex flex-wrap items-start gap-x-8 gap-y-5 pt-3 pb-2 transition motion-glide motion-reduce:transition-none",
 							open ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0",
 							"max-md:translate-y-0 max-md:pt-4 max-md:pb-6 max-md:opacity-100",
 						)}
@@ -128,7 +123,7 @@ export function WallBar({
 					</div>
 				</div>
 				<SheetFooter>
-					<span className="min-w-0 flex-1 truncate text-[13px] text-fg-muted tabular-nums">{count}</span>
+					<span className="min-w-0 flex-1 truncate text-ui text-fg-muted tabular-nums">{count}</span>
 					<Button variant="primary" label="Show results" onClick={closeSheet} />
 				</SheetFooter>
 			</div>
@@ -160,7 +155,7 @@ export function WallGroup({
 		<div className={cn("flex flex-col gap-2 max-md:w-full", className)}>
 			<div className="flex h-4 items-center gap-1.5 whitespace-nowrap">
 				<span className="ta-label">{title}</span>
-				{note ? <span className="text-[11px] text-fg-muted max-md:text-xs">· {note}</span> : null}
+				{note ? <span className="text-caption text-fg-muted">· {note}</span> : null}
 			</div>
 			{children}
 		</div>
@@ -175,7 +170,7 @@ export function WallSubLabel({ children }: { children: ReactNode }) {
 // What the selected option does, as a line of text on a phone only: the desktop keeps these in hover
 // tooltips (or leaves them out), and a finger never hovers.
 export function PhoneNote({ children }: { children: ReactNode }) {
-	return <p className="hidden text-[13px] leading-snug text-fg-muted max-md:block">{children}</p>;
+	return <p className="hidden text-ui leading-tight text-fg-muted max-md:block">{children}</p>;
 }
 
 const GEOMETRY_OPTIONS: { value: FreedrawGeometry; label: string }[] = [
@@ -213,35 +208,15 @@ export interface TriRow {
 	onChange: (v: Tri) => void;
 }
 
-// Has / None / Any per row (finite, strips, … or △, ▢, …): a label column, then one compact 24px
+// Has / None / Any per row (finite, strips, … or △, ▢, …): a label column, then one dense 24px
 // segmented control per row, so the rows align into a table without a header.
 export function TriMatrix({ rows }: { rows: TriRow[] }) {
 	return (
 		<div className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1 max-md:grid-cols-[auto_1fr] max-md:gap-y-1.5">
 			{rows.map((row) => (
 				<Fragment key={row.id}>
-					<span className="text-xs whitespace-nowrap text-fg-secondary max-md:text-sm">{row.label}</span>
-					<div className="ta-seg grid grid-cols-3" style={{ padding: 2 }}>
-						<SegIndicator />
-						{TRI_COLS.map((c) => {
-							const on = row.value === c.value;
-							return (
-								<button
-									key={c.value}
-									type="button"
-									aria-pressed={on}
-									onClick={() => row.onChange(c.value)}
-									className={cn(
-										"ta-tab h-5 cursor-pointer px-2 text-[11px] font-medium transition-colors max-md:text-[13px]",
-										"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-										on ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
-									)}
-								>
-									{c.label}
-								</button>
-							);
-						})}
-					</div>
+					<span className="text-small whitespace-nowrap text-fg-secondary max-md:text-body">{row.label}</span>
+					<OptionWall dense columns={3} options={TRI_COLS} selected={row.value} onChange={row.onChange} />
 				</Fragment>
 			))}
 		</div>
@@ -269,22 +244,29 @@ export function ToggleCell({
 			aria-keyshortcuts={shortcut}
 			onClick={onClick}
 			className={cn(
-				"ta-tab inline-flex min-h-7 flex-1 cursor-pointer items-center justify-center gap-1.5 px-2.5 text-xs font-medium transition-colors",
+				"ta-tab inline-flex min-h-7 flex-1 cursor-pointer items-center justify-center gap-1.5 px-2.5 text-small font-medium transition-colors",
 				"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 				on ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
 			)}
 		>
 			{label}
 			{shortcut ? (
-				<span className="font-mono text-[10px] font-normal text-fg-muted max-md:hidden">{shortcut}</span>
+				<span className="font-mono text-micro font-normal text-fg-muted max-md:hidden">{shortcut}</span>
 			) : null}
 		</button>
 	);
 }
 
-// A row of ToggleCells: one segmented track.
+// A row of ToggleCells: one segmented track. Kept by hand: as a multi OptionWall the shortcut keycaps
+// overflow the four overlay cells in a 15rem column below a ~1360px viewport, where this quiet mono suffix
+// fits from ~1180px.
 export function ToggleRow({ children }: { children: ReactNode }) {
-	return <div className="ta-seg flex">{children}</div>;
+	return (
+		<div className="ta-seg flex">
+			<HoverPill />
+			{children}
+		</div>
+	);
 }
 
 // A catalogue thumbnail card: the render, then an id (12px mono ink) over a subtitle (11px muted).
@@ -326,14 +308,14 @@ export function CatalogueCard({
 			data-selected={selected ? "" : undefined}
 			onClick={onClick}
 			className={cn(
-				"overflow-hidden rounded-surface border bg-surface-raised text-left transition-colors",
-				selected ? "border-fg ring-1 ring-fg" : "border-line-subtle hover:border-line-strong",
+				"ta-card overflow-hidden text-left transition-colors",
+				selected ? "border-fg ring-1 ring-fg" : "hover:border-line-strong",
 			)}
 		>
 			<div className="aspect-square">{!isPhone || near ? children : null}</div>
 			<div className="border-t border-line-subtle px-2.5 py-2 leading-tight max-md:px-2">
-				<div className="truncate font-mono text-xs font-medium text-fg">{title}</div>
-				<div className="mt-0.5 truncate text-[11px] text-fg-muted max-md:text-xs">{subtitle}</div>
+				<div className="truncate font-mono text-small font-medium text-fg">{title}</div>
+				<div className="mt-0.5 truncate text-caption text-fg-muted">{subtitle}</div>
 			</div>
 		</button>
 	);
@@ -402,16 +384,15 @@ export function DetailPane({
 	const ref = useRef<HTMLElement>(null);
 	const close = () => onClose?.();
 	const { active: sheetOpen, swipe, dialogProps } = useSheet(ref, open, close, "Tiling details");
-	const stepButton = (delta: number, label: string, Icon: typeof ChevronLeft, disabled: boolean) => (
-		<button
-			type="button"
+	const stepButton = (delta: number, label: string, icon: typeof ChevronLeft, disabled: boolean) => (
+		<Button
+			variant="ghost"
+			size="bar"
+			icon={icon}
 			onClick={() => onStep?.(delta)}
 			disabled={disabled}
 			aria-label={label}
-			className="flex size-11 shrink-0 items-center justify-center rounded-control text-fg-secondary hover:bg-surface-overlay hover:text-fg disabled:opacity-30"
-		>
-			<Icon size={20} />
-		</button>
+		/>
 	);
 	return (
 		<>
@@ -431,7 +412,7 @@ export function DetailPane({
 					title={count > 0 && index >= 0 ? `${(index + 1).toLocaleString()} of ${count.toLocaleString()}` : title}
 					onClose={close}
 					closeLabel="Close details"
-					className="sticky top-0 z-30 -mx-4 bg-surface-chrome"
+					className="sticky top-0 z-chrome -mx-4 bg-surface-chrome"
 				>
 					{onStep && stepButton(-1, "Previous tiling", ChevronLeft, index <= 0)}
 					{onStep && stepButton(1, "Next tiling", ChevronRight, index < 0 || index >= count - 1)}
@@ -439,15 +420,12 @@ export function DetailPane({
 				<div
 					ref={previewRef}
 					onPointerDown={() => setTouched(true)}
-					className={cn(
-						"relative h-80 overflow-hidden rounded-xl border border-line-subtle max-md:aspect-square max-md:h-auto",
-						previewClassName,
-					)}
+					className={cn("ta-well relative h-80 overflow-hidden max-md:aspect-square max-md:h-auto", previewClassName)}
 				>
 					{!isPhone || open ? preview : null}
 					<div
 						className={cn(
-							"pointer-events-none absolute bottom-2 left-2 rounded-control bg-surface/95 px-2 py-1 text-[11px] text-fg-muted ring-1 ring-line-subtle transition-opacity duration-300 max-md:text-xs",
+							"pointer-events-none absolute bottom-2 left-2 rounded-control bg-surface/95 px-2 py-1 text-caption text-fg-muted ring-1 ring-line-subtle transition-opacity motion-floating",
 							touched && "opacity-0",
 						)}
 					>
@@ -457,15 +435,17 @@ export function DetailPane({
 					{onResetView && <ResetViewButton onClick={onResetView} className="absolute top-3 right-3 z-20" />}
 				</div>
 				<div>
-					<div className="font-mono text-base font-semibold text-fg">{title}</div>
-					{subtitle ? <div className="mt-0.5 text-xs text-fg-muted max-md:text-[13px]">{subtitle}</div> : null}
+					<div className="font-mono text-title font-semibold text-fg">{title}</div>
+					{subtitle ? <div className="mt-0.5 text-small text-fg-muted max-md:text-ui">{subtitle}</div> : null}
 				</div>
-				{playHref && <Button href={playHref} variant="primary" size="sm" icon={Play} label="Open in play" fullWidth />}
+				{playHref && (
+					<Button href={playHref} variant="primary" size="sm" icon={Play} label="Open in play" className="w-full" />
+				)}
 				<dl className="flex flex-col gap-3">
 					{meta.map(([k, v], i) => (
 						<div key={i}>
 							<dt className="ta-label">{k}</dt>
-							<dd className="mt-1 font-mono text-xs text-fg-secondary tabular-nums max-md:text-[13px] max-md:break-words">
+							<dd className="mt-1 font-mono text-small text-fg-secondary tabular-nums max-md:text-ui max-md:break-words">
 								{v}
 							</dd>
 						</div>

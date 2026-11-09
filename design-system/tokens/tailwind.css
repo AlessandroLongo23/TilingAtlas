@@ -1,0 +1,212 @@
+/* THE TAILWIND THEME: the only utilities that exist. Each default scale Tailwind ships is cleared
+   (`initial`) and refilled from the semantic tokens, so text-sm, rounded-lg, shadow-md, bg-red-500, ease-in or
+   blur-sm generate nothing and `pnpm ds:check` reports them. `inline` keeps the var() references in the
+   utilities, so .dark, the phone and reduced motion flip them at runtime. What Tailwind cannot clear (a bare
+   number: p-7, z-50, duration-300) ds:check holds to the set. */
+
+/* .dark on <html> switches the theme; dark: utilities follow the class, not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+	/* Colour: the semantic roles only. bg-surface is the page; the others name themselves. */
+	--color-*: initial;
+	--color-white: var(--palette-white);
+	--color-black: var(--palette-black);
+	--color-surface: var(--color-surface-base);
+	--color-surface-raised: var(--color-surface-raised);
+	--color-surface-chrome: var(--color-surface-chrome);
+	--color-surface-overlay: var(--color-surface-overlay);
+	--color-surface-sunken: var(--color-surface-sunken);
+	--color-fg: var(--color-text-primary);
+	--color-fg-secondary: var(--color-text-secondary);
+	--color-fg-muted: var(--color-text-muted);
+	--color-fg-disabled: var(--color-text-disabled);
+	--color-fg-inverse: var(--color-text-inverse);
+	--color-fg-accent: var(--color-text-accent);
+	/* Borders are `line` so border-line does not read border-border. */
+	--color-line-subtle: var(--color-border-subtle);
+	--color-line: var(--color-border-default);
+	--color-line-strong: var(--color-border-strong);
+	--color-line-focus: var(--color-border-focus);
+	--color-accent: var(--color-accent);
+	--color-accent-hover: var(--color-accent-hover);
+	--color-accent-active: var(--color-accent-active);
+	--color-accent-subtle: var(--color-accent-subtle);
+	--color-accent-contrast: var(--color-accent-contrast);
+	--color-danger: var(--color-danger);
+	--color-danger-subtle: var(--color-danger-subtle);
+	--color-success: var(--color-success);
+	--color-success-subtle: var(--color-success-subtle);
+	--color-warning: var(--color-warning);
+	--color-warning-subtle: var(--color-warning-subtle);
+	--color-info: var(--color-info);
+	--color-info-subtle: var(--color-info-subtle);
+	--color-signal-positive: var(--color-signal-positive);
+	--color-signal-attention: var(--color-signal-attention);
+	--color-scrim: var(--color-scrim);
+	--color-caution: var(--color-caution);
+	--color-caution-ink: var(--color-caution-ink);
+
+	/* Type: one utility per role sets size, line height and tracking together (semantic.css). */
+	--text-*: initial;
+	--text-micro: var(--type-micro-size);
+	--text-micro--line-height: var(--type-micro-line);
+	--text-micro--letter-spacing: var(--type-micro-tracking);
+	--text-caption: var(--type-caption-size);
+	--text-caption--line-height: var(--type-caption-line);
+	--text-caption--letter-spacing: var(--type-caption-tracking);
+	--text-small: var(--type-small-size);
+	--text-small--line-height: var(--type-small-line);
+	--text-small--letter-spacing: var(--type-small-tracking);
+	--text-ui: var(--type-ui-size);
+	--text-ui--line-height: var(--type-ui-line);
+	--text-ui--letter-spacing: var(--type-ui-tracking);
+	--text-body: var(--type-body-size);
+	--text-body--line-height: var(--type-body-line);
+	--text-body--letter-spacing: var(--type-body-tracking);
+	--text-title: var(--type-title-size);
+	--text-title--line-height: var(--type-title-line);
+	--text-title--letter-spacing: var(--type-title-tracking);
+	--text-reading: var(--type-reading-size);
+	--text-reading--line-height: var(--type-reading-line);
+	--text-reading--letter-spacing: var(--type-reading-tracking);
+	--text-heading: var(--type-heading-size);
+	--text-heading--line-height: var(--type-heading-line);
+	--text-heading--letter-spacing: var(--type-heading-tracking);
+	--text-headline: var(--type-headline-size);
+	--text-headline--line-height: var(--type-headline-line);
+	--text-headline--letter-spacing: var(--type-headline-tracking);
+	--text-display: var(--type-display-size);
+	--text-display--line-height: var(--type-display-line);
+	--text-display--letter-spacing: var(--type-display-tracking);
+	--text-hero: var(--type-hero-size);
+	--text-hero--line-height: var(--type-hero-line);
+	--text-hero--letter-spacing: var(--type-hero-tracking);
+
+	--font-sans: var(--font-sans);
+	--font-mono: var(--font-mono);
+	--font-weight-*: initial;
+	--font-weight-normal: var(--font-weight-normal);
+	--font-weight-medium: var(--font-weight-medium);
+	--font-weight-semibold: var(--font-weight-semibold);
+
+	--leading-*: initial;
+	--leading-none: var(--leading-none);
+	--leading-tight: var(--leading-tight);
+	--leading-relaxed: var(--leading-relaxed);
+
+	--tracking-*: initial;
+	--tracking-tight: var(--letter-spacing-n010);
+	--tracking-normal: var(--letter-spacing-0);
+	--tracking-wide: var(--letter-spacing-040);
+	--tracking-caps: var(--type-label-tracking);
+
+	/* Space: the 4px unit (p-3 is 12px), and the named distances and sizes as keys of their own:
+	   pl-indent, pr-corner, h-control-sm, min-h-control-touch, size-icon-sm. */
+	--spacing: var(--space-unit);
+	--spacing-indent: var(--space-indent);
+	--spacing-corner: var(--space-corner);
+	--spacing-control-xs: var(--control-xs);
+	--spacing-control-sm: var(--control-sm);
+	--spacing-control-md: var(--control-md);
+	--spacing-control-lg: var(--control-lg);
+	--spacing-control-touch: var(--control-touch);
+	--spacing-icon-xs: var(--icon-xs);
+	--spacing-icon-sm: var(--icon-sm);
+	--spacing-icon-md: var(--icon-md);
+	--spacing-icon-lg: var(--icon-lg);
+
+	/* Radius by role: rounded-tag, -control, -surface, -overlay, -sheet, -pill (rounded-full stays). */
+	--radius-*: initial;
+	--radius-mark: var(--radius-mark);
+	--radius-tag: var(--radius-tag);
+	--radius-control: var(--radius-control);
+	--radius-surface: var(--radius-surface);
+	--radius-overlay: var(--radius-overlay);
+	--radius-sheet: var(--radius-sheet);
+	--radius-pill: var(--radius-pill);
+
+	/* Elevation by role: shadow-raised, -handle, -lift, -float, -overlay, -modal, -sheet (shadow-none stays). */
+	--shadow-*: initial;
+	--shadow-raised: var(--shadow-raised);
+	--shadow-handle: var(--shadow-handle);
+	--shadow-lift: var(--shadow-lift);
+	--shadow-float: var(--shadow-float);
+	--shadow-overlay: var(--shadow-overlay);
+	--shadow-modal: var(--shadow-modal);
+	--shadow-sheet: var(--shadow-sheet);
+	--drop-shadow-*: initial;
+	--drop-shadow-handle: var(--drop-shadow-handle);
+	--inset-shadow-*: initial;
+	--text-shadow-*: initial;
+	--blur-*: initial;
+	--blur-scrim: var(--blur-scrim);
+	--blur-float: var(--blur-float);
+
+	/* Motion: no ease-* or duration-* scale; a transition names its role with motion-* (below). A bare
+	   `transition` or `transition-colors` is feedback. */
+	--ease-*: initial;
+	--default-transition-duration: var(--duration-feedback);
+	--default-transition-timing-function: var(--ease-feedback);
+	--animate-*: initial;
+	--animate-pulse: ta-skeleton-pulse var(--duration-pulse) var(--ease-pulse) infinite;
+	--animate-spin: ta-spin var(--duration-spin) linear infinite;
+
+	/* Layers: z-chrome, -sheet, -modal, -menu, -popup, -cursor. z-0, z-10, z-20 stack inside a component. */
+	--z-index-chrome: var(--z-chrome);
+	--z-index-sheet: var(--z-sheet);
+	--z-index-modal: var(--z-modal);
+	--z-index-menu: var(--z-menu);
+	--z-index-popup: var(--z-popup);
+	--z-index-cursor: var(--z-cursor);
+
+	/* Breakpoints. md is the line between a phone and everything else (docs/mobile/DESIGN.md): the token
+	   layer's own phone rules read it through theme(--breakpoint-md). xs is a small phone. */
+	--breakpoint-*: initial;
+	--breakpoint-xs: 23.75rem;
+	--breakpoint-sm: 40rem;
+	--breakpoint-md: 48rem;
+	--breakpoint-lg: 64rem;
+	--breakpoint-xl: 80rem;
+	--breakpoint-2xl: 96rem;
+}
+
+/* The motion roles as utilities: one class sets a transition's duration and curve together, the way a type
+   role sets size and line height. Set through --tw-duration and --tw-ease as well, so a transition-* class
+   written before or after this one reads the role. */
+@utility motion-feedback {
+	--tw-duration: var(--duration-feedback);
+	--tw-ease: var(--ease-feedback);
+	transition-duration: var(--duration-feedback);
+	transition-timing-function: var(--ease-feedback);
+}
+@utility motion-floating {
+	--tw-duration: var(--duration-floating);
+	--tw-ease: var(--ease-floating);
+	transition-duration: var(--duration-floating);
+	transition-timing-function: var(--ease-floating);
+}
+@utility motion-glide {
+	--tw-duration: var(--duration-glide);
+	--tw-ease: var(--ease-glide);
+	transition-duration: var(--duration-glide);
+	transition-timing-function: var(--ease-glide);
+}
+@utility motion-travel {
+	--tw-duration: var(--duration-travel);
+	--tw-ease: var(--ease-travel);
+	transition-duration: var(--duration-travel);
+	transition-timing-function: var(--ease-travel);
+}
+@utility motion-arrive {
+	--tw-duration: var(--duration-arrive);
+	--tw-ease: var(--ease-arrive);
+	transition-duration: var(--duration-arrive);
+	transition-timing-function: var(--ease-arrive);
+}
+@utility motion-settle {
+	--tw-duration: var(--duration-settle);
+	--tw-ease: var(--ease-settle);
+	transition-duration: var(--duration-settle);
+	transition-timing-function: var(--ease-settle);
+}

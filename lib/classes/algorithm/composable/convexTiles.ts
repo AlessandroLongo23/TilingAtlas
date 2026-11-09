@@ -1,4 +1,4 @@
-import { Cyclotomic, CyclotomicRing } from "@/classes";
+import { Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
 import { Polyform } from "./Polyform";
 
 /**

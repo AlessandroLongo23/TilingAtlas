@@ -968,7 +968,7 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, cap
             r["id"] = f"{prefix}{board_id}-{k}-{i:05d}"
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json.gz"
+            path = f"{out_prefix}-k{k}.json.br"
             if geo == "spherical":
                 # The board once per shard, the patterns as drawn-bits + tile ids against it.
                 payload = {

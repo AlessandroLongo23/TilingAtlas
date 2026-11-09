@@ -378,11 +378,15 @@ export function buildEdgePatch(
 	// A cell of fixed area can be arbitrarily elongated — push a parameter toward the end of its range
 	// and one side of the tile goes to zero, so the period stretches. Each attempt re-sizes the develop
 	// from what it just learned: given the shortest period, the second is at least cellArea/|v1| away.
+	const over = "period larger than the develop budget allows";
 	for (let attempt = 0; attempt < attempts; attempt++) {
 		const walk = walkAt(reach, budget);
 		const coreR = reach * 0.62;
 		diag = { ...diag, placed: walk.placed, reach, ms: Date.now() - t0 };
-		const last = attempt === attempts - 1;
+		// The widest walk the budget covers, judged by this one (its darts grow with its area). One that ran
+		// out of budget is the last: a wider radius on the same budget covers the same ground.
+		const widest = reach * Math.sqrt(budget / walk.placed) * 0.9;
+		const last = attempt === attempts - 1 || walk.truncated || widest <= reach;
 
 		const found = findLattice(walk, tol, coreR, knownCellArea);
 		if (found && norm2(found.basis[1]) > 0) {
@@ -395,15 +399,19 @@ export function buildEdgePatch(
 			});
 			diag = { ...diag, ...built.diag, ms: Date.now() - t0 };
 			if (built.patch) return { ok: true, patch: built.patch, diag };
-			if (last) return { ok: false, diag, reason: built.reason };
-			reach *= 1.8;
+			if (last) return { ok: false, diag, reason: walk.truncated ? over : built.reason };
+			reach = Math.min(widest, reach * 1.8);
 			continue;
 		}
 		if (last)
 			return {
 				ok: false,
 				diag,
-				reason: found ? "period too elongated to develop" : "no period found in the developed patch",
+				reason: walk.truncated
+					? over
+					: found
+						? "period too elongated to develop"
+						: "no period found in the developed patch",
 			};
 		// Sized, not doubled: reach past the second generator with enough margin that the faces can be cut
 		// from a core that holds a whole period. With the area known the distance is not a guess — a cell of
@@ -415,9 +423,9 @@ export function buildEdgePatch(
 			need =
 				1.25 *
 				(knownCellArea !== null ? knownCellArea / found.shortest + found.shortest : found.shortest * 4 + longest * 2);
-		reach = Math.max(reach * 1.4, need / 0.62);
+		reach = Math.min(widest, Math.max(reach * 1.4, need / 0.62));
 	}
-	return { ok: false, diag, reason: "period larger than the develop budget allows" };
+	return { ok: false, diag, reason: over };
 }
 
 function assemble(

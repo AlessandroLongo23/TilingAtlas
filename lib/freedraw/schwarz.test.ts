@@ -22,11 +22,11 @@ import { readDataText } from "../../scripts/atlas/io.mjs";
 // the manifest matches the files, and the pieces a pattern is made of index into that one board.
 
 const sphShard = (b: SchwarzBoard, k: number): SphSchwarzShard | null => {
-	const f = `public/schwarz-sph/s${b.id}-k${k}.json.gz`;
+	const f = `public/schwarz-sph/s${b.id}-k${k}.json.br`;
 	return existsSync(f) ? decodeShard(JSON.parse(readDataText(f)) as SphSchwarzShard) : null;
 };
 const hypShard = (b: SchwarzBoard, k: number): HypSchwarzPattern[] | null => {
-	const f = `public/schwarz-hyp/h${b.id}-k${k}.json.gz`;
+	const f = `public/schwarz-hyp/h${b.id}-k${k}.json.br`;
 	return existsSync(f) ? decodeAtlas<HypSchwarzPattern>(JSON.parse(readDataText(f))) : null;
 };
 

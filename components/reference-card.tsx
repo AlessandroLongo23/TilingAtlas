@@ -1,26 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { ThumbnailSkeleton } from "@/design-system/components/thumbnail-skeleton";
+import { useCallback, useState } from "react";
 import { Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { Badge, type BadgeTone } from "@/design-system/components/badge";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
-import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
-import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
-import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
-import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail";
-import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
-import { SphStarThumbnail } from "@/components/freedraw/sph-star-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
-import { InfoDot } from "@/components/ui/info-dot";
-import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
-import { IsohedralEdgesThumbnail } from "@/components/isohedral-edges-thumbnail";
+import { InfoDot } from "@/design-system/components/info-dot";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
 import { paramGlyphs } from "@/lib/utils/paramCell";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
+import { Button } from "@/design-system/components/button";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { freedrawKNoun, gridOf } from "@/lib/freedraw/pattern";
 import {
@@ -40,6 +36,45 @@ import { EDGE_BOARD_LABEL } from "@/lib/services/facets";
 import { polyformBoard } from "@/lib/tilings/polyform";
 import { GEOMETRIES, TILE_CLASSES } from "@/lib/vocabulary";
 
+// The curved and decorated thumbnails, fetched the first time a card needs one: the spherical ones carry three.js
+// and the hyperbolic one its per-pixel renderer, which a grid of flat tilings never draws. The skeleton holds the slot.
+const HyperbolicThumbnail = dynamic(
+	() => import("@/components/hyperbolic-thumbnail").then((m) => m.HyperbolicThumbnail),
+	{ ssr: false, loading: () => <ThumbnailSkeleton /> },
+);
+const SphericalColorsThumbnail = dynamic(
+	() => import("@/components/spherical-colors-thumbnail").then((m) => m.SphericalColorsThumbnail),
+	{ ssr: false, loading: () => <ThumbnailSkeleton /> },
+);
+const SphericalThumbnail = dynamic(() => import("@/components/spherical-thumbnail").then((m) => m.SphericalThumbnail), {
+	ssr: false,
+	loading: () => <ThumbnailSkeleton />,
+});
+const HollowThumbnail = dynamic(() => import("@/components/hollow/hollow-thumbnail").then((m) => m.HollowThumbnail), {
+	ssr: false,
+	loading: () => <ThumbnailSkeleton />,
+});
+const SphSchwarzThumbnail = dynamic(
+	() => import("@/components/freedraw/sph-schwarz-thumbnail").then((m) => m.SphSchwarzThumbnail),
+	{ ssr: false, loading: () => <ThumbnailSkeleton /> },
+);
+const SphPolyThumbnail = dynamic(
+	() => import("@/components/freedraw/sph-poly-thumbnail").then((m) => m.SphPolyThumbnail),
+	{ ssr: false, loading: () => <ThumbnailSkeleton /> },
+);
+const SphStarThumbnail = dynamic(
+	() => import("@/components/freedraw/sph-star-thumbnail").then((m) => m.SphStarThumbnail),
+	{ ssr: false, loading: () => <ThumbnailSkeleton /> },
+);
+const PentagonEdgesThumbnail = dynamic(
+	() => import("@/components/pentagon-edges-thumbnail").then((m) => m.PentagonEdgesThumbnail),
+	{ ssr: false, loading: () => <ThumbnailSkeleton /> },
+);
+const IsohedralEdgesThumbnail = dynamic(
+	() => import("@/components/isohedral-edges-thumbnail").then((m) => m.IsohedralEdgesThumbnail),
+	{ ssr: false, loading: () => <ThumbnailSkeleton /> },
+);
+
 // A tiling card in the unified library. Shows the DISCOVERER (historical first-finder) and a
 // CERTIFICATION badge (proven / reproduced / candidate — the rigorous completeness status of its
 // enumeration level, orthogonal to who discovered it). A "family" one-parameter tiling gets an α chip.
@@ -54,10 +89,11 @@ interface ReferenceCardProps {
 
 // Certification is the thesis's headline axis: "proven" (our method certifies the level complete) is a
 // strictly stronger claim than "reproduced" (matches published counts) or "candidate" (unestablished).
-const CERT_STYLE: Record<Certification, { label: string; cls: string }> = {
-	proven: { label: "Proven", cls: "border-fg bg-fg text-fg-inverse" },
-	reproduced: { label: "Reproduced", cls: "border-transparent bg-surface-sunken text-fg-secondary" },
-	candidate: { label: "Candidate", cls: "border-dashed border-line-strong bg-surface-raised/90 text-fg-secondary" },
+// The results table tags its rows with the same map, so a certification looks the same in both views.
+export const CERT_STYLE: Record<Certification, { label: string; tone: BadgeTone }> = {
+	proven: { label: "Proven", tone: "ink" },
+	reproduced: { label: "Reproduced", tone: "neutral" },
+	candidate: { label: "Candidate", tone: "dashed" },
 };
 
 // The card's metadata chip: a small mono tag laid over the thumbnail's top-left corner, so the text
@@ -78,9 +114,6 @@ function PhoneId({ id, className, title }: { id: string; className: string; titl
 	);
 }
 
-const CHIP =
-	"inline-flex items-center rounded bg-surface-raised/90 px-1.5 py-[3px] font-mono text-[10px] font-medium uppercase leading-none tracking-wide text-fg-secondary shadow-sm";
-
 export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceCardProps) {
 	// The variant pager. rawIdx is clamped, not reset, when a filter shrinks the group under the same
 	// card key — the shelf remounts the card (new key) only when the group's identity changes.
@@ -90,6 +123,8 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const idx = members ? Math.min(rawIdx, members.length - 1) : 0;
 	const tiling = members ? members[idx] : baseTiling;
 	const isFamily = Array.isArray(tiling.alphaRange);
+	// Read by the thumbnail's queued draw, not here: the record's renderCell is derived on first read.
+	const cellOf = useCallback(() => tiling.renderCell, [tiling]);
 	// Degrees of freedom = independent sliders in Play. 2+ (α, β, …) get their own badge.
 	const glyphs = tiling.paramCell ? paramGlyphs(tiling.paramCell) : isFamily ? ["α"] : [];
 	const dof = glyphs.length;
@@ -104,11 +139,54 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const isFreedraw = !!tiling.freedraw;
 	const freedrawStats = freedrawStatsOf(tiling);
 	const folds = (tileClassOf(tiling) === TILE_CLASSES.STAR && !isHyperbolic) || isMixed ? starFoldsOf(tiling) : [];
+	// The chips over the thumbnail: only what the class line below does not say (Convex irregular, Isotoxal,
+	// Mixed each used to appear twice on one card). Short words, as on the prototile cards: a card is narrow,
+	// and the title says each in full. The same words end the thumbnail button's name, so a voice user can say
+	// what they see (WCAG 2.5.3).
+	const chips: { text: string; title: string; tone?: BadgeTone; className?: string }[] = [
+		tiling.certification
+			? {
+					...CERT_STYLE[tiling.certification],
+					text: CERT_STYLE[tiling.certification].label,
+					title: `Completeness: ${tiling.certification}`,
+				}
+			: null,
+		isConvex
+			? tiling.decomposableOnly
+				? { text: "decomp", title: "every composite tile dissects into regular polygons" }
+				: { text: "non-decomp", title: "uses a non-decomposable composite tile" }
+			: null,
+		isIsotoxal && tiling.offGrid
+			? {
+					text: "off-grid",
+					title:
+						"Uses an isotoxal tile not expressible on the ζ₁₂ grid — a tiling the 30°-grid enumeration could not reach",
+				}
+			: null,
+		// Freedraw kind chips: what the faces ARE. A strip or an unbounded sheet is the whole point of the class
+		// (these are not tiles in the Grünbaum & Shephard sense), so they get a chip instead of the sub-line.
+		freedrawStats?.strips ? { text: "strip", title: "Contains a tile that is an infinite strip" } : null,
+		freedrawStats?.unbounded ? { text: "∞", title: "Contains a tile unbounded in both directions" } : null,
+		freedrawStats?.withHoles ? { text: "holes", title: "Contains a polyomino with holes" } : null,
+		tiling.preview ? { text: "preview", title: "from a still-running solve — partial", tone: "dashed" as const } : null,
+		dof >= 2
+			? {
+					text: glyphs.join(" "),
+					title: `${dof}-parameter family — ${glyphs.join(", ")} vary independently (${dof} sliders in Play)`,
+					className: "gap-0.5",
+				}
+			: dof === 1
+				? { text: glyphs[0], title: `one-parameter family — ${glyphs[0]} slider in Play` }
+				: null,
+		...folds.map((n) => ({ text: `${n}★`, title: `${n}-pointed star polygon` })),
+	].filter((c) => c !== null);
 	const partitionKey = partitionKeyOf(tiling);
 	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
 	// (m === k, all orbits distinct) is the Krötenheerdt case — shown as "Kröt" since its key is all 1s.
 	const classLabel =
 		tiling.m != null ? `M${tiling.m}${isMaximal(tiling) ? " · Kröt" : partitionKey ? ` · ${partitionKey}` : ""}` : null;
+	// Edge and tile orbits beside k's vertex orbits, where the build computed them.
+	const orbitLabel = tiling.edgeOrbits != null ? `e${tiling.edgeOrbits} t${tiling.faceOrbits}` : null;
 	// A cell of the library's laned wall: it draws its own hairline (ta-lane-cell), the grid's 8px
 	// gap supplies the lane between neighbours, and the cell radius opens the diamonds where four
 	// corners meet.
@@ -163,7 +241,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	// ‹ n/N › — position within the group's CURRENT members (a narrowing filter can drop variants, so
 	// this is the browse position; the sub-line's "v of V" stays the tiling's global variant identity).
 	const pager = members ? (
-		<span className="flex shrink-0 items-center gap-0.5 text-[10px] text-fg-muted tabular-nums max-md:-my-3 max-md:-mr-3 max-md:gap-0 max-md:text-xs">
+		<span className="flex shrink-0 items-center gap-0.5 text-micro text-fg-muted tabular-nums max-md:-my-3 max-md:-mr-3 max-md:gap-0">
 			<button
 				type="button"
 				aria-label="Previous variant"
@@ -173,7 +251,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					setRawIdx((idx - 1 + members.length) % members.length);
 				}}
 			>
-				<ChevronLeft size={12} className="max-md:size-4" />
+				<ChevronLeft className="size-icon-xs max-md:size-4" />
 			</button>
 			<span>
 				{idx + 1}/{members.length}
@@ -187,7 +265,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					setRawIdx((idx + 1) % members.length);
 				}}
 			>
-				<ChevronRight size={12} className="max-md:size-4" />
+				<ChevronRight className="size-icon-xs max-md:size-4" />
 			</button>
 		</span>
 	) : null;
@@ -201,7 +279,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					? {
 							role: "button",
 							tabIndex: 0,
-							"aria-label": `Open ${tiling.family} in Play`,
+							"aria-label": `Open ${tiling.family} in Play${chips.length ? `: ${chips.map((c) => c.text).join(", ")}` : ""}`,
 							onClick: () => onClick(tiling),
 							onKeyDown: (e: React.KeyboardEvent) => {
 								if (e.key === "Enter" || e.key === " ") {
@@ -249,88 +327,13 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				) : tiling.developed ? (
 					<HyperbolicThumbnail tiling={tiling.developed.patch} mode="tiling" />
 				) : (
-					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
+					<TilingThumbnail translationalCell={cellOf} pxPerEdge={22} />
 				)}
 				<div className="absolute top-1.5 left-1.5 flex max-w-[calc(100%-2.75rem)] flex-wrap items-center gap-1 empty:hidden">
-					{tiling.certification ? (
-						<span
-							className={cn(
-								"inline-flex items-center rounded border px-1.5 py-[2px] font-mono text-[10px] leading-none font-medium tracking-wide uppercase shadow-sm",
-								CERT_STYLE[tiling.certification].cls,
-							)}
-							title={`Completeness: ${tiling.certification}`}
-						>
-							{CERT_STYLE[tiling.certification].label}
-						</span>
-					) : null}
-					{/* No class chip: the class line below already names it (Convex irregular, Isotoxal, Mixed
-					    each used to appear twice on one card). Only what the class line does not say gets a chip. */}
-					{isConvex ? (
-						<span
-							className={CHIP}
-							title={
-								tiling.decomposableOnly
-									? "every composite tile dissects into regular polygons"
-									: "uses a non-decomposable composite tile"
-							}
-						>
-							{tiling.decomposableOnly ? "decomposable" : "not decomposable"}
-						</span>
-					) : null}
-					{isIsotoxal && tiling.offGrid ? (
-						<span
-							className={CHIP}
-							title="Uses an isotoxal tile not expressible on the ζ₁₂ grid — a tiling the 30°-grid enumeration could not reach"
-						>
-							off-grid
-						</span>
-					) : null}
-					{/* Freedraw kind chips: what the faces ARE. A strip or an unbounded sheet is the whole point
-					    of the class — these are not tiles in the Grünbaum & Shephard sense — so they get a
-					    badge instead of being buried in the sub-line. */}
-					{isFreedraw && freedrawStats ? (
-						<>
-							{freedrawStats.strips > 0 ? (
-								<span className={CHIP} title="Contains a tile that is an infinite strip">
-									strip
-								</span>
-							) : null}
-							{freedrawStats.unbounded > 0 ? (
-								<span className={CHIP} title="Contains a tile unbounded in both directions">
-									∞
-								</span>
-							) : null}
-							{freedrawStats.withHoles > 0 ? (
-								<span className={CHIP} title="Contains a polyomino with holes">
-									holes
-								</span>
-							) : null}
-						</>
-					) : null}
-					{tiling.preview ? (
-						<span
-							className={cn(CHIP, "border border-dashed border-line-strong")}
-							title="from a still-running solve — partial"
-						>
-							preview
-						</span>
-					) : null}
-					{dof >= 2 ? (
-						<span
-							className={cn(CHIP, "gap-0.5")}
-							title={`${dof}-parameter family — ${glyphs.join(", ")} vary independently (${dof} sliders in Play)`}
-						>
-							{glyphs.join(" ")}
-						</span>
-					) : dof === 1 ? (
-						<span className={CHIP} title={`one-parameter family — ${glyphs[0]} slider in Play`}>
-							{glyphs[0]}
-						</span>
-					) : null}
-					{folds.map((n) => (
-						<span key={n} className={CHIP} title={`${n}-pointed star polygon`}>
-							{n}★
-						</span>
+					{chips.map((c) => (
+						<Badge key={c.text} tone={c.tone ?? "raised"} mono caps title={c.title} className={c.className}>
+							{c.text}
+						</Badge>
 					))}
 				</div>
 				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
@@ -342,15 +345,16 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				!tiling.colors &&
 				!tiling.hypEdges &&
 				!tiling.hollow ? (
-					<button
-						type="button"
-						onClick={handleScreenshot}
-						title="Screenshot"
-						aria-label="Take screenshot"
-						className="absolute top-1.5 right-1.5 rounded-md border border-line-strong bg-surface-overlay/80 p-1.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-overlay hover:text-fg focus:opacity-100 max-md:opacity-100"
-					>
-						<Camera size={13} />
-					</button>
+					<Tooltip label="Screenshot">
+						<Button
+							variant="secondary"
+							size="icon"
+							icon={Camera}
+							onClick={handleScreenshot}
+							aria-label="Take screenshot"
+							className="absolute top-1.5 right-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 max-md:opacity-100"
+						/>
+					</Tooltip>
 				) : null}
 			</div>
 			{/* On a phone the whole card is one target: a finger that lands on the name expects the tiling,
@@ -373,11 +377,11 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					// Everything technical (valence, edge length ℓ, engine provenance, Poincaré-disk model, the
 					// dev id) lives in the /play info panel, not here.
 					<>
-						<p className="font-mono text-sm leading-tight text-fg" title={`vertex configuration ${tiling.family}`}>
+						<p className="font-mono text-body leading-tight text-fg" title={`vertex configuration ${tiling.family}`}>
 							{compactVertexConfig(tiling.family)}
 						</p>
 						<div className="flex items-end justify-between gap-2">
-							<p className="text-[10px] leading-tight text-fg-muted">
+							<p className="text-micro leading-tight text-fg-muted">
 								k={tiling.k} ·{" "}
 								{/* grouped: the pager already says n/N, so the "v of V" sub-line segment would repeat it */}
 								{tiling.variants && tiling.variants > 1 && !members ? `${tiling.variant} of ${tiling.variants} · ` : ""}
@@ -402,12 +406,12 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					// The discoverer is on hover, like every other card.
 					<>
 						<p
-							className="font-mono text-xs leading-snug font-medium break-words text-fg"
+							className="font-mono text-small leading-tight font-medium break-words text-fg"
 							title={`${tiling.family} · discovered by ${tiling.discoverer}`}
 						>
 							{tiling.family}
 						</p>
-						<p className="truncate text-xs leading-tight text-fg-muted">
+						<p className="truncate text-small leading-tight text-fg-muted">
 							k={tiling.k}{" "}
 							{isFreedraw
 								? freedrawKNoun(gridOf(tiling.freedraw!))
@@ -415,23 +419,23 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 									? "colored vertices"
 									: "vertex orbits"}
 						</p>
-						<p className="truncate font-mono text-[10px] text-fg-disabled max-md:hidden" title={tiling.id}>
+						<p className="truncate font-mono text-micro text-fg-muted max-md:hidden" title={tiling.id}>
 							{tiling.id}
 						</p>
-						<PhoneId id={tiling.id} title={tiling.id} className="font-mono text-xs text-fg-muted" />
+						<PhoneId id={tiling.id} title={tiling.id} className="font-mono text-small text-fg-muted" />
 					</>
 				) : (
 					<>
 						{/* The id is what tells two cards on one shelf apart, so it gets the full width; the
 						    discoverer is on hover. */}
 						<p
-							className="truncate font-mono text-[13px] leading-snug font-medium text-fg max-md:hidden"
+							className="truncate font-mono text-ui leading-tight font-medium text-fg max-md:hidden"
 							title={`${tiling.id} · discovered by ${tiling.discoverer}`}
 						>
 							{tiling.id}
 						</p>
-						<PhoneId id={tiling.id} className="font-mono text-[13px] leading-snug font-medium text-fg" />
-						<p className="truncate text-xs leading-tight text-fg-muted" title={tiling.note ?? `{${tiling.family}}`}>
+						<PhoneId id={tiling.id} className="font-mono text-ui leading-tight font-medium text-fg" />
+						<p className="truncate text-small leading-tight text-fg-muted" title={tiling.note ?? `{${tiling.family}}`}>
 							{/* The class long label names the shelf; where a class holds more than one PALETTE, the
 							    palette is what the card should say — "Multiple edge lengths" is true of both tile
 							    sets in that class and tells the reader nothing about the tiling in front of them. */}
@@ -445,14 +449,20 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							    census is for a colouring. "T0×1 T3×1" is the paper's T{0,3}(1:1). */}
 							{tileClassOf(tiling) === TILE_CLASSES.BUBBLE ? ` · ${tiling.family}` : ""}
 						</p>
-						{classLabel || tiling.wallpaperGroup ? (
+						{classLabel || orbitLabel || tiling.wallpaperGroup ? (
 							<p
-								className="font-mono text-[10px] leading-tight text-fg-muted"
-								title={`${classLabel ? `${tiling.m} distinct vertex configuration(s)${partitionKey ? `, multiplicities ${tiling.partition?.join("·")}` : ""}` : ""}${tiling.wallpaperGroup ? ` · wallpaper group ${tiling.wallpaperGroup} (${tiling.latticeShape})` : ""}`.trim()}
+								className="font-mono text-micro leading-tight text-fg-muted"
+								title={[
+									classLabel
+										? `${tiling.m} distinct vertex configuration(s)${partitionKey ? `, multiplicities ${tiling.partition?.join("·")}` : ""}`
+										: null,
+									orbitLabel ? `${tiling.edgeOrbits} edge orbit(s), ${tiling.faceOrbits} tile orbit(s)` : null,
+									tiling.wallpaperGroup ? `wallpaper group ${tiling.wallpaperGroup} (${tiling.latticeShape})` : null,
+								]
+									.filter(Boolean)
+									.join(" · ")}
 							>
-								{classLabel}
-								{classLabel && tiling.wallpaperGroup ? " · " : null}
-								{tiling.wallpaperGroup ? <span className="text-fg-muted">{tiling.wallpaperGroup}</span> : null}
+								{[classLabel, orbitLabel, tiling.wallpaperGroup].filter(Boolean).join(" · ")}
 							</p>
 						) : null}
 					</>

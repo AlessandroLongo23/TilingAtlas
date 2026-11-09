@@ -92,8 +92,8 @@ interface ComposableTiling {
 const ROOT = process.cwd();
 const IN_DIR = path.join(ROOT, "experiments", "composable-oracle");
 const PUBLIC_DIR = path.join(ROOT, "public");
-const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-composable.json.gz");
-const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-composable-k${k}.json.gz`);
+const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-composable.json.br");
+const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-composable-k${k}.json.br`);
 // k≤MAIN_MAX_K ships in the eagerly-loaded main file; each higher k is written to its own lazy shard
 // (reference-atlas-composable-k{k}.json), mirroring the regular atlas's k≥8 shards. The k=3 convex
 // solve will add thousands of tilings to the k=3 shard without bloating the main /library + /play load.
@@ -335,7 +335,7 @@ function main(): void {
 	// Drop any orphaned composable shard from a prior build (a k that no longer has entries) so we never
 	// serve a stale shard. Only touches reference-atlas-composable-k{n}.json — this script's own outputs.
 	for (const f of fs.readdirSync(PUBLIC_DIR)) {
-		const m = /^reference-atlas-composable-k(\d+)\.json(\.gz)?$/.exec(f);
+		const m = /^reference-atlas-composable-k(\d+)\.json(\.br)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) {
 			fs.unlinkSync(path.join(PUBLIC_DIR, f));
 			log(`  removed stale shard ${f}`);

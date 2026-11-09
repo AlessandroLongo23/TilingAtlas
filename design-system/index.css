@@ -1,0 +1,14 @@
+/* The Tiling Atlas design system (design-system/README.md). Load order is the layering: core values, the
+   static and themed roles built from them, the Tailwind theme that exposes the roles as utilities, then
+   the library's own styles. Both apps import it: the atlas through app/globals.css, the Searcher through
+   the same file. */
+@import "./tokens/core.css";
+@import "./tokens/semantic.css";
+@import "./tokens/themed.css";
+@import "./tokens/tailwind.css";
+
+@import "./styles/base.css";
+@import "./styles/controls.css";
+@import "./styles/surfaces.css";
+@import "./styles/motion.css";
+@import "./styles/tree.css";

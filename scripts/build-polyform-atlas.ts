@@ -250,7 +250,7 @@ function familyLabel(faces: Face[], order: string[]): string {
 }
 
 const MIRROR_REPORT = process.argv.includes("--mirror-report");
-const OUT = path.join(ROOT, "public", "reference-atlas-polyomino.json.gz");
+const OUT = path.join(ROOT, "public", "reference-atlas-polyomino.json.br");
 const LOG = path.join(ROOT, "experiments", "results", "polyform-atlas-build.log");
 
 function note(b: PolyformBoard, pieces: string[]): string {

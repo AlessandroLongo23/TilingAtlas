@@ -131,7 +131,7 @@ export function PrototileInspector({ info, cell }: { info: IsohedralTypeInfo; ce
 
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="rounded-surface border border-line-subtle p-2">
+			<div className="ta-card p-2">
 				<svg
 					viewBox={`0 0 ${BOX} ${BOX}`}
 					className="mx-auto block overflow-visible"
@@ -228,7 +228,7 @@ export function PrototileInspector({ info, cell }: { info: IsohedralTypeInfo; ce
 			</div>
 
 			{cell.degenerate ? (
-				<p className="text-[11px] text-fg-muted">
+				<p className="text-caption text-fg-muted">
 					Self-overlapping: at these vertices the outline crosses itself, so the tiles overlap instead of tiling.
 					Tactile ships no parameter ranges, so the sliders can reach here.
 				</p>

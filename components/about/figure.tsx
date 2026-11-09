@@ -4,12 +4,15 @@
 // caption under it, and an SVG stage that fits a set of polygons. The frames article set the look;
 // every article's figures use these, so a figure reads the same on every shelf.
 
-import { useState, type ReactNode } from "react";
+import { createContext, useContext, useId, useState, type ComponentProps, type ReactNode } from "react";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
 import { CardDoneChip } from "@/components/card-done-chip";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
 import { PATCH_LIGHT, PATCH_SAT } from "@/lib/hooks/usePatchCanvas";
 import { cn } from "@/lib/utils/cn";
+
+// The caption's id, so a drawing inside the figure takes the caption as its name (figureImage).
+const CaptionId = createContext<string | undefined>(undefined);
 
 export function Figure({
 	caption,
@@ -20,12 +23,24 @@ export function Figure({
 	children: ReactNode;
 	className?: string;
 }) {
+	const id = useId();
 	return (
 		<figure className={cn("not-prose my-8 border border-line bg-surface p-4 max-md:-mx-1 max-md:p-3", className)}>
-			{children}
-			{caption && <figcaption className="mt-3 text-sm leading-snug text-fg-muted">{caption}</figcaption>}
+			<CaptionId.Provider value={caption ? id : undefined}>{children}</CaptionId.Provider>
+			{caption && (
+				<figcaption id={id} className="mt-3 text-body leading-tight text-fg-muted">
+					{caption}
+				</figcaption>
+			)}
 		</figure>
 	);
+}
+
+/** A figure's drawing: an image named by the caption of the Figure it sits in, or hidden from screen readers
+ *  when no caption names it (WCAG 1.1.1). */
+export function FigureSvg(props: ComponentProps<"svg">) {
+	const id = useContext(CaptionId);
+	return <svg {...props} {...(id ? { role: "img", "aria-labelledby": id } : { "aria-hidden": true })} />;
 }
 
 /**
@@ -63,7 +78,7 @@ export function LiveFigure({
 }
 
 export function FigureLoading({ what = "figure" }: { what?: string }) {
-	return <div className="flex h-48 items-center justify-center text-sm text-fg-muted">Loading the {what}…</div>;
+	return <div className="flex h-48 items-center justify-center text-body text-fg-muted">Loading the {what}…</div>;
 }
 
 /** A tile's fill, the patch canvas's own colour for its hue. */
@@ -107,12 +122,11 @@ export function Stage({
 		}
 	const m = 0.06 * Math.max(x1 - x0, y1 - y0, 1);
 	return (
-		<svg
+		<FigureSvg
 			viewBox={[x0 - m, -y1 - m, x1 - x0 + 2 * m, y1 - y0 + 2 * m].map(tidy).join(" ")}
 			className={cn("mx-auto block max-h-[340px] w-full", className)}
-			role="img"
 		>
 			<g transform="scale(1,-1)">{children}</g>
-		</svg>
+		</FigureSvg>
 	);
 }

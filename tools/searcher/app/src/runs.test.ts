@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { RunFolder } from "../electron/runs";
-import { describeRaise, raiseCeiling, raiseStop } from "./bridge";
+import { describeRaise, raiseCeiling, raiseStop, type Run } from "./bridge";
+import { earlierOf, withEarlier } from "./runs";
 
 describe("a run folder read from disk", () => {
 	it("is finished when census.txt ends in MAX, also with the Windows engine's \\r\\n", () => {
@@ -48,5 +49,25 @@ describe("raising k by a rule", () => {
 			"one k at a time up to k = 9, until a search finds at least 5 tilings; a search stops past 2 min or 4 GB",
 		);
 		expect(describeRaise({ upTo: 7 })).toBe("one k at a time up to k = 7");
+	});
+});
+
+describe("a run that replaces another, not finished yet", () => {
+	it("shows the earlier run's tilings, every k up to its own, and its own only above that k", () => {
+		const file = (path: string, k: number) => ({ name: path, path, k, labels: "", orientable: true, edges: 0, bytes: 1, tilings: 1 });
+		const prev = { dir: "/a", state: "finished", kmax: 3, counts: { 1: 1, 2: 0, 3: 4 }, files: [file("/a/1", 1), file("/a/3", 3)], symbols: { X1: "dent" } } as unknown as Run;
+		const next = { dir: "/b", replaces: "/a", state: "stopped", counts: { 1: 1, 4: 2 }, files: [file("/b/1", 1), file("/b/4", 4)], symbols: {} } as unknown as Run;
+		const seen = withEarlier(next, earlierOf(next, [prev, next]));
+		expect([seen.counts, seen.total, seen.files.map((f) => f.path), seen.files[0].symbols]).toEqual([
+			{ 1: 1, 2: 0, 3: 4, 4: 2 },
+			7,
+			["/a/1", "/a/3", "/b/4"],
+			{ X1: "dent" },
+		]);
+		const done = { ...next, state: "finished" } as Run;
+		expect(earlierOf(done, [prev, done])).toBeUndefined(); // finished: its own census covers every k
+		// the folder they share moved: replaces.txt still names the old path, and the run beside it is found by name
+		const moved = { ...next, dir: "/x/b", replaces: "/old/a" } as Run;
+		expect(earlierOf(moved, [{ ...prev, dir: "/x/a" } as Run, moved])?.dir).toBe("/x/a");
 	});
 });

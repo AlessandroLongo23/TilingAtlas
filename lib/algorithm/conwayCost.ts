@@ -9,8 +9,9 @@
  * - Corner (two mirrors at π/n): C = (n-1)/n
  */
 
-import { Vector, type Gyration, type Reflection } from "@/classes";
-import { isWithinTolerance } from "@/utils";
+import { Vector } from "@/classes/Vector";
+import { type Gyration, type Reflection } from "@/classes/Transform";
+import { isWithinTolerance } from "@/utils/math";
 
 /** Target cost for Euclidean plane tilings */
 export const CONWAY_TARGET = 2;

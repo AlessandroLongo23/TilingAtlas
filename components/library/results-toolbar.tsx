@@ -2,9 +2,10 @@
 
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Download, LayoutGrid, Rows3, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { Dropdown } from "@/components/ui/dropdown";
-import { SegIndicator } from "@/components/ui/seg-indicator";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Button } from "@/design-system/components/button";
+import { Dropdown } from "@/design-system/components/dropdown";
+import { SegIndicator } from "@/design-system/components/seg-indicator";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { SORT_LABEL, type SortDir, type SortKey } from "@/lib/services/librarySort";
 import { cn } from "@/lib/utils/cn";
 
@@ -28,28 +29,21 @@ export function ActiveFilters({ chips, onClearAll }: { chips: ActiveChip[]; onCl
 			{chips.map((c) => (
 				<span
 					key={c.key}
-					className="ta-rise-in inline-flex h-7 items-center gap-1 rounded-full bg-surface-sunken pr-1 pl-2.5 text-[12px] text-fg ring-1 ring-line-subtle"
+					className="ta-rise-in inline-flex h-7 items-center gap-1 rounded-full bg-surface-sunken pr-1 pl-2.5 text-small text-fg ring-1 ring-line-subtle"
 				>
 					{c.label}
+					{/* ds-check: keep (the chip's own remove ×; the library has no removable chip) */}
 					<button
 						type="button"
 						onClick={c.clear}
 						aria-label="Remove filter"
 						className="flex size-5 cursor-pointer items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg"
 					>
-						<X size={11} />
+						<X className="size-icon-xs" />
 					</button>
 				</span>
 			))}
-			{chips.length > 1 ? (
-				<button
-					type="button"
-					onClick={onClearAll}
-					className="h-7 cursor-pointer rounded-full px-2.5 text-[12px] text-fg-muted transition-colors hover:text-danger"
-				>
-					Clear all
-				</button>
-			) : null}
+			{chips.length > 1 ? <Button variant="ghost" size="sm" onClick={onClearAll} label="Clear all" /> : null}
 		</div>
 	);
 }
@@ -73,17 +67,22 @@ export function SortControl({
 				options={keys.map((k) => ({ value: k, label: SORT_LABEL[k] }))}
 				onChange={(k) => onChange(k)}
 				label="Sort"
-				ariaLabel="Sort by"
+				aria-label="Sort by"
 				className="rounded-r-none"
 			/>
-			<Tooltip label={sortDir === "asc" ? "Ascending" : "Descending"} delay={0}>
+			<Tooltip label={sortDir === "asc" ? "Ascending" : "Descending"} delay="instant">
+				{/* ds-check: keep (joined to the Dropdown as one split control; Button's phone size would break the join) */}
 				<button
 					type="button"
 					onClick={() => onChange(sortKey, sortDir === "asc" ? "desc" : "asc")}
 					aria-label={sortDir === "asc" ? "Sorted ascending; reverse" : "Sorted descending; reverse"}
-					className="-ml-px flex size-8 cursor-pointer items-center justify-center rounded-r-control border border-line bg-surface-raised text-fg-secondary shadow-sm hover:bg-surface-overlay hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+					className="-ml-px flex size-8 cursor-pointer items-center justify-center rounded-r-control border border-line bg-surface-raised text-fg-secondary shadow-raised hover:bg-surface-overlay hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
 				>
-					{sortDir === "asc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
+					{sortDir === "asc" ? (
+						<ArrowUpNarrowWide className="size-icon-sm" />
+					) : (
+						<ArrowDownWideNarrow className="size-icon-sm" />
+					)}
 				</button>
 			</Tooltip>
 		</div>
@@ -93,7 +92,7 @@ export function SortControl({
 /** Grid of previews, or a table of properties. */
 export function ViewToggle({ view, onChange }: { view: ResultsView; onChange: (v: ResultsView) => void }) {
 	const opt = (v: ResultsView, label: string, icon: ReactNode) => (
-		<Tooltip label={label} delay={0}>
+		<Tooltip label={label} delay="instant">
 			<button
 				type="button"
 				aria-pressed={view === v}
@@ -111,8 +110,8 @@ export function ViewToggle({ view, onChange }: { view: ResultsView; onChange: (v
 	return (
 		<div className="ta-seg flex" role="group" aria-label="View">
 			<SegIndicator />
-			{opt("grid", "Previews", <LayoutGrid size={14} />)}
-			{opt("table", "Table", <Rows3 size={14} />)}
+			{opt("grid", "Previews", <LayoutGrid className="size-icon-sm" />)}
+			{opt("table", "Table", <Rows3 className="size-icon-sm" />)}
 		</div>
 	);
 }
@@ -120,17 +119,17 @@ export function ViewToggle({ view, onChange }: { view: ResultsView; onChange: (v
 /** The filtered set as a CSV a reader can take into a notebook or a paper. */
 export function ExportButton({ onExport, disabled }: { onExport: () => void; disabled?: boolean }) {
 	return (
-		<Tooltip label="Download the filtered set as CSV" delay={0}>
-			<button
-				type="button"
+		<Tooltip label="Download the filtered set as CSV" delay="instant">
+			<Button
+				variant="secondary"
+				size="sm"
+				icon={Download}
 				onClick={onExport}
 				disabled={disabled}
 				aria-label="Export CSV"
-				className="flex h-8 cursor-pointer items-center gap-1.5 rounded-control border border-line bg-surface-raised px-2.5 text-[13px] text-fg shadow-sm transition-[background-color,scale] hover:bg-surface-overlay focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 active:scale-[0.97] disabled:opacity-50 max-md:h-11 max-md:min-w-11 max-md:justify-center"
-			>
-				<Download size={14} />
-				<span className="max-lg:sr-only">CSV</span>
-			</button>
+				className="max-md:min-w-11"
+				label={<span className="max-lg:sr-only">CSV</span>}
+			/>
 		</Tooltip>
 	);
 }

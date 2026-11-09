@@ -1,8 +1,10 @@
 "use client";
 
 // TEMPORARY: a bench for looking at the generated polychora (lib/render/polychora.ts) through the
-// renderer (lib/render/polychoraGL.ts). Not in the nav and not a shelf; plain inputs on purpose.
+// renderer (lib/render/polychoraGL.ts). Not in the nav and not a shelf; plain inputs on purpose, except
+// the list, which is the shared Dropdown.
 import { useMemo, useState } from "react";
+import { Dropdown } from "@/design-system/components/dropdown";
 import { PolychoronCanvas } from "@/components/polychoron-canvas";
 import { polychora, type PolychoronSet } from "@/lib/render/polychora";
 import { filmArea } from "@/lib/render/polychoraGL";
@@ -16,6 +18,9 @@ const SETS: [PolychoronSet, string][] = [
 	["duoprism", "Duoprisms (p, q ≤ 8)"],
 	["antiprismatic-prism", "Antiprismatic prisms (n ≤ 8)"],
 ];
+const OPTIONS = SETS.flatMap(([set, group]) =>
+	LIST.filter((x) => x.set === set).map((x) => ({ value: x.id, label: x.name, group })),
+);
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
 export default function PolychoraBench() {
@@ -53,6 +58,7 @@ export default function PolychoraBench() {
 				<span>{label}</span>
 				<span className="font-mono text-fg-muted">{s[key].toFixed(2)}</span>
 			</span>
+			{/* ds-check: keep (a bench page, plain inputs on purpose) */}
 			<input
 				type="range"
 				min={min}
@@ -65,36 +71,22 @@ export default function PolychoraBench() {
 	);
 	const toggle = (label: string, key: "showFaces" | "showEdges" | "dark" | "spin") => (
 		<label className="flex items-center gap-2">
+			{/* ds-check: keep (a bench page, plain inputs on purpose) */}
 			<input type="checkbox" checked={s[key]} onChange={(e) => setS({ ...s, [key]: e.target.checked })} />
 			{label}
 		</label>
 	);
 	return (
 		<div className="flex min-w-0 flex-1">
-			<aside className="border-border flex w-72 shrink-0 flex-col gap-4 overflow-y-auto border-r p-4 text-xs">
+			<aside className="border-border flex w-72 shrink-0 flex-col gap-4 overflow-y-auto border-r p-4 text-small">
 				<div>
-					<div className="text-sm font-semibold">{spec.name}</div>
+					<div className="text-body font-semibold">{spec.name}</div>
 					<div className="font-mono text-fg-muted">{spec.symbol}</div>
 					<div className="font-mono text-fg-muted">
 						V {f[0]} · E {f[1]} · F {f[2]} · C {f[3]}
 					</div>
 				</div>
-				<select
-					className="border-border w-full rounded border bg-surface p-1 text-fg"
-					size={18}
-					value={id}
-					onChange={(e) => setId(e.target.value)}
-				>
-					{SETS.map(([set, label]) => (
-						<optgroup key={set} label={label}>
-							{LIST.filter((x) => x.set === set).map((x) => (
-								<option key={x.id} value={x.id}>
-									{x.name}
-								</option>
-							))}
-						</optgroup>
-					))}
-				</select>
+				<Dropdown aria-label="Polychoron" className="w-full" value={id} options={OPTIONS} onChange={setId} />
 				{slider("Projection point (1 = stereographic)", "pole", 1.02, 4)}
 				{slider("Film opacity ×", "opacity", 0, 4)}
 				{slider("Edge width ×", "width", 0.2, 4)}

@@ -3347,3 +3347,91 @@ Detail: DEVELOPMENT_NOTES "Martin Olivier's solver, studied and ported"; experim
 children, their duals, standard or random ancestry, panned without bound (HypCamera takes a DiskChart; the anchor is
 a tile's ancestry, lib/tilings/binary.ts). For n = 2 a geodesic version whose dual is regular 3.4.3.4.4, at the edge
 of the catalogue's three periodic k = 2 records. Detail: DEVELOPMENT_NOTES "Binary tilings on /aperiodic".
+
+2026-11-06 · CC · Orderly generation in the Čtrnáct engine (`EU_ORDERLY=1`): every closed configuration built once,
+from the root whose replayed code is least; replaces the transposition table. Same tilings on 10 palettes
+(union-prune test); regular k≤16 on one core 170 s → 65.5 s (old engine 705 s, Martin 394 s). Opt-in: it moves
+id serials. Uncommitted. Detail: DEVELOPMENT_NOTES "Orderly generation"; experiments/results/orderly-generation-2026-11-06.md.
+
+2026-11-06 · CC · Classifications in /library: proven-complete lists shown across the shelves (lib/classifications.ts,
+URL `set`), first Krötenheerdt (135, rule m = k) and Galebach's 203 edge-homogeneous tilings, all 203 in the Atlas:
+197 on the shelf to k = 10 (whole-shelf scan, none outside his list), six above it from targeted Searcher runs. The
+regular shelf now ships partial tiers k = 11 to 22 (REGULAR_SHARD_KS) with 1,456 tilings. Uncommitted.
+Detail: DEVELOPMENT_NOTES "Classifications: proven lists across the shelves".
+
+2026-11-07 · CC · Merged feat/browse-merge into master (24934bf8): /play and /library are one /catalogue page.
+Uncommitted work in the 7 overlapping files (classifications, k > 10 shelves, edge/tile orbits) stashed and
+reapplied. Classifications are now browse-tree nodes with a checklist icon; k > 10 shards load on demand, deep
+links via regularShardOf. Not pushed. Detail: DEVELOPMENT_NOTES "feat/browse-merge merged; classifications move".
+
+2026-11-07 · CC · One component library for the atlas and the Searcher: every segmented control has the hover
+glide (SegIndicator), OptionWall is the one choice control (ButtonGroup/Toggle/ToggleButton/Switch folded), new
+Disclosure, FoldChevron, POPUP, Field, Button pressed. Catalogue components/ui/README.md, `pnpm ui:audit` 91 → 0;
+20 dead files deleted. Searcher reinstalled. Uncommitted. Detail: DEVELOPMENT_NOTES "One component library".
+
+2026-11-07 · CC · Whole component library reviewed: dead and duplicate pieces removed (SidebarSection, Fold into
+Reveal, MultiSelect, Segmented now over OptionWall), one prop convention (className, aria-label, open, value),
+named tooltip delays, new Spinner/Notice/.ta-card/.ta-well/.ta-link. ui:audit 122 → 0. Tests, build and
+Searcher reinstall not rerun (machine quiet). Uncommitted. Detail: DEVELOPMENT_NOTES "whole component library".
+
+2026-11-08 · CC · Design system extracted to design-system/: four-layer tokens, Tailwind defaults cleared, a compact
+type scale of ten roles (13px interface text), control heights as tokens, the library and its CSS moved in, ds:check
+with token rules and a ratcheting baseline at zero, migrate.py for older branches. Build and 3,305 tests pass.
+Searcher not reinstalled. Uncommitted. Detail: DEVELOPMENT_NOTES "The design system".
+2026-11-08 · CC · Token layer completed: every colour role resolves to a core step, a curated spacing scale with
+named distances, four icon sizes, six motion roles (motion-*, reduced motion in the tokens, motion.ts mirrored by
+a test), named layers, breakpoints written once. ds:check reads lib/ and CSS and catches undefined tokens (found
+var(--color-bg) in five figures). Build and 3,318 tests pass. Searcher not reinstalled (it was mid-search).
+Uncommitted. Detail: DEVELOPMENT_NOTES "The token layer completed".
+2026-11-08 · CC · Whole site benched on production (scripts/bench-journey.mjs: 50 cold loads, 333 steps) and made
+lighter: nav and card links prefetch on intent, canvases/thumbnails/dialogs/solid data load on demand, barrel imports
+cut (legacy engine, Supabase, zod off every page), grid facets scoped and card cells built off the click. Interleaved
+A/B: cold loads -41%, bytes halved, k-filter render ~270 -> ~37 ms. Uncommitted. Detail: DEVELOPMENT_NOTES "The
+whole site benched".
+2026-11-08 · CC · Galebach's 203 edge-homogeneous tilings and Krötenheerdt's 135 confirmed complete with no bound on
+k by a Delaney–Dress search with one orbit per figure (tools/ctrnact-oracle/homogeneous.py + homogeneous_dfs.cpp,
+about a second each). The 98 full edge figures are derived from the vertex data and all occur in his list. Open: 22
+strongly edge-homogeneous, Chavey quoted at 20. Uncommitted. Detail: DEVELOPMENT_NOTES "Galebach's 203 and
+Krötenheerdt's 135 proved complete".
+2026-11-08 · CC · Catalogue second pass: freedraw and bubble labels lazy, the corpus grown per batch (no full re-sort,
+re-partition or index rebuild), the grid's sort keys and facet scans computed once, the sphere's Tegula file (1 MB)
+deferred to Spherical. Edge patterns 3.0 -> 1.7 s main thread; catalogue journey -27%. Uncommitted. Detail:
+DEVELOPMENT_NOTES "The catalogue's second pass".
+2026-11-08 · CC · Krötenheerdt and edge-homogeneous classifications carry the homogeneous search's Delaney–Dress
+symbols: each member paired by its own record's symbol, one to one with equal k (135, 203). Krötenheerdt is a member
+list now (rule path removed); the classification CSV export has a symbol column. Uncommitted. Detail:
+DEVELOPMENT_NOTES "The homogeneous search's symbols in the two classifications".
+2026-11-09 · CC · Third classification: strongly edge-homogeneous, 22 tilings (one edge class per pair of polygons),
+complete through the 203; the shelf scan and the search agree tiling by tiling. Chavey's reported 20 stays an open
+question in the banner. Uncommitted. Detail: DEVELOPMENT_NOTES "The homogeneous search's symbols in the two
+classifications" (last bullet).
+2026-11-09 · CC · Face-figure-homogeneous: 669 full face figures; the shelf holds 1,441 such tilings to k = 10,
+rising every k (9 to 20 per k at k = 22 on one board). The figure search does not finish (estimated 1e9 to 1e14
+nodes on the triangle starts); stopped. Uncommitted. Detail: DEVELOPMENT_NOTES "Face-figure-homogeneous tilings".
+2026-11-09 · CC · Fourth classification: face-homogeneous tilings to k = 10, 1,441 (AL: ship to where the shelf is
+complete). The script checks the shelf against A068599 at every k ≤ 10 and reads each tiling's face figures from its
+own symbol; the ids equal the earlier Python reading. Admission now also takes complete-shelf scans, k in the title.
+Uncommitted. Detail: DEVELOPMENT_NOTES "Face-figure-homogeneous tilings" (last bullet).
+2026-11-09 · CC · Black-on-blue primary buttons fixed at the root: `cn()` now knows the theme's type roles, so
+tailwind-merge stops dropping a colour or a size (about 50 calls, both apps). New `pnpm a11y` (axe-core over every
+route, both themes); production report in experiments/results. Uncommitted. Detail: DEVELOPMENT_NOTES "Black on
+blue, and an accessibility check".
+2026-11-09 · CC · `pnpm a11y --app` checks the Searcher (a test copy with its own data folder, 11 screens, both
+themes). axe-core raised to 4.14: 4.11 silently skipped contrast on color-mix backgrounds. Uncommitted. Detail:
+DEVELOPMENT_NOTES "The accessibility check on the Searcher".
+2026-11-09 · CC · Shipped data moves from gzip to brotli (AL): `public/` 687.6 -> 506.2 MB (q9 fast pass, 20,998 files
+verified byte for byte; hyperbolic-poly 1.44x, frames 1.02x), under the 650 MB budget again. `shardBody` decodes
+`.json.br` (Chrome via `brotli-dec-wasm`); io.mjs and write_json write it; 154 files renamed; docs-check bans new
+`.json.gz`. Uncommitted. Detail: DEVELOPMENT_NOTES "Shipped data moves from gzip to brotli".
+2026-11-09 · CC · Accessibility fixes in both apps (AL: "apply all"): muted text neutral 550 on desktop, disabled ink
+off readable text, the dark accent split into a fill (ultramarine 450) and a text role `text-fg-accent`; figures
+named by their captions, no control inside a control, 24px targets. Atlas 148 loads and Searcher 22 screens pass
+WCAG 2.2 A/AA in axe 4.14; Searcher reinstalled (17:15 build). Uncommitted. Detail: DEVELOPMENT_NOTES "The
+accessibility fixes, both apps"; design-system D18.
+2026-11-09 · CC · Production reads the shipped data from Cloudflare R2 (`data.thetilingatlas.com`, bucket
+`tiling-atlas-data`); the domain's DNS moved to Cloudflare, the site stays on Vercel. Browser fetches go through
+`fetchData`; `scripts/data-sync.mjs` uploads changes and prunes the data from Vercel builds. 21,003 files uploaded.
+Uncommitted. Detail: DEVELOPMENT_NOTES "Production reads the data from Cloudflare R2".
+2026-11-09 · CC · The regular shelf is complete to k = 16: 1,768,892 more tilings (k = 11 to 16, 933,637 at k = 16),
+built from the engine's run by `scripts/build-regular-shards.ts`, split into 100,000-tiling parts from k = 13, on R2.
+Face-homogeneous to k = 16 scanning. Uncommitted. Detail: DEVELOPMENT_NOTES "The regular shelf to k = 16".

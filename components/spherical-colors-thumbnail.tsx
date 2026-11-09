@@ -5,7 +5,7 @@ import { buildSphColors } from "@/lib/render/sphColors";
 import { paletteRgb255 } from "@/lib/colors/render";
 import { applyStudioMaterials } from "@/lib/render/sphericalLook";
 import { mountSpinningThumb, thumbPhase } from "@/lib/render/sphereThumbStage";
-import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
+import { ThumbnailSkeleton } from "@/design-system/components/thumbnail-skeleton";
 import { useConfiguration } from "@/stores/configuration";
 import type { IcoMode } from "@/lib/render/icoFreedraw";
 import type { SphColorsPattern } from "@/lib/colors/sph-colors";
@@ -58,7 +58,7 @@ export function SphericalColorsThumbnail({ pattern, mode, size = 256 }: Props) {
 
 	if (failed) {
 		return (
-			<div className="flex h-full w-full items-center justify-center rounded bg-surface-raised text-[10px] text-fg-disabled">
+			<div className="flex h-full w-full items-center justify-center rounded-tag bg-surface-raised text-micro text-fg-muted">
 				sphere
 			</div>
 		);
@@ -72,7 +72,7 @@ export function SphericalColorsThumbnail({ pattern, mode, size = 256 }: Props) {
 				width={size}
 				height={size}
 				aria-label={`colored ${pattern.solid} ${pattern.id}`}
-				className={`relative block h-full w-full rounded object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
+				className={`relative block h-full w-full rounded-tag object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
 			/>
 		</div>
 	);

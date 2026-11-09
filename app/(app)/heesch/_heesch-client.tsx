@@ -19,11 +19,11 @@ import { STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, strokePxAt, usePatchCanvas } fro
 import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
 import { useImmersiveShortcuts } from "@/components/fullscreen-toggle";
 import { PeekTitle } from "@/components/dock-peek";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CornerControls } from "@/components/ui/corner-controls";
-import { Pagination } from "@/components/ui/pagination";
-import { Slider } from "@/components/ui/slider";
+import { Button } from "@/design-system/components/button";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { CornerControls } from "@/design-system/components/corner-controls";
+import { Pagination } from "@/design-system/components/pagination";
+import { Slider } from "@/design-system/components/slider";
 import {
 	NAMED_SET,
 	HEESCH_GRIDS,
@@ -97,7 +97,7 @@ function CensusNote({
 	const from = census.listedFrom;
 	const allTile = census.tilers === census.holeFree && !census.slices;
 	return (
-		<div className="flex flex-col gap-1 text-[11px] text-fg-muted max-md:text-xs">
+		<div className="flex flex-col gap-1 text-caption text-fg-muted">
 			{allTile ? (
 				<p>
 					{census.holeFree === 1
@@ -401,7 +401,7 @@ export function HeeschClient() {
 				<Section label="Cells">
 					<Segmented options={sizeOptions} value={setId} onChange={selectSet} cols={SET_COLS} fill={false} />
 					{grid !== NAMED_SET && gridCaveat(grid as HeeschGridId) && (
-						<p className="text-[11px] text-fg-muted max-md:text-xs">{gridCaveat(grid as HeeschGridId)}</p>
+						<p className="text-caption text-fg-muted">{gridCaveat(grid as HeeschGridId)}</p>
 					)}
 					{setInfo?.census && (
 						<CensusNote
@@ -439,8 +439,8 @@ export function HeeschClient() {
 	const header = (
 		<>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-[15px] leading-tight font-semibold text-fg">{title}</h1>
-				<p className="truncate text-xs text-fg-muted" title={sub}>
+				<h1 className="text-title leading-tight font-semibold text-fg">{title}</h1>
+				<p className="truncate text-small text-fg-muted" title={sub}>
 					{sub}
 				</p>
 			</div>
@@ -511,12 +511,14 @@ export function HeeschClient() {
 					<Segmented
 						options={Array.from({ length: Math.max(0, Math.min(PAGE_SIZE, total - pageStart)) }, (_, i) => {
 							const s = shapeAt(pageStart + i);
+							const title = s
+								? `${s.name ?? polyformName(s)} · ${s.p ? "tiles the plane" : `H = ${heeschNumber(s, def)}`}`
+								: "Loading";
 							return {
 								v: String(pageStart + i),
 								label: s ? <RingGlyph rings={[outlinePage(s)]} /> : <span className="my-0.5 block h-[22px] w-[22px]" />,
-								title: s
-									? `${s.name ?? polyformName(s)} · ${s.p ? "tiles the plane" : `H = ${heeschNumber(s, def)}`}`
-									: "Loading",
+								title,
+								ariaLabel: title,
 							};
 						})}
 						value={String(at)}
@@ -532,7 +534,7 @@ export function HeeschClient() {
 						showRange={false}
 					/>
 					{computing && (
-						<p className="text-[11px] text-fg-muted max-md:text-xs">
+						<p className="text-caption text-fg-muted">
 							Too many to ship as files: these tilings are being computed in your browser, one slice of the census at a
 							time.
 						</p>
@@ -541,7 +543,7 @@ export function HeeschClient() {
 
 				{shape?.p ? (
 					<Section label="Tiling">
-						<span className="text-[11px] text-fg-muted max-md:text-xs">
+						<span className="text-caption text-fg-muted">
 							It tiles the plane. Drawn here: one of its tilings, which repeats every {shape.p.k.length / 6}{" "}
 							{shape.p.k.length === 6 ? "copy" : "copies"}, one colour per orientation.
 						</span>
@@ -565,9 +567,7 @@ export function HeeschClient() {
 							}
 						/>
 						{H === 0 && (
-							<span className="text-[11px] text-fg-muted max-md:text-xs">
-								No complete ring of copies fits around this shape.
-							</span>
+							<span className="text-caption text-fg-muted">No complete ring of copies fits around this shape.</span>
 						)}
 					</Section>
 				)}

@@ -90,25 +90,28 @@ export function SlideMarkdown({ content, components, compact = false, layout = "
 				layout === "pinned" && "[&>*:last-child]:mb-auto [&>*:nth-child(2)]:mt-auto",
 				compact
 					? [
-							"[&_h1]:mb-1 [&_h1]:text-[0.95rem] [&_h1]:leading-tight [&_h1]:font-bold",
-							"[&_h2]:mb-1 [&_h2]:text-[0.8rem] [&_h2]:font-semibold",
-							"[&_h3]:mb-1 [&_h3]:text-[0.7rem] [&_h3]:font-semibold",
-							"[&_p]:mb-1 [&_p]:text-[0.6rem] [&_p]:leading-snug [&_p]:text-fg-muted",
-							"[&_li]:mb-0.5 [&_ol]:text-[0.6rem] [&_ul]:text-[0.6rem]",
-							"[&_table]:text-[0.5rem]",
+							"[&_h1]:mb-1 [&_h1]:text-title [&_h1]:leading-tight [&_h1]:font-semibold",
+							"[&_h2]:mb-1 [&_h2]:text-ui [&_h2]:font-semibold",
+							"[&_h3]:mb-1 [&_h3]:text-caption [&_h3]:font-semibold",
+							"[&_p]:mb-1 [&_p]:text-micro [&_p]:leading-tight [&_p]:text-fg-muted",
+							"[&_li]:mb-0.5 [&_ol]:text-micro [&_ul]:text-micro",
+							"[&_table]:text-micro",
 							"[&_img]:max-h-16",
 						]
 					: [
 							// Headings
-							"[&_h1]:text-[clamp(2rem,4.4vh+1.4vw,4.25rem)] [&_h1]:font-bold [&_h1]:tracking-tight",
+							"[&_h1]:text-[clamp(2rem,4.4vh+1.4vw,4.25rem)] [&_h1]:font-semibold [&_h1]:tracking-tight",
+							// ds-check: keep (a slide's type scales with the viewport, on its own fluid scale)
 							"[&_h1]:mb-[0.5em] [&_h1]:leading-[1.08] [&_h1]:text-balance [&_h1]:text-fg",
-							"[&_h2]:text-[clamp(1.4rem,2.8vh+0.9vw,2.6rem)] [&_h2]:font-bold [&_h2]:tracking-tight",
+							"[&_h2]:text-[clamp(1.4rem,2.8vh+0.9vw,2.6rem)] [&_h2]:font-semibold [&_h2]:tracking-tight",
+							// ds-check: keep (a slide's type scales with the viewport, on its own fluid scale)
 							"[&_h2]:mb-[0.6em] [&_h2]:leading-[1.15] [&_h2]:text-balance [&_h2]:text-fg",
 							"[&_h3]:text-[clamp(1.05rem,1.7vh+0.6vw,1.6rem)] [&_h3]:font-semibold [&_h3]:text-fg",
 							"[&_h3]:mt-[1em] [&_h3]:mb-[0.5em]",
 							// Body. No measure cap: a slide is read at a distance in two or three lines, so the
 							// usual 60-character limit only forces a line the column had room for. The pull quote
 							// below keeps its cap, since that one is meant to sit narrow.
+							// ds-check: keep (a slide's type scales with the viewport, on its own fluid scale)
 							"[&_p]:text-[clamp(0.95rem,1.5vh+0.45vw,1.5rem)] [&_p]:leading-[1.5]",
 							"[&_p]:mb-[0.85em] [&_p]:text-fg-secondary",
 							"[&_strong]:font-semibold [&_strong]:text-fg",
@@ -116,6 +119,7 @@ export function SlideMarkdown({ content, components, compact = false, layout = "
 							// Lists: the workhorse of a slide, so they get the same size as body text
 							"[&_ul]:mb-[0.85em] [&_ul]:ml-[1.1em] [&_ul]:list-disc",
 							"[&_ol]:mb-[0.85em] [&_ol]:ml-[1.2em] [&_ol]:list-decimal",
+							// ds-check: keep (a slide's type scales with the viewport, on its own fluid scale)
 							"[&_li]:text-[clamp(0.95rem,1.5vh+0.45vw,1.5rem)] [&_li]:leading-[1.45]",
 							"[&_li]:mb-[0.4em] [&_li]:text-fg-secondary",
 							"[&_li_strong]:text-fg",
@@ -124,11 +128,12 @@ export function SlideMarkdown({ content, components, compact = false, layout = "
 							"[&_blockquote]:border-l-2 [&_blockquote]:border-accent [&_blockquote]:pl-[0.8em]",
 							"[&_blockquote]:my-[0.9em] [&_blockquote]:not-italic",
 							"[&_blockquote_p]:text-[clamp(1.1rem,2vh+0.6vw,1.85rem)] [&_blockquote_p]:text-fg",
+							// ds-check: keep (a slide's type scales with the viewport, on its own fluid scale)
 							"[&_blockquote_p]:max-w-[38ch] [&_blockquote_p]:leading-[1.35]",
 							// Code
 							"[&_code]:bg-surface-overlay [&_code]:font-mono [&_code]:text-[0.85em]",
-							"[&_code]:rounded [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-fg",
-							"[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-overlay/50 [&_pre]:p-4",
+							"[&_code]:rounded-tag [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-fg",
+							"[&_pre]:overflow-x-auto [&_pre]:rounded-surface [&_pre]:bg-surface-overlay/50 [&_pre]:p-4",
 							"[&_pre]:mb-[0.85em] [&_pre]:border [&_pre]:border-line",
 							"[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-fg-secondary",
 							// Tables: counts, obligations, timings
@@ -141,9 +146,9 @@ export function SlideMarkdown({ content, components, compact = false, layout = "
 							// Figures
 							// Figures come from the thesis TikZ on white; the white plate keeps them legible if
 							// the deck is ever shown in dark mode.
-							"[&_img]:mx-auto [&_img]:block [&_img]:max-h-[46vh] [&_img]:w-auto [&_img]:rounded-lg",
+							"[&_img]:mx-auto [&_img]:block [&_img]:max-h-[46vh] [&_img]:w-auto [&_img]:rounded-surface",
 							"[&_img]:bg-white [&_img]:p-3",
-							"[&_a]:text-accent [&_a]:underline",
+							"[&_a]:text-fg-accent [&_a]:underline",
 						],
 				// KaTeX inherits slide type instead of shrinking to article size
 				"[&_.katex]:text-[1.02em] [&_.katex-display]:my-[0.7em] [&_.katex-display]:overflow-x-auto",

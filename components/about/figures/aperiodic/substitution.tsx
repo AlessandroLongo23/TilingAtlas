@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Shuffle } from "lucide-react";
 import { Segmented } from "@/components/shelf";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
 import { applyViewTransform, viewToWorld, type AperiodicFrame } from "@/lib/hooks/useAperiodicView";
 import { STROKE_WIDTH, usePatchCanvas } from "@/lib/hooks/usePatchCanvas";
@@ -232,7 +232,7 @@ export function SubstitutionFigure({
 						cols={2}
 					/>
 				)}
-				<p className="text-center font-mono text-xs text-fg-muted tabular-nums">
+				<p className="text-center font-mono text-small text-fg-muted tabular-nums">
 					{polys.length.toLocaleString()} {polys.length === 1 ? def.noun.replace(/(es|s)$/, "") : def.noun}
 				</p>
 			</div>
@@ -265,7 +265,7 @@ export function RuleFigure({ tiling, caption }: { tiling?: string; caption?: str
 						<Stage fit={p.pieces} className="max-h-[200px]">
 							<Tiles polys={p.pieces} />
 						</Stage>
-						<p className="mt-2 text-center font-mono text-xs text-fg-muted">{p.caption.replace(" → ", ": ")}</p>
+						<p className="mt-2 text-center font-mono text-small text-fg-muted">{p.caption.replace(" → ", ": ")}</p>
 					</div>
 				))}
 			</div>
@@ -313,7 +313,7 @@ export function RandomFigure({ caption }: { caption?: string }) {
 					>
 						New draw
 					</Button>
-					<span className="font-mono text-xs text-fg-muted tabular-nums">
+					<span className="font-mono text-small text-fg-muted tabular-nums">
 						{polys.length.toLocaleString()} trapezoids
 					</span>
 				</div>

@@ -1,21 +1,27 @@
 // ── Families of faces ──
 //
 // A family is a set of faces added at once: regular polygons by size, the isotoxal faces whose corners sit on
-// one angle grid (Marek's star palettes: 360°/24, 360°/10, 360°/5), the n-cell polyforms of a {p,q} grid, or
-// the Laves tiles. Each family builds the board with all of its faces; the modal then keeps the ones picked
-// (keepNew).
+// one angle grid (Marek's star palettes: 360°/24, 360°/10, 360°/5), the n-cell polyforms of a {p,q} grid, the
+// Laves tiles, or the polyforms of a Schwarz triangle's grid (the triangle itself at one cell). Each family builds
+// the board with all of its faces; the modal then keeps the ones picked (keepNew).
 
 import planigon from "@/tools/ctrnact-oracle/alphabets/palettes/planigon.json";
 import { cyclicKey, printLength, readLength, type Board, type Face } from "./board";
 import { dentOf, isotoxal, withFace, type FaceSpec } from "./corners";
 import { problemOf, withDrawnFace, type Edge } from "./freeface";
-import { MAX_CELLS, withPolyforms } from "./polyform";
+import { boardPolyforms, withBoardPolyforms } from "./boardforms";
+import { MAX_CELLS, regularGrid, withPolyforms, type Picture } from "./polyform";
 
 export type Family =
 	| { kind: "regular"; sizes: (number | null)[] }
-	| { kind: "system"; N: number; stars: boolean; convex: boolean; regular: boolean }
+	| { kind: "system"; N: number; stars: boolean; convex: boolean }
 	| { kind: "polyform"; p: number; q: number; n: number }
-	| { kind: "laves"; all: boolean };
+	| { kind: "laves"; all: boolean }
+	/** The polyforms of n triangles of the Schwarz triangle's grid: n = 1 (the default) the triangle itself. */
+	| { kind: "schwarz"; pqr: [number, number, number]; n?: number }
+	/** The polyforms of n of the board's own faces (`cells`, all by default) that its vertex lines allow
+	 *  (boardforms.ts). */
+	| { kind: "board"; n: number; cells?: number[] };
 
 /** Sizes typed as `3, 4, 6-8, oo` (oo the apeirogon), in order and each once; null when a part does not read. */
 export function readSizes(text: string): (number | null)[] | null {
@@ -30,16 +36,15 @@ export function readSizes(text: string): (number | null)[] | null {
 }
 
 /**
- * The faces whose every corner is a whole number of 360°/N steps: N divides 360. An isotoxal 2n-gon has n
- * dividing N (its corners add to 360 − 360/n), a regular n-gon an angle of 180 − 360/n on the grid. Stars
- * come with their point, convex isotoxal faces (a rhombus from n = 2) once, by their smaller corner.
+ * The isotoxal faces whose every corner is a whole number of 360°/N steps: N divides 360, and a 2n-gon has n
+ * dividing N (its corners add to 360 − 360/n). Stars come with their point, convex isotoxal faces (a rhombus
+ * from n = 2) once, by their smaller corner. Regular polygons are their own family.
  */
 export function systemSpecs(f: Extract<Family, { kind: "system" }>): FaceSpec[] {
 	const { N } = f;
 	if (!Number.isInteger(N) || N < 2 || 360 % N) return [];
 	const step = 360 / N;
 	const out: FaceSpec[] = [];
-	if (f.regular) for (let n = 3; n <= 2 * N; n++) if ((N * (n - 2)) % (2 * n) === 0) out.push({ n, seg: 1 });
 	for (let n = 2; n <= N; n++) {
 		if (N % n) continue;
 		for (let k = 1; k * step < 180; k++) {
@@ -52,14 +57,24 @@ export function systemSpecs(f: Extract<Family, { kind: "system" }>): FaceSpec[] 
 	return out;
 }
 
-/** The board with every face of the family added after b's own, and for polyforms how many had holes. */
-export function withFamily(b: Board, f: Family): { board: Board; holes: number } {
+/** The board with every face of the family added after b's own, and for polyforms how many had holes and each
+ *  added face drawn in its grid. */
+export function withFamily(
+	b: Board,
+	f: Family,
+): { board: Board; holes: number; pictures?: Picture[]; problem?: string } {
 	if (f.kind === "laves") return { board: withLaves(b, f.all), holes: 0 };
-	if (f.kind === "polyform") {
-		const ok = [f.p, f.q].every((x) => Number.isInteger(x) && x >= 3 && x <= 60) && f.n >= 1 && f.n <= MAX_CELLS;
+	if (f.kind === "board") return withBoardPolyforms(b, boardPolyforms(b, f.n, f.cells));
+	if (f.kind === "polyform" || f.kind === "schwarz") {
+		const [m, low, n] = f.kind === "schwarz" ? [f.pqr, 2, f.n ?? 1] : [[f.p, f.q], 3, f.n];
+		const ok = m.every((x) => Number.isInteger(x) && x >= low && x <= 60) && n >= 1 && n <= MAX_CELLS;
 		if (!ok) return { board: b, holes: 0 };
-		const r = withPolyforms(b, f.p, f.q, f.n);
-		return { board: r.board, holes: r.holes };
+		const spec = f.kind === "schwarz" ? { m: f.pqr, cell: [] } : regularGrid(f.p, f.q);
+		const { board, holes, pictures } = withPolyforms(b, spec, n);
+		// the triangle alone keeps its name
+		const named = f.kind === "schwarz" && n === 1;
+		const trail = (x: Face, i: number) => (named && i >= b.faces.length ? { ...x, trail: `(${f.pqr.join(",")})` } : x);
+		return { board: { ...board, faces: board.faces.map(trail) }, holes, pictures };
 	}
 	const specs: FaceSpec[] = f.kind === "regular" ? f.sizes.map((n) => ({ n, seg: 1 })) : systemSpecs(f);
 	return { board: specs.reduce((acc, s) => withFace(acc, s), b), holes: 0 };

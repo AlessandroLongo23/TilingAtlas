@@ -31,7 +31,7 @@ describe("Schwarz (2,3,6) edge systems", () => {
 		// The only k=5 slice that ever existed came from the retracted solver, and the corrected drop
 		// stops at k=4. A short slice sitting beside two corrected ones would read as "enumerated to
 		// k=5". Deleting it is the honest state; this test is what stops it drifting back in.
-		expect(existsSync(dataPath("public/freedraw/sch236-solutions-k5.json.gz"))).toBe(false);
+		expect(existsSync(dataPath("public/freedraw/sch236-solutions-k5.json.br"))).toBe(false);
 	});
 
 	it.skipIf(!k3)("has exactly one nothing-drawn pattern: the bare Schwarz tiling", () => {

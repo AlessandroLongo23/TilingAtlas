@@ -190,9 +190,6 @@ export const tileHue = polygonHue;
  *  C∞, …), so apeirogons of different side lengths stay apart. GLSL's copy is in hyperbolicPerPixelGL.ts. */
 export const apeirogonGrey = (k: number): number => 0.38 + 0.62 * 0.76 ** (Math.max(k, 1) - 1);
 
-/** The one hue an EDGE pattern's disk is filled with: a backdrop, not a polygon, so no side count. */
-export const EDGE_PATTERN_HUE = 94;
-
 /**
  * The rim depth shade, the one law every hyperbolic renderer uses: dim = 1 − k·d², d the screen radius
  * (of the tile's centre for a tiling, of the pixel for an edge system or colouring, whose merged faces

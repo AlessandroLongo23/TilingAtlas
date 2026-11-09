@@ -105,7 +105,7 @@ print(f"wrote johnsonSolids.ts with {len(entries)} solids")
 
 # ---- emit catalogue entries (all except the 2 already present)
 existing={"triangular-orthobicupola","pseudo-rhombicuboctahedron"}
-cat=read_json(f"{ROOT}/public/reference-atlas-spherical.json.gz")
+cat=read_json(f"{ROOT}/public/reference-atlas-spherical.json.br")
 cell=[x for x in cat if x.get('spherical',{}).get('solid')=='cuboctahedron'][0]['renderCell']
 by_id={x['id']:x for x in cat}
 added=fixed=0
@@ -122,5 +122,5 @@ for V,ident,var,name,k,note,r in entries:
     cat.append({"id":eid,"source":"spherical","k":k,"family":fam,"spherical":{"solid":ident},
                 "geometry":"spherical","discoverer":"Norman Johnson (1966)","note":note,"renderCell":cell})
     added+=1
-write_json(f"{ROOT}/public/reference-atlas-spherical.json.gz",cat,indent=1)
+write_json(f"{ROOT}/public/reference-atlas-spherical.json.br",cat,indent=1)
 print(f"catalogue: added {added}, repaired {fixed}, total {len(cat)}")

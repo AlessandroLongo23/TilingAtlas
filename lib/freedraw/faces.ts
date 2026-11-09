@@ -104,11 +104,18 @@ function holeCount(cells: [number, number][]): number {
 
 /**
  * Classify every face of a pattern. O(n) in the number of lattice cosets, so it is cheap enough to
- * run on load for a whole catalogue page instead of being baked into the data file.
+ * run on load for a whole catalogue page instead of being baked into the data file. Kept per pattern:
+ * the shelf re-reads a whole grid's slice each time the grid or k changes, and a slice of thousands
+ * analysed afresh on every return blocked the click for a second.
  */
+const ANALYSES = new WeakMap<FreedrawPattern, FaceAnalysis>();
 export function analyseFaces(p: FreedrawPattern): FaceAnalysis {
-	if (p.patch) return analysePatch(p);
-	return gridOf(p) === FREEDRAW_GRIDS.TRIANGLE ? analyseTriangle(p) : analyseSquare(p);
+	let a = ANALYSES.get(p);
+	if (!a) {
+		a = p.patch ? analysePatch(p) : gridOf(p) === FREEDRAW_GRIDS.TRIANGLE ? analyseTriangle(p) : analyseSquare(p);
+		ANALYSES.set(p, a);
+	}
+	return a;
 }
 
 /**

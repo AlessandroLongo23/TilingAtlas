@@ -18,6 +18,33 @@ import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, screenToWorld, stepOrbitScales } f
 // normalised screen distance from the canvas centre; `p` the phase progress in [0,1]. Returns the tile's
 // [0,1] scale about its centroid. WAVE_MIN_SCALE (0.02) is applied by the caller so the tile is dropped
 // (zero-area) instead of lingering as a stroke speck.
+/** How many orbits get a hover scale (uOrbitScale, packed four to a vec4 so 256 cost 64 uniform vectors); an orbit
+ *  past it stays at rest. At 32, with one shared slot for the rest, every orbit from the 32nd on grew together. */
+export const ORBIT_MAX = 256;
+
+// An orbit's hover scale, 1 for none (-1) and for one past ORBIT_MAX.
+const ORBIT_SCALE_GLSL = `
+uniform vec4 uOrbitScale[${ORBIT_MAX / 4}];
+float orbitScale(float orbit) {
+	int oi = int(floor(orbit + 0.5));
+	return oi < 0 || oi >= ${ORBIT_MAX} ? 1.0 : uOrbitScale[oi >> 2][oi & 3];
+}
+`;
+
+// Tile orbit mode (the Orbits overlay's tiles) colours the fills themselves, by an orbit id per vertex
+// (aOrbit; -1 for none): the orbit's colour, faded toward the background as another orbit is hovered
+// (uOrbitHover 0..1), and back to full strength for the hovered one (its uOrbitScale above 1). Hue =
+// id·360/k, as orbitColor. Edges are marks of their own (ORBIT_VERT), with the same fade.
+const ORBIT_TINT_GLSL = `
+uniform float uOrbitK;
+${ORBIT_SCALE_GLSL}
+uniform float uOrbitHover;
+vec3 orbitTint(float orbit, vec3 col, vec3 bg) {
+	float lift = clamp(orbitScale(orbit) - 1.0, 0.0, 1.0);
+	return mix(bg, col, 1.0 - 0.65 * uOrbitHover * (1.0 - lift));
+}
+`;
+
 export const WAVE_GLSL = `
 float waveTileScale(int phase, float u, float p) {
 	float travel = 0.8; // WAVE_TRAVEL
@@ -32,6 +59,7 @@ in vec2 aPos;
 in float aHue;
 in vec2 aInst;
 in vec2 aCentroid;      // tile fan-apex centroid, for the selection-transition wave
+in float aOrbit;        // tile orbit id in tile mode; a constant -1 everywhere else
 uniform vec2 uOffset;   // wrapped pan, centred CSS px, y down
 uniform float uZoom;
 uniform float uRot;
@@ -42,8 +70,10 @@ uniform vec2 uHalf;     // canvas CSS half-size (w/2, h/2)
 uniform int uWavePhase; // 0 inactive, +1 grow-in, -1 collapse-out
 uniform float uWaveP;   // wave phase progress [0,1]
 out float vHue;
+out float vOrbit;
 ${WAVE_GLSL}
 void main() {
+	vOrbit = aOrbit;
 	// Transcribes flatWorldToClip in lib/render/flatView.ts — keep the two in step.
 	float c = cos(uRot), s = sin(uRot);
 	vec2 pos = aPos;
@@ -79,9 +109,17 @@ uniform float uTileSat;   // tile saturation 0..1 — the sidebar's Fill slider.
 uniform float uFillDim;   // 0 = full colour; 1 fades the tile toward uDimTarget for vertex-orbit mode (M3).
                           // Default 0 keeps every other consumer (theory cards, FlatCellRenderer) untouched.
 uniform vec3 uDimTarget;  // the surface background colour to fade toward when dimming (theme-dependent)
+in float vOrbit;
+uniform int uOrbitMode;   // 1 = tile mode: each tile in its orbit's colour (0 everywhere else)
 out vec4 frag;
 ${TILE_PALETTE_GLSL}
+${ORBIT_TINT_GLSL}
 void main() {
+	if (uOrbitMode == 1) {
+		vec3 col = vOrbit < -0.5 ? uDimTarget : tileFill(vOrbit * 360.0 / max(uOrbitK, 1.0));
+		frag = vec4(orbitTint(vOrbit, col, uDimTarget), 1.0);
+		return;
+	}
 	// tileFill is the shared palette (lib/render/tilePalette.ts), so this agrees with Tiling.show and the
 	// inversive shader by construction instead of by hand. In orbit
 	// mode (uFillDim=1) the tile fades to 0.3 of its colour over the surface background, OPAQUELY: p5 draws
@@ -223,14 +261,16 @@ void main() {
 }
 `;
 
-// Vertex-orbit dots (M3, showVertexOrbits): the GPU port of Tiling.drawVertexOrbits. Same billboarded
-// disk as POINTS, but coloured by orbit id (hue = id·360/k, matching orbitColor) and grown per orbit on
-// hover: uOrbitScale[id] scales the disk radius (1 at rest, up to ORBIT_HOVER_GROW when the orbit is
-// hovered). Instanced by the fill's lattice grid. MAX_ORBITS caps the scale array; the index is clamped.
-export const ORBIT_MAX = 32;
+// The Orbits overlay's marks (OrbitMarkPass): a vertex as a disk, an edge as a bar with round caps, both
+// a capsule around the segment aPos-aEnd (a vertex has aEnd = aPos). The GPU port of
+// Tiling.drawVertexOrbits and drawFeatureOrbits: coloured by orbit id (hue = id·360/k, as orbitColor) and
+// grown per orbit on hover, uOrbitScale[id] scaling the radius (1 at rest, up to ORBIT_HOVER_GROW). Drawn
+// in two layers, the orbits at rest and then the lifted ones, so a hovered edge lies over its neighbours
+// instead of under whichever was drawn later. Instanced by the fill's lattice grid.
 export const ORBIT_VERT = `#version 300 es
 in vec2 aPos;
-in vec2 aCorner;   // unit-quad corner in [-1,1]
+in vec2 aEnd;      // the edge's other end; aPos again for a vertex
+in vec2 aCorner;   // unit-quad corner in [-1,1]: x picks the end and reaches past it by the radius, y the side
 in float aOrbit;   // orbit id
 in vec2 aInst;
 uniform vec2 uOffset;
@@ -240,43 +280,181 @@ uniform vec2 uV1;
 uniform vec2 uV2;
 uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;
-uniform float uRadiusPx;          // base disk radius, CSS px
+uniform float uRadiusPx;          // base radius (a dot's, or half an edge's width), CSS px
 uniform float uK;                 // orbit count, for the equidistant hue
-uniform float uOrbitScale[${ORBIT_MAX}]; // per-orbit hover-grow scale (1 at rest)
-out vec2 vCorner;
-out float vHue;
-void main() {
-	vec2 world = uDeform * (aPos + aInst.x * uV1 + aInst.y * uV2);
+${ORBIT_SCALE_GLSL}
+uniform int uLayer;     // 1: the orbits at rest; 2: the lifted ones (scale above 1)
+uniform float uEdge;    // 1 for edges: a shade darker, faded by a hover, no rim
+uniform float uFade;    // how far a hover fades the other orbits toward uDimTarget
+uniform vec3 uDimTarget;
+out vec2 vLocal;   // CSS px from the mark's first end: x along it, y across
+out float vLen;    // the segment's screen length, CSS px
+out float vR;      // the radius, CSS px
+out vec3 vCol;
+${TILE_PALETTE_GLSL}
+vec2 screen(vec2 p) {
+	vec2 w = uDeform * (p + aInst.x * uV1 + aInst.y * uV2);
 	float c = cos(uRot), s = sin(uRot);
-	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
-	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
-	int oi = int(aOrbit + 0.5);
-	oi = oi < 0 ? 0 : (oi > ${ORBIT_MAX - 1} ? ${ORBIT_MAX - 1} : oi);
-	float r = uRadiusPx * uOrbitScale[oi];
-	sx += aCorner.x * r;
-	sy += aCorner.y * r;
-	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
-	vCorner = aCorner;
-	vHue = uK > 0.0 ? (aOrbit * 360.0 / uK) : 0.0;
+	return vec2(uOffset.x + uZoom * (c * w.x + s * w.y), uOffset.y + uZoom * (s * w.x - c * w.y));
+}
+void main() {
+	float scale = orbitScale(aOrbit); // per-orbit hover-grow scale (1 at rest)
+	float lift = clamp(scale - 1.0, 0.0, 1.0);
+	if ((uLayer == 2) != (lift > 0.0)) {
+		gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // not this layer's: outside the clip volume
+		return;
+	}
+	vec2 a = screen(aPos), b = screen(aEnd);
+	float len = length(b - a);
+	vec2 t = len > 1e-4 ? (b - a) / len : vec2(1.0, 0.0);
+	vec2 n = vec2(-t.y, t.x);
+	float r = uRadiusPx * scale;
+	vec2 p = (aCorner.x < 0.0 ? a : b) + r * (aCorner.x * t + aCorner.y * n);
+	gl_Position = vec4(p.x / uHalf.x, -p.y / uHalf.y, 0.0, 1.0);
+	vLocal = vec2(dot(p - a, t), dot(p - a, n));
+	vLen = len;
+	vR = r;
+	vec3 col = mix(1.0, 0.8, uEdge) * tileFill(aOrbit * 360.0 / max(uK, 1.0));
+	vCol = mix(uDimTarget, col, 1.0 - 0.65 * uFade * (1.0 - lift));
 }
 `;
 
 export const ORBIT_FRAG = `#version 300 es
 precision highp float;
-in vec2 vCorner;
-in float vHue;
+uniform float uEdge;
+in vec2 vLocal;
+in float vLen;
+in float vR;
+in vec3 vCol;
 out vec4 frag;
-${TILE_PALETTE_GLSL}
 void main() {
-	float d = length(vCorner);
+	// distance to the segment in radii: 0 on it, 1 at the mark's outline (a disk when vLen is 0)
+	float d = length(vec2(vLocal.x - clamp(vLocal.x, 0.0, vLen), vLocal.y)) / vR;
 	float aa = fwidth(d);
 	float alpha = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
 	if (alpha <= 0.0) discard;
-	vec3 col = tileFill(vHue);  // orbitColor(id,k) is tileFill too, so this matches it
-	float ring = smoothstep(0.62, 0.76, d);       // black outline, echoing drawVertexOrbits' 1.5px stroke
-	frag = vec4(mix(col, vec3(0.0), ring), alpha);
+	float ring = (1.0 - uEdge) * smoothstep(0.62, 0.76, d); // a dot's black outline, as drawVertexOrbits' stroke
+	frag = vec4(mix(vCol, vec3(0.0), ring), alpha);
 }
 `;
+
+/** Floats per vertex of an orbit-mark buffer: x, y, end x, end y, corner x, corner y, orbit. */
+export const ORBIT_MARK_FLOATS = 7;
+
+export interface OrbitMarkDraw {
+	inst: WebGLBuffer; // the fill's lattice instance grid
+	instCount: number;
+	offset: { x: number; y: number }; // wrapped pan, centred CSS px
+	zoom: number;
+	rot: number; // radians
+	v1: [number, number];
+	v2: [number, number];
+	deform: Float32List;
+	width: number; // CSS px
+	height: number;
+	k: number; // orbit count of the kind drawn
+	scales: Float32Array; // stepOrbitScales' per-orbit scales
+	radiusPx: number;
+	dim: [number, number, number]; // what a hover fades the other edges toward
+}
+
+/** The vertex dots and edge bars of an orbit mesh: one program, one buffer per kind. Shared by /play
+ *  (euclidean-canvas.tsx) and FlatCellRenderer. */
+export class OrbitMarkPass {
+	private gl: WebGL2RenderingContext;
+	private prog: WebGLProgram;
+	private bufs: Record<"vertex" | "edge", WebGLBuffer>;
+	private counts = { vertex: 0, edge: 0 };
+	private u: Record<string, WebGLUniformLocation | null> = {};
+	private a: Record<string, number> = {};
+
+	constructor(gl: WebGL2RenderingContext) {
+		this.gl = gl;
+		const prog = linkProgram(gl, ORBIT_VERT, ORBIT_FRAG);
+		if (!prog) throw new Error("orbit mark program failed to link");
+		this.prog = prog;
+		this.bufs = { vertex: gl.createBuffer(), edge: gl.createBuffer() };
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx", "uK"])
+			this.u[name] = gl.getUniformLocation(prog, name);
+		for (const name of ["uOrbitScale", "uLayer", "uEdge", "uFade", "uDimTarget"])
+			this.u[name] = gl.getUniformLocation(prog, name);
+		for (const name of ["aPos", "aEnd", "aCorner", "aOrbit", "aInst"]) this.a[name] = gl.getAttribLocation(prog, name);
+	}
+
+	/** Upload the dots and edge bars of an orbit mesh, or clear them. */
+	upload(mesh: OrbitDotMesh | null): void {
+		const gl = this.gl;
+		for (const kind of ["vertex", "edge"] as const) {
+			const marks = kind === "vertex" ? mesh?.marks : mesh?.edges?.marks;
+			this.counts[kind] = marks ? marks.length / ORBIT_MARK_FLOATS : 0;
+			if (!marks) continue;
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.bufs[kind]);
+			gl.bufferData(gl.ARRAY_BUFFER, marks, gl.STATIC_DRAW);
+		}
+	}
+
+	/** Paint one kind over the frame: the orbits at rest, then the lifted ones on top. No VAOs, so every
+	 *  attribute is rebound here, as the other passes do. */
+	draw(kind: "vertex" | "edge", p: OrbitMarkDraw): void {
+		const gl = this.gl,
+			A = this.a,
+			U = this.u;
+		if (!this.counts[kind]) return;
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		gl.useProgram(this.prog);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.bufs[kind]);
+		const fields = [
+			["aPos", 2],
+			["aEnd", 2],
+			["aCorner", 2],
+			["aOrbit", 1],
+		] as const;
+		let at = 0;
+		for (const [name, size] of fields) {
+			gl.enableVertexAttribArray(A[name]);
+			gl.vertexAttribPointer(A[name], size, gl.FLOAT, false, ORBIT_MARK_FLOATS * 4, at * 4);
+			gl.vertexAttribDivisor(A[name], 0);
+			at += size;
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, p.inst);
+		gl.enableVertexAttribArray(A.aInst);
+		gl.vertexAttribPointer(A.aInst, 2, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribDivisor(A.aInst, 1);
+		gl.uniform2f(U.uOffset, p.offset.x, p.offset.y);
+		gl.uniform1f(U.uZoom, p.zoom);
+		gl.uniform1f(U.uRot, p.rot);
+		gl.uniform2f(U.uV1, p.v1[0], p.v1[1]);
+		gl.uniform2f(U.uV2, p.v2[0], p.v2[1]);
+		gl.uniformMatrix2fv(U.uDeform, false, p.deform);
+		gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
+		gl.uniform1f(U.uRadiusPx, p.radiusPx);
+		gl.uniform1f(U.uK, p.k);
+		gl.uniform4fv(U.uOrbitScale, p.scales);
+		gl.uniform1f(U.uEdge, kind === "edge" ? 1 : 0);
+		// edges fade the others by how far the hover has lifted its orbit; dots grow, and nothing fades
+		gl.uniform1f(U.uFade, kind === "edge" ? Math.min(1, Math.max(0, ...Array.from(p.scales, (s) => s - 1))) : 0);
+		gl.uniform3f(U.uDimTarget, p.dim[0], p.dim[1], p.dim[2]);
+		for (const layer of [1, 2]) {
+			gl.uniform1i(U.uLayer, layer);
+			gl.drawArraysInstanced(gl.TRIANGLES, 0, this.counts[kind], p.instCount);
+		}
+	}
+
+	dispose(): void {
+		this.gl.deleteProgram(this.prog);
+		this.gl.deleteBuffer(this.bufs.vertex);
+		this.gl.deleteBuffer(this.bufs.edge);
+	}
+}
+
+/** Pin a per-vertex attribute to one value for a draw with no buffer for it (aOrbit outside tile mode).
+ *  There are no VAOs, so a location another pass left enabled would otherwise feed this draw. */
+export function constantAttrib(gl: WebGL2RenderingContext, loc: number | undefined, value: number): void {
+	if (loc == null || loc < 0) return;
+	gl.disableVertexAttribArray(loc);
+	gl.vertexAttrib1f(loc, value);
+}
 
 export function compileShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
 	const sh = gl.createShader(type);
@@ -383,14 +561,9 @@ export class FlatCellRenderer {
 	private mesh: CellMesh | null = null;
 	private inst = { key: "", count: 0 };
 	private disposed = false;
-	// Vertex-orbit dots: its own program and buffers, drawn over the dimmed fill, sharing the fill's
-	// instance grid. Inert until uploadOrbitMesh() supplies a mesh.
-	private orbitProg: WebGLProgram;
-	private orbitPosBuf: WebGLBuffer;
-	private orbitCornerBuf: WebGLBuffer;
-	private orbitOrbitBuf: WebGLBuffer;
-	private orbitU: Record<string, WebGLUniformLocation | null> = {};
-	private orbitA: Record<string, number> = {};
+	// Vertex-orbit dots, drawn over the dimmed fill and sharing the fill's instance grid. Inert until
+	// uploadOrbitMesh() supplies a mesh.
+	private orbits: OrbitMarkPass;
 	private orbitMesh: OrbitDotMesh | null = null;
 	private orbitScales: number[] = [];
 	/** Last orbit reported to `onOrbitHover`, so the callback fires on changes and not every frame. */
@@ -412,13 +585,11 @@ export class FlatCellRenderer {
 		this.gl = gl;
 		const fillProg = linkProgram(gl, FILL_VERT, FILL_FRAG);
 		const strokeProg = linkProgram(gl, STROKE_VERT, STROKE_FRAG);
-		const orbitProg = linkProgram(gl, ORBIT_VERT, ORBIT_FRAG);
 		const pointsProg = linkProgram(gl, POINTS_VERT, POINTS_FRAG);
-		if (!fillProg || !strokeProg || !orbitProg || !pointsProg)
-			throw new Error("flat renderer: shader compile/link failed");
+		if (!fillProg || !strokeProg || !pointsProg) throw new Error("flat renderer: shader compile/link failed");
 		this.fillProg = fillProg;
 		this.strokeProg = strokeProg;
-		this.orbitProg = orbitProg;
+		this.orbits = new OrbitMarkPass(gl);
 		this.pointsProg = pointsProg;
 
 		// uWavePhase/uWaveP are set explicitly (to "wave off"), not left at their default-zero,
@@ -444,7 +615,7 @@ export class FlatCellRenderer {
 		]) {
 			this.fillU[name] = gl.getUniformLocation(fillProg, name);
 		}
-		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
+		for (const name of ["aPos", "aHue", "aInst", "aCentroid", "aOrbit"]) {
 			this.fillA[name] = gl.getAttribLocation(fillProg, name);
 		}
 		for (const name of [
@@ -467,23 +638,6 @@ export class FlatCellRenderer {
 		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
 			this.strokeA[name] = gl.getAttribLocation(strokeProg, name);
 		}
-		for (const name of [
-			"uOffset",
-			"uZoom",
-			"uRot",
-			"uV1",
-			"uV2",
-			"uDeform",
-			"uHalf",
-			"uRadiusPx",
-			"uK",
-			"uOrbitScale",
-		]) {
-			this.orbitU[name] = gl.getUniformLocation(orbitProg, name);
-		}
-		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
-			this.orbitA[name] = gl.getAttribLocation(orbitProg, name);
-		}
 		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx"]) {
 			this.pointsU[name] = gl.getUniformLocation(pointsProg, name);
 		}
@@ -494,9 +648,6 @@ export class FlatCellRenderer {
 		this.pointsPosBuf = gl.createBuffer();
 		this.pointsCornerBuf = gl.createBuffer();
 		this.pointsColorBuf = gl.createBuffer();
-		this.orbitPosBuf = gl.createBuffer();
-		this.orbitCornerBuf = gl.createBuffer();
-		this.orbitOrbitBuf = gl.createBuffer();
 		this.posBuf = gl.createBuffer();
 		this.hueBuf = gl.createBuffer();
 		this.instBuf = gl.createBuffer();
@@ -545,7 +696,6 @@ export class FlatCellRenderer {
 	/** Supply (or clear) the vertex-orbit dots. With a mesh uploaded, draw() dims the tiles and paints
 	 *  the dots over them, exactly as /play does in orbit mode. */
 	uploadOrbitMesh(mesh: OrbitDotMesh | null): void {
-		const gl = this.gl;
 		this.orbitMesh = mesh;
 		this.orbitScales = []; // a new mesh means a new orbit count; drop the eased state
 		// `lastHoveredOrbit` is deliberately NOT reset here. It is the record of what the caller was
@@ -553,13 +703,7 @@ export class FlatCellRenderer {
 		// draw believe -1 was already reported, so a caller that lit something up on hover keeps it lit
 		// after the overlay is switched off, with no dots left on screen to explain why. draw() sees the
 		// mismatch and reports the change.
-		if (!mesh) return;
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitPosBuf);
-		gl.bufferData(gl.ARRAY_BUFFER, mesh.pos, gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitCornerBuf);
-		gl.bufferData(gl.ARRAY_BUFFER, mesh.corner, gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitOrbitBuf);
-		gl.bufferData(gl.ARRAY_BUFFER, mesh.orbit, gl.STATIC_DRAW);
+		this.orbits.upload(mesh);
 	}
 
 	// One frame. The caller owns canvas backing-size/viewport management (DPR differs per surface).
@@ -630,6 +774,7 @@ export class FlatCellRenderer {
 			gl.enableVertexAttribArray(A.aInst);
 			gl.vertexAttribPointer(A.aInst, 2, gl.FLOAT, false, 0, 0);
 			gl.vertexAttribDivisor(A.aInst, 1);
+			constantAttrib(gl, A.aOrbit, -1);
 			gl.uniform2f(U.uOffset, draw.x, draw.y);
 			gl.uniform1f(U.uZoom, p.zoom);
 			gl.uniform1f(U.uRot, rot);
@@ -760,40 +905,22 @@ export class FlatCellRenderer {
 				this.lastHoveredOrbit = hovered;
 				p.onOrbitHover?.(hovered);
 			}
-			const scales = stepOrbitScales(this.orbitScales, orbitMesh.k, hovered, ORBIT_MAX);
-
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-			gl.useProgram(this.orbitProg);
-			const A = this.orbitA,
-				U = this.orbitU;
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitPosBuf);
-			gl.enableVertexAttribArray(A.aPos);
-			gl.vertexAttribPointer(A.aPos, 2, gl.FLOAT, false, 0, 0);
-			gl.vertexAttribDivisor(A.aPos, 0);
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitCornerBuf);
-			gl.enableVertexAttribArray(A.aCorner);
-			gl.vertexAttribPointer(A.aCorner, 2, gl.FLOAT, false, 0, 0);
-			gl.vertexAttribDivisor(A.aCorner, 0);
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitOrbitBuf);
-			gl.enableVertexAttribArray(A.aOrbit);
-			gl.vertexAttribPointer(A.aOrbit, 1, gl.FLOAT, false, 0, 0);
-			gl.vertexAttribDivisor(A.aOrbit, 0);
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.instBuf);
-			gl.enableVertexAttribArray(A.aInst);
-			gl.vertexAttribPointer(A.aInst, 2, gl.FLOAT, false, 0, 0);
-			gl.vertexAttribDivisor(A.aInst, 1);
-			gl.uniform2f(U.uOffset, draw.x, draw.y);
-			gl.uniform1f(U.uZoom, p.zoom);
-			gl.uniform1f(U.uRot, rot);
-			gl.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
-			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
-			gl.uniformMatrix2fv(U.uDeform, false, deform);
-			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
-			gl.uniform1f(U.uRadiusPx, ORBIT_DOT_RADIUS_PX);
-			gl.uniform1f(U.uK, orbitMesh.k);
-			gl.uniform1fv(U.uOrbitScale, scales);
-			gl.drawArraysInstanced(gl.TRIANGLES, 0, orbitMesh.vertexCount, this.inst.count);
+			this.orbits.draw("vertex", {
+				inst: this.instBuf,
+				instCount: this.inst.count,
+				offset: draw,
+				zoom: p.zoom,
+				rot,
+				v1: mesh.v1,
+				v2: mesh.v2,
+				deform,
+				width: p.width,
+				height: p.height,
+				k: orbitMesh.k,
+				scales: stepOrbitScales(this.orbitScales, orbitMesh.k, hovered, ORBIT_MAX),
+				radiusPx: ORBIT_DOT_RADIUS_PX,
+				dim,
+			});
 		}
 	}
 
@@ -803,11 +930,8 @@ export class FlatCellRenderer {
 		const gl = this.gl;
 		gl.deleteProgram(this.fillProg);
 		gl.deleteProgram(this.strokeProg);
-		gl.deleteProgram(this.orbitProg);
+		this.orbits.dispose();
 		gl.deleteProgram(this.pointsProg);
-		gl.deleteBuffer(this.orbitPosBuf);
-		gl.deleteBuffer(this.orbitCornerBuf);
-		gl.deleteBuffer(this.orbitOrbitBuf);
 		gl.deleteBuffer(this.pointsPosBuf);
 		gl.deleteBuffer(this.pointsCornerBuf);
 		gl.deleteBuffer(this.pointsColorBuf);

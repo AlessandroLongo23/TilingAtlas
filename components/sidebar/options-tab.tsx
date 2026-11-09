@@ -1,13 +1,13 @@
 "use client";
 
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { ArrowLeftRight } from "lucide-react";
+import { Disclosure } from "@/design-system/components/disclosure";
 import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { faceKindCount, solidHasStarFace, vertexConfigs } from "@/lib/render/sphericalGeometry";
 import type { Vec3 } from "@/lib/render/platonicSolids";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { useSolid } from "@/lib/render/sphericalSolids";
 import {
 	isNobleFamily,
 	stephanoidChoices,
@@ -17,16 +17,24 @@ import {
 } from "@/lib/render/nobleSolids";
 import { dualIsIsohedral, midradius, polarDual } from "@/lib/render/dualSolid";
 import { isChiralTiling } from "@/lib/services/chirality";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Slider } from "@/components/ui/slider";
-import { Kbd } from "@/components/ui/kbd";
-import { HueRing } from "@/components/ui/hue-ring";
-import { HankinPad } from "@/components/ui/hankin-pad";
+import { Button } from "@/design-system/components/button";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { Slider } from "@/design-system/components/slider";
+import { Tooltip } from "@/design-system/components/tooltip";
+import { Kbd } from "@/design-system/components/kbd";
+import { HueRing } from "@/design-system/components/hue-ring";
+import { HankinPad } from "@/design-system/components/hankin-pad";
 import { wrapHue } from "@/lib/render/hueRing";
-import { Reveal } from "@/components/ui/reveal";
-import { OptionWall } from "@/components/ui/option-wall";
+import { Reveal } from "@/design-system/components/reveal";
+import { OptionWall } from "@/design-system/components/option-wall";
+
+// The flat Orbits overlay's three partitions (configuration.orbitMode).
+const ORBIT_MODE_OPTIONS = [
+	{ value: "vertex" as const, label: "Vertices", title: "One dot per vertex, coloured by its orbit" },
+	{ value: "edge" as const, label: "Edges", title: "Each edge in its orbit's colour; hover one to pick out its orbit" },
+	{ value: "face" as const, label: "Tiles", title: "Each tile in its orbit's colour; hover one to pick out its orbit" },
+];
 import type { Material } from "@/lib/render/materials";
 
 // The materials (lib/render/materials.ts). Each steps through its stones, glasses or woods by polygon size,
@@ -37,7 +45,6 @@ const MATERIAL_OPTIONS: { value: Material; label: string; title?: string }[] = [
 	{ value: "wood", label: "Wood", title: "A board per tile, each with its own saw cut and grain" },
 	{ value: "cobble", label: "Cobblestone", title: "Domed paving setts in sand, under a low sun" },
 ];
-import { Toggle } from "@/components/ui/toggle";
 import { WIRINGS } from "@/lib/freedraw/arcs";
 import { FILL_MODES } from "@/lib/freedraw/render";
 import { colorCountOf, colorLetter } from "@/lib/colors/pattern";
@@ -59,6 +66,8 @@ import { TILE_CLASSES } from "@/lib/vocabulary";
 
 interface OptionsTabProps {
 	selected: CatalogueTiling | null;
+	/** The symmetry steppers (orbifold-morph-controls.tsx), folded under their own heading at the end. */
+	symmetry?: ReactNode;
 }
 
 // The hue a ring shows while the slot holds cream/dark (neither is a hue): the default palette's own
@@ -96,10 +105,10 @@ function RotationSlider({
 			// The gesture reads as a quiet caption before the value, so the label keeps the row's left edge.
 			format={(v) => (
 				<>
-					<span className="mr-2 text-[11px] text-fg-muted max-md:hidden">
+					<span className="mr-2 text-caption text-fg-muted max-md:hidden">
 						{gesture === "shift-scroll" ? "Shift + scroll" : "scroll"}
 					</span>
-					<span className="mr-2 hidden text-xs text-fg-muted max-md:inline">two-finger twist</span>
+					<span className="mr-2 hidden text-small text-fg-muted max-md:inline">two-finger twist</span>
 					{v}°
 				</>
 			)}
@@ -112,8 +121,9 @@ function RotationSlider({
 // Catalogue tab and nav header take plain props). Controls are keyed off the selected tiling's own
 // geometry (isHyperbolic/isSpherical), which — since selection is scoped to the geometry toggle — always
 // matches whatever geometry is active in the Catalogue tab.
-export function OptionsTab({ selected }: OptionsTabProps) {
+export function OptionsTab({ selected, symmetry }: OptionsTabProps) {
 	const cfg = useConfiguration();
+	const [symmetryOpen, setSymmetryOpen] = useState(false);
 	const setCfg = cfg.set;
 	// Islamic construction applies to every class (see polygonClassSupportsIslamic — the shape-agnostic
 	// Hankin construction handles them all). Hyperbolic tilings run it as geodesic rays baked into the
@@ -167,8 +177,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// including the self-intersecting ones — see no change, so they are not offered the control.
 	// The hollow shelf is the Euclidean member of the set: its tiles are self-crossing {n/d} by
 	// definition, so the rule applies to every record on it.
-	const starFillApplies =
-		isSphStar || surface === "hollow2d" || solidHasStarFace(polyhedronForId(selected?.spherical?.solid ?? ""));
+	// The non-convex and genus solids arrive after the panel first draws; useSolid re-renders when they do.
+	const solid = useSolid(selected?.spherical?.solid);
+	const starFillApplies = isSphStar || surface === "hollow2d" || solidHasStarFace(solid);
 	// Whether the round spherical view exists for this record. False for the nineteen reference solids with
 	// no circumsphere, where the canvas forces the flat polyhedron and this hides the toggle back to it.
 	const sphereViewAvailable = !selected?.spherical || hasSphereView(selected.spherical.solid);
@@ -221,7 +232,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// SOLID's vertex orbits, never off the dual's faces — see dualSolid.ts for why that is the sound
 	// side of the identity.
 	const dualSolid = useMemo(() => {
-		const base = polyhedronForId(selected?.spherical?.solid ?? "");
+		const base = solid;
 		if (!base) return null;
 		const r = polarDual(base);
 		if (!("dual" in r)) return null;
@@ -230,7 +241,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 		// true — so where there is no midsphere the option is disabled and says why, rather than
 		// rendering a figure whose scale is arbitrary.
 		return { isohedral: dualIsIsohedral(base), hasMidsphere: midradius(base) !== null };
-	}, [selected?.spherical?.solid]);
+	}, [solid]);
 	// The parametric noble families: which one is selected, its live parameters, and how many (p,q) the
 	// current n admits, which is the range of the Member slider.
 	const nobleFamily = isNobleFamily(selected?.spherical?.solid) ? (selected!.spherical!.solid as NobleFamily) : null;
@@ -247,14 +258,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 		if (cfg.solidDualMode === "compound" || selected?.sphBubble) return null;
 		let shape: { vertices: readonly (readonly number[])[]; faces: number[][] } | null = selected?.sphStar ?? null;
 		if (!shape) {
-			const base = polyhedronForId(selected?.spherical?.solid ?? "");
+			const base = solid;
 			const dual = base && cfg.solidDualMode === "dual" ? polarDual(base) : null;
 			shape = dual && "dual" in dual ? dual.dual : base;
 		}
 		if (!shape?.faces?.length) return null;
 		const vertices = shape.vertices as Vec3[];
 		return { configs: vertexConfigs(vertices, shape.faces), oneFace: faceKindCount(vertices, shape.faces) === 1 };
-	}, [selected, cfg.solidDualMode]);
+	}, [selected, cfg.solidDualMode, solid]);
 	const isHyperbolicDisk = isDiskSurface(surface);
 	// One picker per color of the SELECTED pattern (2 to 4 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
@@ -345,19 +356,20 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					<Fragment key={name}>
 						{i > 0 ? (
 							<div className="flex flex-col justify-center">
-								<button
-									type="button"
-									title={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}
-									aria-label={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}
-									onClick={() =>
-										writePalette((next) => {
-											[next[i - 1], next[i]] = [pal[i], pal[i - 1]];
-										})
-									}
-									className="flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg max-md:h-11 max-md:w-9"
-								>
-									<ArrowLeftRight size={13} />
-								</button>
+								<Tooltip label={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}>
+									<Button
+										variant="secondary"
+										size="xs"
+										icon={ArrowLeftRight}
+										aria-label={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}
+										onClick={() =>
+											writePalette((next) => {
+												[next[i - 1], next[i]] = [pal[i], pal[i - 1]];
+											})
+										}
+										className="w-6 px-0 max-md:w-9"
+									/>
+								</Tooltip>
 							</div>
 						) : null}
 						<div className="min-w-0 flex-1 space-y-1.5">
@@ -368,21 +380,26 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onChange={setChoice}
 							/>
 							<div className="grid grid-cols-2 gap-1">
-								{(["cream", "dark"] as const).map((s) => (
-									<button
-										key={s}
-										type="button"
-										aria-pressed={choice === s}
-										title={s === "cream" ? "Cream — the warm near-white" : "Dark — the almost-black complement"}
-										onClick={() => setChoice(s)}
-										className={
-											choice === s
-												? "h-6 rounded border border-fg ring-1 ring-fg max-md:h-10"
-												: "h-6 rounded border border-line hover:border-line-strong max-md:h-10"
-										}
-										style={{ background: cellFill(s, false) }}
-									/>
-								))}
+								{(["cream", "dark"] as const).map((s) => {
+									const swatch = s === "cream" ? "Cream — the warm near-white" : "Dark — the almost-black complement";
+									return (
+										<Tooltip key={s} label={swatch}>
+											{/* ds-check: keep (a colour swatch: the button is the colour it picks) */}
+											<button
+												type="button"
+												aria-pressed={choice === s}
+												aria-label={swatch}
+												onClick={() => setChoice(s)}
+												className={
+													choice === s
+														? "h-6 rounded-tag border border-fg ring-1 ring-fg max-md:h-10"
+														: "h-6 rounded-tag border border-line hover:border-line-strong max-md:h-10"
+												}
+												style={{ background: cellFill(s, false) }}
+											/>
+										</Tooltip>
+									);
+								})}
 							</div>
 						</div>
 					</Fragment>
@@ -394,7 +411,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	return (
 		<div
 			// Checkbox rows read one step lighter than the section's slider labels, so the toggles stop outweighing them.
-			className="ta-scroll-fade h-full overflow-y-auto bg-surface-chrome pb-6 [&_[role=checkbox]_label]:text-[13px] [&_[role=checkbox]_label]:font-normal [&_[role=checkbox]_label]:text-fg"
+			className="ta-scroll-fade h-full overflow-y-auto bg-surface-chrome pb-6 [&_[role=checkbox]_label]:text-ui [&_[role=checkbox]_label]:font-normal [&_[role=checkbox]_label]:text-fg"
 			data-sidebar-scroll
 		>
 			{/* Every render/view toggle lives in this one flat section — the old collapsed "Advanced options"
@@ -409,7 +426,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    pattern's k actually counts. */}
 					{isFreedraw ? (
 						<div className="space-y-2">
-							<span className="text-[11px] text-fg-muted">Cell fill</span>
+							<span className="text-caption text-fg-muted">Cell fill</span>
 							{/* Coarse to fine: each mode is a refinement of the one to its left, so moving right
 							    only ever splits a colour. See FillMode / classifyFaces. */}
 							<div className="grid grid-cols-5 gap-1">
@@ -418,14 +435,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										key={value}
 										variant={cfg.freedrawFill === value ? "primary" : "secondary"}
 										size="sm"
-										classes="flex-1 px-0"
+										className="flex-1 px-0"
 										onClick={() => setCfg({ freedrawFill: value })}
 									>
 										{label}
 									</Button>
 								))}
 							</div>
-							<p className="text-[11px] leading-relaxed text-fg-muted">
+							<p className="text-caption leading-relaxed text-fg-muted">
 								{FILL_MODES.find((m) => m.value === cfg.freedrawFill)?.help}
 							</p>
 							{/* The shared Line stroke field, placed here so it sits with the fill. Here it multiplies
@@ -459,8 +476,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ freedrawArcs: v })}
 							/>
 							<Reveal show={cfg.freedrawArcs}>
-								<div className="space-y-2 pl-7">
-									<span className="text-[11px] text-fg-muted">Wiring</span>
+								<div className="space-y-2 pl-indent">
+									<span className="text-caption text-fg-muted">Wiring</span>
 									{/* A tile with c connected edges has c! drawings — one per bijection on its ports.
 									    These three name the useful corners of that space. */}
 									<div className="grid grid-cols-3 gap-1">
@@ -469,14 +486,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 												key={value}
 												variant={cfg.freedrawArcWiring === value ? "primary" : "secondary"}
 												size="sm"
-												classes="flex-1 px-0"
+												className="flex-1 px-0"
 												onClick={() => setCfg({ freedrawArcWiring: value })}
 											>
 												{label}
 											</Button>
 										))}
 									</div>
-									<p className="text-[11px] leading-relaxed text-fg-muted">
+									<p className="text-caption leading-relaxed text-fg-muted">
 										{WIRINGS.find((r) => r.value === cfg.freedrawArcWiring)?.help}
 									</p>
 									<Checkbox
@@ -485,7 +502,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										checked={cfg.freedrawArcTwist}
 										onCheckedChange={(v) => setCfg({ freedrawArcTwist: v })}
 									/>
-									<p className="text-[11px] leading-relaxed text-fg-muted">
+									<p className="text-caption leading-relaxed text-fg-muted">
 										Ribbons only. Four connected edges pair into two bands two ways, and no turn of the tile carries one
 										onto the other. This picks which.
 									</p>
@@ -508,7 +525,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ freedrawVertices: v })}
 							/>
 							<Reveal show={cfg.freedrawVertices}>
-								<p className="pl-7 text-[11px] leading-relaxed text-fg-muted max-md:hidden">
+								<p className="pl-indent text-caption leading-relaxed text-fg-muted max-md:hidden">
 									Hover a dot to grow every grid point in its orbit.
 								</p>
 							</Reveal>
@@ -547,7 +564,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ colorsVertices: v })}
 							/>
 							<Reveal show={cfg.colorsVertices}>
-								<p className="pl-7 text-[11px] leading-relaxed text-fg-muted max-md:hidden">
+								<p className="pl-indent text-caption leading-relaxed text-fg-muted max-md:hidden">
 									Hover a dot to grow every vertex in its orbit.
 								</p>
 							</Reveal>
@@ -560,7 +577,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<div className="space-y-2">
 							{palettePickers}
 							{isHyperbolicColors ? (
-								<p className="text-[11px] leading-relaxed text-fg-muted max-md:text-xs">
+								<p className="text-caption leading-relaxed text-fg-muted">
 									<span className="max-md:hidden">
 										Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
 									</span>
@@ -612,7 +629,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<Button
 								variant={cfg.hyperbolicLineMode === "geometry" ? "primary" : "secondary"}
 								size="sm"
-								classes="flex-1"
+								className="flex-1"
 								onClick={() => setCfg({ hyperbolicLineMode: "geometry" })}
 							>
 								Perspective
@@ -620,7 +637,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<Button
 								variant={cfg.hyperbolicLineMode === "constant" ? "primary" : "secondary"}
 								size="sm"
-								classes="flex-1"
+								className="flex-1"
 								onClick={() => setCfg({ hyperbolicLineMode: "constant" })}
 							>
 								Flat
@@ -659,10 +676,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						// A compact ring on a slider-height row, its degrees in the same mono readout column as
 						// Fill and Line stroke; the ring's own centre label is too small to read at this size.
 						<div className="flex items-center justify-between gap-3">
-							<span className="text-[13px] font-medium text-fg-secondary">Hue shift</span>
+							<span className="text-ui font-medium text-fg-secondary">Hue shift</span>
 							<div className="flex items-center gap-2.5 [&_text]:hidden">
 								<HueRing size={32} value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
-								<span className="w-8 text-right font-mono text-xs text-fg tabular-nums">
+								<span className="w-8 text-right font-mono text-small text-fg tabular-nums">
 									{wrapHue(Math.round(cfg.hueOffset))}°
 								</span>
 							</div>
@@ -712,12 +729,25 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					{(isFlat && sourceControls) || hypOverlays ? (
 						<Checkbox
 							id="showVertexOrbits"
-							label="Vertex orbits"
+							label={hypOverlays ? "Vertex orbits" : "Orbits"}
 							shortcut="O"
 							checked={cfg.showVertexOrbits}
 							disabled={!hypOverlays && !selected?.exactSource}
 							onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
 						/>
+					) : null}
+					{/* What the flat overlay partitions. The disks' orbits come from the darts and stay vertices. */}
+					{isFlat && sourceControls && selected?.exactSource ? (
+						<Reveal show={cfg.showVertexOrbits}>
+							<div className="pl-indent">
+								<OptionWall
+									columns={3}
+									options={ORBIT_MODE_OPTIONS}
+									selected={cfg.orbitMode}
+									onChange={(v) => setCfg({ orbitMode: v })}
+								/>
+							</div>
+						</Reveal>
 					) : null}
 					{/* Symmetry elements + fundamental domain: wallpaper-group overlays on the flat p5 path, and
 					    their hyperbolic counterparts (mirrors, n-fold centres, a Dirichlet domain) on the disks.
@@ -760,7 +790,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ freedrawArcs: v })}
 							/>
 							<Reveal show={cfg.freedrawArcs}>
-								<div className="space-y-2 pl-7">
+								<div className="space-y-2 pl-indent">
 									{/* The figures are an OVERLAY: the tiling keeps drawing underneath, so Polygon fill
 									    and Line stroke above still say what the board looks like. This adds the faint
 									    tile-edge scaffold the freedraw browser has, for when both of those are off. */}
@@ -774,18 +804,23 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<Button
 										variant="secondary"
 										size="sm"
-										classes="w-full"
+										className="w-full"
 										onClick={() => setCfg({ truchetSeed: 1 + Math.floor(Math.random() * 2147483646) })}
 									>
 										{cfg.truchetSeed ? "Reshuffle" : "Shuffle the tiles"}
 									</Button>
 									{cfg.truchetSeed ? (
 										<>
-											<p className="text-[11px] leading-relaxed text-fg-muted">
+											<p className="text-caption leading-relaxed text-fg-muted">
 												Every tile drawn independently, seed {cfg.truchetSeed}. The link carries it, so a pattern you
 												like is reproducible.
 											</p>
-											<Button variant="secondary" size="sm" classes="w-full" onClick={() => setCfg({ truchetSeed: 0 })}>
+											<Button
+												variant="secondary"
+												size="sm"
+												className="w-full"
+												onClick={() => setCfg({ truchetSeed: 0 })}
+											>
 												Back to one wiring
 											</Button>
 										</>
@@ -797,14 +832,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 														key={value}
 														variant={cfg.freedrawArcWiring === value ? "primary" : "secondary"}
 														size="sm"
-														classes="flex-1 px-0"
+														className="flex-1 px-0"
 														onClick={() => setCfg({ freedrawArcWiring: value })}
 													>
 														{label}
 													</Button>
 												))}
 											</div>
-											<p className="text-[11px] leading-relaxed text-fg-muted">
+											<p className="text-caption leading-relaxed text-fg-muted">
 												{WIRINGS.find((r) => r.value === cfg.freedrawArcWiring)?.help}
 											</p>
 										</>
@@ -825,21 +860,21 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    is the same tab on a sphere. */}
 					{(isFlat && curvedTiles && selected?.bubble) || selected?.sphBubble ? (
 						<div className="space-y-2">
-							<p className="text-xs font-medium text-fg-muted">Edge decoration</p>
+							<p className="text-small font-medium text-fg-muted">Edge decoration</p>
 							<div className="grid grid-cols-3 gap-1">
 								{BUBBLE_EDGE_STYLES.map(({ value, label }) => (
 									<Button
 										key={value}
 										variant={cfg.bubbleEdgeStyle === value ? "primary" : "secondary"}
 										size="sm"
-										classes="flex-1 px-0"
+										className="flex-1 px-0"
 										onClick={() => setCfg({ bubbleEdgeStyle: value })}
 									>
 										{label}
 									</Button>
 								))}
 							</div>
-							<p className="text-[11px] leading-relaxed text-fg-muted">
+							<p className="text-caption leading-relaxed text-fg-muted">
 								{BUBBLE_EDGE_STYLES.find((r) => r.value === cfg.bubbleEdgeStyle)?.help}
 							</p>
 							{/* The two fractal profiles' one parameter. Neither reaches further as it climbs: the
@@ -863,7 +898,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<button
 							type="button"
 							onClick={() => setCfg({ isIslamic: true })}
-							className="w-full rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-left text-[11px] text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+							className="ta-card w-full px-2.5 py-1.5 text-left text-caption text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
 						>
 							This is an underlying Islamic tessellation. Turn on the{" "}
 							<span className="text-fg">Islamic construction</span> <Kbd>I</Kbd> to reveal the star pattern.
@@ -880,7 +915,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{islamicAvailable ? (
 						<Reveal show={cfg.isIslamic}>
-							<div className="space-y-2 pl-7">
+							<div className="space-y-2 pl-indent">
 								{isSpherical ? (
 									<>
 										<div className="grid grid-cols-2 gap-2">
@@ -905,7 +940,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 														key={val}
 														variant={active ? "primary" : "secondary"}
 														size="sm"
-														classes="flex-1"
+														className="flex-1"
 														onClick={() => setCfg({ islamicStyle: val })}
 													>
 														{label}
@@ -913,7 +948,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 												);
 											})}
 										</div>
-										<p className="text-[11px] text-fg-muted">
+										<p className="text-caption text-fg-muted">
 											{cfg.islamicStyle === "interlace"
 												? "Over/under woven straps on the sphere surface. Wireframe leaves just the outlined straps; the angle slider sets the weave."
 												: cfg.islamicStyle === "outline"
@@ -936,7 +971,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 												key={val}
 												variant={cfg.islamicStyle === val ? "primary" : "secondary"}
 												size="sm"
-												classes="flex-1"
+												className="flex-1"
 												onClick={() => setCfg({ islamicStyle: val })}
 											>
 												{label}
@@ -960,7 +995,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<Button
 										variant={cfg.islamicAngle === 30 ? "primary" : "secondary"}
 										size="sm"
-										classes="flex-1"
+										className="flex-1"
 										onClick={() => setCfg({ islamicAngle: 30 })}
 									>
 										Acute
@@ -968,7 +1003,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<Button
 										variant={cfg.islamicAngle === 45 ? "primary" : "secondary"}
 										size="sm"
-										classes="flex-1"
+										className="flex-1"
 										onClick={() => setCfg({ islamicAngle: 45 })}
 									>
 										Median
@@ -976,7 +1011,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<Button
 										variant={cfg.islamicAngle === 60 ? "primary" : "secondary"}
 										size="sm"
-										classes="flex-1"
+										className="flex-1"
 										onClick={() => setCfg({ islamicAngle: 60 })}
 									>
 										Obtuse
@@ -1020,13 +1055,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											onCheckedChange={(v) => setCfg({ islamicRigid: v })}
 										/>
 										<Reveal show={cfg.islamicRigid}>
-											<div className="space-y-2 pl-7">
-												<span className="text-[11px] text-fg-muted">Section</span>
+											<div className="space-y-2 pl-indent">
+												<span className="text-caption text-fg-muted">Section</span>
 												<div className="flex gap-2">
 													<Button
 														variant={cfg.islamicBarSection === "tube" ? "primary" : "secondary"}
 														size="sm"
-														classes="flex-1"
+														className="flex-1"
 														onClick={() => setCfg({ islamicBarSection: "tube" })}
 													>
 														Tube
@@ -1034,7 +1069,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 													<Button
 														variant={cfg.islamicBarSection === "rect" ? "primary" : "secondary"}
 														size="sm"
-														classes="flex-1"
+														className="flex-1"
 														onClick={() => setCfg({ islamicBarSection: "rect" })}
 													>
 														Rectangle
@@ -1078,12 +1113,12 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								{/* Solid 3D ribbons (Interlace + Rigid): woven over/under relief, or flat coplanar bands. */}
 								<Reveal show={isSpherical && cfg.islamicStyle === "interlace" && cfg.islamicRigid}>
 									<div className="space-y-2">
-										<span className="text-[11px] text-fg-muted">Ribbons</span>
+										<span className="text-caption text-fg-muted">Ribbons</span>
 										<div className="flex gap-2">
 											<Button
 												variant={!cfg.sphericalWeaveFlat ? "primary" : "secondary"}
 												size="sm"
-												classes="flex-1"
+												className="flex-1"
 												onClick={() => setCfg({ sphericalWeaveFlat: false })}
 											>
 												Woven
@@ -1091,7 +1126,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											<Button
 												variant={cfg.sphericalWeaveFlat ? "primary" : "secondary"}
 												size="sm"
-												classes="flex-1"
+												className="flex-1"
 												onClick={() => setCfg({ sphericalWeaveFlat: true })}
 											>
 												Flat
@@ -1304,17 +1339,19 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    faces these are, and the canvas ignores the field rather than reading it (AL,
 							    2026-08-27). */}
 							<Reveal show={sphereViewAvailable && !selected?.sphBubble}>
-								<Toggle
-									id="sphericalShape"
-									leftValue="sphere"
-									rightValue="polyhedron"
-									value={shapeIsSphere ? "sphere" : "polyhedron"}
+								<OptionWall
+									columns={2}
+									options={[
+										{ value: "sphere", label: "Sphere" },
+										{ value: "polyhedron", label: "Polyhedron" },
+									]}
+									selected={shapeIsSphere ? "sphere" : "polyhedron"}
 									onChange={setShape}
 								/>
 							</Reveal>
 							{/* THE DUAL, every spherical solid whose reciprocal exists. */}
 							<Reveal show={!!dualSolid && !selected?.sphBubble}>
-								<ButtonGroup
+								<OptionWall
 									options={[
 										{ value: "solid" as const, label: "Solid" },
 										{
@@ -1352,7 +1389,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    since a part of the round sphere is not a view of anything. */}
 							{faceViewInfo ? (
 								<>
-									<ButtonGroup
+									<OptionWall
 										options={[
 											{ value: "all" as const, label: "All faces" },
 											{
@@ -1386,7 +1423,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									    solid, or any other with several kinds of corner. Named by the faces round
 									    the vertex, with how many vertices carry it. */}
 									{cfg.solidFaceView === "vertex" && faceViewInfo.configs.length > 1 ? (
-										<ButtonGroup
+										<OptionWall
 											options={faceViewInfo.configs.map((c, i) => ({
 												value: i,
 												label: <span className="font-mono">{c.short}</span>,
@@ -1469,14 +1506,18 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							{/* Camera projection: perspective (foreshortened) vs orthographic (parallel, the flat
 							    "isometric" solid look). One or the other, so a single toggle. Shared by all three
 							    canvases through lib/render/sphericalCamera.ts. */}
-							<Toggle
-								id="sphericalProjection"
-								label="Projection"
-								leftValue="perspective"
-								rightValue="orthographic"
-								value={cfg.sphericalOrthographic ? "orthographic" : "perspective"}
-								onChange={(v) => setCfg({ sphericalOrthographic: v === "orthographic" })}
-							/>
+							<div className="grid gap-1.5">
+								<span className="ta-label">Projection</span>
+								<OptionWall
+									columns={2}
+									options={[
+										{ value: "perspective", label: "Perspective" },
+										{ value: "orthographic", label: "Orthographic" },
+									]}
+									selected={cfg.sphericalOrthographic ? "orthographic" : "perspective"}
+									onChange={(v) => setCfg({ sphericalOrthographic: v === "orthographic" })}
+								/>
+							</div>
 							{/* The faint base-grid overlay draws the solid's FULL edge lattice under the drawn ink, so
 							    it says something only where the drawn set is a proper subset of it: the spherical
 							    freedraw patterns and the edge-marked boards. On a star polyhedron or a 3.4.n.4 solid
@@ -1495,7 +1536,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    circumsphere, so the mode cannot draw a tiling the way it does for a convex solid, and
 							    a blue ball with arcs on it explains nothing on its own. */}
 							{isSphStar && shapeIsSphere ? (
-								<p className="text-[11px] leading-relaxed text-fg-muted">
+								<p className="text-caption leading-relaxed text-fg-muted">
 									Star faces overlap on the sphere, so there is no tiling to draw. Each direction is shaded by how many
 									faces lie over it: the sheets a ray from the centre crosses.
 								</p>
@@ -1507,7 +1548,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    leaves the bare coloured faces. */}
 							{isSphStar && !shapeIsSphere ? (
 								<div className="space-y-2">
-									<span className="flex items-center gap-1 text-[11px] text-fg-muted">
+									<span className="flex items-center gap-1 text-caption text-fg-muted">
 										Edges
 										<InfoDot>
 											True edges bound the faces. Crossings are where two faces pass through each other: drawn the same
@@ -1526,7 +1567,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 												key={value}
 												variant={cfg.sphStarEdges === value ? "primary" : "secondary"}
 												size="sm"
-												classes="flex-1"
+												className="flex-1"
 												onClick={() => setCfg({ sphStarEdges: value })}
 											>
 												{label}
@@ -1537,7 +1578,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 							{/* The gesture note, last: it explains the CANVAS, not a control, so it belongs after the
 							    controls and not wedged between two of them (AL, 2026-08-25). */}
-							<p className="text-[11px] leading-relaxed text-fg-muted">
+							<p className="text-caption leading-relaxed text-fg-muted">
 								Drag to rotate the solid freely in any direction (no poles, so every symmetry is reachable).{" "}
 								<span className="max-md:hidden">Scroll to zoom.</span>
 								<span className="hidden max-md:inline">Pinch to zoom.</span>
@@ -1555,7 +1596,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{lensApplies ? (
 						<Reveal show={cfg.inversive}>
-							<div className="pl-7">
+							<div className="pl-indent">
 								<InversiveControls />
 							</div>
 						</Reveal>
@@ -1578,7 +1619,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{deformShown ? (
 						<Reveal show={cfg.deformOn}>
-							<div className="pl-7">
+							<div className="pl-indent">
 								<DeformPad />
 							</div>
 						</Reveal>
@@ -1594,7 +1635,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{materialsShown ? (
 						<Reveal show={cfg.materials}>
-							<div className="space-y-2 pl-7">
+							<div className="space-y-2 pl-indent">
 								<OptionWall
 									columns={2}
 									options={MATERIAL_OPTIONS}
@@ -1618,6 +1659,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								) : null}
 							</div>
 						</Reveal>
+					) : null}
+					{/* Folded by default: changing the group is a tool for a closer look, not a view setting. The
+					    open state lives here, so it survives stepping from tiling to tiling. */}
+					{symmetry ? (
+						<Disclosure title="Symmetry" open={symmetryOpen} onOpenChange={setSymmetryOpen} headerClassName="pt-3">
+							{symmetry}
+						</Disclosure>
 					) : null}
 				</div>
 			</div>

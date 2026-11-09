@@ -11,13 +11,15 @@ import { execFile } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { parse } from "../src/board";
+import { engineText, parse } from "../src/board";
 import {
 	raiseCeiling,
 	raiseStop,
 	type RaiseRule,
+	type RemovedFace,
 	type RowState,
 	type StudyDetail,
+	type StudyEdit,
 	type StudyOptions,
 	type StudyRow,
 	type StudySummary,
@@ -25,6 +27,7 @@ import {
 import {
 	aliveKeys,
 	cyclicOrders,
+	faceTally,
 	MAX_ORDERS,
 	planStudy,
 	rowText,
@@ -49,6 +52,8 @@ interface SavedRow {
 	adopted?: boolean;
 	/** Stopped by the study at its time limit: not resumed until the limit is lifted. */
 	limited?: boolean;
+	/** Finishing without the time limit (Finish): the limit stops it no more. */
+	free?: boolean;
 	/** The run it had before its run was replaced (Raise k): back to it should the new run go unfinished. */
 	was?: string;
 }
@@ -61,6 +66,8 @@ interface Saved {
 	note: string;
 	options: StudyOptions;
 	rows: SavedRow[];
+	/** Optional faces edits took out, with what their rows had found then. */
+	removed?: RemovedFace[];
 }
 
 /** What a study needs from main.ts each tick. */
@@ -97,14 +104,14 @@ const factsOf = (run: RunFolder) => ({
 
 export class Study {
 	dir: string;
-	readonly template: string;
+	template!: string;
 	private saved: Saved;
-	private plan: StudyPlan;
-	private rows: RowPlan[];
+	private plan!: StudyPlan;
+	private rows!: RowPlan[];
 	/** Rows whose balance check is in flight. */
 	private checking = new Set<number>();
 	/** The k range of the rows (the first row board's), for the list. */
-	private k: [number, number];
+	private k!: [number, number];
 	private dirty = false;
 	private lastSave = 0;
 	/** Finished runs by frame key, for adoption; built at the first check of a session. */
@@ -112,19 +119,24 @@ export class Study {
 
 	private constructor(dir: string, template: string, saved: Saved) {
 		this.dir = dir;
-		this.template = template;
 		this.saved = saved;
-		this.plan = planStudy(template);
-		this.rows = this.plan.list ?? [];
-		const kb = this.plan.instances[0]?.board ?? parse(template).board;
-		this.k = [kb.kmin, kb.kmax];
-		// study.json keeps rows by name: a plan that comes out different (a later app) keeps what still matches
-		const byName = new Map(saved.rows.map((r) => [r.name, r]));
-		this.saved.rows = this.rows.map((r) => byName.get(r.name) ?? { name: r.name });
+		this.load(template, planStudy(template));
 		if (!this.plan.list && saved.state !== "done") {
 			this.saved.state = "paused";
 			this.saved.note = this.plan.problems[0]?.message ?? "The study board no longer gives its rows.";
 		}
+	}
+
+	/** The rows of `template`, planned. study.json keeps rows by name: a plan that comes out different (a later
+	 *  app, more faces per row) keeps what still matches, and a new row starts unchecked. */
+	private load(template: string, plan: StudyPlan) {
+		this.template = template;
+		this.plan = plan;
+		this.rows = plan.list ?? [];
+		const kb = plan.instances[0]?.board ?? parse(template).board;
+		this.k = [kb.kmin, kb.kmax];
+		const byName = new Map(this.saved.rows.map((r) => [r.name, r]));
+		this.saved.rows = this.rows.map((r) => byName.get(r.name) ?? { name: r.name });
 	}
 
 	static open(dir: string): Study | null {
@@ -284,7 +296,7 @@ export class Study {
 		if (s.options.limit > 0)
 			for (const r of s.rows) {
 				const run = !r.adopted && this.runDir(r) ? byDir.get(this.runDir(r)!) : undefined;
-				if (run?.state === "running" && run.elapsed > s.options.limit) {
+				if (run?.state === "running" && run.elapsed > s.options.limit && !r.free) {
 					run.stop(`Stopped at the study's time limit of ${Math.round(s.options.limit / 60)} min`);
 					r.limited = true;
 					this.save();
@@ -413,7 +425,8 @@ export class Study {
 			return;
 		}
 		const f = path.join(os.tmpdir(), `tilesearch-study-${process.pid}-${checkFiles++}.board`);
-		fs.writeFileSync(f, text);
+		// a tile-orbit row is checked as the engine runs it, swapped: what cannot balance there has no tiling either
+		fs.writeFileSync(f, engineText(text));
 		// an hour: a check of 10⁵ orders took 12 minutes on a busy machine, and one cut short leaves its row unsearched
 		const out = await new Promise<string | null>((resolve) =>
 			execFile(ctx.engine, [f, "--balance"], { timeout: 3_600_000, maxBuffer: 1 << 26 }, (err, stdout) =>
@@ -505,6 +518,107 @@ export class Study {
 	}
 
 	/**
+	 * Finish every search a time limit stopped: each goes on from where it stopped to the end of the k it was on,
+	 * with no limit and raising k no further. A disk ceiling still holds. Returns how many go on.
+	 */
+	finish(byDir: Map<string, RunFolder>): number {
+		let on = 0;
+		for (const r of this.saved.rows) {
+			const run = !r.adopted && this.runDir(r) ? byDir.get(this.runDir(r)!) : undefined;
+			if (run?.state !== "stopped") continue;
+			if (r.limited) {
+				delete r.limited;
+				r.free = true;
+			} else if (run.capped && !run.capped.includes("wrote over")) run.uncap();
+			else continue;
+			on++;
+		}
+		if (on) this.resume();
+		return on;
+	}
+
+	/**
+	 * Rows at once, threads per row and priority, changed while the study goes or waits. A search takes them as it
+	 * starts; one going now takes a lower priority at once (the system lets a process's priority go down, not up),
+	 * and with `restart` stops and resumes from its finished roots, with the new threads.
+	 */
+	setResources(o: Pick<StudyOptions, "parallel" | "threads" | "nice">, restart: boolean, byDir: Map<string, RunFolder>) {
+		this.saved.options = { ...this.saved.options, ...o };
+		for (const r of this.saved.rows) {
+			const run = !r.adopted && this.runDir(r) ? byDir.get(this.runDir(r)!) : undefined;
+			if (run?.state !== "running") continue;
+			if (restart) run.stop(`Restarted with ${o.threads} thread${o.threads === 1 ? "" : "s"}`);
+			else run.renice(o.nice);
+		}
+		this.save(true);
+	}
+
+	/** The last edit previewed, against the plan it was compared with: applying it does not compare rows again. */
+	private pending: { text: string; base: StudyPlan; plan: StudyPlan; changed: Set<string> } | null = null;
+
+	/**
+	 * An edited study board, previewed, and with `apply` taken. Rows whose board is the same keep their checks and
+	 * searches; a row whose board changed is checked and searched again; rows the board no longer gives leave; new
+	 * rows join. An optional face the edit takes out is recorded with what its rows had found, for the census. The
+	 * runs of rows that leave or start over stay on disk, and come back in `stop` for main to stop or dequeue. Rows
+	 * are compared a few hundred at a time, so the app answers meanwhile on a study of thousands.
+	 */
+	async edit(
+		text: string,
+		apply: boolean,
+		byDir: Map<string, RunFolder>,
+		queued: (id: string) => boolean,
+	): Promise<(StudyEdit & { stop: string[] }) | { error: string }> {
+		const [base, rows] = [this.plan, this.rows];
+		const same = this.pending?.text === text && this.pending.base === base ? this.pending : null;
+		const plan = same?.plan ?? planStudy(text);
+		if (plan.problems.length) return { error: plan.problems[0].message };
+		if (!plan.list) return { error: `${plan.rows.toLocaleString("en")} rows is more than a study runs at once.` };
+		const old = new Map(rows.map((r) => [r.name, r]));
+		const changed = same?.changed ?? new Set<string>();
+		if (!same) {
+			for (const [j, r] of plan.list.entries()) {
+				if (j % 200 === 199) await new Promise((ok) => setImmediate(ok));
+				const o = old.get(r.name);
+				if (o && withoutK(rowText(base, o).text) !== withoutK(rowText(plan, r).text)) changed.add(r.name);
+			}
+			if (this.plan !== base) return { error: "The study changed while its rows were compared: try again." };
+			this.pending = { text, base, plan, changed };
+		}
+		const names = new Set(plan.list.map((r) => r.name));
+		const shown = rows.map((_, i) => this.row(i, byDir, queued));
+		const gone = shown.filter((r) => !names.has(r.name));
+		const at = new Date().toISOString();
+		const added = plan.list.filter((r) => !old.has(r.name)).length;
+		const out = {
+			rows: plan.list.length,
+			kept: plan.list.length - added - changed.size,
+			changed: changed.size,
+			added,
+			dropped: gone.length,
+			lost: shown
+				.filter((r) => r.total > 0 && (!names.has(r.name) || changed.has(r.name)))
+				.map((r) => ({ name: r.name, tilings: r.total })),
+			removed: base.optional.filter((f) => !plan.optional.includes(f)).map((face) => ({ face, at, ...faceTally(gone, face) })),
+			stop: [] as string[],
+		};
+		if (!apply) return out;
+		for (const r of this.saved.rows) {
+			if (names.has(r.name) && !changed.has(r.name)) continue;
+			if (!r.adopted && r.run) out.stop.push(this.place(r.run));
+			// a changed row starts over: checked, then searched in a run of its own
+			if (changed.has(r.name)) for (const k of Object.keys(r) as (keyof SavedRow)[]) if (k !== "name") delete r[k];
+		}
+		fs.writeFileSync(path.join(this.dir, "study.board"), text);
+		if (out.removed.length) this.saved.removed = [...(this.saved.removed ?? []), ...out.removed];
+		this.pending = null;
+		this.load(text, plan);
+		if (this.saved.state === "done" && (added || changed.size)) this.resume();
+		else this.save(true);
+		return out;
+	}
+
+	/**
 	 * A new time limit on each search, in minutes (null for none), raised or lowered. A study that raises k keeps
 	 * it as its rule's ceiling, which a running search reads as it goes; another as its own limit, checked each
 	 * tick. A row searching past it stops there; a row a limit stopped goes on while it is under it, and its
@@ -591,13 +705,21 @@ export class Study {
 
 	// ── what the window sees ──
 
-	private row(i: number, byDir: Map<string, RunFolder>): StudyRow {
+	private row(i: number, byDir: Map<string, RunFolder>, queued: (id: string) => boolean): StudyRow {
 		const plan = this.rows[i];
 		const r = this.saved.rows[i];
 		const dir = this.runDir(r);
 		const run = dir ? byDir.get(dir) : undefined;
+		// raised: until its new search finishes (or a limit stops it), the row shows what the search before it found,
+		// every k up to its own; the new search's partial counts would hide that the row has tilings
+		const prior =
+			r.was && run && !run.options?.find && (run.state === "running" || (run.state === "stopped" && !run.capped && !r.limited))
+				? byDir.get(this.place(r.was))
+				: undefined;
+		const before = prior?.state === "finished" ? prior : undefined;
+		const shown = before ?? run;
 		// from the study's lowest k up to wherever its run went: k raised past the study's, or an adopted run's
-		const counts = Object.fromEntries(Object.entries(run?.counts ?? {}).filter(([k]) => +k >= this.k[0])) as Record<
+		const counts = Object.fromEntries(Object.entries(shown?.counts ?? {}).filter(([k]) => +k >= this.k[0])) as Record<
 			number,
 			number
 		>;
@@ -609,8 +731,8 @@ export class Study {
 			state: "checking",
 			counts,
 			total: Object.values(counts).reduce((t, x) => t + x, 0),
-			reached: run?.options?.find ? run.find?.found || Math.max(0, (run.find?.proven ?? 0) - 1) || undefined : run?.kRange[1],
-			elapsed: run && !r.adopted ? run.elapsed : 0,
+			reached: run?.options?.find ? run.find?.found || Math.max(0, (run.find?.proven ?? 0) - 1) || undefined : shown?.kRange[1],
+			elapsed: run && !r.adopted ? run.elapsed + (before?.elapsed ?? 0) : 0,
 			...(r.reason ? { reason: r.reason } : {}),
 			...(run ? { run: run.dir, ...(r.adopted ? { adopted: true } : {}) } : {}),
 		};
@@ -625,6 +747,11 @@ export class Study {
 		if (r.check === "error") return { ...base, state: "failed" };
 		if (!r.check) return base;
 		if (!run) return { ...base, state: "waiting" };
+		if (before) {
+			const raising = { state: run.state === "running" ? "running" : queued(run.dir) ? "queued" : "stopped", k: run.kRange[1] } as const;
+			const first = firstK(counts);
+			return first ? { ...base, state: "found", first, raising } : { ...base, state: "none", through: before.kRange[1], raising };
+		}
 		const find = !!run.options?.find;
 		const first = (find && run.find?.found) || firstK(counts);
 		if (run.state === "running") return { ...base, state: "running", roots: { ...run.roots } };
@@ -639,7 +766,7 @@ export class Study {
 					};
 		// stopped part way: its counts are its finished roots', so the least k among them is not the first k
 		if (run.capped) return { ...base, state: "limit", reason: run.capped, roots: { ...run.roots } };
-		return { ...base, state: r.limited ? "limit" : "stopped", roots: { ...run.roots } };
+		return { ...base, state: r.limited ? "limit" : queued(run.dir) ? "queued" : "stopped", roots: { ...run.roots } };
 	}
 
 	summary(byDir: Map<string, RunFolder>, queued: (id: string) => boolean): StudySummary {
@@ -647,12 +774,13 @@ export class Study {
 		let elapsed = 0;
 		// the study's k reaches as far as any row's run went
 		let kmax = this.k[1];
+		let raising = 0;
 		for (let i = 0; i < this.rows.length; i++) {
-			const row = this.row(i, byDir);
+			const row = this.row(i, byDir, queued);
 			if (row.run) kmax = Math.max(kmax, byDir.get(row.run)?.kRange[1] ?? 0);
-			const state = row.state === "stopped" && row.run && queued(row.run) ? "queued" : row.state;
-			tally[state] = (tally[state] ?? 0) + 1;
+			tally[row.state] = (tally[row.state] ?? 0) + 1;
 			elapsed += row.elapsed;
+			if (row.raising) raising++;
 		}
 		const m = STAMP.exec(path.basename(this.dir));
 		return {
@@ -669,19 +797,18 @@ export class Study {
 			params: this.plan.params.map((p) => ({ name: p.name, values: p.values })),
 			optional: this.plan.optional,
 			sizes: this.plan.sizes,
+			required: this.plan.required,
 			rowCount: this.rows.length,
 			checked: this.saved.rows.filter((r) => r.check).length,
 			tally,
 			elapsed,
+			raising,
 		};
 	}
 
 	detail(byDir: Map<string, RunFolder>, queued: (id: string) => boolean): StudyDetail {
-		const rows = this.rows.map((_, i) => {
-			const row = this.row(i, byDir);
-			return row.state === "stopped" && row.run && queued(row.run) ? { ...row, state: "queued" as const } : row;
-		});
-		return { ...this.summary(byDir, queued), rows, template: this.template };
+		const rows = this.rows.map((_, i) => this.row(i, byDir, queued));
+		return { ...this.summary(byDir, queued), rows, template: this.template, removed: this.saved.removed ?? [] };
 	}
 }
 

@@ -16,8 +16,8 @@ import {
 // change of meaning in the data the classifier reads.
 
 const read = (p: string) => decodeAtlas<unknown>(JSON.parse(readDataText(p)));
-const HYP = "public/reference-atlas-hyperbolic.json.gz";
-const SPH = "public/reference-atlas-spherical.json.gz";
+const HYP = "public/reference-atlas-hyperbolic.json.br";
+const SPH = "public/reference-atlas-spherical.json.br";
 const anyShard = existsSync(HYP) && existsSync(SPH);
 
 describe("vertex-configuration canonicalisation", () => {

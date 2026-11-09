@@ -2,11 +2,13 @@
 // only on "Add face", so an outline left open never reaches the board text.
 import { CircleAlert, CircleCheck, Trash2, Undo2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
-import { OptionWall } from "@/components/ui/option-wall";
+import { Button } from "@/design-system/components/button";
+import { Field } from "@/design-system/components/field";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { Input } from "@/design-system/components/input";
+import { Modal } from "@/design-system/components/modal";
+import { Notice } from "@/design-system/components/notice";
+import { OptionWall } from "@/design-system/components/option-wall";
 import { tileFill } from "@/lib/render/tilePalette";
 import { cn } from "@/lib/utils/cn";
 import { polygonFillHue } from "@/lib/utils/renderTiling";
@@ -48,7 +50,15 @@ const shown = (e: { len: number; text?: string }) => (e.text ?? String(e.len)).r
 const TYPED_STEPS = ["1", "2", "sqrt2", "sqrt3", "3"];
 
 /** A length typed as written ("sqrt2", "3/2", "sqrt3-1"): kept while it does not read, passed on when it does. */
-function LengthInput({ value, onChange, label }: { value: string; onChange: (text: string, len: number) => void; label: string }) {
+function LengthInput({
+	value,
+	onChange,
+	label,
+}: {
+	value: string;
+	onChange: (text: string, len: number) => void;
+	label: string;
+}) {
 	const [draft, setDraft] = useState(value);
 	// a length set from outside (a preset, the other kind of sides) replaces the draft
 	const [was, setWas] = useState(value);
@@ -74,7 +84,8 @@ function LengthInput({ value, onChange, label }: { value: string; onChange: (tex
 
 /** Whether a keystroke belongs to a field being typed in (or, for Enter, a button), not to the drawing. */
 const typing = (e: KeyboardEvent) =>
-	e.target instanceof HTMLElement && !!e.target.closest(e.key === "Enter" ? "input, textarea, select, button" : "input, textarea, select");
+	e.target instanceof HTMLElement &&
+	!!e.target.closest(e.key === "Enter" ? "input, textarea, select, button" : "input, textarea, select");
 
 export function DrawFaceModal({
 	b,
@@ -99,8 +110,8 @@ export function DrawFaceModal({
 	const g = grid(n);
 	// lengths as edge types: every side one edge, its length its type (only like lengths glue); a new face
 	// takes them when the board already has edge lines of its own lengths
-	const [typed, setTyped] = useState(
-		() => (start ? start.edges.some((e) => e.text !== undefined) : b.angles.some((a) => a.edge?.length && !a.edge.style)),
+	const [typed, setTyped] = useState(() =>
+		start ? start.edges.some((e) => e.text !== undefined) : b.angles.some((a) => a.edge?.length && !a.edge.style),
 	);
 	const [step, setStep] = useState<{ len: number; text?: string }>(() => (typed ? { len: 1, text: "1" } : { len: 1 }));
 	const len = step.len;
@@ -202,7 +213,12 @@ export function DrawFaceModal({
 
 	// the view: the outline, the start, and every dot the next edge can reach
 	const view = useMemo(() => {
-		const reach = [{ x: len, y: 0 }, { x: 0, y: len }, { x: -len, y: 0 }, { x: 0, y: -len }];
+		const reach = [
+			{ x: len, y: 0 },
+			{ x: 0, y: len },
+			{ x: -len, y: 0 },
+			{ x: 0, y: -len },
+		];
 		const all = [...pts, ...(closed ? [] : reach.map((d) => ({ x: tip.x + d.x, y: tip.y + d.y })))];
 		const xs = all.map((p) => p.x);
 		const ys = all.map((p) => p.y);
@@ -230,13 +246,11 @@ export function DrawFaceModal({
 	// corner i is where edge i starts; an open path's start is no corner yet
 	const corners = edges.flatMap((_, i) => (i === 0 && !closed ? [] : [i]));
 	const pending =
-		!closed && last && aimed?.ok
-			? { deg: cornerDegrees(last, { dir: aimed.dir, ...step }, side, g), at: tip }
-			: null;
+		!closed && last && aimed?.ok ? { deg: cornerDegrees(last, { dir: aimed.dir, ...step }, side, g), at: tip } : null;
 
 	return (
 		<Modal
-			isOpen
+			open
 			onOpenChange={(o) => !o && close()}
 			title={`${face ? `Redraw face ${index! + 1}` : "Draw a face"}${cross ? ", self-intersecting" : ""}`}
 			maxWidth="max-w-5xl"
@@ -322,7 +336,7 @@ export function DrawFaceModal({
 												fontSize={2.8 * u}
 												textAnchor="middle"
 												dominantBaseline="central"
-												className="fill-accent font-mono"
+												className="fill-fg-accent font-mono"
 											>
 												{shown(e)}
 											</text>
@@ -339,7 +353,7 @@ export function DrawFaceModal({
 										fontSize={(Number.isInteger(deg) ? 3.2 : 2.3) * u}
 										textAnchor="middle"
 										dominantBaseline="central"
-										className={cn("font-mono", deg > 180 ? "fill-accent" : "fill-fg-secondary")}
+										className={cn("font-mono", deg > 180 ? "fill-fg-accent" : "fill-fg-secondary")}
 									>
 										{showDegrees(deg)}°
 									</text>
@@ -369,13 +383,7 @@ export function DrawFaceModal({
 										cx={o.at.x}
 										cy={-o.at.y}
 										r={dot(o.closes && o.ok ? 1.6 : aim === o.dir ? 1.3 : 0.8)}
-										fill={
-											!o.ok
-												? "none"
-												: o.closes || aim === o.dir
-													? "var(--color-accent)"
-													: "var(--color-fg-muted)"
-										}
+										fill={!o.ok ? "none" : o.closes || aim === o.dir ? "var(--color-accent)" : "var(--color-fg-muted)"}
 										stroke={o.ok ? "none" : "var(--color-fg-muted)"}
 										strokeWidth={0.3 * u}
 										opacity={o.ok ? 1 : 0.5}
@@ -391,7 +399,7 @@ export function DrawFaceModal({
 									y={-pending.at.y - 4 * u}
 									fontSize={3.4 * u}
 									textAnchor="middle"
-									className="fill-accent font-mono font-semibold"
+									className="fill-fg-accent font-mono font-semibold"
 									pointerEvents="none"
 								>
 									{showDegrees(pending.deg)}°
@@ -401,24 +409,17 @@ export function DrawFaceModal({
 						<div className="absolute top-2 right-2">
 							<InfoDot side="bottom" label="How to draw">
 								Click a dot to draw the next edge from the tip. The dots sit one edge length away, every{" "}
-								{showDegrees(g.step)}°; a hollow
-								one would {cross ? "fold back" : "cross the outline"}. ← and → aim, ↑ and ↓ or 1–9 set the length, Enter draws, Backspace undoes.
-								The face closes when an edge ends on the start.
+								{showDegrees(g.step)}°; a hollow one would {cross ? "fold back" : "cross the outline"}. ← and → aim, ↑
+								and ↓ or 1–9 set the length, Enter draws, Backspace undoes. The face closes when an edge ends on the
+								start.
 							</InfoDot>
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
-						<span className="ta-label flex items-center gap-1.5">
-							Sides
-							<InfoDot>
-								Unit edges: a side of length 3 is three unit edges with Pi points between them, and it glues to
-								any unit edges. Lengths as edge types: each side is one edge of any length (2, 3/2, sqrt2, 2sqrt3,
-								sqrt3-1, (1+sqrt5)/2), and each length is an edge type that glues only to itself, as in the
-								atlas&rsquo;s 45-45-90 and planigon (Laves) palettes. A side of length 1 needs no type: it is a plain
-								unit edge either way, so it glues to any face&rsquo;s. A longer side glues only to sides drawn the same
-								way.
-							</InfoDot>
-						</span>
+					<Field
+						inline
+						label="Sides"
+						hint="Unit edges: a side of length 3 is three unit edges with Pi points between them, and it glues to any unit edges. Lengths as edge types: each side is one edge of any length (2, 3/2, sqrt2, 2sqrt3, sqrt3-1, (1+sqrt5)/2), and each length is an edge type that glues only to itself, as in the atlas’s 45-45-90 and planigon (Laves) palettes. A side of length 1 needs no type: it is a plain unit edge either way, so it glues to any face’s. A longer side glues only to sides drawn the same way."
+					>
 						<OptionWall
 							columns={2}
 							fill={false}
@@ -429,55 +430,57 @@ export function DrawFaceModal({
 							selected={typed}
 							onChange={changeTyped}
 						/>
-					</div>
-					<div className="flex items-center gap-2">
-						<span className="ta-label">Edge length</span>
-						{typed ? (
-							<>
-								<OptionWall
-									columns={TYPED_STEPS.length}
-									fill={false}
-									options={TYPED_STEPS.map((t) => ({ value: t, label: shown({ len: 0, text: t }) }))}
-									selected={step.text ?? ""}
-									onChange={(t) => setStep({ len: readLength(t)!.value, text: t })}
-								/>
-								<LengthInput value={step.text ?? "1"} onChange={(text, l) => setStep({ len: l, text })} label="Edge length" />
-							</>
-						) : (
-							<>
-								<OptionWall
-									columns={6}
-									fill={false}
-									options={[1, 2, 3, 4, 5, 6].map((d) => ({ value: d, label: String(d) }))}
-									selected={len}
-									onChange={setLen}
-								/>
-								<Input
-									type="number"
-									min={1}
-									max={MAX_LEN}
-									value={len}
-									onChange={(e) => {
-										const l = Math.round(Number(e.target.value));
-										if (l >= 1 && l <= MAX_LEN) setLen(l);
-									}}
-									size="sm"
-									className="w-16"
-									aria-label="Edge length"
-								/>
-							</>
-						)}
-					</div>
+					</Field>
+					<Field inline label="Edge length">
+						{/* the presets and the field are one control: justify-between would push them apart */}
 						<div className="flex items-center gap-2">
-							<span className="ta-label flex items-center gap-1.5">
-								Angle unit
-								<InfoDot>
-									Every turn is a multiple of 180°/N, N from {MIN_N} to {MAX_N}. N = 12 gives turns of 15°, the
-									corners of the squares, triangles, hexagons and dodecagons; N = 5 or 10 the pentagon&rsquo;s, N = 7
-									the heptagon&rsquo;s. A new N keeps the drawing when every edge still points along one of its
-									directions, and starts over otherwise.
-								</InfoDot>
-							</span>
+							{typed ? (
+								<>
+									<OptionWall
+										columns={TYPED_STEPS.length}
+										fill={false}
+										options={TYPED_STEPS.map((t) => ({ value: t, label: shown({ len: 0, text: t }) }))}
+										selected={step.text ?? ""}
+										onChange={(t) => setStep({ len: readLength(t)!.value, text: t })}
+									/>
+									<LengthInput
+										value={step.text ?? "1"}
+										onChange={(text, l) => setStep({ len: l, text })}
+										label="Edge length"
+									/>
+								</>
+							) : (
+								<>
+									<OptionWall
+										columns={6}
+										fill={false}
+										options={[1, 2, 3, 4, 5, 6].map((d) => ({ value: d, label: String(d) }))}
+										selected={len}
+										onChange={setLen}
+									/>
+									<Input
+										type="number"
+										min={1}
+										max={MAX_LEN}
+										value={len}
+										onChange={(e) => {
+											const l = Math.round(Number(e.target.value));
+											if (l >= 1 && l <= MAX_LEN) setLen(l);
+										}}
+										size="sm"
+										className="w-16"
+										aria-label="Edge length"
+									/>
+								</>
+							)}
+						</div>
+					</Field>
+					<Field
+						inline
+						label="Angle unit"
+						hint={`Every turn is a multiple of 180°/N, N from ${MIN_N} to ${MAX_N}. N = 12 gives turns of 15°, the corners of the squares, triangles, hexagons and dodecagons; N = 5 or 10 the pentagon’s, N = 7 the heptagon’s. A new N keeps the drawing when every edge still points along one of its directions, and starts over otherwise.`}
+					>
+						<div className="flex items-center gap-2">
 							<OptionWall
 								columns={5}
 								fill={false}
@@ -495,28 +498,26 @@ export function DrawFaceModal({
 								className="w-16"
 								aria-label="N, the angle unit 180°/N"
 							/>
-							<span className="font-mono text-xs text-fg-muted">{showDegrees(g.step)}°</span>
+							<span className="font-mono text-small text-fg-muted">{showDegrees(g.step)}°</span>
 						</div>
-						<div className="flex items-center gap-2">
-							<span className="ta-label flex items-center gap-1.5">
-								Outline
-								<InfoDot>
-									A self-intersecting face, a star polygon such as the pentagram, may cross its own outline; its
-									corners are only where its edges turn. An edge still may not fold straight back.
-								</InfoDot>
-							</span>
-							<OptionWall
-								columns={2}
-								fill={false}
-								options={[
-									{ value: false, label: "Simple" },
-									{ value: true, label: "Self-intersecting" },
-								]}
-								selected={cross}
-								onChange={setCross}
-							/>
-						</div>
-					</div>
+					</Field>
+					<Field
+						inline
+						label="Outline"
+						hint="A self-intersecting face, a star polygon such as the pentagram, may cross its own outline; its corners are only where its edges turn. An edge still may not fold straight back."
+					>
+						<OptionWall
+							columns={2}
+							fill={false}
+							options={[
+								{ value: false, label: "Simple" },
+								{ value: true, label: "Self-intersecting" },
+							]}
+							selected={cross}
+							onChange={setCross}
+						/>
+					</Field>
+				</div>
 
 				<div className="flex min-w-0 flex-col gap-5">
 					<Status
@@ -528,8 +529,7 @@ export function DrawFaceModal({
 						onHover={setGhost}
 						onClose={(add) => (setEdges([...edges, ...add]), setGhost(null))}
 					/>
-					<div className="space-y-2">
-						<div className="ta-label">Start from</div>
+					<Field label="Start from">
 						<div className="flex flex-wrap gap-1.5">
 							{PRESETS.map((p) => {
 								const at = regrid(p.edges, G12, g);
@@ -551,16 +551,12 @@ export function DrawFaceModal({
 								);
 							})}
 						</div>
-					</div>
+					</Field>
 					{edges.length ? (
-						<div className="space-y-2">
-							<div className="ta-label flex items-center gap-1.5">
-								Edges
-								<InfoDot>
-									Each edge&rsquo;s length, and the corner where it meets the next. Changing a corner turns every edge
-									after it, so the outline may open; the dots and the suggestions above close it again.
-								</InfoDot>
-							</div>
+						<Field
+							label="Edges"
+							hint="Each edge’s length, and the corner where it meets the next. Changing a corner turns every edge after it, so the outline may open; the dots and the suggestions above close it again."
+						>
 							<ol className="max-h-64 space-y-1 overflow-auto pr-1">
 								{edges.map((e, i) => {
 									const next = edges[i + 1] ?? (closed ? edges[0] : null);
@@ -571,7 +567,7 @@ export function DrawFaceModal({
 											onMouseEnter={() => setRow(i)}
 											onMouseLeave={() => setRow(null)}
 											className={cn(
-												"flex items-center gap-2 rounded-control px-1.5 py-1 text-xs",
+												"flex items-center gap-2 rounded-control px-1.5 py-1 text-small",
 												row === i && "bg-surface-sunken",
 											)}
 										>
@@ -632,27 +628,20 @@ export function DrawFaceModal({
 									);
 								})}
 							</ol>
-						</div>
+						</Field>
 					) : null}
 					{line ? (
-						<div className="space-y-1.5">
-							<div className="ta-label flex items-center gap-1.5">
-								On the board
-								<InfoDot>
-									Each corner is a symbol with its angle set, named for this face; corners of the same angle share one.
-									With unit edges, a side longer than one edge is cut by Pi points. With lengths as edge types, each
-									side has an edge corner at its middle naming its length, declared once on the board with a vertex
-									line gluing it to itself, so only like lengths meet. A face and its mirror image are the same face,
-									so it does not matter which way round you drew it.
-								</InfoDot>
-							</div>
-							<code className="block rounded-control bg-surface-sunken px-2.5 py-1.5 font-mono text-xs break-words whitespace-pre-line text-fg-secondary">
+						<Field
+							label="On the board"
+							hint="Each corner is a symbol with its angle set, named for this face; corners of the same angle share one. With unit edges, a side longer than one edge is cut by Pi points. With lengths as edge types, each side has an edge corner at its middle naming its length, declared once on the board with a vertex line gluing it to itself, so only like lengths meet. A face and its mirror image are the same face, so it does not matter which way round you drew it."
+						>
+							<code className="block rounded-control bg-surface-sunken px-2.5 py-1.5 font-mono text-small break-words whitespace-pre-line text-fg-secondary">
 								{newTypes.map(([sym, l]) => `edge ${sym} length ${l}\n`).join("")}
 								face {line.face.word.join(" ")}
 								{line.face.repeat === 1 ? "" : ` x ${line.face.repeat}`}
 								{newTypes.map(([sym]) => `\nvertex ${sym} ${sym}`).join("")}
 							</code>
-						</div>
+						</Field>
 					) : null}
 					<div className="mt-auto flex items-center gap-2 border-t border-line-subtle pt-4">
 						{face ? (
@@ -704,29 +693,23 @@ function Status({
 	const unitEdges = edges.reduce((t, e) => t + e.len, 0);
 	if (!edges.length)
 		return (
-			<p className="text-sm text-fg-secondary">
+			<p className="text-body text-fg-secondary">
 				Click a dot round the start to draw the first edge, or start from a shape below.
 			</p>
 		);
 	if (!problem)
 		return (
-			<div className="flex items-start gap-2 rounded-surface bg-surface-sunken p-3 text-sm">
-				<CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-				<span>
-					Closed: {edges.length} edges{typed ? "" : `, ${unitEdges} unit edges round`}.
-				</span>
-			</div>
+			<Notice tone="info" icon={<CircleCheck className="size-icon-md text-fg-accent" />}>
+				Closed: {edges.length} edges{typed ? "" : `, ${unitEdges} unit edges round`}.
+			</Notice>
 		);
 	const open = !closed && problem === "The outline is still open.";
 	return (
-		<div className="space-y-2 rounded-surface bg-surface-sunken p-3 text-sm">
-			<div className={cn("flex items-start gap-2", !open && "text-danger")}>
-				<CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-				<span>{open ? `Open: the tip is ${gap.toFixed(3)} from the start.` : problem}</span>
-			</div>
+		<Notice tone={open ? "info" : "danger"} icon={<CircleAlert className="size-icon-md"/>}>
+			{open ? `Open: the tip is ${gap.toFixed(3)} from the start.` : problem}
 			{open && suggestions.length ? (
-				<div className="flex flex-wrap items-center gap-1.5" onMouseLeave={() => onHover(null)}>
-					<span className="text-xs text-fg-muted">Close with</span>
+				<div className="mt-2 flex flex-wrap items-center gap-1.5" onMouseLeave={() => onHover(null)}>
+					<span className="text-small text-fg-muted">Close with</span>
 					{suggestions.map((s, i) => (
 						<span key={i} onMouseEnter={() => onHover(s)}>
 							<Button
@@ -738,11 +721,11 @@ function Status({
 					))}
 				</div>
 			) : open && edges.length >= 2 ? (
-				<p className="text-xs text-fg-muted">
-					No one or two edges of {typed ? "a plain length" : "whole length"} close it from here: keep drawing, or change an
-					edge below.
+				<p className="mt-2 text-small text-fg-muted">
+					No one or two edges of {typed ? "a plain length" : "whole length"} close it from here: keep drawing, or change
+					an edge below.
 				</p>
 			) : null}
-		</div>
+		</Notice>
 	);
 }

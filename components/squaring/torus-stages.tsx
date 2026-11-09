@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Minus, Plus } from "lucide-react";
+import { Notice } from "@/design-system/components/notice";
 import { buildTorusMap } from "@/lib/squaring/torusMap";
 import { squareTorus } from "@/lib/squaring/torusSquaring";
 import {
@@ -20,8 +22,9 @@ import { SquaredTorusFigure } from "./squared-torus-figure";
 import { SqDomainFigure } from "./sq-domain-figure";
 import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-board";
 import { num, torusFills } from "./torus-shared";
-import { RangeInput } from "@/components/ui/range-input";
-import { shardBody } from "@/lib/services/atlasCodec";
+import { RangeInput } from "@/design-system/components/range-input";
+import { Button } from "@/design-system/components/button";
+import { fetchData, shardBody } from "@/lib/services/atlasCodec";
 
 // One periodic tiling becoming one squared torus, in the same four stages as the polyhedron page.
 //
@@ -75,7 +78,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 	useEffect(() => {
 		if (shardCache.has(entry.id)) return;
 		let live = true;
-		fetch(torusShardUrl(entry.id))
+		fetchData(torusShardUrl(entry.id))
 			.then((r) => (r.ok ? shardBody<TorusRecord>(r) : Promise.reject(new Error(String(r.status)))))
 			.then((data: TorusRecord) => {
 				shardCache.set(entry.id, data);
@@ -142,20 +145,14 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 
 	if (error)
 		return (
-			<div className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">
+			<Notice tone={error === "stale" ? "warning" : "danger"} className="p-4">
 				{error === "stale" ? (
 					<>
 						<p>
 							This page is holding an older list of tilings: <span className="font-mono text-fg">{entry.id}</span> is no
 							longer in the shelf. The shelf was rebuilt after the page loaded.
 						</p>
-						<button
-							type="button"
-							onClick={() => window.location.reload()}
-							className="mt-3 border border-line px-2 py-1 text-[11px] transition-colors hover:text-fg"
-						>
-							Reload the page
-						</button>
+						<Button size="sm" className="mt-3" label="Reload the page" onClick={() => window.location.reload()} />
 					</>
 				) : (
 					<p>
@@ -163,9 +160,9 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 						have been built. Run <code className="font-mono">pnpm tsx scripts/build-torus-shelf.ts</code>.
 					</p>
 				)}
-			</div>
+			</Notice>
 		);
-	if (!record || !map) return <p className="p-4 text-sm text-fg-muted">Loading…</p>;
+	if (!record || !map) return <p className="p-4 text-body text-fg-muted">Loading…</p>;
 
 	const squaring = solved?.squaring ?? null;
 
@@ -177,10 +174,10 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 			<StageBoard
 				empty={
 					squaring === null ? (
-						<p className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">
+						<Notice tone="info" className="p-4">
 							No squaring at ({cls[0]}, {cls[1]}): {solved?.failure ?? "the class is degenerate"}. The zero class has no
 							harmonic form, and classes where the form vanishes on an edge drop to a lower genus.
-						</p>
+						</Notice>
 					) : undefined
 				}
 				control={
@@ -191,26 +188,20 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 					>
 						<div className="flex items-baseline justify-between gap-2">
 							{exact ? (
-								<p className="font-mono text-base leading-none text-fg">
+								<p className="font-mono text-reading leading-none text-fg">
 									({cls[0]}, {cls[1]})
 								</p>
 							) : (
-								<p className="font-mono text-base leading-none text-fg">
+								<p className="font-mono text-reading leading-none text-fg">
 									{(((raw * 180) / Math.PI + 360) % 360).toFixed(2)}°
 								</p>
 							)}
-							<button
-								type="button"
-								onClick={() => setCls(entry.bestClass)}
-								className="border border-line px-1.5 py-0.5 text-[10px] text-fg-muted transition-colors hover:text-fg max-md:min-h-11 max-md:px-3 max-md:text-xs"
-							>
-								reset
-							</button>
+							<Button size="xs" label="reset" onClick={() => setCls(entry.bestClass)} />
 						</div>
 						{/* Always rendered, at a fixed height. Showing it only off the lattice made the panel
 						    grow and shrink under the cursor mid-drag, which moved the disk out from under the
 						    pointer: the control fought the hand holding it. */}
-						<p className="mt-1 h-3 overflow-hidden font-mono text-[9px] leading-3 whitespace-nowrap text-fg-muted max-md:h-4 max-md:text-xs max-md:leading-4">
+						<p className="mt-1 h-3 overflow-hidden font-mono text-micro leading-3 whitespace-nowrap text-fg-muted max-md:h-4 max-md:leading-4">
 							{exact ? "exact class · integer sides" : "off the integer lattice · sides irrational"}
 						</p>
 						{domains ? (
@@ -229,7 +220,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 										fills={fills}
 									/>
 								</div>
-								<p className="h-8 overflow-hidden text-[10px] leading-snug text-fg-muted max-md:h-auto max-md:min-h-8 max-md:text-xs">
+								<p className="h-8 overflow-hidden text-micro leading-tight text-fg-muted max-md:h-auto max-md:min-h-8">
 									{litWall >= 0 ? (
 										<>
 											The {domains.walls[litWall].edges.length === 1 ? "square" : "squares"} lit in the stages shrink
@@ -246,7 +237,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 							<Stepper label="n" value={step[1]} min={-LIMIT} max={LIMIT} onChange={(v) => setCls([step[0], v])} />
 						</div>
 						{squaring ? (
-							<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px] max-md:text-xs">
+							<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-micro">
 								<Fact label="order" value={String(squaring.order)} />
 								<Fact
 									label="distinct sizes"
@@ -358,16 +349,15 @@ function Stepper({
 }) {
 	return (
 		<div className="flex flex-col gap-1 max-md:w-full">
-			<span className="text-[9px] tracking-wide text-fg-muted uppercase max-md:text-xs">{label}</span>
+			<span className="ta-label">{label}</span>
 			<div className="flex items-center gap-2">
-				<button
-					type="button"
+				<Button
+					size="xs"
+					icon={Minus}
 					aria-label={`decrease ${label}`}
 					onClick={() => onChange(Math.max(min, value - 1))}
-					className="h-5 w-5 border border-line text-[11px] leading-none text-fg-muted transition-colors hover:text-fg max-md:size-11 max-md:text-base"
-				>
-					−
-				</button>
+					className="w-6 px-0 max-md:min-w-11"
+				/>
 				<RangeInput
 					min={min}
 					max={max}
@@ -378,14 +368,13 @@ function Stepper({
 					className="min-w-0 flex-1"
 					aria-label={label}
 				/>
-				<button
-					type="button"
+				<Button
+					size="xs"
+					icon={Plus}
 					aria-label={`increase ${label}`}
 					onClick={() => onChange(Math.min(max, value + 1))}
-					className="h-5 w-5 border border-line text-[11px] leading-none text-fg-muted transition-colors hover:text-fg max-md:size-11 max-md:text-base"
-				>
-					+
-				</button>
+					className="w-6 px-0 max-md:min-w-11"
+				/>
 			</div>
 		</div>
 	);

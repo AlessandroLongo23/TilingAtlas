@@ -30,7 +30,7 @@ const EPS = 1e-9;
 
 const records = (): TorusRecord[] =>
 	readdirSync(SHELF)
-		.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("index."))
+		.filter((f) => /\.json(\.br)?$/.test(f) && !f.startsWith("index."))
 		.map((f) => JSON.parse(readDataText(path.join(SHELF, f))) as TorusRecord);
 
 const built = (rec: TorusRecord) => {

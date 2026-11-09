@@ -26,7 +26,9 @@ import {
 	type Geometry,
 	type Shape,
 } from "./corners";
+import { faceEdges, faceWalk, missAt, sharedEdge, stepsOf } from "./develop";
 import { EPS, onSegment, orient } from "./freeface";
+import { along, diskView } from "./polyform";
 
 /** One colour per declared corner, spread round the wheel by the golden angle. */
 export const cornerHue = (b: Board, sym: string) => {
@@ -71,6 +73,9 @@ type Pt = { x: number; y: number };
 type Walks = {
 	shapes: Map<string, Shape>;
 	faces: [Map<Face, Pt[] | null>, Map<Face, Pt[] | null>];
+	/** per face, whether it closes only in the hyperbolic plane (hypFace), and the side the board's such faces share */
+	hyp: Map<Face, HypFace>;
+	edge?: number | null;
 	/** per corner: its face and every way it can sit at a vertex (cornerAt), with the sides it starts and ends on */
 	corners: Map<string, { face: Face; polys: Pt[][]; sides: [string, string][]; js: number[] } | null>;
 	/** whether two corners' faces overlap, by the corners and the turn between them */
@@ -82,10 +87,57 @@ const walksOf = (b: Board) => {
 	if (!w)
 		walks.set(
 			b,
-			(w = { shapes: cornerShapes(b), faces: [new Map(), new Map()], corners: new Map(), pairs: new Map() }),
+			(w = {
+				shapes: cornerShapes(b),
+				faces: [new Map(), new Map()],
+				hyp: new Map(),
+				corners: new Map(),
+				pairs: new Map(),
+			}),
 		);
 	return w;
 };
+
+/** A face of set angles whose corners add up to less than a plane polygon's (`off`: a {4,5} polyform's, a (2,3,7)
+ *  triangle's): its angles and its steps (stepsOf: a side typed by length at its own); with every side typed,
+ *  `fixed` when it closes as it is. */
+type HypFace = { alphas: number[]; steps: (number | null)[]; off: boolean; fixed: boolean };
+function hypFace(b: Board, f: Face): HypFace {
+	const { shapes, hyp } = walksOf(b);
+	let out = hyp.get(f);
+	if (!out) {
+		const full = f.repeat === "inf" ? [] : Array.from({ length: f.repeat }, () => f.word).flat();
+		const types = edgeTypes(b);
+		const set =
+			full.length > 2 && full.every((c) => !types.get(c)?.style && ["set", "pi"].includes(shapes.get(c)?.kind ?? ""));
+		const alphas = full.map((c) => cornerAngle(shapes.get(c), "plane", 0)!);
+		const steps = stepsOf(b, full);
+		const off = set && alphas.reduce((t, a) => t + Math.PI - a, 0) > 2 * Math.PI + 1e-9;
+		hyp.set(f, (out = { alphas, steps, off, fixed: off && !steps.includes(null) && missAt(alphas, steps)(0) < 1e-6 }));
+	}
+	return out;
+}
+
+/**
+ * A face of hypFace as the tilings draw it (develop.ts geometry): walked in the hyperbolic plane at the
+ * shortest plain side every such face of the board closes at (else its own shortest), its corners and its
+ * curved outline in the Poincaré disk. Null for any other face.
+ */
+function hyperbolicFace(b: Board, f: Face): { corners: Pt[]; outline: Pt[] } | null {
+	const w = walksOf(b);
+	const { alphas, steps, off, fixed } = hypFace(b, f);
+	if (!off) return null;
+	// a face that closes in the plane too, crossing itself (a pentagram, 36° five times), stays there unless the
+	// board has a face that closes only off it (the X pentomino among the other {4,5} pentominoes)
+	if (walkFace(b, f) && !b.faces.some((g) => hypFace(b, g).off && !walkFace(b, g))) return null;
+	if (w.edge === undefined) w.edge = sharedEdge(b.faces.map((g) => hypFace(b, g)).filter((x) => x.off && !x.fixed));
+	const s = fixed ? 0 : (w.edge ?? faceEdges(alphas, steps)[0]);
+	if (s === undefined) return null;
+	const { corners } = faceWalk(alphas, s, steps);
+	const sides = corners.flatMap((c, i) => along("hyperbolic", c, corners[(i + 1) % corners.length]).slice(1));
+	const flat = diskView("hyperbolic", [...corners, ...sides]);
+	return { corners: flat.slice(0, corners.length), outline: flat.slice(corners.length) };
+}
 /**
  * A face walked with unit edges, turning at each corner by its own angle, corner by corner (y up). Null
  * when the walk does not close, or, unless `regular` allows them, when a corner takes its angle from the
@@ -421,12 +473,14 @@ function runsInside(P: Pt[], Q: Pt[]) {
 }
 
 /** A walked outline centred and scaled into the face drawing's circle, y down as SVG draws. */
-const fitted = (pts: Pt[]) => {
+/** The move that centres `pts` in a card, y down, their farthest at 0.62. */
+const fitTo = (pts: Pt[]) => {
 	const cx = pts.reduce((t, p) => t + p.x, 0) / pts.length;
 	const cy = pts.reduce((t, p) => t + p.y, 0) / pts.length;
 	const r = Math.max(...pts.map((p) => Math.hypot(p.x - cx, p.y - cy)));
-	return pts.map((p) => ({ x: ((p.x - cx) * 0.62) / r, y: (-(p.y - cy) * 0.62) / r }));
+	return (p: Pt) => ({ x: ((p.x - cx) * 0.62) / r, y: (-(p.y - cy) * 0.62) / r });
 };
+const fitted = (pts: Pt[]) => pts.map(fitTo(pts));
 
 /**
  * A bubble face's outline: each side between real corners curved out (a bump) or in (a bite) when its
@@ -509,7 +563,7 @@ function Slot(props: {
 					fontSize={r * 2.6}
 					textAnchor="middle"
 					dominantBaseline="central"
-					className={cn("font-mono", selected ? "fill-accent font-semibold" : !onFace && "fill-fg")}
+					className={cn("font-mono", selected ? "fill-fg-accent font-semibold" : !onFace && "fill-fg")}
 					fill={onFace && !selected ? INK : undefined}
 				>
 					{sym || "?"}
@@ -587,8 +641,11 @@ export function FaceFigure({
 	// a star whose point Quick setup solves is drawn at a stand-in point, halfway to turning convex
 	const loose = freePoints({ ...b, faces: [face] })[0];
 	const shown = loose ? withPoints(b, [loose], [loose.n >= 3 ? (180 - 360 / loose.n) / 2 : 60]) : b;
-	// a face whose corners all have angles of their own is drawn from them (a star, a cut polygon)
-	const walked = walkFace(shown, face);
+	// a face whose corners all have angles of their own is drawn from them (a star, a cut polygon); one that
+	// closes only in the hyperbolic plane, there
+	const hyp = hyperbolicFace(shown, face);
+	const fit = hyp && fitTo(hyp.corners);
+	const walked = hyp ? null : walkFace(shown, face);
 	// the polygon itself: its real corners, and how many edges each side is cut into
 	const flat = flatOf(b);
 	const cut = polygonOf(face, flat);
@@ -600,15 +657,17 @@ export function FaceFigure({
 		return { x: 0.62 * Math.cos(a), y: 0.62 * Math.sin(a) };
 	});
 	// corner i of the written-out face: a vertex of the polygon, or a Pi point that far along its side
-	const pts = walked
-		? fitted(walked)
-		: Array.from({ length: n }, (_, i) => {
-				const j = (((i - at0) % n) + n) % n;
-				const k = Math.floor(j / seg);
-				const t = (j % seg) / seg;
-				const [a, c] = [vs[k], vs[(k + 1) % m]];
-				return { x: a.x + (c.x - a.x) * t, y: a.y + (c.y - a.y) * t };
-			});
+	const pts = fit
+		? hyp.corners.map(fit)
+		: walked
+			? fitted(walked)
+			: Array.from({ length: n }, (_, i) => {
+					const j = (((i - at0) % n) + n) % n;
+					const k = Math.floor(j / seg);
+					const t = (j % seg) / seg;
+					const [a, c] = [vs[k], vs[(k + 1) % m]];
+					return { x: a.x + (c.x - a.x) * t, y: a.y + (c.y - a.y) * t };
+				});
 	const outward = (p: { x: number; y: number }) => (Math.hypot(p.x, p.y) + 0.24) / Math.hypot(p.x, p.y);
 	const L = Math.max(1, face.word.length);
 	const bubble = bubbleOutline(
@@ -630,11 +689,16 @@ export function FaceFigure({
 	const labelled = bare ? bare.filter((m) => !m).length <= labelsUpTo : label;
 	const outline = bubble
 		? `M ${bubble.outline.map((p) => `${p.x} ${p.y}`).join(" L ")} Z`
-		: walked
-		? `M ${pts.map((p) => `${p.x} ${p.y}`).join(" L ")} Z`
-		: m === 2
-			? `M ${vs[0].x} ${vs[0].y} Q 0.5 0 ${vs[1].x} ${vs[1].y} Q -0.5 0 ${vs[0].x} ${vs[0].y} Z`
-			: `M ${vs.map((p) => `${p.x} ${p.y}`).join(" L ")} Z`;
+		: fit
+			? `M ${hyp.outline
+					.map(fit)
+					.map((p) => `${p.x} ${p.y}`)
+					.join(" L ")} Z`
+			: walked
+				? `M ${pts.map((p) => `${p.x} ${p.y}`).join(" L ")} Z`
+				: m === 2
+					? `M ${vs[0].x} ${vs[0].y} Q 0.5 0 ${vs[1].x} ${vs[1].y} Q -0.5 0 ${vs[0].x} ${vs[0].y} Z`
+					: `M ${vs.map((p) => `${p.x} ${p.y}`).join(" L ")} Z`;
 	return (
 		<svg viewBox="-1 -1 2 2" width={size} height={size} className="text-fg-secondary">
 			<path d={outline} fill={fillOf(shown, face)} stroke={INK} strokeWidth="0.012" strokeLinejoin="round" />

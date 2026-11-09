@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
+import { Button } from "@/design-system/components/button";
+import { Kbd } from "@/design-system/components/kbd";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
 
 // Why emit-on-closure is unsound, built by the room, not asserted at it.
@@ -192,45 +194,44 @@ export function RowStacker() {
 		<div className="not-prose flex flex-col items-center gap-2">
 			{/* Square, because the drawn frame is COLS x (1 + MAX_ROWS) and both are 7 — a wider box would
 			    just be margin. Height-driven so the slide, not the text column, decides the size. */}
-			<div ref={hostRef} className="bg-surface-base relative aspect-square h-[42vh] rounded-2xl border border-line">
+			<div ref={hostRef} className="ta-well relative aspect-square h-[42vh]">
 				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-				<div className="absolute top-2 left-3 font-mono text-[11px] text-fg-muted max-md:text-xs">
+				<div className="absolute top-2 left-3 font-mono text-caption text-fg-muted">
 					{rows.length ? rows.join(" ") : "—"}
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-center gap-2 text-xs max-md:text-sm">
-				<button
-					type="button"
+			<div className="flex flex-wrap items-center justify-center gap-2 text-small max-md:text-body">
+				<Button
+					size="sm"
+					label={
+						<>
+							add a square row <Kbd>1</Kbd>
+						</>
+					}
 					onClick={() => add("S")}
 					disabled={full}
-					className="rounded-md border border-line px-3 py-1 text-fg-secondary transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40 max-md:min-h-11"
-				>
-					add a square row <span className="text-fg-disabled max-md:hidden">1</span>
-				</button>
-				<button
-					type="button"
+				/>
+				<Button
+					size="sm"
+					label={
+						<>
+							add a triangle row <Kbd>2</Kbd>
+						</>
+					}
 					onClick={() => add("T")}
 					disabled={full}
-					className="rounded-md border border-line px-3 py-1 text-fg-secondary transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40 max-md:min-h-11"
-				>
-					add a triangle row <span className="text-fg-disabled max-md:hidden">2</span>
-				</button>
-				<button
-					type="button"
-					onClick={undo}
-					disabled={n === 0}
-					className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40 max-md:min-h-11 max-md:px-3"
-				>
-					undo
-				</button>
-				<button
-					type="button"
+				/>
+				<Button size="sm" label="undo" onClick={undo} disabled={n === 0} />
+				<Button
+					size="sm"
+					label={
+						<>
+							reset <Kbd>0</Kbd>
+						</>
+					}
 					onClick={reset}
-					className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:px-3"
-				>
-					reset <span className="text-fg-disabled max-md:hidden">0</span>
-				</button>
+				/>
 			</div>
 
 			<p className="m-0 text-center text-[clamp(0.7rem,1vh+0.3vw,0.95rem)] text-fg-secondary">

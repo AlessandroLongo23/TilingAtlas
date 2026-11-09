@@ -103,11 +103,8 @@ function LetterCell({ letter }: { letter: AlphabetLetter }) {
 	const name = letter.variant || "F";
 
 	return (
-		<figure className="m-0 flex flex-col items-center gap-[0.15rem]">
-			<div
-				className="bg-surface-base relative overflow-hidden rounded-md border border-line"
-				style={{ width: "var(--cell)", height: "var(--cell)" }}
-			>
+		<figure className="m-0 flex flex-col items-center gap-0.5">
+			<div className="ta-well relative overflow-hidden" style={{ width: "var(--cell)", height: "var(--cell)" }}>
 				{geo && (
 					// y down in SVG, y up in the figure: one flip on the group, so the angles the generator
 					// emits are the angles drawn.
@@ -192,11 +189,11 @@ export function Alphabet44() {
 		>
 			<div className="flex flex-wrap items-start justify-center gap-x-5 gap-y-2">
 				{BLOCKS.map((b) => (
-					<div key={b.word} className="flex flex-col items-center gap-[0.2rem]">
+					<div key={b.word} className="flex flex-col items-center gap-1">
 						<div className="font-mono leading-none text-fg-muted" style={{ fontSize: "var(--label)" }}>
 							{b.word} · {b.letters.length}
 						</div>
-						<div className="flex gap-[0.2rem]">
+						<div className="flex gap-1">
 							{b.letters.map((l) => (
 								<LetterCell key={l.code} letter={l} />
 							))}

@@ -54,6 +54,11 @@ export const SOURCES = {
 	MYERS: "myers",
 	CTRNACT: "ctrnact",
 	CTRNACT_STAR: "ctrnact-star",
+	/** Regular tilings above k = 10 from targeted Tiling Searcher runs (scripts/tilesearch-exact.ts). */
+	TILESEARCH: "tilesearch",
+	/** Regular tilings the Atlas's homogeneous-tiling searches found and no shelf holds (face-homogeneous above
+	 *  k = 16), drawn from their Delaney–Dress symbols (tools/ctrnact-oracle/homogeneous.py, scripts/atlas/records.ts). */
+	HOMOGENEOUS: "homogeneous",
 	COMPOSABLE: "composable",
 	ISOTOXAL: "isotoxal",
 	MIXED: "mixed",

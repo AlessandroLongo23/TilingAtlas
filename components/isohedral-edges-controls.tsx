@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RangeInput } from "@/components/ui/range-input";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { RangeInput } from "@/design-system/components/range-input";
 import { BULGE } from "@/lib/isohedral/build";
 import { ISOHEDRAL_TYPES } from "@/lib/isohedral/catalogue";
 import { IH_EDGE_BOARD_BY_IH, solveIhBoardFor } from "@/lib/isohedral/edge-board";
@@ -63,7 +63,7 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 
 	// On a phone this card is one of the panels in /play's bottom tray, so it gives up its corner.
 	return (
-		<div className="ta-float absolute bottom-3 left-3 z-20 flex flex-col gap-1 p-3 text-xs max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-[13px]">
+		<div className="ta-float absolute bottom-3 left-3 z-20 flex flex-col gap-1 p-3 text-small max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-ui">
 			<div className="flex items-center justify-between gap-4 pb-1">
 				<span className="font-mono text-fg-secondary">{info?.label ?? `IH${ih}`}</span>
 				<button

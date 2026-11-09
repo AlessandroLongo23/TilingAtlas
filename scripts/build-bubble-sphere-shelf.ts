@@ -1,4 +1,4 @@
-// Build public/bubble-sphere/*.json.gz — the spherical bubble boards.
+// Build public/bubble-sphere/*.json.br — the spherical bubble boards.
 //
 // COVERAGE, and why it differs per board (AL, 2026-08-27). The 28 solids carry 1.277e52 decorations
 // between them, so "all of them" is not a shelf. But the small boards ARE finite and small — the
@@ -15,7 +15,7 @@
 //   pnpm tsx scripts/build-bubble-sphere-shelf.ts
 import { mkdirSync } from "node:fs";
 import { writeDataFile } from "./atlas/io.mjs";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { polyhedronForId } from "@/lib/render/sphericalSolidsAll";
 import { biteWords, byK, kDistribution, lowK, sphereAutomorphisms, sphereMapOf } from "@/lib/bubble/sphere";
 
 const COMPLETE_UNDER = 20_000;
@@ -96,7 +96,7 @@ for (const [solid, prefix] of BOARDS) {
 			}))
 			.sort((a, b) => a.id.localeCompare(b.id));
 		const name = `${prefix}-k${k}.json`;
-		writeDataFile(`${OUT}/${name}.gz`, JSON.stringify(recs));
+		writeDataFile(`${OUT}/${name}.br`, JSON.stringify(recs));
 		shards.push(name);
 		rows += recs.length;
 	}
@@ -105,5 +105,5 @@ for (const [solid, prefix] of BOARDS) {
 		`${solid.padEnd(28)} ${complete ? "complete" : `k<=${KMAX}`.padEnd(8)}  total ${total.toString().padStart(12)}  shipped ${String(reps.length).padStart(6)}  ${shards.length} shard(s)`,
 	);
 }
-writeDataFile(`${OUT}/manifest.json.gz`, JSON.stringify(manifest, null, 1));
+writeDataFile(`${OUT}/manifest.json.br`, JSON.stringify(manifest, null, 1));
 console.log(`\n${rows} records across ${manifest.length} boards -> ${OUT}`);

@@ -16,13 +16,20 @@ import {
 	STROKE_FRAG,
 	POINTS_VERT,
 	POINTS_FRAG,
-	ORBIT_VERT,
-	ORBIT_FRAG,
 	ORBIT_MAX,
+	OrbitMarkPass,
 	POINT_DOT_RADIUS_PX,
 	compileShader,
+	constantAttrib,
 } from "@/lib/render/flatTilingGL";
-import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, parseDimTarget, stepOrbitScales } from "@/lib/render/orbitHover";
+import {
+	ORBIT_DOT_RADIUS_PX,
+	hoveredEdgeAt,
+	hoveredOrbitAt,
+	hoveredTileAt,
+	parseDimTarget,
+	stepOrbitScales,
+} from "@/lib/render/orbitHover";
 import { getOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
 import { FlatMaterialPass } from "@/lib/render/flatMaterialGL";
 import { resolveAlphaDegs, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
@@ -82,16 +89,13 @@ export function EuclideanCanvas({
 	const pointsColorBufRef = useRef<WebGLBuffer | null>(null);
 	const pointsUniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
 	const pointsAttribsRef = useRef<Record<string, number>>({});
-	// Vertex-orbit dots (M3, showVertexOrbits): own program/buffers, own mesh (built from orbitData), and a
-	// caller-owned per-orbit hover-grow scale array eased each frame. The dots share the fill's instance grid.
-	const orbitProgRef = useRef<WebGLProgram | null>(null);
-	const orbitPosBufRef = useRef<WebGLBuffer | null>(null);
-	const orbitCornerBufRef = useRef<WebGLBuffer | null>(null);
-	const orbitOrbitBufRef = useRef<WebGLBuffer | null>(null);
-	const orbitUniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
-	const orbitAttribsRef = useRef<Record<string, number>>({});
+	// The Orbits overlay (M3, showVertexOrbits): vertex dots and edge bars (OrbitMarkPass), their mesh (built
+	// from orbitData), and a per-orbit hover-grow scale array eased each frame. They share the fill's
+	// instance grid. Tile mode: an orbit id per fill vertex (OrbitDotMesh.faces).
+	const orbitPassRef = useRef<OrbitMarkPass | null>(null);
 	const orbitMeshRef = useRef<OrbitDotMesh | null>(null);
 	const orbitScalesRef = useRef<number[]>([]);
+	const fillOrbitBufRef = useRef<WebGLBuffer | null>(null);
 	const orbitDataRef = useRef<OrbitData | null>(orbitData);
 	orbitDataRef.current = orbitData;
 	const meshRef = useRef<CellMesh | null>(null);
@@ -148,18 +152,16 @@ export function EuclideanCanvas({
 		instRef.current = { key: "", count: 0 }; // force an instance rebuild for the new basis
 	};
 
-	// Upload the vertex-orbit dot mesh (M3), or clear it when there's no orbit data. Reset the eased hover
-	// scales so a new tiling starts at rest.
+	// Upload the orbit mesh (M3), or clear it when there's no orbit data. Reset the eased hover scales so a
+	// new tiling starts at rest.
 	const uploadOrbitMesh = (gl: WebGL2RenderingContext, mesh: OrbitDotMesh | null) => {
 		orbitMeshRef.current = mesh;
 		orbitScalesRef.current = [];
-		if (!mesh) return;
-		gl.bindBuffer(gl.ARRAY_BUFFER, orbitPosBufRef.current);
-		gl.bufferData(gl.ARRAY_BUFFER, mesh.pos, gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, orbitCornerBufRef.current);
-		gl.bufferData(gl.ARRAY_BUFFER, mesh.corner, gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, orbitOrbitBufRef.current);
-		gl.bufferData(gl.ARRAY_BUFFER, mesh.orbit, gl.STATIC_DRAW);
+		orbitPassRef.current?.upload(mesh);
+		if (mesh?.faces) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, fillOrbitBufRef.current);
+			gl.bufferData(gl.ARRAY_BUFFER, mesh.faces.orbit, gl.STATIC_DRAW);
+		}
 	};
 
 	useEffect(() => {
@@ -200,10 +202,14 @@ export function EuclideanCanvas({
 			"uWaveP",
 			"uFillDim",
 			"uDimTarget",
+			"uOrbitMode",
+			"uOrbitK",
+			"uOrbitScale",
+			"uOrbitHover",
 		]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
-		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
+		for (const name of ["aPos", "aHue", "aInst", "aCentroid", "aOrbit"]) {
 			attribsRef.current[name] = gl.getAttribLocation(prog, name);
 		}
 
@@ -211,6 +217,7 @@ export function EuclideanCanvas({
 		hueBufRef.current = gl.createBuffer();
 		centroidBufRef.current = gl.createBuffer();
 		instBufRef.current = gl.createBuffer();
+		fillOrbitBufRef.current = gl.createBuffer();
 
 		const strokeVs = compileShader(gl, gl.VERTEX_SHADER, STROKE_VERT);
 		const strokeFs = compileShader(gl, gl.FRAGMENT_SHADER, STROKE_FRAG);
@@ -275,41 +282,11 @@ export function EuclideanCanvas({
 		pointsCornerBufRef.current = gl.createBuffer();
 		pointsColorBufRef.current = gl.createBuffer();
 
-		const orbitVs = compileShader(gl, gl.VERTEX_SHADER, ORBIT_VERT);
-		const orbitFs = compileShader(gl, gl.FRAGMENT_SHADER, ORBIT_FRAG);
-		if (!orbitVs || !orbitFs) return;
-		const orbitProg = gl.createProgram();
-		gl.attachShader(orbitProg, orbitVs);
-		gl.attachShader(orbitProg, orbitFs);
-		gl.linkProgram(orbitProg);
-		if (!gl.getProgramParameter(orbitProg, gl.LINK_STATUS)) {
-			console.error("euclidean orbit program link failed:", gl.getProgramInfoLog(orbitProg));
-			return;
+		try {
+			orbitPassRef.current = new OrbitMarkPass(gl);
+		} catch (e) {
+			console.error(e); // no Orbits overlay
 		}
-		orbitProgRef.current = orbitProg;
-
-		for (const name of [
-			"uOffset",
-			"uZoom",
-			"uRot",
-			"uV1",
-			"uV2",
-			"uDeform",
-			"uHalf",
-			"uRadiusPx",
-			"uK",
-			"uOrbitScale",
-		]) {
-			orbitUniformsRef.current[name] = gl.getUniformLocation(orbitProg, name);
-		}
-		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
-			orbitAttribsRef.current[name] = gl.getAttribLocation(orbitProg, name);
-		}
-
-		orbitPosBufRef.current = gl.createBuffer();
-		orbitCornerBufRef.current = gl.createBuffer();
-		orbitOrbitBufRef.current = gl.createBuffer();
-
 		try {
 			materialRef.current = new FlatMaterialPass(gl);
 		} catch (e) {
@@ -415,6 +392,42 @@ export function EuclideanCanvas({
 			g.clearColor(0, 0, 0, 0);
 			g.clear(g.COLOR_BUFFER_BIT);
 
+			// The Orbits overlay (M3, plus the edge and tile modes): which partition is drawn, the orbit under the
+			// pointer p5 publishes (orbitHoverBridge), and each orbit's eased emphasis. The wave (M2) suppresses
+			// it. Tile mode needs its per-vertex ids to line up with the fill on the GPU, which they may not
+			// mid-selection, and the symmetry panel's hover (force) is always dots; else vertices.
+			const om = orbitMeshRef.current;
+			const overlay = (cfg.showVertexOrbits || !!om?.force) && wavePhaseInt === 0;
+			const want = om?.force ? "vertex" : cfg.orbitMode;
+			const feature: "vertex" | "edge" | "face" | null =
+				!overlay || !om
+					? null
+					: want === "edge" && om.edges
+						? "edge"
+						: want === "face" && om.faces?.orbit.length === mesh.fillVertexCount
+							? "face"
+							: "vertex";
+			const orbitMode = feature != null;
+			const hoverWorld = getOrbitHoverWorld();
+			let orbitCount = om?.k ?? 1;
+			let hoveredOrbit = -1;
+			if (feature === "edge" && om?.edges) {
+				orbitCount = om.edges.count;
+				hoveredOrbit = hoveredEdgeAt(om.edges.features, hoverWorld, mesh.v1, mesh.v2, mesh.det, ctrl.zoom);
+			} else if (feature === "face" && om?.faces) {
+				orbitCount = om.faces.count;
+				hoveredOrbit = hoveredTileAt(om.faces.features, hoverWorld, mesh.v1, mesh.v2, mesh.det);
+			} else if (feature === "vertex" && om) {
+				hoveredOrbit = hoveredOrbitAt(om.dots, hoverWorld, mesh.v1, mesh.v2, mesh.det, ctrl.zoom);
+			}
+			const orbitScales = orbitMode
+				? stepOrbitScales(orbitScalesRef.current, orbitCount, hoveredOrbit, ORBIT_MAX)
+				: null;
+			// How far a hover has faded the other tile orbits: the largest eased lift, 0 at rest.
+			const orbitHover = orbitScales ? Math.min(1, Math.max(0, ...orbitScales.map((x) => x - 1))) : 0;
+			// Tiles and outlines fade back under dots and under coloured edges; in tile mode the fills ARE the overlay.
+			const dimTiles = feature === "vertex" || feature === "edge";
+
 			const A = attribsRef.current,
 				U = uniformsRef.current;
 			g.bindBuffer(g.ARRAY_BUFFER, posBufRef.current);
@@ -433,13 +446,13 @@ export function EuclideanCanvas({
 			g.enableVertexAttribArray(A.aInst);
 			g.vertexAttribPointer(A.aInst, 2, g.FLOAT, false, 0, 0);
 			g.vertexAttribDivisor(A.aInst, 1);
+			if (feature === "face") {
+				g.bindBuffer(g.ARRAY_BUFFER, fillOrbitBufRef.current);
+				g.enableVertexAttribArray(A.aOrbit);
+				g.vertexAttribPointer(A.aOrbit, 1, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(A.aOrbit, 0);
+			} else constantAttrib(g, A.aOrbit, -1);
 
-			// Vertex-orbit mode (M3): the shader draws the orbit dots AND fades the tiles to 0.3, replacing
-			// p5's drawVertexOrbits + dim. Active only while a dot mesh exists (orbitData present). The wave
-			// (M2) suppresses it — the dots ride the un-scaled outline, so we hide them for the transition,
-			// matching Tiling.show / the canvas.tsx orbit gate.
-			const orbitMode =
-				(cfg.showVertexOrbits || !!orbitMeshRef.current?.force) && orbitMeshRef.current != null && wavePhaseInt === 0;
 			// Dim target = the actual surface background behind this (transparent) canvas, so the faded fill
 			// reads pale in light theme and dark in dark theme, matching what p5 composites over. Read only in
 			// orbit mode (a static overlay); otherwise uFillDim=0 makes uDimTarget irrelevant.
@@ -461,8 +474,12 @@ export function EuclideanCanvas({
 			g.uniform1f(U.uTileSat, fillAmountToSatPct(cfg.fillAmount) / 100);
 			g.uniform1i(U.uWavePhase, wavePhaseInt);
 			g.uniform1f(U.uWaveP, waveP);
-			g.uniform1f(U.uFillDim, orbitMode ? 1 : 0);
+			g.uniform1f(U.uFillDim, dimTiles ? 1 : 0);
 			g.uniform3f(U.uDimTarget, dim[0], dim[1], dim[2]);
+			g.uniform1i(U.uOrbitMode, feature === "face" ? 1 : 0);
+			g.uniform1f(U.uOrbitK, orbitCount);
+			if (orbitScales) g.uniform4fv(U.uOrbitScale, orbitScales);
+			g.uniform1f(U.uOrbitHover, orbitHover);
 
 			// Materials draw their own joints, so they replace the stroke as well as the fill. Not under the
 			// orbit dots, which want the tiles faded back.
@@ -488,11 +505,12 @@ export function EuclideanCanvas({
 					waveP,
 				});
 			if (materialDrawn) g.useProgram(progRef.current);
-			else if (cfg.fillAmount > 0) {
+			else if (cfg.fillAmount > 0 || feature === "face") {
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
 			}
 
-			if (!materialDrawn && cfg.lineWidth > 0 && mesh.strokeVertexCount > 0) {
+			// In edge mode the orbit bars below are the outlines.
+			if (!materialDrawn && cfg.lineWidth > 0 && feature !== "edge" && mesh.strokeVertexCount > 0) {
 				// Blend stays enabled across frames deliberately: both fragment shaders write alpha 1.0, so
 				// SRC_ALPHA blending is identity today; keeping it on future-proofs a per-tile-opacity fill
 				// without a state-toggle dance.
@@ -535,7 +553,7 @@ export function EuclideanCanvas({
 				g.uniform2f(SU.uHalf, w / 2, h / 2);
 				g.uniform1i(SU.uWavePhase, wavePhaseInt);
 				g.uniform1f(SU.uWaveP, waveP);
-				g.uniform1f(SU.uStrokeDim, orbitMode ? 1 : 0); // fade the outline with the dimmed fill in orbit mode
+				g.uniform1f(SU.uStrokeDim, dimTiles ? 1 : 0); // fade the outline with the dimmed fill in orbit mode
 				g.uniform3f(SU.uDimTarget, dim[0], dim[1], dim[2]);
 				g.uniform1f(SU.uHalfStrokePx, cfg.lineWidth * 0.5); // p5 strokeWeight(lineWidth/zoom) => lineWidth px
 				const dark = document.documentElement.classList.contains("dark");
@@ -585,56 +603,29 @@ export function EuclideanCanvas({
 				g.useProgram(progRef.current); // restore the fill program for next frame's fill pass
 			}
 
-			// Vertex-orbit dots pass (M3): instanced disks coloured by orbit, on top of the dimmed fill.
-			// Hover-grow: hit-test the p5-published mouse-world (orbitHoverBridge) against the base-cell dots
-			// reduced modulo the lattice to find the hovered orbit, then ease every orbit's radius scale
-			// toward 2x (hovered) or 1x — the same per-orbit lerp Tiling.drawVertexOrbits runs. The hit-test
-			// uses the BASE radius, so hover is deterministic (no grow/shrink flicker at the boundary).
-			const orbitMesh = orbitMeshRef.current;
-			if (orbitMode && orbitMesh && orbitMesh.vertexCount > 0) {
-				const k = orbitMesh.k;
-				const hoveredOrbit = hoveredOrbitAt(
-					orbitMesh.dots,
-					getOrbitHoverWorld(),
-					mesh.v1,
-					mesh.v2,
-					mesh.det,
-					ctrl.zoom,
-				);
-				const arr = stepOrbitScales(orbitScalesRef.current, k, hoveredOrbit, ORBIT_MAX);
-
-				g.enable(g.BLEND);
-				g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
-				g.useProgram(orbitProgRef.current);
-				const OA = orbitAttribsRef.current,
-					OU = orbitUniformsRef.current;
-				g.bindBuffer(g.ARRAY_BUFFER, orbitPosBufRef.current);
-				g.enableVertexAttribArray(OA.aPos);
-				g.vertexAttribPointer(OA.aPos, 2, g.FLOAT, false, 0, 0);
-				g.vertexAttribDivisor(OA.aPos, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, orbitCornerBufRef.current);
-				g.enableVertexAttribArray(OA.aCorner);
-				g.vertexAttribPointer(OA.aCorner, 2, g.FLOAT, false, 0, 0);
-				g.vertexAttribDivisor(OA.aCorner, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, orbitOrbitBufRef.current);
-				g.enableVertexAttribArray(OA.aOrbit);
-				g.vertexAttribPointer(OA.aOrbit, 1, g.FLOAT, false, 0, 0);
-				g.vertexAttribDivisor(OA.aOrbit, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
-				g.enableVertexAttribArray(OA.aInst);
-				g.vertexAttribPointer(OA.aInst, 2, g.FLOAT, false, 0, 0);
-				g.vertexAttribDivisor(OA.aInst, 1);
-				g.uniform2f(OU.uOffset, draw.x, draw.y);
-				g.uniform1f(OU.uZoom, ctrl.zoom);
-				g.uniform1f(OU.uRot, rot);
-				g.uniform2f(OU.uV1, mesh.v1[0], mesh.v1[1]);
-				g.uniform2f(OU.uV2, mesh.v2[0], mesh.v2[1]);
-				g.uniformMatrix2fv(OU.uDeform, false, deform);
-				g.uniform2f(OU.uHalf, w / 2, h / 2);
-				g.uniform1f(OU.uRadiusPx, ORBIT_DOT_RADIUS_PX); // p5 drew an 8px-diameter orbit dot
-				g.uniform1f(OU.uK, k);
-				g.uniform1fv(OU.uOrbitScale, arr);
-				g.drawArraysInstanced(g.TRIANGLES, 0, orbitMesh.vertexCount, instRef.current.count);
+			// Orbit marks (M3): vertex dots or edge bars coloured by orbit, over the dimmed fill. Hover-grow:
+			// hit-test the p5-published mouse-world (orbitHoverBridge) against the base cell reduced modulo
+			// the lattice to find the hovered orbit, then ease every orbit's scale toward 2x (hovered) or 1x,
+			// the same per-orbit lerp Tiling.drawVertexOrbits runs. The hit-test uses the BASE size, so hover
+			// is deterministic (no grow/shrink flicker at the boundary).
+			if ((feature === "vertex" || feature === "edge") && om && orbitScales && orbitPassRef.current) {
+				orbitPassRef.current.draw(feature, {
+					inst: instBufRef.current!,
+					instCount: instRef.current.count,
+					offset: draw,
+					zoom: ctrl.zoom,
+					rot,
+					v1: mesh.v1,
+					v2: mesh.v2,
+					deform,
+					width: w,
+					height: h,
+					k: orbitCount,
+					scales: orbitScales,
+					// p5 drew an 8px-diameter orbit dot, and its edge bars 2.5 line widths wide
+					radiusPx: feature === "vertex" ? ORBIT_DOT_RADIUS_PX : 1.25 * Math.max(cfg.lineWidth, 1),
+					dim,
+				});
 				g.useProgram(progRef.current); // restore the fill program for next frame's fill pass
 			}
 
@@ -666,19 +657,15 @@ export function EuclideanCanvas({
 			if (pointsPosBufRef.current) gl.deleteBuffer(pointsPosBufRef.current);
 			if (pointsCornerBufRef.current) gl.deleteBuffer(pointsCornerBufRef.current);
 			if (pointsColorBufRef.current) gl.deleteBuffer(pointsColorBufRef.current);
-			if (orbitProgRef.current) gl.deleteProgram(orbitProgRef.current);
-			gl.deleteShader(orbitVs);
-			gl.deleteShader(orbitFs);
-			if (orbitPosBufRef.current) gl.deleteBuffer(orbitPosBufRef.current);
-			if (orbitCornerBufRef.current) gl.deleteBuffer(orbitCornerBufRef.current);
-			if (orbitOrbitBufRef.current) gl.deleteBuffer(orbitOrbitBufRef.current);
+			orbitPassRef.current?.dispose();
+			orbitPassRef.current = null;
+			if (fillOrbitBufRef.current) gl.deleteBuffer(fillOrbitBufRef.current);
 			materialRef.current?.dispose();
 			materialRef.current = null;
 			glRef.current = null;
 			progRef.current = null;
 			strokeProgRef.current = null;
 			pointsProgRef.current = null;
-			orbitProgRef.current = null;
 			meshRef.current = null;
 			orbitMeshRef.current = null;
 		};
@@ -690,7 +677,7 @@ export function EuclideanCanvas({
 	// alpha cell — cheap and rare (orbit mode is a Regular-shelf overlay, not an alpha-drag surface).
 	useEffect(() => {
 		const gl = glRef.current;
-		if (!gl || !orbitPosBufRef.current) return;
+		if (!gl || !orbitPassRef.current) return;
 		const cell = paramCell
 			? evalWithHue(paramCell, resolveAlphaDegs(paramCell, useFamilyAlphas.getState().values))
 			: translationalCell;

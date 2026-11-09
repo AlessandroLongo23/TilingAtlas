@@ -80,7 +80,7 @@ describe("padPositionFromVelocity", () => {
 	});
 });
 
-// components/ui/velocity-pad.tsx holds NO local knob state: it derives the knob from the `value` prop
+// design-system/components/velocity-pad.tsx holds NO local knob state: it derives the knob from the `value` prop
 // on every render, so a drag only survives because the full pointer → velocity → knob path is an
 // exact identity. If it ever stopped being one, the knob would drift out from under the pointer
 // mid-drag. These tests are what that component stands on.

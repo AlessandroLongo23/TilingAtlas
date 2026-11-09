@@ -15,7 +15,7 @@ const SHELF = path.join(process.cwd(), "public", "squarings", "cylinder");
 
 const records = (): CylinderRecord[] =>
 	readdirSync(SHELF)
-		.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("index."))
+		.filter((f) => /\.json(\.br)?$/.test(f) && !f.startsWith("index."))
 		.map((f) => JSON.parse(readDataText(path.join(SHELF, f))) as CylinderRecord);
 
 // Pairs whose EXACT solve is affordable in a test run. Bareiss is cubic in the free-vertex count with

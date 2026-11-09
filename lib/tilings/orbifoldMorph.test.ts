@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { conePoints, morphTiling, orbifoldName, parseTegulaSymbol, stepOrder } from "@/lib/tilings/orbifoldMorph";
+import { readDataJson } from "../../scripts/atlas/io.mjs";
 
 const TRIANGLES = "<1.0:1:1,1,1:3,6>"; // 3^6, one chamber, *632
 
@@ -35,8 +34,8 @@ describe("orbifold morph", () => {
 	// The load-bearing check: at the catalogued orders every Tegula type develops to the tiling the shelf
 	// ships, tile for tile and colour for colour on the plane (one period cell), tile for tile on the sphere.
 	it("reproduces every shipped Tegula type at its own orders", () => {
-		const rows = ["reference-atlas-tegula.json.gz", "reference-atlas-tegula-sph.json.gz"].flatMap((f) =>
-			JSON.parse(gunzipSync(readFileSync(`public/${f}`)).toString()),
+		const rows = ["reference-atlas-tegula.json.br", "reference-atlas-tegula-sph.json.br"].flatMap((f) =>
+			readDataJson(`public/${f}`),
 		);
 		const bad = rows.filter((r) => {
 			const sym = parseTegulaSymbol(r.note)!;

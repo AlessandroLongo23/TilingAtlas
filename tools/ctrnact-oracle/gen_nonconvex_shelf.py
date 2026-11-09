@@ -301,7 +301,7 @@ def shelf_keys():
     del ts
     star = os.path.join(ROOT, "public", "spherical-star")
     for f in sorted(os.listdir(star)):
-        if not f.endswith((".json", ".json.gz")) or f.startswith("manifest.json"):
+        if not f.endswith((".json", ".json.br")) or f.startswith("manifest.json"):
             continue
         blob = read_json(os.path.join(star, f))
         r = blob[0] if isinstance(blob, list) else blob

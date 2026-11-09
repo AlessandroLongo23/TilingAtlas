@@ -1,19 +1,18 @@
-import {
-	Vector,
-	Polygon,
-	PolygonType,
-	PolygonSignature,
-	StarVertexTypes,
-	RegularPolygon,
-	StarRegularPolygon,
-	StarParametricPolygon,
-	EquilateralPolygon,
-	GenericPolygon,
-	SeedConfiguration,
-	type PartialConfiguration,
-	type SurroundingPolygon,
-} from "@/classes";
-import { deduplicatePoints, isWithinAngularTolerance, isWithinTolerance, toRadians, compareVCNames } from "@/utils";
+import { Vector } from "@/classes/Vector";
+import { Polygon } from "@/classes/polygons/Polygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
+import { PolygonSignature } from "@/classes/algorithm/PolygonSignature";
+import { StarVertexTypes } from "@/classes/polygons/PolygonType";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { StarRegularPolygon } from "@/classes/polygons/StarRegularPolygon";
+import { StarParametricPolygon } from "@/classes/polygons/StarParametricPolygon";
+import { EquilateralPolygon } from "@/classes/polygons/EquilateralPolygon";
+import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
+import { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
+import { type PartialConfiguration, type SurroundingPolygon } from "@/classes/algorithm/types";
+import { deduplicatePoints, toRadians } from "@/utils/geometry";
+import { isWithinAngularTolerance, isWithinTolerance } from "@/utils/math";
+import { compareVCNames } from "@/utils/utils";
 import {
 	regularPolygonRegex,
 	regularStarRegex,

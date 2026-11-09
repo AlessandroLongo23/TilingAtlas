@@ -6,7 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
 import { polygonHue } from "@/lib/utils/renderTiling";
 
@@ -99,11 +99,11 @@ export function KuOctagon({ caption }: { caption?: string }) {
 					aria-label="Next step"
 					onClick={() => setStep(Math.min(STEPS.length - 1, step + 1))}
 				/>
-				<span className="ml-2 font-mono text-xs text-fg-muted tabular-nums">
+				<span className="ml-2 font-mono text-small text-fg-muted tabular-nums">
 					step {step + 1} of {STEPS.length}
 				</span>
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">{STEPS[step].text}</p>
+			<p className="mt-2 text-center text-small text-fg-muted">{STEPS[step].text}</p>
 		</Figure>
 	);
 }

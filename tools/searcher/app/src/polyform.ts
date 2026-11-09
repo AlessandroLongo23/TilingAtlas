@@ -12,8 +12,8 @@
 // representation, where W acts simply transitively on chambers, so equal names are equal triangles. Crossing
 // side s of w gives ws, named s·(w⁻¹ρ): one reflection applied to the name. The coordinates are in ℤ[ζ_N]
 // (2cos(π/m) = ζ^{N/2m} + ζ^{-N/2m}), exact integers, so nothing depends on rounding.
-import type { Angle, Board, Face } from "./board";
-import { angleOf, cyclotomic, faceOfCorners, nextPrefix } from "./freeface";
+import { isUnitLength, printLength, readLength, type Angle, type Board, type Face } from "./board";
+import { angleOf, cyclotomic, faceOfCorners, nextPrefix, withMadeFace, type Pt } from "./freeface";
 
 export type GridSpec = { m: [number, number, number]; cell: number[] };
 
@@ -231,14 +231,110 @@ export type Polyform = {
 	 *  the side after it. Flat corners (180°) at grid vertices are kept. Empty when not simple. */
 	corners: Corner[];
 	sides: number[];
+	/** With `draw`, a simple polyform as it lies in its geometry. */
+	picture?: Picture;
 };
+
+/** A polyform drawn in its geometry: its outline, and its cells' sides inside it, as polylines (diskView). */
+export type Picture = { outline: Pt[]; lines: Pt[][] };
+
+/**
+ * Points of a geometry's model, centred and flattened: on the hyperboloid (z² − x² − y² = 1) or the unit
+ * sphere, moved so their mean is at (0, 0, 1) and then seen from (0, 0, −1), which is the Poincaré disk and the
+ * sphere's stereographic view; in the plane, (x, y, ·) moved so their mean is at the origin.
+ */
+export function diskView(geo: Geometry, pts: number[][]): Pt[] {
+	const n = pts.length || 1;
+	const c = [0, 1, 2].map((i) => pts.reduce((t, p) => t + p[i], 0) / n);
+	if (geo === "plane") return pts.map((p) => ({ x: p[0] - c[0], y: p[1] - c[1] }));
+	const e = geo === "sphere" ? 1 : -1;
+	const r = Math.sqrt(Math.abs(c[0] ** 2 + c[1] ** 2 + e * c[2] ** 2));
+	// the mirror swapping the mean and (0, 0, 1)
+	const m = [c[0] / r, c[1] / r, c[2] / r - 1];
+	return pts.map((p) => {
+		const q = reflectIn(e, m, p);
+		return { x: q[0] / (1 + q[2]), y: q[1] / (1 + q[2]) };
+	});
+}
+
+const form = (e: number, u: number[], v: number[]) => u[0] * v[0] + u[1] * v[1] + e * u[2] * v[2];
+/** x mirrored in the plane through the origin whose normal is m, in the form of sign e (−1 the hyperboloid's). */
+function reflectIn(e: number, m: number[], x: number[]): number[] {
+	const mm = form(e, m, m);
+	if (Math.abs(mm) < 1e-15) return x;
+	const k = (2 * form(e, x, m)) / mm;
+	return x.map((v, i) => v - k * m[i]);
+}
+
+/** A side from a to b, as points along it: the geodesic is where the plane through a, b and the origin meets
+ *  the model, so each mix of a and b, scaled back onto it, lies on it. */
+export function along(geo: Geometry, a: number[], b: number[], steps = 8): number[][] {
+	if (geo === "plane") return [a, b];
+	const e = geo === "sphere" ? 1 : -1;
+	return Array.from({ length: steps + 1 }, (_, i) => {
+		const v = a.map((x, j) => x + ((b[j] - x) * i) / steps);
+		const r = Math.sqrt(Math.abs(form(e, v, v)));
+		return v.map((x) => x / r);
+	});
+}
+
+/** The polyform's triangles laid out: the base triangle's corner 2 at the origin, then each neighbour the mirror
+ *  image of the one it was reached from in their shared side. Its outline and its cells' inner sides. */
+function pictureOf(g: Grid, tris: number[], inP: (t: number) => boolean, loop: Step[]): Picture {
+	const geo = geometryOf(g.spec);
+	const side = sideLengths(g.spec);
+	const e = geo === "sphere" ? 1 : -1;
+	const point = (d: number, th: number) =>
+		geo === "plane"
+			? [d * Math.cos(th), d * Math.sin(th), 1]
+			: geo === "sphere"
+				? [Math.sin(d) * Math.cos(th), Math.sin(d) * Math.sin(th), Math.cos(d)]
+				: [Math.sinh(d) * Math.cos(th), Math.sinh(d) * Math.sin(th), Math.cosh(d)];
+	// corner r across side r: side 1 joins corners 0 and 2, side 0 corners 1 and 2, at the angle π/m[2]
+	const at = new Map([[tris[0], [point(side[1], 0), point(side[0], Math.PI / g.spec.m[2]), point(0, 0)]]]);
+	const reflect = (a: number[], b: number[], x: number[]) => {
+		if (geo === "plane") {
+			const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+			const t = ((x[0] - a[0]) * dx + (x[1] - a[1]) * dy) / (dx * dx + dy * dy);
+			return [2 * (a[0] + t * dx) - x[0], 2 * (a[1] + t * dy) - x[1], 1];
+		}
+		const m = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], e * (a[0] * b[1] - a[1] * b[0])];
+		return reflectIn(e, m, x);
+	};
+	const queue = [tris[0]];
+	for (const t of queue)
+		for (let s = 0; s < 3; s++) {
+			const u = g.move(t, s);
+			if (!inP(u) || at.has(u)) continue;
+			const P = at.get(t)!;
+			at.set(
+				u,
+				P.map((x, r) => (r === s ? reflect(P[(s + 1) % 3], P[(s + 2) % 3], x) : x)),
+			);
+			queue.push(u);
+		}
+	// side e of t runs from the corner neither e nor r to corner r
+	const outline = loop.flatMap(({ t, e: s, r }) => along(geo, at.get(t)![3 - s - r], at.get(t)![r]).slice(1));
+	const inner = new Set([0, 1, 2].filter((s) => !g.spec.cell.includes(s)));
+	const lines = tris.flatMap((t) =>
+		[...inner].flatMap((s) => {
+			const u = g.move(t, s);
+			const P = at.get(t)!;
+			return inP(u) && t < u ? [along(geo, P[(s + 1) % 3], P[(s + 2) % 3])] : [];
+		}),
+	);
+	const flat = diskView(geo, [...outline, ...lines.flat()]);
+	let i = outline.length;
+	return { outline: flat.slice(0, i), lines: lines.map((l) => flat.slice(i, (i += l.length))) };
+}
 
 /**
  * Every polyform of n cells, one per class under the grid's symmetries: rotations only when `mirror` is false
  * (one-sided polyforms), rotations and reflections when true (free). Polyforms with holes are included, marked
- * not simple, so the counts match the published ones (A000105 for the square grid).
+ * not simple, so the counts match the published ones (A000105 for the square grid). With `draw`, each simple
+ * one comes with its picture.
  */
-export function polyforms(spec: GridSpec, n: number, mirror = true): Polyform[] {
+export function polyforms(spec: GridSpec, n: number, mirror = true, draw = false): Polyform[] {
 	const g = new Grid(spec);
 	const maps = sideMaps(spec);
 	const K = 2 * Math.max(...spec.m) + 1;
@@ -317,9 +413,18 @@ export function polyforms(spec: GridSpec, n: number, mirror = true): Polyform[] 
 
 	const side = sideLengths(spec);
 	const corner = new Set(cornerTypes(g));
-	return [...level.values()].map((cells) => {
+	return [...level.values()].map((cells): Polyform => {
 		const { symmetries, loop } = codeOf(cells);
 		if (!loop) return { simple: false, symmetries, corners: [], sides: [] };
+		const inCells = new Set(cells);
+		const picture = draw
+			? pictureOf(
+					g,
+					cells.flatMap((c) => g.cells[c]),
+					(t) => inCells.has(g.cell(t)),
+					loop,
+				)
+			: undefined;
 		const corners: Corner[] = [];
 		const sides: number[] = [];
 		let run = 0;
@@ -335,7 +440,7 @@ export function polyforms(spec: GridSpec, n: number, mirror = true): Polyform[] 
 			run = 0;
 		}
 		// the side after corner i is sides[i + 1]: rotate so each corner is followed by its own side
-		return { simple: true, symmetries, corners, sides: [...sides.slice(1), sides[0]] };
+		return { simple: true, symmetries, corners, sides: [...sides.slice(1), sides[0]], picture };
 	});
 }
 
@@ -361,27 +466,98 @@ function cornerTypes(g: Grid): number[] {
 export const MAX_CELLS = 8;
 
 /**
- * The board with every free n-cell polyform of the {p,q} grid added as a face (a polyform and its mirror image
- * are one face on a board). Corners are named once for the lot (`F3_90`, `F3_270`): with sides of one cell edge
- * each, equal angles are the same corner whichever polyform holds them. A 180° corner at a grid vertex is Pi.
- * Polyforms with holes are no faces and are only counted.
+ * A Schwarz triangle's sides as a board writes them, side r across corner r: in the plane exactly, the shortest
+ * 1 ((2,4,4) is √2, 1, 1; (2,3,6) 2, √3, 1); off it by the law of cosines for angles (tools/ctrnact-oracle/
+ * schwarz_board.py) to ten places, each type named for the triangle and the corner across (E237_2), as Marek's
+ * Schwarz edge systems have them (lib/freedraw/schwarz.ts). `lengths` are sideLengths', as polyforms' sides.
+ */
+export function schwarzSides(spec: GridSpec) {
+	const lengths = sideLengths(spec);
+	const plane = geometryOf(spec) === "plane";
+	const unit = Math.min(...lengths);
+	const texts = lengths.map((l) => {
+		if (!plane) return l.toFixed(10);
+		const sq = Math.round((l / unit) ** 2);
+		return Number.isInteger(Math.sqrt(sq)) ? String(Math.sqrt(sq)) : `sqrt${sq}`;
+	});
+	const name = plane
+		? undefined
+		: (key: string) => `E${spec.m.join("")}_${spec.m[texts.findIndex((t) => printLength(readLength(t)!) === key)]}`;
+	return { lengths, texts, name };
+}
+
+/**
+ * The board with every free n-cell polyform of the grid added as a face (a polyform and its mirror image are
+ * one face on a board), and each drawn in its geometry. Corners are named once for the lot (`F3_90`,
+ * `F3_270`): equal angles are the same corner whichever polyform holds them. On a {p,q} grid every side is a
+ * cell edge, so a 180° corner at a grid vertex is Pi along a longer side. On a Schwarz triangle's grid (its
+ * cells the triangles) the three sides differ: each is typed by its length (schwarzSides), so only like sides
+ * glue, and a 180° corner is Pi between two of them. Polyforms with holes are no faces and are only counted.
  */
 export function withPolyforms(
 	b: Board,
-	p: number,
-	q: number,
+	spec: GridSpec,
 	n: number,
-): { board: Board; added: number; holes: number } {
-	const forms = polyforms(regularGrid(p, q), n);
+): { board: Board; added: number; holes: number; pictures: Picture[] } {
+	const forms = polyforms(spec, n, true, true);
+	const simple = forms.filter((x) => x.simple);
+	const prefix = nextPrefix(b);
+	const out = { added: simple.length, holes: forms.length - simple.length, pictures: simple.map((f) => f.picture!) };
+	if (!spec.cell.length) {
+		const { lengths, texts, name } = schwarzSides(spec);
+		const text = (l: number) => texts[lengths.findIndex((x) => Math.abs(x - l) < 1e-9)];
+		const board = simple.reduce(
+			(acc, f) =>
+				withMadeFace(
+					acc,
+					(_, typeOf) =>
+						faceOfCorners(
+							f.corners.map((c) => angleOf(c.num, c.den)),
+							f.sides.map((l) => (isUnitLength(text(l)) ? 1 : typeOf(text(l)))),
+							prefix,
+						),
+					acc.faces.length,
+					name,
+				),
+			b,
+		);
+		// a curved side's length as the decimal it was given, not the exact fraction that reads it
+		const decimal = new Map(texts.map((t) => [printLength(readLength(t)!), t]));
+		const curved = (l?: string) => !!name && l !== undefined && decimal.has(l);
+		return {
+			...out,
+			board: {
+				...board,
+				angles: board.angles.map((a) =>
+					curved(a.edge?.length) ? { ...a, edge: { ...a.edge, length: decimal.get(a.edge!.length!) } } : a,
+				),
+			},
+		};
+	}
+	return {
+		...out,
+		board: withOutlines(
+			b,
+			simple.map((f) => f.corners),
+		),
+	};
+}
+
+/**
+ * The board with a face per outline: its corners round it anticlockwise, each followed by one unit edge. Named
+ * once for the lot (`F3_90`, `F3_270`): with sides of unit edges, equal angles are the same corner whichever
+ * face holds them, and a 180° corner is Pi along a longer side.
+ */
+export function withOutlines(b: Board, outlines: Corner[][]): Board {
 	const prefix = nextPrefix(b);
 	const faces: Face[] = [];
 	const declare = new Map<string, Angle>();
-	for (const f of forms.filter((x) => x.simple)) {
-		const start = f.corners.findIndex((c) => c.num !== 180 * c.den);
+	for (const corners of outlines) {
+		const start = corners.findIndex((c) => c.num !== 180 * c.den);
 		const corner: { value: string; tag: string }[] = [];
 		const lens: number[] = [];
-		for (let i = 0; i < f.corners.length; i++) {
-			const c = f.corners[(start + i) % f.corners.length];
+		for (let i = 0; i < corners.length; i++) {
+			const c = corners[(start + i) % corners.length];
 			if (c.num === 180 * c.den) lens[lens.length - 1]++;
 			else (corner.push(angleOf(c.num, c.den)), lens.push(1));
 		}
@@ -391,9 +567,5 @@ export function withPolyforms(
 	}
 	if (faces.some((f) => f.word.includes("Pi"))) declare.set("Pi", { sym: "Pi" });
 	const angles = [...b.angles, ...[...declare.values()].filter((a) => !b.angles.some((x) => x.sym === a.sym))];
-	return {
-		board: { ...b, angles, faces: [...b.faces, ...faces] },
-		added: faces.length,
-		holes: forms.length - faces.length,
-	};
+	return { ...b, angles, faces: [...b.faces, ...faces] };
 }

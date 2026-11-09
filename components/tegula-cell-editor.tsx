@@ -12,6 +12,8 @@
 
 import { useRef } from "react";
 import { RotateCcw } from "lucide-react";
+import { Button } from "@/design-system/components/button";
+import { Tooltip } from "@/design-system/components/tooltip";
 import {
 	bendTegula,
 	handleFromPoint,
@@ -163,24 +165,25 @@ export function TegulaCellEditor({ id, cell, sphere }: { id: string; cell?: Tegu
 
 	if (handles.length === 0) return null;
 	return (
-		<div className="rounded-xl bg-surface-raised/95 p-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm">
-			<div className="mb-1.5 flex items-center justify-between text-[11px] text-fg-secondary">
+		<div className="ta-float p-2.5">
+			<div className="mb-1.5 flex items-center justify-between text-caption text-fg-secondary">
 				<span>Cell shape</span>
-				<button
-					type="button"
-					aria-label="Reset the cell shape"
-					title="Reset"
-					disabled={!custom}
-					onClick={() => useTegulaShapes.getState().reset(id)}
-					className="rounded p-1 text-fg-muted hover:text-fg disabled:opacity-30"
-				>
-					<RotateCcw size={12} />
-				</button>
+				<Tooltip label="Reset">
+					<Button
+						variant="ghost"
+						size="xs"
+						icon={RotateCcw}
+						aria-label="Reset the cell shape"
+						disabled={!custom}
+						onClick={() => useTegulaShapes.getState().reset(id)}
+						className="w-6 px-0"
+					/>
+				</Tooltip>
 			</div>
 			<svg
 				ref={svgRef}
 				viewBox={`${x0} ${-(y0 + h)} ${w} ${h}`}
-				className="block w-full touch-none rounded bg-surface select-none"
+				className="block w-full touch-none rounded-tag bg-surface select-none"
 				onPointerMove={(e) => drag.current !== null && move(e)}
 				onPointerUp={() => (drag.current = null)}
 				onPointerLeave={() => (drag.current = null)}
@@ -226,7 +229,7 @@ export function TegulaCellEditor({ id, cell, sphere }: { id: string; cell?: Tegu
 					</g>
 				))}
 			</svg>
-			<p className="mt-1.5 text-[10px] leading-snug text-fg-muted">
+			<p className="mt-1.5 text-micro leading-tight text-fg-muted">
 				Drag a handle to bend every edge of its class. Each moves only as its symmetry allows.
 			</p>
 		</div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HEMI_STAR_FACED } from "@/lib/render/hemiSolids";
-import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolids";
+import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolidsAll";
 import {
 	circumsphereMiss,
 	hasSphereView,

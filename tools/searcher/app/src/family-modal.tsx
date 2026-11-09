@@ -1,16 +1,18 @@
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
-import { Pagination } from "@/components/ui/pagination";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/design-system/components/button";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Checkbox } from "@/design-system/components/checkbox";
+import { Input } from "@/design-system/components/input";
+import { Modal } from "@/design-system/components/modal";
+import { Pagination } from "@/design-system/components/pagination";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { cn } from "@/lib/utils/cn";
 import { angleDegrees, edgeTypes, type Board, type Face } from "./board";
+import { growAsync, growing, withBoardPolyforms } from "./boardforms";
 import { keepNew, onBoard, readSizes, withFamily, type Family } from "./family";
 import { FaceFigure, fillOf, INK } from "./figures";
-import { MAX_CELLS } from "./polyform";
+import { MAX_CELLS, type Picture } from "./polyform";
 
 type Kind = Family["kind"];
 const KINDS: { value: Kind; label: string }[] = [
@@ -18,6 +20,8 @@ const KINDS: { value: Kind; label: string }[] = [
 	{ value: "system", label: "Stars on an angle grid" },
 	{ value: "polyform", label: "Polyforms" },
 	{ value: "laves", label: "Laves tiles" },
+	{ value: "schwarz", label: "Schwarz triangles" },
+	{ value: "board", label: "From this board" },
 ];
 const SIZE_PRESETS = ["3, 4, 6, 8, 12", "3-12", "3-12, oo"];
 const SYSTEMS = [24, 12, 10, 8, 6, 5];
@@ -28,6 +32,7 @@ const GRIDS: { label: string; p: number; q: number }[] = [
 	{ label: "{4,5}", p: 4, q: 5 },
 	{ label: "{7,3}", p: 7, q: 3 },
 ];
+const TRIANGLES = ["2,4,4", "2,3,6", "3,3,3", "2,3,4", "2,3,5", "2,3,7", "2,4,5"];
 const PAGE = 28;
 
 /** A face's corner angles: Pi 180°, a regular polygon's corners (no angle declared) as in the plane. */
@@ -59,8 +64,9 @@ const caption = (b: Board, face: Face) => {
 };
 
 /** A face drawn to its angles, each side one edge or as long as its edge type says, when they are known and it
- *  closes in the plane; otherwise the board's usual drawing (a regular polygon with its corners labelled). */
-function Shape({ b, face, size }: { b: Board; face: Face; size: number }) {
+ *  closes in the plane, turning once; a polyform as it lies in its grid, cells and all; otherwise the board's
+ *  usual drawing (off the plane, or a regular polygon with its corners labelled). */
+function Shape({ b, face, size, picture }: { b: Board; face: Face; size: number; picture?: Picture }) {
 	const pts = useMemo(() => {
 		const deg = anglesOf(b, face);
 		if (!deg) return null;
@@ -82,23 +88,37 @@ function Shape({ b, face, size }: { b: Board; face: Face; size: number }) {
 			y += at[i].len * Math.sin(h);
 			h += ((180 - at[(i + 1) % at.length].deg) * Math.PI) / 180;
 		}
-		return out.length > 2 && Math.hypot(x, y) < 1e-6 ? out : null;
+		// turning twice also closes ({4,5}'s X pentomino, 72° 72° 216° four times, as an hourglass): not a plane face
+		const turns = at.reduce((t, c) => t + 180 - c.deg, 0);
+		return out.length > 2 && Math.hypot(x, y) < 1e-6 && Math.abs(turns - 360) < 1e-6 ? out : null;
 	}, [b, face]);
-	if (!pts) return <FaceFigure b={b} face={face} size={size} labelsUpTo={0} />;
-	const xs = pts.map((p) => p[0]);
-	const ys = pts.map((p) => -p[1]);
+	const outline = picture?.outline.map((p) => [p.x, p.y]) ?? pts;
+	if (!outline) return <FaceFigure b={b} face={face} size={size} labelsUpTo={0} />;
+	const xs = outline.map((p) => p[0]);
+	const ys = outline.map((p) => -p[1]);
 	const [x0, y0] = [Math.min(...xs), Math.min(...ys)];
 	const span = Math.max(Math.max(...xs) - x0, Math.max(...ys) - y0, 1e-9);
 	const pad = span * 0.08;
+	const line = (ps: number[][]) => ps.map(([x, y]) => `${x},${-y}`).join(" ");
 	return (
 		<svg viewBox={`${x0 - pad} ${y0 - pad} ${span + 2 * pad} ${span + 2 * pad}`} width={size} height={size}>
 			<polygon
-				points={pts.map(([x, y]) => `${x},${-y}`).join(" ")}
+				points={line(outline)}
 				fill={fillOf(b, face)}
 				stroke={INK}
 				strokeWidth={span / 60}
 				strokeLinejoin="round"
 			/>
+			{picture?.lines.map((l, i) => (
+				<polyline
+					key={i}
+					points={line(l.map((p) => [p.x, p.y]))}
+					fill="none"
+					stroke={INK}
+					strokeOpacity={0.45}
+					strokeWidth={span / 110}
+				/>
+			))}
 		</svg>
 	);
 }
@@ -110,24 +130,52 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 	const [N, setN] = useState("24");
 	const [stars, setStars] = useState(true);
 	const [convex, setConvex] = useState(false);
-	const [regular, setRegular] = useState(false);
 	const [grid, setGrid] = useState({ p: "4", q: "4" });
 	const [cells, setCells] = useState(5);
 	const [allPlanigons, setAllPlanigons] = useState(false);
+	const [pqr, setPqr] = useState(["2", "4", "4"]);
+	const [triangles, setTriangles] = useState(1);
+	const [grownN, setGrownN] = useState(3);
+	// the board's faces the polyforms are made of; null, all of them
+	const [made, setMade] = useState<number[] | null>(null);
+	const finite = b.faces.flatMap((f, i) => (f.repeat === "inf" ? [] : [i]));
 	const family: Family | null = useMemo(() => {
 		if (kind === "regular") {
 			const s = readSizes(sizes);
 			return s && { kind, sizes: s };
 		}
-		if (kind === "system") return { kind, N: Number(N), stars, convex, regular };
+		if (kind === "system") return { kind, N: Number(N), stars, convex };
 		if (kind === "laves") return { kind, all: allPlanigons };
+		if (kind === "schwarz") return { kind, pqr: pqr.map(Number) as [number, number, number], n: triangles };
+		if (kind === "board") return { kind, n: grownN, ...(made ? { cells: made } : {}) };
 		return { kind, p: Number(grid.p), q: Number(grid.q), n: cells };
-	}, [kind, sizes, N, stars, convex, regular, grid, cells, allPlanigons]);
-	const { board: full, holes } = useMemo(() => (family ? withFamily(b, family) : { board: b, holes: 0 }), [b, family]);
+	}, [kind, sizes, N, stars, convex, grid, cells, allPlanigons, pqr, triangles, grownN, made]);
+	const fkey = JSON.stringify(family);
+	const now = useMemo(() => (family && family.kind !== "board" ? withFamily(b, family) : null), [b, family]);
+	// polyforms of the board grow a slice at a time, the window free between slices (boardforms.ts growAsync)
+	const [grown, setGrown] = useState<{ key: string; r: ReturnType<typeof withBoardPolyforms> } | null>(null);
+	const [count, setCount] = useState(0);
+	useEffect(() => {
+		if (family?.kind !== "board") return;
+		let stop = false;
+		void growAsync(growing(b, family.n, family.cells), setCount, () => stop).then(
+			(r) => r && setGrown({ key: JSON.stringify(family), r: withBoardPolyforms(b, r) }),
+		);
+		return () => void (stop = true);
+	}, [b, family]);
+	const busy = kind === "board" && grown?.key !== fkey;
+	const {
+		board: full,
+		holes,
+		pictures,
+		problem,
+	} = useMemo(
+		() => now ?? (grown?.key === fkey ? grown.r : { board: b, holes: 0, pictures: undefined, problem: undefined }),
+		[now, grown, fkey, b],
+	);
 	const fresh = full.faces.slice(b.faces.length);
 	const have = useMemo(() => onBoard(b, full), [b, full]);
 	// faces switched off, for this family only: changing it starts again with all of them on
-	const fkey = JSON.stringify(family);
 	const [off, setOff] = useState({ key: fkey, set: new Set<number>() });
 	const offSet = off.key === fkey ? off.set : new Set<number>();
 	const toggle = (i: number) => {
@@ -141,14 +189,14 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 	const badN = kind === "system" && !fresh.length;
 	return (
 		<Modal
-			isOpen
+			open
 			onOpenChange={(o) => !o && close()}
 			title="Add a family of faces"
 			maxWidth="max-w-4xl"
 			description="Every face of the family is added; click one to leave it out."
 			footer={
 				<div className="flex items-center justify-between gap-3">
-					<span className="text-xs text-fg-muted">
+					<span className="text-small text-fg-muted">
 						{[
 							holes ? `${holes} with holes left out (no face)` : "",
 							have.some(Boolean) ? `${have.filter(Boolean).length} already on the board` : "",
@@ -169,8 +217,8 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 				</div>
 			}
 		>
-			<div className="space-y-4 p-5 text-sm">
-				<ButtonGroup variant="pill" options={KINDS} selected={kind} onChange={setKind} />
+			<div className="space-y-4 p-5 text-body">
+				<OptionWall options={KINDS} selected={kind} onChange={setKind} />
 				{kind === "regular" ? (
 					<div className="flex flex-wrap items-center gap-2">
 						<Input
@@ -181,7 +229,7 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 							aria-label="Sizes"
 							placeholder="3, 4, 6-8, oo"
 						/>
-						<ButtonGroup
+						<OptionWall
 							options={SIZE_PRESETS.map((s) => ({ value: s, label: s }))}
 							selected={sizes}
 							onChange={setSizes}
@@ -202,7 +250,7 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 								className={cn("w-16 font-mono", badN && "border-danger/60")}
 								aria-label="Steps in a turn"
 							/>
-							<ButtonGroup
+							<OptionWall
 								options={SYSTEMS.map((s) => ({ value: String(s), label: `${360 / s}°` }))}
 								selected={N}
 								onChange={setN}
@@ -211,12 +259,90 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 						<div className="flex flex-wrap gap-x-6 gap-y-1">
 							<Checkbox label="Stars" checked={stars} onCheckedChange={setStars} />
 							<Checkbox label="Convex isotoxal (rhombi, …)" checked={convex} onCheckedChange={setConvex} />
-							<Checkbox label="Regular polygons" checked={regular} onCheckedChange={setRegular} />
 						</div>
 						<p className="text-fg-secondary">
 							An isotoxal 2n-gon alternates two angles adding to 360° − 360°/n, so both sit on the grid when n divides
 							the steps; each comes once, a star by its point. The angles are Euclidean.
 						</p>
+					</div>
+				) : kind === "schwarz" ? (
+					<div className="space-y-2">
+						<div className="flex flex-wrap items-center gap-2">
+							<OptionWall
+								options={TRIANGLES.map((t) => ({ value: t, label: `(${t})` }))}
+								selected={pqr.join(",")}
+								onChange={(v) => setPqr(v.split(","))}
+							/>
+							<span className="text-fg-secondary">or (</span>
+							{pqr.map((x, i) => (
+								<Input
+									key={i}
+									value={x}
+									onChange={(e) => setPqr(pqr.map((y, j) => (j === i ? e.target.value.replace(/\D/g, "") : y)))}
+									size="sm"
+									className="w-12 font-mono"
+									aria-label={`Corner ${i + 1}: 180° divided by`}
+								/>
+							))}
+							<span className="text-fg-secondary">)</span>
+						</div>
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="text-fg-secondary">Triangles</span>
+							<OptionWall
+								options={Array.from({ length: MAX_CELLS }, (_, i) => ({ value: i + 1, label: String(i + 1) }))}
+								selected={triangles}
+								onChange={setTriangles}
+							/>
+						</div>
+						<p className="text-fg-secondary">
+							The triangle with corners 180°/p, 180°/q and 180°/r, whose mirror images tile the plane when 1/p + 1/q +
+							1/r = 1, the sphere above that and the hyperbolic plane below: the board of Marek&rsquo;s Schwarz edge
+							systems. With more triangles, every polyform of that many from its grid, up to turning and mirroring. The
+							angles fix the sides, each typed by length so only like sides glue. On the sphere they are searched but
+							not drawn yet.
+						</p>
+					</div>
+				) : kind === "board" ? (
+					<div className="space-y-2">
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="text-fg-secondary">Cells</span>
+							<OptionWall
+								options={Array.from({ length: MAX_CELLS }, (_, i) => ({ value: i + 1, label: String(i + 1) }))}
+								selected={grownN}
+								onChange={setGrownN}
+							/>
+						</div>
+						{finite.length > 1 ? (
+							<div className="flex flex-wrap items-center gap-2">
+								<span className="text-fg-secondary">Made of</span>
+								<OptionWall
+									multi
+									options={finite.map((i) => ({
+										value: i,
+										label: <span className="font-mono text-small">{caption(b, b.faces[i])}</span>,
+									}))}
+									selected={made ?? finite}
+									onChange={(i) => {
+										const now = made ?? finite;
+										const next = now.includes(i) ? now.filter((x) => x !== i) : [...now, i].sort((x, y) => x - y);
+										setMade(next.length === finite.length ? null : next);
+									}}
+								/>
+							</div>
+						) : null}
+						<p className="text-fg-secondary">
+							Every polyform of that many of the board&rsquo;s faces glued edge to edge, up to turning and mirroring,
+							each of its corners part of a vertex the board allows:{" "}
+							{b.vertices.length
+								? `its ${b.vertices.length} vertex line${b.vertices.length === 1 ? "" : "s"}, ${b.permutations ? "each as a set (permutations on)" : "each in its order"}`
+								: "with no vertex lines on the board, any set of corners that closes"}
+							. A corner no vertex completes, such as three squares and a triangle, is never made.
+						</p>
+						{busy ? (
+							<p className="text-fg-muted">Growing: {count.toLocaleString()} so far…</p>
+						) : problem ? (
+							<p className="text-danger">{problem}</p>
+						) : null}
 					</div>
 				) : kind === "laves" ? (
 					<div className="space-y-2">
@@ -235,7 +361,7 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 				) : (
 					<div className="space-y-2">
 						<div className="flex flex-wrap items-center gap-2">
-							<ButtonGroup
+							<OptionWall
 								options={GRIDS.map((g) => ({ value: `${g.p},${g.q}`, label: g.label }))}
 								selected={`${grid.p},${grid.q}`}
 								onChange={(v) => setGrid({ p: v.split(",")[0], q: v.split(",")[1] })}
@@ -255,7 +381,7 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<span className="text-fg-secondary">Cells</span>
-							<ButtonGroup
+							<OptionWall
 								options={Array.from({ length: MAX_CELLS }, (_, i) => ({ value: i + 1, label: String(i + 1) }))}
 								selected={cells}
 								onChange={setCells}
@@ -271,21 +397,21 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 					{fresh.slice((page - 1) * PAGE, page * PAGE).map((f, j) => {
 						const i = (page - 1) * PAGE + j;
 						return (
-							<button
-								key={i}
-								type="button"
-								disabled={have[i]}
-								onClick={() => toggle(i)}
-								title={have[i] ? "Already on the board" : f.word.join(" ")}
-								className={cn(
-									"flex cursor-pointer flex-col items-center gap-1 rounded-surface border bg-surface-sunken/60 p-1.5 transition",
-									have[i] || offSet.has(i) ? "border-line-subtle opacity-35" : "border-accent/60",
-									have[i] && "cursor-not-allowed",
-								)}
-							>
-								<Shape b={full} face={f} size={80} />
-								<span className="max-w-full truncate font-mono text-[10px] text-fg-muted">{caption(full, f)}</span>
-							</button>
+							<Tooltip key={i} label={have[i] ? "Already on the board" : f.word.join(" ")}>
+								<button
+									type="button"
+									disabled={have[i]}
+									onClick={() => toggle(i)}
+									className={cn(
+										"ta-well flex cursor-pointer flex-col items-center gap-1 p-1.5 transition",
+										have[i] || offSet.has(i) ? "opacity-35" : "border-accent/60",
+										have[i] && "cursor-not-allowed",
+									)}
+								>
+									<Shape b={full} face={f} size={80} picture={pictures?.[i]} />
+									<span className="max-w-full truncate font-mono text-micro text-fg-muted">{caption(full, f)}</span>
+								</button>
+							</Tooltip>
 						);
 					})}
 				</div>
@@ -296,7 +422,7 @@ export function FamilyModal({ b, set, close }: { b: Board; set: (b: Board) => vo
 						currentPage={page}
 						onPageChange={(n) => setPaging({ key: fkey, page: n })}
 					/>
-				) : !fresh.length ? (
+				) : !fresh.length && !busy ? (
 					<p className="text-fg-muted">No faces in this family.</p>
 				) : null}
 			</div>

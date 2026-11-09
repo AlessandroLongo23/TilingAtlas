@@ -4,6 +4,8 @@ import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { reconstructOracleCell } from "@/classes/algorithm/oracleCellReconstruct";
 import { orbitsFromExactSource } from "@/lib/services/orbitsFromExactSource";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
+import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 // Real atlas record t2001 (k=2). {T1,T2,Seed} in the ζ12 power basis. `kind` is `as const` so the
 // fixture's own type keeps T1/T2/Seed directly accessible (an ExactCellSource union would hide them),
@@ -58,6 +60,35 @@ describe("orbitsFromExactSource", () => {
 			}
 		}
 		expect(orbits.size).toBe(2);
+	});
+
+	it("partitions t2001's edges and tiles too: 4 edge orbits, 4 tile orbits", () => {
+		const ring = CyclotomicRing.create(24);
+		setActiveRing(ring);
+		const data = orbitsFromExactSource(ring, "t2001", T2001 satisfies ExactCellSource)!;
+		expect(data.edges?.count).toBe(4);
+		expect(data.faces?.count).toBe(4);
+
+		const rec = reconstructOracleCell(ring, "t2001", { T1: T2001.T1, T2: T2001.T2, Seed: T2001.Seed });
+		const cell = (rec as { cell: PeriodCell }).cell;
+		const edgeIds = new Set<number>();
+		const tileIds = new Set<number>();
+		for (const poly of cell.cellPolygons) {
+			for (const h of poly.halfways) edgeIds.add(data.edges!.at(h.x, h.y));
+			tileIds.add(data.faces!.at(poly.centroid.x, poly.centroid.y));
+		}
+		// every side and every tile of the cell is found, and they cover all the orbits
+		expect([...edgeIds].sort()).toEqual([0, 1, 2, 3]);
+		expect([...tileIds].sort()).toEqual([0, 1, 2, 3]);
+
+		// Stabilizer orders, from an independent float computation over the replicated patch. A non-null
+		// result also means the exact checks passed: V − E + F = 0 on the torus, and the orbifold sum
+		// Σ1/|G_v| − Σ1/|G_e| + Σ1/|G_f| = 1/1 + 1/2 − (1 + 3/2) + (1/2 + 1/4 + 1/6 + 1/12) = 0.
+		const checker = new KUniformityChecker();
+		const [u, v] = cell.basisExact;
+		const ef = checker.edgeFaceOrbits(cell.cellPolygons, u, v, checker.vertexOrbits(cell.cellPolygons, u, v)!)!;
+		expect([...ef.edges.stabilizers].sort((a, b) => a - b)).toEqual([1, 2, 2, 2]);
+		expect([...ef.faces.stabilizers].sort((a, b) => a - b)).toEqual([2, 4, 6, 12]);
 	});
 
 	it("returns null on a degenerate seed instead of throwing", () => {

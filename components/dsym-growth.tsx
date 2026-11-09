@@ -181,10 +181,10 @@ export function DsymGrowth() {
 
 	return (
 		<figure className="not-prose m-0 mx-auto flex w-full max-w-[54rem] flex-col items-center gap-1.5">
-			<div ref={host} className="bg-surface-base relative aspect-[10/3] w-full rounded-xl border border-line">
+			<div ref={host} className="ta-well relative aspect-[10/3] w-full">
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
-			<figcaption className="text-center text-[clamp(0.56rem,0.78vh+0.15vw,0.78rem)] leading-snug text-fg-muted">
+			<figcaption className="text-center text-[clamp(0.56rem,0.78vh+0.15vw,0.78rem)] leading-tight text-fg-muted">
 				every periodic tiling of Dress complexity δ ≤ 24, counted by Zeller, Delgado-Friedrichs and Huson (2020) —
 				2,395,220,319 of them, 322 GB. Their table ends exactly at the <em>k</em> = 2 ceiling.
 			</figcaption>

@@ -3,9 +3,9 @@
 import { memo, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
-import { SegIndicator } from "@/components/ui/seg-indicator";
-import { Dropdown } from "@/components/ui/dropdown";
-import { Tabs } from "@/components/ui/tabs";
+import { SegIndicator } from "@/design-system/components/seg-indicator";
+import { Dropdown } from "@/design-system/components/dropdown";
+import { Tabs } from "@/design-system/components/tabs";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -21,7 +21,8 @@ import { BrowseTree } from "./browse-tree";
 
 // The left panel of the atlas page, in both lenses: the cell (geometry, then decoration, the same two
 // segmented rows the /play sidebar had) over the browse tree. On a phone it is the bottom dock it always
-// was, with the view options as a second tab, since a phone has no right-hand column to put them in.
+// was, with the tiling's Info and the View options as further tabs, since a phone has no right-hand column
+// to put them in.
 
 // 123727 → "123,727", 2227510 → "2.23M": a segment is ~90px wide and a seven-digit count does not fit.
 const compactCount = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n.toLocaleString("en-US"));
@@ -43,7 +44,8 @@ interface BrowseSidebarProps {
 	collapsed: boolean;
 	/** Phone: the dock's peek row (the tiling's name and the three stepping buttons). */
 	peek: ReactNode;
-	/** Phone: the view options, a second tab of the dock. */
+	/** Phone: the tiling's facts and the view options, the dock's second and third tabs. */
+	info: ReactNode;
 	options: ReactNode;
 }
 
@@ -62,6 +64,7 @@ export const BrowseSidebar = memo(function BrowseSidebar({
 	onDecorationChange,
 	collapsed,
 	peek,
+	info,
 	options,
 }: BrowseSidebarProps) {
 	const isPhone = useIsPhone();
@@ -96,9 +99,9 @@ export const BrowseSidebar = memo(function BrowseSidebar({
 							empty && "pointer-events-none cursor-not-allowed opacity-50",
 						)}
 					>
-						<span className="text-center text-[12.5px] leading-tight font-medium text-balance">{label[v]}</span>
+						<span className="text-center text-small leading-tight font-medium text-balance">{label[v]}</span>
 						{/* A deferred catalogue has no count until it is fetched; a dash keeps every segment two lines tall. */}
-						<span className="font-mono text-[10.5px] leading-tight text-fg-muted tabular-nums">
+						<span className="font-mono text-micro leading-tight text-fg-muted tabular-nums">
 							{isPending ? "–" : compactCount(counts[v])}
 						</span>
 					</button>
@@ -124,21 +127,20 @@ export const BrowseSidebar = memo(function BrowseSidebar({
 				disabled: counts[v] === 0 && !pending?.[v],
 			}))}
 			onChange={onChange}
-			ariaLabel={name}
+			aria-label={name}
 			className="relative h-12 flex-col items-stretch justify-center gap-0 border-0 bg-surface-sunken pr-8 pl-3 text-left shadow-none hover:bg-surface-sunken"
 			face={
 				<>
-					<span className="text-xs leading-tight text-fg-muted">{name}</span>
-					<span className="truncate text-[15px] leading-tight font-medium text-fg">
+					<span className="text-small leading-tight text-fg-muted">{name}</span>
+					<span className="truncate text-title leading-tight font-medium text-fg">
 						{label[value]}{" "}
-						<span className="font-mono text-xs text-fg-muted">
+						<span className="font-mono text-small text-fg-muted">
 							{pending?.[value] ? "" : compactCount(counts[value])}
 						</span>
 					</span>
 					<ChevronDown
-						size={16}
 						aria-hidden
-						className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-fg-muted"
+						className="pointer-events-none absolute top-1/2 right-2.5 size-icon-md -translate-y-1/2 text-fg-muted"
 					/>
 				</>
 			}
@@ -207,11 +209,11 @@ export const BrowseSidebar = memo(function BrowseSidebar({
 				<Tabs
 					value={tab}
 					onValueChange={setTab}
-					tabs={["Browse", "View options"]}
+					tabs={["Browse", "Info", "View"]}
 					keepMounted
 					listClassName="mx-3.5 mb-2"
 				>
-					{(t) => (t === "Browse" ? browse : options)}
+					{(t) => (t === "Browse" ? browse : t === "Info" ? info : options)}
 				</Tabs>
 			) : (
 				browse

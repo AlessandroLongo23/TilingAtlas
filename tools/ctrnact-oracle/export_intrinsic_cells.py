@@ -493,7 +493,7 @@ def main():
 
     if args.attach:
         root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-        main = args.shelf or os.path.join(root, "public", "reference-atlas-period.json.gz")
+        main = args.shelf or os.path.join(root, "public", "reference-atlas-period.json.br")
         paths = [main] + sorted(glob.glob(main.replace(".json", "-k*.json")))
         miss = attach(paths, args.out, log, write=args.write)
         sys.exit(0 if miss == 0 else 1)

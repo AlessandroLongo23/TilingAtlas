@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { LatticeTooltip } from "@/components/lattice-diagram";
-import { ButtonGroup } from "@/components/ui/button-group";
+import { OptionWall } from "@/design-system/components/option-wall";
 
 describe("LatticeTooltip content", () => {
 	it("renders the diagram, name, and gloss for a lattice", () => {
@@ -12,9 +12,9 @@ describe("LatticeTooltip content", () => {
 		expect(screen.getByText("centered rectangular")).toBeInTheDocument();
 	});
 
-	it("mounts inside a tooltip-wrapped ButtonGroup option without throwing", () => {
+	it("mounts inside a tooltip-wrapped OptionWall option without throwing", () => {
 		render(
-			<ButtonGroup
+			<OptionWall
 				options={[{ value: "square", label: "square", tooltip: <LatticeTooltip lattice="square" /> }]}
 				selected={null}
 				onChange={() => {}}

@@ -22,7 +22,7 @@
 // exclusions, an edge of one piercing the STRICT interior of the other — and unions the two. The union
 // only ever adds, which is the safe direction: it cannot un-flag a solid the generator flagged.
 import { readFileSync, writeFileSync } from "node:fs";
-import { SPHERICAL_SOLIDS } from "../lib/render/sphericalSolids";
+import { SPHERICAL_SOLIDS } from "../lib/render/sphericalSolidsAll";
 
 type V = [number, number, number];
 const sub = (a: V, b: V): V => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];

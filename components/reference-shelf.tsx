@@ -12,17 +12,22 @@ import {
 	type SetStateAction,
 } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, ChevronRight, Library, Link2, Loader2, Search, Shapes, X } from "lucide-react";
-import { InfoDot } from "@/components/ui/info-dot";
+import { Check, ChevronRight, Download, Library, Link2, Shapes, X } from "lucide-react";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { Spinner } from "@/design-system/components/spinner";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { mirroredQuery, mirrorQuery } from "@/lib/services/urlMirror";
-import { Fold } from "@/components/ui/sidebar-section";
+import { FoldChevron } from "@/design-system/components/disclosure";
+import { Reveal } from "@/design-system/components/reveal";
 import { PageSidebar } from "@/components/page-sidebar";
-import { SheetTrigger } from "@/components/ui/bottom-sheet";
-import { IntervalSlider } from "@/components/ui/interval-slider";
-import { OptionWall } from "@/components/ui/option-wall";
-import { Button } from "@/components/ui/button";
-import { Pagination } from "@/components/ui/pagination";
-import { Switch } from "@/components/ui/switch";
+import { SheetTrigger } from "@/design-system/components/bottom-sheet";
+import { IntervalSlider } from "@/design-system/components/interval-slider";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { ColumnPicker, type Column } from "@/design-system/components/column-chart";
+import { Button } from "@/design-system/components/button";
+import { SearchInput } from "@/design-system/components/search-input";
+import { Pagination } from "@/design-system/components/pagination";
+import { Checkbox } from "@/design-system/components/checkbox";
 import { ReferenceCard } from "@/components/reference-card";
 import { useMobileSheet } from "@/stores/mobileSheet";
 import { useAfterPaint } from "@/lib/hooks/useAfterPaint";
@@ -100,6 +105,9 @@ import {
 	TRI45_SHARD_KS as TRI45_HIGHER_K,
 	PENROSE_SHARD_KS as PENROSE_HIGHER_K,
 	EUHALF_SHARD_KS as EUHALF_HIGHER_K,
+	REGULAR_COMPLETE_K,
+	REGULAR_SHARD_KS,
+	REGULAR_SHARD_PARTS,
 	loadEuHalfAtlasShard,
 	type Certification,
 	type FreedrawKind,
@@ -112,9 +120,13 @@ import {
 	type IslamicSystem,
 	type EdgeBoard,
 	type PolygonMode,
+	familyOfSub,
 } from "@/lib/services/referenceAtlas";
+import { loadAtlasManifest, type AtlasManifest, type ManifestTier } from "@/lib/services/atlasManifest";
 import { PolygonFilterModal } from "@/components/polygon-filter-modal";
-import { AnimatedNumber } from "@/components/ui/animated-number";
+import { AnimatedNumber } from "@/design-system/components/animated-number";
+import { ClassificationDefinition } from "@/components/library/classifications";
+import { CLASSIFICATION_BY_SLUG, classificationMember, loadClassification } from "@/lib/classifications";
 import { ResultsTable } from "@/components/library/results-table";
 import {
 	ActiveFilters,
@@ -170,7 +182,7 @@ import { polyformFamilyShort, POLYFORM_FAMILIES, type PolyformFamily } from "@/l
 import { DECORATIONS, GEOMETRIES, SOURCES, TILE_CLASSES } from "@/lib/vocabulary";
 
 // The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars in the
-// base file; regular k=8..10 as lazy per-k shards loaded on demand), fetched from public/reference-
+// base file; regular k=8..22 as lazy per-k shards loaded on demand), fetched from public/reference-
 // atlas*.json. Each entry carries a DISCOVERER (historical
 // first-finder), a CERTIFICATION (proven / reproduced / candidate), and a vertex-type classification
 // (k, M, partition — see referenceAtlas.ts). Filters are flat and always-open (no accordion); groups
@@ -301,15 +313,16 @@ const COLUMN_PRESETS = [3, 4, 5, 6];
 // Page-size choices for the header dropdown; 25 is the default.
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
-// Čtrnáct tiers beyond the base atlas (k≤7), shipped as separate lazy shards (public/reference-atlas-
-// k{k}.json). Their k chips always show; selecting one fetches the shard on demand and merges it in.
-const HIGHER_K = [8, 9, 10];
+// Regular tiers beyond the base atlas (k≤7), shipped as separate lazy shards (public/reference-atlas-
+// k{k}.json.br): complete to REGULAR_COMPLETE_K, partial above. Their k chips always show; selecting one fetches
+// the shard on demand and merges it in, except a k split into parts, which waits for its Load button.
+const HIGHER_K = REGULAR_SHARD_KS;
+const PARTIAL_K = REGULAR_SHARD_KS.filter((k) => k > REGULAR_COMPLETE_K);
 // Convex-irregular (COMPOSABLE_HIGHER_K) and isotoxal (ISOTOXAL_HIGHER_K) demo tiers held out of the eager
 // main file as lazy shards — imported from referenceAtlas so /play's browse tree reads the SAME tier list
 // (they drifted before: the shelf knew isotoxal k=4 while /play did not). k≤2 ship in the main file; these
 // load on demand when the class or a k≥3 chip is selected. The isotoxal ks are tracked in DEDICATED shard
 // state (below) because they collide with the convex-irregular shard ks in the shared number-keyed sets.
-const ALL_NUM = 0; // sentinel: the "All" chip for a single-select numeric group (k / M)
 const ALL_STR = ""; // sentinel: the "All" chip for the partition group
 
 // Enum whitelists for URL parsing — a hand-edited or stale link can carry any string, so only accept
@@ -322,7 +335,7 @@ const CERT_VALUES = CERT_OPTIONS.map((o) => o.value);
 // the query string: a reload restores the exact view, and the "Copy link" button hands a friend a link
 // that reproduces it. parseViewState and serializeView are inverse — add a field to one, add it to the
 // other. Keys are short and stable (they're a shared URL contract): k, dec, class, decomp, m, partition,
-// maximal, folds, param, iso, fdkind, group, lattice, by, cert, polygon, q + page, size, cols.
+// maximal, folds, param, iso, fdkind, group, lattice, by, cert, polygon, q, e, t, axis, set + page, size, cols.
 interface ViewState {
 	filters: ReferenceFilter;
 	page: number;
@@ -336,7 +349,11 @@ interface ViewState {
 	sortKey: SortKey;
 	sortDir: SortDir;
 	view: ResultsView;
+	// Which orbit count the first chip row picks by: vertex orbits (k, the default) or edge orbits (e).
+	// URL key "axis". Tile orbits are a filter only (see the Tile orbits group for why).
+	orbitAxis: OrbitAxis;
 }
+type OrbitAxis = "vertex" | "edge" | "face";
 
 // One card of the (possibly grouped) shelf: the tilings it cycles through, in variant order. A
 // singleton for every ungrouped entry.
@@ -413,9 +430,15 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (ncx === "self-intersecting" || ncx === "embedded") f.ncxCrossing = ncx;
 	const m = num("m");
 	if (m != null) f.mValue = m;
+	const e = num("e");
+	if (e != null) f.eValue = e;
+	const t = num("t");
+	if (t != null) f.tValue = t;
 	const partition = sp.get("partition");
 	if (partition) f.partitionKey = partition;
 	if (sp.get("maximal") === "1") f.maximalOnly = true;
+	const set = sp.get("set");
+	if (set && CLASSIFICATION_BY_SLUG.has(set)) f.classification = set;
 	const folds = list("folds")
 		?.map(Number)
 		.filter((n) => Number.isFinite(n));
@@ -511,6 +534,7 @@ function parseViewState(sp: URLSearchParams): ViewState {
 		sortKey,
 		sortDir: dirParam === "asc" || dirParam === "desc" ? dirParam : SORT_DEFAULT_DIR[sortKey],
 		view: sp.get("view") === "table" ? "table" : "grid",
+		orbitAxis: sp.get("axis") === "edge" ? "edge" : sp.get("axis") === "face" ? "face" : "vertex",
 	};
 }
 
@@ -529,8 +553,12 @@ function serializeView(v: ViewState): string {
 	if (f.starKind) p.set("skind", f.starKind);
 	if (f.ncxCrossing) p.set("ncx", f.ncxCrossing);
 	if (f.mValue != null) p.set("m", String(f.mValue));
+	if (f.eValue != null) p.set("e", String(f.eValue));
+	if (f.tValue != null) p.set("t", String(f.tValue));
+	if (v.orbitAxis !== "vertex") p.set("axis", v.orbitAxis);
 	if (f.partitionKey) p.set("partition", f.partitionKey);
 	if (f.maximalOnly) p.set("maximal", "1");
+	if (f.classification) p.set("set", f.classification);
 	if (f.starFolds?.length) p.set("folds", f.starFolds.join(","));
 	if (f.parametric) p.set("param", f.parametric);
 	if (f.isotoxalShape) p.set("iso", f.isotoxalShape);
@@ -584,7 +612,7 @@ function serializeView(v: ViewState): string {
 // column. One constant now, so they can't drift apart again.
 // text-fg-muted, not fg-disabled: at 11px the disabled ink (neutral-600 on neutral-900) was unreadable
 // in dark, and /play's options panel already annotates at 11px muted.
-const META = "text-[11px] font-normal leading-snug text-fg-muted";
+const META = "text-caption font-normal leading-tight text-fg-muted";
 
 // Structure sits on the wall's mortar; content sits on its tiles. A group heading and a sub-label are
 // structure, but they carry the SAME chrome fill the option cells use (AL, 2026-07-23) — the title band
@@ -597,7 +625,7 @@ const META = "text-[11px] font-normal leading-snug text-fg-muted";
 function CountLabel({ label, count, stacked }: { label: ReactNode; count?: number; stacked?: boolean }) {
 	const n =
 		count != null ? (
-			<span className="font-mono text-[10.5px] font-normal text-fg-muted tabular-nums">
+			<span className="font-mono text-micro font-normal text-fg-muted tabular-nums">
 				{count.toLocaleString("en-US")}
 			</span>
 		) : null;
@@ -616,7 +644,7 @@ function CountLabel({ label, count, stacked }: { label: ReactNode; count?: numbe
 
 // A caption row inside a filter group — a thinner echo of the group heading, same chrome band.
 function SubLabel({ children }: { children: ReactNode }) {
-	return <span className="pt-1 text-xs text-fg-secondary">{children}</span>;
+	return <span className="pt-1 text-small text-fg-secondary">{children}</span>;
 }
 
 // An explanatory line under a group's controls: helper text, 4px under what it explains.
@@ -652,8 +680,8 @@ function IntervalFilterCell({
 	return (
 		<div className="flex flex-col gap-1 pb-1">
 			<div className="flex items-baseline justify-between gap-2">
-				<span className="text-xs text-fg-secondary">{label}</span>
-				<span className={cn("text-[10px] font-medium tabular-nums", active ? "text-fg" : "text-fg-muted")}>
+				<span className="text-small text-fg-secondary">{label}</span>
+				<span className={cn("text-micro font-medium tabular-nums", active ? "text-fg" : "text-fg-muted")}>
 					{format(value[0])} – {format(value[1])}
 				</span>
 			</div>
@@ -688,36 +716,49 @@ function FilterGroup({
 	return (
 		<section className="flex flex-col border-t border-line-subtle">
 			<div className="flex items-center gap-1 pr-2.5 pl-2">
-				<button
-					type="button"
-					aria-expanded={open}
-					onClick={() => setOpen(!open)}
-					title={note}
-					className="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-control py-3 pl-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:min-h-11"
-				>
-					<ChevronRight
-						size={12}
-						aria-hidden
-						className={cn(
-							"shrink-0 text-fg-muted transition-transform duration-200 ease-[var(--ease-out-strong)] group-hover:text-fg motion-reduce:transition-none",
-							open && "rotate-90",
-						)}
-					/>
-					<span className="ta-label shrink-0 transition-colors group-hover:text-fg-secondary">{title}</span>
-					{/* Open, the controls show the selection themselves; the heading repeats it only when folded. */}
-					{summary && !open ? (
-						<span className="min-w-0 truncate text-[11px] font-medium text-fg">{summary}</span>
-					) : null}
-					{/* A finger has no hover, so on a phone the gloss is printed after the heading instead. */}
-					{note && !summary ? <span className={cn(META, "truncate md:hidden")}>· {note}</span> : null}
-				</button>
+				<Tooltip label={note}>
+					<button
+						type="button"
+						aria-expanded={open}
+						onClick={() => setOpen(!open)}
+						className="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-control py-3 pl-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:min-h-11"
+					>
+						<FoldChevron open={open} size={12} className="group-hover:text-fg" />
+						<span className="ta-label shrink-0 transition-colors group-hover:text-fg-secondary">{title}</span>
+						{/* Open, the controls show the selection themselves; the heading repeats it only when folded. */}
+						{summary && !open ? (
+							<span className="min-w-0 truncate text-caption font-medium text-fg">{summary}</span>
+						) : null}
+						{/* A finger has no hover, so on a phone the gloss is printed after the heading instead. */}
+						{note && !summary ? <span className={cn(META, "truncate md:hidden")}>· {note}</span> : null}
+					</button>
+				</Tooltip>
 				{info ? <InfoDot label={`About ${title}`}>{info}</InfoDot> : null}
 			</div>
-			<Fold open={open}>
+			<Reveal show={open}>
 				<div className="flex flex-col gap-2 px-3.5 pb-4">{children}</div>
-			</Fold>
+			</Reveal>
 		</section>
 	);
+}
+
+const NO_CELL_RECORDS = { tilings: null, cell: "" };
+
+/**
+ * The records of one cell that match the scope. The cell's own geometry and kind are not tested again, and
+ * with nothing else in the scope the list comes back as it is: under a bare Edge patterns chip that was two
+ * classifications of 170,000 records per landing shelf, for a copy of the same list.
+ */
+function inScope(
+	{ tilings, cell }: { tilings: readonly ReferenceTiling[] | null; cell: string },
+	scope: ReferenceFilter,
+): readonly ReferenceTiling[] | null {
+	if (!tilings) return null;
+	const rest =
+		cell === `${scope.geometry}|${scope.decoration}` ? { ...scope, geometry: undefined, decoration: undefined } : scope;
+	return Object.values(rest).some((v) => v !== undefined)
+		? tilings.filter((t) => matchesReferenceFilters(t, rest))
+		: tilings;
 }
 
 /**
@@ -787,6 +828,7 @@ const SCOPE_FIELDS = [
 	"sub",
 	"colorsCount",
 	"polySet",
+	"classification",
 ] as const;
 // Kept across a tree pick: they mean the same thing in every place of the tree.
 const PORTABLE_FIELDS = ["query", "discoverers", "certifications", "vcs", "vcMode"] as const;
@@ -814,6 +856,8 @@ interface ReferenceShelfProps {
 	countNote?: ReactNode;
 	/** Tilings in the scope that exist but are not in memory, so the count can say what it covers. */
 	notLoaded: number;
+	/** The manifest's tiers of this cell not in memory: the count charts draw their tilings before they load. */
+	pending?: readonly ManifestTier[];
 }
 
 export function ReferenceShelf({
@@ -829,6 +873,7 @@ export function ReferenceShelf({
 	title,
 	countNote,
 	notLoaded,
+	pending,
 }: ReferenceShelfProps) {
 	const searchParams = useSearchParams();
 	// Parse the URL exactly once, on mount. After this we only WRITE the URL (one-way, via replaceState
@@ -858,6 +903,7 @@ export function ReferenceShelf({
 	const [sortKey, setSortKey] = useState<SortKey>(initialView.sortKey);
 	const [sortDir, setSortDir] = useState<SortDir>(initialView.sortDir);
 	const [view, setView] = useState<ResultsView>(initialView.view);
+	const [orbitAxis, setOrbitAxis] = useState<OrbitAxis>(initialView.orbitAxis);
 	// A key picks its own natural direction; the same key again (a table header clicked twice) reverses.
 	const changeSort = (key: SortKey, dir?: SortDir) => {
 		setSortDir(dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : SORT_DEFAULT_DIR[key]));
@@ -879,6 +925,8 @@ export function ReferenceShelf({
 	const [loadedShards, setLoadedShards] = useState<Set<number>>(new Set());
 	const [loadingShards, setLoadingShards] = useState<Set<number>>(new Set());
 	const [shardErrors, setShardErrors] = useState<Map<number, string>>(new Map());
+	// The split ks the reader asked for with their Load button.
+	const [askedShards, setAskedShards] = useState<ReadonlySet<number>>(new Set());
 	// Dedicated isotoxal shard tracking — its k=3 collides with the convex-irregular k=3 in the shared sets.
 	const [isotoxalLoadedShards, setIsotoxalLoadedShards] = useState<Set<number>>(new Set());
 	const isotoxalInflight = useRef<Set<number>>(new Set());
@@ -928,9 +976,10 @@ export function ReferenceShelf({
 			sortKey,
 			sortDir,
 			view,
+			orbitAxis,
 		});
 		mirrorQuery("lib", q);
-	}, [filters, currentPage, pageSize, gridColumns, groupVariants, sortKey, sortDir, view]);
+	}, [filters, currentPage, pageSize, gridColumns, groupVariants, sortKey, sortDir, view, orbitAxis]);
 	useEffect(() => onFiltersChange(filters), [filters, onFiltersChange]);
 
 	const copyLink = useCallback(() => {
@@ -954,6 +1003,36 @@ export function ReferenceShelf({
 		[],
 	);
 
+	// The edge-orbit axis reads the manifest's per-tier e histogram (fetched once, on that axis only) to offer
+	// chips for shards not loaded yet and to fetch just the shards holding the e picked. undefined = still
+	// loading; null = unavailable, and then the bound every tiling obeys stands in: e edge orbits allow at
+	// most e + 1 vertex orbits (the orbits form a connected graph), so the shards with k ≤ e + 1.
+	const [manifest, setManifest] = useState<AtlasManifest | null | undefined>(undefined);
+	useEffect(() => {
+		if (orbitAxis !== "edge" || manifest !== undefined) return;
+		let alive = true;
+		loadAtlasManifest().then((m) => alive && setManifest(m));
+		return () => {
+			alive = false;
+		};
+	}, [orbitAxis, manifest]);
+	const edgeTiers = useMemo(
+		() =>
+			(manifest?.tiers ?? []).filter(
+				(t) => t.shelf === "ctrnact" && t.edgeOrbits && (!filters.tileClass || t.cls === filters.tileClass),
+			),
+		[manifest, filters.tileClass],
+	);
+	const shardsWithEdgeOrbits = useCallback(
+		(e: number) =>
+			manifest === undefined
+				? []
+				: manifest === null
+					? HIGHER_K.filter((k) => k <= e + 1)
+					: HIGHER_K.filter((k) => edgeTiers.some((t) => t.k === k && t.edgeOrbits![e])),
+		[manifest, edgeTiers],
+	);
+
 	// Lazy k≥8 shards: selecting the k fetches public/reference-atlas-k{k}.json once and merges the
 	// records into `tilings`, so every derived facet (k chips, filtered, pagination) picks them up. A
 	// failed shard is sticky (won't refetch until Clear) and surfaces an inline error by the count.
@@ -962,29 +1041,80 @@ export function ReferenceShelf({
 		// same k selects hyperbolic-edge shards instead (below), so don't fetch a 15–73 MB Euclidean file for
 		// a hyperbolic view that would filter every record out by geometry.
 		if (filters.geometry && filters.geometry !== GEOMETRIES.EUCLIDEAN) return;
-		const k = filters.kValue;
-		// `HIGHER_K`, not `k >= 8`: the base Čtrnáct shards are k = 8, 9 and 10 and there is no k=11+ file,
-		// so any higher k 404'd and painted "failed to load k=…" beside the count. That was unreachable
-		// while nothing offered a Euclidean chip above 10; the halved-polygon boards go to k=14, which is
-		// how it surfaced. The bug is the unbounded test, not the new chips.
-		if (k == null || !HIGHER_K.includes(k)) return;
-		if (loadedShards.has(k) || loadingShards.has(k) || shardErrors.has(k)) return;
+		// `HIGHER_K`, not `k >= 8`: only the ks in REGULAR_SHARD_KS have a file, so any other k 404'd and
+		// painted "failed to load k=…" beside the count. The halved-polygon boards go to k=14, which is how it
+		// surfaced. The bug is the unbounded test, not the new chips.
+		// A k split into parts (100,000 tilings each) is too big to pull on a chip: it waits for its Load button
+		// by the count, like a large hyperbolic slice.
+		const wanted = (
+			filters.kValue != null
+				? HIGHER_K.filter((k) => k === filters.kValue)
+				: filters.eValue != null
+					? shardsWithEdgeOrbits(filters.eValue)
+					: []
+		).filter((k) => !REGULAR_SHARD_PARTS[k] || askedShards.has(k));
+		const todo = wanted.filter((k) => !loadedShards.has(k) && !loadingShards.has(k) && !shardErrors.has(k));
+		if (!todo.length) return;
 		// eslint-disable-next-line react-hooks/set-state-in-effect -- the fetch starts here and the "loading k=…" line renders this set
-		setLoadingShards((s) => new Set(s).add(k));
-		loadReferenceAtlasShard(k)
-			.then((data) => {
-				setTilings((prev) => (prev ? [...prev, ...data] : data));
-				setLoadedShards((s) => new Set(s).add(k));
+		setLoadingShards((s) => new Set([...s, ...todo]));
+		for (const k of todo)
+			loadReferenceAtlasShard(k)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setLoadedShards((s) => new Set(s).add(k));
+				})
+				.catch((e) => setShardErrors((m) => new Map(m).set(k, e instanceof Error ? e.message : String(e))))
+				.finally(() =>
+					setLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(k);
+						return n;
+					}),
+				);
+	}, [
+		filters.geometry,
+		filters.kValue,
+		filters.eValue,
+		shardsWithEdgeOrbits,
+		askedShards,
+		loadedShards,
+		loadingShards,
+		shardErrors,
+		setTilings,
+	]);
+
+	// A split k picked on its chip waits for its Load button, which says how many tilings it brings.
+	const splitK =
+		filters.kValue != null &&
+		REGULAR_SHARD_PARTS[filters.kValue] &&
+		!loadedShards.has(filters.kValue) &&
+		!loadingShards.has(filters.kValue) &&
+		(!filters.geometry || filters.geometry === GEOMETRIES.EUCLIDEAN)
+			? filters.kValue
+			: null;
+	const splitCount = (manifest?.tiers ?? [])
+		.filter((t) => t.shelf === "ctrnact" && t.k === splitK)
+		.reduce((a, t) => a + t.count, 0);
+
+	// A list classification's members arrive as one small file, with the records of those on the lazy shards, so
+	// no shard loads for them. Once it is in, a fresh filters object re-runs every memo keyed on the filters,
+	// since inClassification can now answer for each tiling.
+	const [listError, setListError] = useState<string | null>(null);
+	useEffect(() => {
+		const slug = filters.classification;
+		if (!slug) return;
+		let alive = true;
+		loadClassification(slug)
+			.then((l) => {
+				if (!alive || !l) return;
+				setTilings(l.records);
+				setFilters((f) => (f.classification === slug ? { ...f } : f));
 			})
-			.catch((e) => setShardErrors((m) => new Map(m).set(k, e instanceof Error ? e.message : String(e))))
-			.finally(() =>
-				setLoadingShards((s) => {
-					const n = new Set(s);
-					n.delete(k);
-					return n;
-				}),
-			);
-	}, [filters.geometry, filters.kValue, loadedShards, loadingShards, shardErrors, setTilings]);
+			.catch((e) => alive && setListError(e instanceof Error ? e.message : String(e)));
+		return () => {
+			alive = false;
+		};
+	}, [filters.classification, setTilings]);
 
 	// Hyperbolic edge systems (freedraw class, hyperbolic geometry): lazy like the k≥8 shards, but off the
 	// plane. The eager k ≤ 9 slice loads once the Hyperbolic geometry is entered; the dense k = 12/13/14
@@ -1589,6 +1719,21 @@ export function ReferenceShelf({
 	const setKValue = (k: number | undefined) =>
 		setFilters({ ...filters, kValue: k, mValue: undefined, partitionKey: undefined });
 	const setMValue = (m: number | undefined) => setFilters({ ...filters, mValue: m, partitionKey: undefined });
+	const setEValue = (e: number | undefined) => setFilters({ ...filters, eValue: e });
+	const setTValue = (t: number | undefined) => setFilters({ ...filters, tValue: t });
+	// Switching the axis drops the pick on the old one (and M/partition, which hang off k).
+	const switchOrbitAxis = (axis: OrbitAxis) => {
+		if (axis === orbitAxis) return;
+		setOrbitAxis(axis);
+		setFilters({
+			...filters,
+			kValue: undefined,
+			eValue: undefined,
+			tValue: undefined,
+			mValue: undefined,
+			partitionKey: undefined,
+		});
+	};
 	const setPartitionKey = (p: string | undefined) => setFilters({ ...filters, partitionKey: p });
 	const toggleMaximal = () => setFilters({ ...filters, maximalOnly: filters.maximalOnly ? undefined : true });
 	const setParametric = (v: "all" | "rigid" | "family") =>
@@ -1746,6 +1891,8 @@ export function ReferenceShelf({
 					...base,
 					geometry: g,
 					kValue: undefined,
+					eValue: undefined,
+					tValue: undefined,
 					mValue: undefined,
 					partitionKey: undefined,
 					maximalOnly: undefined,
@@ -1793,6 +1940,7 @@ export function ReferenceShelf({
 				sub: undefined,
 				colorsCount: undefined,
 				polySet: undefined,
+				classification: undefined,
 			};
 		}
 		if (command && commandDue) {
@@ -1808,7 +1956,50 @@ export function ReferenceShelf({
 
 	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
 	// The facets count off the records one painted frame late (lib/hooks/useAfterPaint.ts): the cards come first.
-	const facetTilings = useAfterPaint(tilings, null);
+	// The cell travels with its records: the scoped lists below skip the geometry and kind tests on a list
+	// known to hold one cell, and the late copy can still be the previous cell's for a frame.
+	const cellRecords = useMemo(
+		() => ({ tilings, cell: `${cellGeometry}|${cellDecoration}` }),
+		[tilings, cellGeometry, cellDecoration],
+	);
+	const lateCell = useAfterPaint(cellRecords, NO_CELL_RECORDS);
+	const facetTilings = lateCell.tilings;
+	// The tree's scope (geometry, kind, class, board, row) narrows the records once, before any facet counts them.
+	// Every facet below keeps the scope, so scanning the whole loaded cell re-tested it per record in each of
+	// them: a click under "Regular polygons" walked all 40k Euclidean tilings ten times to count 2,720.
+	const scope = useMemo(
+		() => ({
+			geometry: filters.geometry,
+			decoration: filters.decoration,
+			tileClass: filters.tileClass,
+			family: filters.family,
+			board: filters.board,
+			sub: filters.sub,
+			colorsCount: filters.colorsCount,
+			polySet: filters.polySet,
+			classification: filters.classification,
+		}),
+		[
+			filters.geometry,
+			filters.decoration,
+			filters.tileClass,
+			filters.family,
+			filters.board,
+			filters.sub,
+			filters.colorsCount,
+			filters.polySet,
+			filters.classification,
+		],
+	);
+	const scopedTilings = useMemo(() => inScope(cellRecords, scope), [cellRecords, scope]);
+	const scopedFacetTilings = useMemo(() => inScope(lateCell, scope), [lateCell, scope]);
+	// The filters without the scope, for the scans of the two scoped lists: every record in them has passed
+	// the scope, and matchesReferenceFilters is one independent test per field, so testing it again per
+	// facet only repeated the classification of every record.
+	const unscoped = useMemo<ReferenceFilter>(
+		() => ({ ...filters, ...Object.fromEntries(SCOPE_FIELDS.map((key) => [key, undefined])) }),
+		[filters],
+	);
 
 	const kChips = useMemo(() => {
 		const s = new Set<number>();
@@ -1843,29 +2034,119 @@ export function ReferenceShelf({
 
 	// M chips are faceted to the current view MINUS M/partition: at k=4 they resolve to {2,3,4}.
 	const mOptions = useMemo(() => {
-		if (!facetTilings || filters.kValue == null) return [];
+		if (!scopedFacetTilings || filters.kValue == null) return [];
 		const s = new Set<number>();
-		for (const t of facetTilings) {
+		for (const t of scopedFacetTilings) {
 			if (t.m == null) continue;
-			if (matchesReferenceFilters(t, { ...filters, mValue: undefined, partitionKey: undefined })) s.add(t.m);
+			if (matchesReferenceFilters(t, { ...unscoped, mValue: undefined, partitionKey: undefined })) s.add(t.m);
 		}
 		return [...s].sort((a, b) => a - b);
-	}, [facetTilings, filters]);
+	}, [scopedFacetTilings, filters.kValue, unscoped]);
 
 	// Partition chips faceted to the current view MINUS the partition itself — so they narrow with the
 	// chosen k (and M, if one is picked): k=7 → 511/421/331/…; k=7,M=3 → just the M=3 partitions.
 	const partitionOptions = useMemo(() => {
-		if (!facetTilings || filters.kValue == null) return [];
+		if (!scopedFacetTilings || filters.kValue == null) return [];
 		const byKey = new Map<string, number>(); // key → m (for ordering)
-		for (const t of facetTilings) {
-			if (!matchesReferenceFilters(t, { ...filters, partitionKey: undefined })) continue;
+		for (const t of scopedFacetTilings) {
+			if (!matchesReferenceFilters(t, { ...unscoped, partitionKey: undefined })) continue;
 			const key = partitionKeyOf(t);
 			if (key && t.m != null) byKey.set(key, t.m);
 		}
 		return [...byKey.entries()]
 			.map(([key, m]) => ({ key, m }))
 			.sort((a, b) => a.m - b.m || (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
-	}, [facetTilings, filters]);
+	}, [scopedFacetTilings, filters.kValue, unscoped]);
+
+	// ── edge and tile orbits ──
+	// The edge-orbit axis is offered where tilings carry the count: the regular and star Euclidean tilings,
+	// whose exact cells the build measured (scripts/enrich-reference-atlas.ts --orbits).
+	const edgeAxisAvailable = useMemo(
+		() =>
+			(!filters.decoration || filters.decoration === "tilings") &&
+			!!tilings?.some((t) => t.edgeOrbits != null && geometryOf(t) === geometry && decorationOf(t) === "tilings"),
+		[tilings, geometry, filters.decoration],
+	);
+	// The face-orbit axis is offered inside a classification: its list is complete for every t (Galebach bins his
+	// lists by isohedrality), where the open shelf would be a slice of the k it ships (the note on tOptions).
+	const faceAxisAvailable = useMemo(
+		() =>
+			!!filters.classification &&
+			!!tilings?.some((t) => t.faceOrbits != null && !!classificationMember(filters.classification!, t.id)),
+		[tilings, filters.classification],
+	);
+	const axis: OrbitAxis =
+		orbitAxis === "face" ? (faceAxisAvailable ? "face" : "vertex") : edgeAxisAvailable ? orbitAxis : "vertex";
+	// e chips: the counts of the tilings in view (less the k and e picks), plus those the manifest places
+	// in shards not loaded yet.
+	const eChips = useMemo(() => {
+		if (axis !== "edge") return [];
+		const s = new Set<number>();
+		const view = { ...unscoped, kValue: undefined, eValue: undefined, mValue: undefined, partitionKey: undefined };
+		for (const t of scopedTilings ?? [])
+			if (t.edgeOrbits != null && matchesReferenceFilters(t, view)) s.add(t.edgeOrbits);
+		for (const t of edgeTiers) for (const e of Object.keys(t.edgeOrbits!)) s.add(Number(e));
+		return [...s].sort((a, b) => a - b);
+	}, [axis, scopedTilings, unscoped, edgeTiers]);
+	// The largest e whose list is whole. A tiling with e edge orbits has at most e + 1 vertex orbits (vertex
+	// orbits joined by edge orbits form a connected graph), and at most e with regular polygons (a tree would
+	// be bipartite, and a triangle closes an odd cycle; the triangle-free ones are 4⁴, 6³, 4.8.8 and 4.6.12,
+	// all with one vertex orbit). So e is complete while that bound stays within the layers a class ships
+	// whole: k = 1, 2, … with no gap and an e on every record. The s24f star families have no exact cell, so
+	// no e, and the regular enumeration is whole only to REGULAR_COMPLETE_K (above it, targeted searches only).
+	const edgeComplete = useMemo(() => {
+		if (axis !== "edge") return null;
+		const eSources = new Set((tilings ?? []).filter((t) => t.edgeOrbits != null).map((t) => t.source));
+		const layers = new Map<string, Map<number, [number, number]>>(); // class → k → [records, records with e]
+		const add = (cls: string, k: number, n: number, withE: number) => {
+			const byK = layers.get(cls) ?? new Map<number, [number, number]>();
+			const [a, b] = byK.get(k) ?? [0, 0];
+			layers.set(cls, byK.set(k, [a + n, b + withE]));
+		};
+		for (const t of tilings ?? [])
+			if (
+				eSources.has(t.source) &&
+				geometryOf(t) === geometry &&
+				(!filters.tileClass || tileClassOf(t) === filters.tileClass)
+			)
+				add(tileClassOf(t), t.k, 1, t.edgeOrbits != null ? 1 : 0);
+		// a loaded shard counts twice (its records and its tier), which keeps a whole layer whole
+		for (const t of edgeTiers)
+			add(
+				t.cls,
+				t.k,
+				t.count,
+				Object.values(t.edgeOrbits!).reduce((s, n) => s + n, 0),
+			);
+		const bounds = [...layers].map(([cls, byK]) => {
+			const regular = cls === TILE_CLASSES.REGULAR;
+			let top = 0;
+			for (let l = byK.get(1); l && l[0] === l[1] && !(regular && top === REGULAR_COMPLETE_K); l = byK.get(top + 1))
+				top++;
+			return regular ? top : top - 1;
+		});
+		const bound = bounds.length ? Math.min(...bounds) : 0;
+		return bound >= 1 ? bound : null;
+	}, [axis, tilings, geometry, filters.tileClass, edgeTiers]);
+	// Tile orbits are a filter on the open shelf, never an axis: nothing useful bounds the vertex orbits by the
+	// tile orbits (only k ≤ e ≤ 12t), so a list of "t = 2 tilings" drawn from the k ≤ 16 shelf would be a slice
+	// presented as a catalogue. Offered once a k or e is picked, like M; an axis only inside a classification.
+	const tOptions = useMemo(() => {
+		if (!scopedTilings || (filters.kValue == null && filters.eValue == null)) return [];
+		const s = new Set<number>();
+		for (const t of scopedTilings)
+			if (t.faceOrbits != null && matchesReferenceFilters(t, { ...unscoped, tValue: undefined })) s.add(t.faceOrbits);
+		return [...s].sort((a, b) => a - b);
+	}, [scopedTilings, filters.kValue, filters.eValue, unscoped]);
+
+	// t columns on the face-orbit axis: every count among the tilings in view, less the t pick.
+	const tChips = useMemo(() => {
+		if (axis !== "face" || !scopedTilings) return [];
+		const s = new Set<number>();
+		for (const t of scopedTilings)
+			if (t.faceOrbits != null && matchesReferenceFilters(t, { ...unscoped, tValue: undefined })) s.add(t.faceOrbits);
+		return [...s].sort((a, b) => a - b);
+	}, [axis, scopedTilings, unscoped]);
 
 	// Data bounds for the hyperbolic interval sliders (valence / palette / edge length ℓ), derived from
 	// the loaded hyperbolic shelf. The edge span is rounded outward to the slider's 0.01 step so the raw
@@ -1904,21 +2185,29 @@ export function ReferenceShelf({
 	const setHypInterval = (key: "hypValence" | "hypPolygon" | "hypEdge", v: [number, number], full: [number, number]) =>
 		setFilters({ ...filters, [key]: v[0] <= full[0] && v[1] >= full[1] ? undefined : v });
 
+	const tileClass = filters.tileClass ?? "all";
+	const decoration = filters.decoration ?? "all";
+	// Tilings covers both the explicit segment and "All", where the shape chips are still the useful way in
+	// (each of the eight lives only in that segment, so picking one implies it).
+	const inTilings = decoration === "all" || decoration === "tilings";
+
+	// The star folds and the polygon facets below read tile tokens off the family label, and only the Tilings
+	// segment shows them. Under Edge patterns a label costs a face analysis, so they are not read there.
 	const availableFolds = useMemo(() => {
-		if (!facetTilings) return [];
+		if (!facetTilings || !inTilings) return [];
 		const s = new Set<number>();
 		for (const t of facetTilings) for (const n of starFoldsOf(t)) s.add(n);
 		return [...s].sort((a, b) => a - b);
-	}, [facetTilings]);
+	}, [facetTilings, inTilings]);
 
 	// The polygon facet's own scope: every tiling matching the OTHER filters. Both the picker's
 	// per-token counts and the "how many distinct species" walls read off this, so a token shows the
 	// tilings it would actually add and a count chip is never offered when it can only return nothing.
 	const polygonScope = useMemo(() => {
-		if (!facetTilings) return [];
-		return facetTilings.filter((t) =>
+		if (!scopedFacetTilings || !inTilings) return [];
+		return scopedFacetTilings.filter((t) =>
 			matchesReferenceFilters(t, {
-				...filters,
+				...unscoped,
 				polygonNames: undefined,
 				polygonExclude: undefined,
 				distinctPolygons: undefined,
@@ -1926,7 +2215,7 @@ export function ReferenceShelf({
 				anglePeriods: undefined,
 			}),
 		);
-	}, [facetTilings, filters]);
+	}, [scopedFacetTilings, unscoped, inTilings]);
 
 	// Counts are per SPECIES (fold AND point angle), the granularity /catalogue/about/prototiles shows: "6*30" and
 	// "6*60" are different tiles and get their own card.
@@ -1996,24 +2285,19 @@ export function ReferenceShelf({
 		// one throwaway object per loaded tiling every time any filter changed. And the filter is tested
 		// BEFORE tilingLevel, because the level is the expensive half (it canonicalises every vertex
 		// configuration of the record) and a tiling the filter rejects never needs its level at all.
-		const scope = { ...filters, levels: undefined };
-		for (const t of facetTilings ?? []) {
-			if (!matchesReferenceFilters(t, scope)) continue;
+		const rest = { ...unscoped, levels: undefined };
+		for (const t of scopedFacetTilings ?? []) {
+			if (!matchesReferenceFilters(t, rest)) continue;
 			const lv = tilingLevel(t);
 			if (lv) c.set(lv, (c.get(lv) ?? 0) + 1);
 		}
 		return c;
-	}, [facetTilings, filters]);
+	}, [scopedFacetTilings, unscoped]);
 
 	// The one selected lattice (single-select). When set, it disables the wallpaper-group chips whose
 	// group can't be crystallographically realized on it.
 	const selectedLattice = filters.latticeShapes?.[0];
 
-	const tileClass = filters.tileClass ?? "all";
-	const decoration = filters.decoration ?? "all";
-	// Tilings covers both the explicit segment and "All", where the shape chips are still the useful way in
-	// (each of the eight lives only in that segment, so picking one implies it).
-	const inTilings = decoration === "all" || decoration === "tilings";
 	// Classes carrying NO vertex-configuration classification — no M/partition, no star folds, no wallpaper
 	// group or lattice. The convex-irregular + isotoxal demo shelves, whose builds don't compute it.
 	const isUnclassified = tileClass === "convex" || tileClass === "isotoxal";
@@ -2101,6 +2385,8 @@ export function ReferenceShelf({
 			off("vcs", "vcMode"),
 		);
 	if (filters.kValue != null) chip("k", `k = ${filters.kValue}`, off("kValue"), () => setKValue(undefined));
+	if (filters.eValue != null) chip("e", `e = ${filters.eValue}`, off("eValue"), () => setEValue(undefined));
+	if (filters.tValue != null) chip("t", `t = ${filters.tValue}`, off("tValue"), () => setTValue(undefined));
 	if (filters.mValue != null)
 		chip("m", `m = ${filters.mValue}`, off("mValue", "partitionKey"), () => setMValue(undefined));
 	if (filters.partitionKey) chip("partition", `partition ${filters.partitionKey}`, off("partitionKey"));
@@ -2156,21 +2442,148 @@ export function ReferenceShelf({
 		if (value) chip(key, value, off(key));
 	const activeFilterCount = activeChips.length;
 
+	// ── the count charts (k, e, M, t) ──
+	// Per value, the tilings under every other filter, and while another filter narrows them, a ghost of the
+	// tilings without it. A tier not in memory counts from the manifest (`pending`): in full while nothing else
+	// narrows, and only in the ghost once something does. A scope the manifest cannot split (a board, a hybrid
+	// row, a classification) leaves such a value without a column until its shard loads.
+	const kCounts = useMemo(
+		() =>
+			countFacet(
+				scopedFacetTilings,
+				{ ...unscoped, kValue: undefined, mValue: undefined, partitionKey: undefined },
+				(t) => t.k,
+			),
+		[scopedFacetTilings, unscoped],
+	);
+	const kTotals = useMemo(() => countFacet(scopedFacetTilings, {}, (t) => t.k), [scopedFacetTilings]);
+	const eCounts = useMemo(
+		() =>
+			axis === "edge"
+				? countFacet(
+						scopedFacetTilings,
+						{ ...unscoped, kValue: undefined, eValue: undefined, mValue: undefined, partitionKey: undefined },
+						(t) => t.edgeOrbits,
+					)
+				: new Map<number, number>(),
+		[axis, scopedFacetTilings, unscoped],
+	);
+	const eTotals = useMemo(
+		() => (axis === "edge" ? countFacet(scopedFacetTilings, {}, (t) => t.edgeOrbits) : new Map<number, number>()),
+		[axis, scopedFacetTilings],
+	);
+	// M and t are picked within a k (or an e), and only then counted: their ghost is the tilings there
+	const atK = useMemo(
+		() =>
+			filters.kValue == null && filters.eValue == null ? null : { kValue: filters.kValue, eValue: filters.eValue },
+		[filters.kValue, filters.eValue],
+	);
+	const mCounts = useMemo(
+		() =>
+			atK
+				? countFacet(scopedFacetTilings, { ...unscoped, mValue: undefined, partitionKey: undefined }, (t) => t.m)
+				: new Map<number, number>(),
+		[atK, scopedFacetTilings, unscoped],
+	);
+	const tCounts = useMemo(
+		() =>
+			atK || axis === "face"
+				? countFacet(scopedFacetTilings, { ...unscoped, tValue: undefined }, (t) => t.faceOrbits)
+				: new Map<number, number>(),
+		[atK, axis, scopedFacetTilings, unscoped],
+	);
+	const mTotals = useMemo(
+		() => (atK ? countFacet(scopedFacetTilings, atK, (t) => t.m) : new Map<number, number>()),
+		[scopedFacetTilings, atK],
+	);
+	const tTotals = useMemo(
+		() =>
+			axis === "face" || atK
+				? countFacet(scopedFacetTilings, atK ?? {}, (t) => t.faceOrbits)
+				: new Map<number, number>(),
+		[scopedFacetTilings, atK, axis],
+	);
+	const [kPending, ePending] = useMemo(() => {
+		if (filters.board || filters.polySet || filters.classification || filters.colorsCount || filters.colorsGrid)
+			return [null, null];
+		const [byK, byE] = [new Map<number, number>(), new Map<number, number>()];
+		for (const t of pending ?? []) {
+			if (filters.tileClass && t.cls !== filters.tileClass) continue;
+			if (filters.sub != null && t.sub !== filters.sub) continue;
+			if (filters.family && (familyOfSub(t.sub) ?? "_spine") !== filters.family) continue;
+			byK.set(t.k, (byK.get(t.k) ?? 0) + t.count);
+			for (const [e, c] of Object.entries(t.edgeOrbits ?? {})) byE.set(+e, (byE.get(+e) ?? 0) + c);
+		}
+		return [byK, byE];
+	}, [
+		pending,
+		filters.board,
+		filters.polySet,
+		filters.classification,
+		filters.colorsCount,
+		filters.colorsGrid,
+		filters.tileClass,
+		filters.sub,
+		filters.family,
+	]);
+	// whether a filter other than the chart's own (and those that hang off it) narrows the tilings
+	const narrowedBut = (...own: string[]) => activeChips.some((c) => !own.includes(c.key));
+	const countColumns = (
+		values: readonly number[],
+		name: string,
+		counts: Map<number, number>,
+		totals: Map<number, number>,
+		narrowed: boolean,
+		later?: Map<number, number> | null,
+		partial?: (x: number) => boolean,
+	): Column[] =>
+		values.map((x) => {
+			const lazy = later?.get(x) ?? 0;
+			const loaded = totals.get(x) ?? 0;
+			const all = loaded + lazy;
+			const has = counts.get(x) ?? 0;
+			const many = (v: number) => `${v.toLocaleString("en-US")} tiling${v === 1 ? "" : "s"}`;
+			// under another filter, a value none of whose tilings are in memory has no count yet: only its ghost
+			const unknown = !all || (narrowed && !loaded);
+			const what = !all
+				? "none in memory yet"
+				: narrowed && !loaded
+					? `${many(all)}, not loaded yet: how many pass the other filters shows once they load`
+					: narrowed
+						? `${has.toLocaleString("en-US")} of ${many(loaded)} in memory pass the other filters${lazy ? `; ${lazy.toLocaleString("en-US")} more not loaded yet` : ""}`
+						: `${many(all)}${lazy ? (loaded ? `, ${lazy.toLocaleString("en-US")} of them not loaded yet` : ", not loaded yet") : ""}`;
+			return {
+				x,
+				count: unknown ? undefined : narrowed ? has : all,
+				behind: narrowed && all ? all : undefined,
+				part: (narrowed && lazy > 0) || !!partial?.(x),
+				tip: `${name} = ${x}: ${what}${partial?.(x) ? ". Not a complete list here" : ""}`,
+			};
+		});
+	const kNarrowed = narrowedBut("k", "m", "partition");
+	const eNarrowed = narrowedBut("e", "k", "m", "partition");
+	const mNarrowed = narrowedBut("m", "partition", "k", "e");
+	const tNarrowed = narrowedBut("t", "k", "e");
+	const GHOST = "without the other filters";
+
 	// Decoration leads the sort so that Kind = "All" pages in the order the Kind wall reads: every tiling,
 	// then every edge pattern, then every coloring. Without it the shelf is (k, id)-major, and since the
 	// three segments share the k axis and "col-…" precedes "reg-…", the landing page of the whole library
 	// was colorings. Inside one segment nothing moves — k ascending, then id, as before.
 	const filtered = useMemo(() => {
-		if (!tilings) return [];
-		return tilings
-			.filter((t) => matchesReferenceFilters(t, filters))
-			.sort(
-				(a, b) =>
-					DECORATION_ORDER.indexOf(decorationOf(a)) - DECORATION_ORDER.indexOf(decorationOf(b)) ||
-					a.k - b.k ||
-					(a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
-			);
-	}, [tilings, filters]);
+		if (!scopedTilings) return [];
+		// On the edge-orbit axis the shelf reads in e order, k within it, and on the face-orbit axis in t order;
+		// tilings without the count go last.
+		// Keys worked out once per tiling: in the comparator they were classified again on every comparison,
+		// millions of times over a 170k-record cell.
+		const e = (t: ReferenceTiling) =>
+			axis === "vertex" ? 0 : ((axis === "edge" ? t.edgeOrbits : t.faceOrbits) ?? Number.MAX_SAFE_INTEGER);
+		return scopedTilings
+			.filter((t) => matchesReferenceFilters(t, unscoped))
+			.map((t) => ({ t, d: DECORATION_ORDER.indexOf(decorationOf(t)), e: e(t) }))
+			.sort((a, b) => a.d - b.d || a.e - b.e || a.t.k - b.t.k || (a.t.id < b.t.id ? -1 : a.t.id > b.t.id ? 1 : 0))
+			.map((x) => x.t);
+	}, [scopedTilings, unscoped, axis]);
 
 	// The card list, one group per card. Grouping collapses HYPERBOLIC entries sharing (k, vertex
 	// configuration) — the shelf where one figure carries up to hundreds of variants — into a single
@@ -2243,20 +2656,20 @@ export function ReferenceShelf({
 
 	// ── facet counts: the tilings matching every OTHER filter, per option of one facet ──
 	const vcCounts = useMemo(
-		() => countFacet(facetTilings, { ...filters, vcs: undefined, vcMode: undefined }, (t) => vcsOf(t)),
-		[facetTilings, filters],
+		() => countFacet(scopedFacetTilings, { ...unscoped, vcs: undefined, vcMode: undefined }, (t) => vcsOf(t)),
+		[scopedFacetTilings, unscoped],
 	);
 	const discovererCounts = useMemo(
-		() => countFacet(facetTilings, { ...filters, discoverers: undefined }, (t) => t.discoverer),
-		[facetTilings, filters],
+		() => countFacet(scopedFacetTilings, { ...unscoped, discoverers: undefined }, (t) => t.discoverer),
+		[scopedFacetTilings, unscoped],
 	);
 	const certCounts = useMemo(
-		() => countFacet(facetTilings, { ...filters, certifications: undefined }, (t) => t.certification),
-		[facetTilings, filters],
+		() => countFacet(scopedFacetTilings, { ...unscoped, certifications: undefined }, (t) => t.certification),
+		[scopedFacetTilings, unscoped],
 	);
 	const groupCounts = useMemo(
-		() => countFacet(facetTilings, { ...filters, wallpaperGroups: undefined }, (t) => t.wallpaperGroup),
-		[facetTilings, filters],
+		() => countFacet(scopedFacetTilings, { ...unscoped, wallpaperGroups: undefined }, (t) => t.wallpaperGroup),
+		[scopedFacetTilings, unscoped],
 	);
 	const showVcs = inTilings && vcCounts.size > 0;
 
@@ -2269,6 +2682,8 @@ export function ReferenceShelf({
 			"id",
 			"geometry",
 			"k",
+			"edge_orbits",
+			"tile_orbits",
 			"m",
 			"partition",
 			"vertex_configurations",
@@ -2278,12 +2693,16 @@ export function ReferenceShelf({
 			"edge_length",
 			"discoverer",
 			"certification",
+			// a classification's members carry the Delaney–Dress symbol the Atlas's search proved them with
+			...(filters.classification ? ["delaney_dress_symbol"] : []),
 		];
 		const rows = sorted.map((t) =>
 			[
 				t.id,
 				geometryOf(t),
 				t.k,
+				t.edgeOrbits,
+				t.faceOrbits,
 				t.m,
 				t.partition?.join(" "),
 				(vcsOf(t) ?? []).join(" ; "),
@@ -2293,6 +2712,7 @@ export function ReferenceShelf({
 				t.edge,
 				t.discoverer,
 				t.certification ?? (t.candidate ? "candidate" : ""),
+				...(filters.classification ? [classificationMember(filters.classification, t.id)?.dsym] : []),
 			]
 				.map(cell)
 				.join(","),
@@ -2329,9 +2749,9 @@ export function ReferenceShelf({
 			<main ref={mainRef} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
 				<div className="mb-4 flex flex-col gap-3">
 					<div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-2 max-md:gap-y-3">
-						<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
+						<h1 className="flex items-baseline gap-2 text-heading font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
 							{title}
-							<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
+							<span className="font-mono text-small font-normal tracking-normal text-fg-muted tabular-nums">
 								<AnimatedNumber value={filtered.length} /> {notLoaded ? "tilings in memory" : "tilings"}
 								{groupVariants && geometry === GEOMETRIES.HYPERBOLIC && view === "grid"
 									? ` · ${displayGroups.length.toLocaleString("en-US")} families`
@@ -2340,15 +2760,31 @@ export function ReferenceShelf({
 						</h1>
 						{countNote}
 						{loadingShards.size > 0 ? (
-							<span className="flex items-center gap-1.5 text-xs text-fg-muted">
-								<Loader2 size={12} className="animate-spin text-fg-muted" />
+							<span className="flex items-center gap-1.5 text-small text-fg-muted">
+								<Spinner size={12} />
 								loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
 							</span>
 						) : null}
+						{splitK != null ? (
+							<Button
+								variant="secondary"
+								size="sm"
+								icon={Download}
+								onClick={() => setAskedShards((s) => new Set(s).add(splitK))}
+								label={`Load k = ${splitK}${splitCount ? `: ${splitCount.toLocaleString("en-US")} tilings` : ""}`}
+							/>
+						) : null}
 						{shardErrors.size > 0 ? (
-							<span className="text-xs text-danger">
+							<span className="text-small text-danger">
 								failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
 							</span>
+						) : null}
+						{listError && filters.classification ? (
+							<span className="text-small text-danger">failed to load the {filters.classification} list</span>
+						) : null}
+						{/* A classification's definition, on a line of its own between the title and the controls. */}
+						{filters.classification ? (
+							<ClassificationDefinition slug={filters.classification} className="my-1 basis-full" />
 						) : null}
 
 						<div className="ml-auto flex items-center gap-2 max-md:ml-0 max-md:w-full max-md:flex-wrap">
@@ -2370,33 +2806,31 @@ export function ReferenceShelf({
 										options={COLUMN_PRESETS.map((n) => ({ value: n, label: n, title: `${n} columns` }))}
 										selected={gridColumns}
 										onChange={setGridColumns}
-										classes="w-28 tabular-nums"
+										className="w-28 tabular-nums"
 									/>
 								</div>
 							) : null}
 							{/* Group-variants toggle — hyperbolic grid only, where one vertex configuration carries up to
 							    hundreds of tilings; the card then pages through them in place. The table lists each. */}
 							{geometry === GEOMETRIES.HYPERBOLIC && view === "grid" ? (
-								<label className="flex items-center gap-2 text-xs text-fg-muted">
-									Group variants
-									<Switch
-										size="sm"
-										checked={groupVariants}
-										onCheckedChange={setGroupVariants}
-										aria-label="Group tilings sharing a vertex configuration"
-									/>
-								</label>
+								<Checkbox
+									label="Group variants"
+									checked={groupVariants}
+									onCheckedChange={setGroupVariants}
+									hint={<InfoDot side="bottom">Group tilings sharing a vertex configuration.</InfoDot>}
+								/>
 							) : null}
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={copyLink}
-								title="Copy a link to this exact view"
-								icon={copied ? Check : Link2}
-								aria-label={copied ? "Copied" : "Copy link"}
-								classes="max-md:min-w-11"
-								label={<span className="max-xl:sr-only">{copied ? "Copied" : "Copy link"}</span>}
-							/>
+							<Tooltip label="Copy a link to this exact view">
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={copyLink}
+									icon={copied ? Check : Link2}
+									aria-label={copied ? "Copied" : "Copy link"}
+									className="max-md:min-w-11"
+									label={<span className="max-xl:sr-only">{copied ? "Copied" : "Copy link"}</span>}
+								/>
+							</Tooltip>
 							<ExportButton onExport={exportCsv} disabled={!sorted.length} />
 						</div>
 					</div>
@@ -2406,38 +2840,33 @@ export function ReferenceShelf({
 				{error ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center">
 						<p className="font-medium text-danger">Could not load the tiling library</p>
-						<p className="mt-1 font-mono text-sm text-fg-disabled">{error}</p>
+						<p className="mt-1 font-mono text-body text-fg-muted">{error}</p>
 					</div>
 				) : tilings === null ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center text-fg-muted">
-						<Loader2 size={28} className="mb-3 animate-spin text-fg-muted" />
-						<p className="text-sm">Loading tiling library…</p>
+						<Spinner size={28} className="mb-3" />
+						<p className="text-body">Loading tiling library…</p>
 					</div>
 				) : filtered.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center">
-						<Library size={40} className="mb-4 text-fg-disabled" />
+						<Library className="mb-4 size-10 text-fg-disabled" />
 						<p className="font-medium text-fg-muted">No tilings match the current filters.</p>
 						{relaxations.length ? (
 							<div className="mt-4 flex flex-col items-center gap-1.5">
-								<p className="text-xs text-fg-muted">Nearest results:</p>
+								<p className="text-small text-fg-muted">Nearest results:</p>
 								{relaxations.map(({ chip, count }) => (
-									<button
-										key={chip.key}
-										type="button"
-										onClick={chip.clear}
-										className="flex cursor-pointer items-center gap-2 rounded-full bg-surface-sunken px-3 py-1.5 text-[13px] text-fg ring-1 ring-line-subtle transition-colors hover:bg-surface-overlay max-md:min-h-11"
-									>
+									<Button key={chip.key} variant="secondary" size="sm" onClick={chip.clear}>
 										{chip.key === "vc-contains" ? null : <span className="text-fg-muted">without</span>}
 										{chip.label}
-										<span className="font-mono text-xs text-fg-muted tabular-nums">
+										<span className="font-mono text-small text-fg-muted tabular-nums">
 											→ {count.toLocaleString("en-US")} {count === 1 ? "tiling" : "tilings"}
 										</span>
-									</button>
+									</Button>
 								))}
 							</div>
 						) : null}
 						{activeFilterCount > 0 ? (
-							<button onClick={clearFilters} className="mt-3 text-sm text-accent hover:underline max-md:min-h-11">
+							<button type="button" onClick={clearFilters} className="ta-link mt-3 text-body max-md:min-h-11">
 								Clear all filters
 							</button>
 						) : null}
@@ -2465,14 +2894,18 @@ export function ReferenceShelf({
 							))}
 						</div>
 						<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
-							<div role="group" aria-label="Items per page" className="flex items-center gap-2 text-xs text-fg-muted">
+							<div
+								role="group"
+								aria-label="Items per page"
+								className="flex items-center gap-2 text-small text-fg-muted"
+							>
 								Per page
 								<OptionWall
 									columns={PAGE_SIZE_OPTIONS.length}
 									options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
 									selected={pageSize}
 									onChange={setPageSize}
-									classes="w-36 tabular-nums"
+									className="w-36 tabular-nums"
 								/>
 							</div>
 							<div className="min-w-0 flex-1">
@@ -2501,7 +2934,7 @@ export function ReferenceShelf({
 						) : null}
 						<Button
 							variant="primary"
-							classes="flex-1"
+							className="flex-1"
 							onClick={showResults}
 							label={
 								tilings === null
@@ -2512,42 +2945,30 @@ export function ReferenceShelf({
 					</div>
 				}
 			>
-				<div className="flex flex-col gap-px pb-12 text-sm">
+				<div className="flex flex-col gap-px pb-12 text-body">
 					{/* On a phone the sheet's own title says "Filters" and its footer carries Clear. */}
 					<div className="flex h-11 items-center justify-between px-3.5 max-md:hidden">
-						<span className="text-[13px] font-semibold text-fg">Filters</span>
+						<span className="text-ui font-semibold text-fg">Filters</span>
 						{activeFilterCount > 0 ? (
-							<button
+							<Button
+								variant="ghost"
+								size="sm"
+								icon={X}
+								label={`Clear (${activeFilterCount})`}
 								onClick={clearFilters}
-								className="flex cursor-pointer items-center gap-1 text-xs text-fg-muted transition-colors hover:text-danger"
-							>
-								<X size={11} /> Clear ({activeFilterCount})
-							</button>
+							/>
 						) : null}
 					</div>
-					<div className="relative mx-3.5 mb-3 max-md:mt-3">
-						<Search
-							size={14}
-							className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-fg-muted"
-						/>
-						<input
-							type="text"
-							value={filters.query ?? ""}
-							onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-							placeholder="Search id or family…"
+					<div className="mx-3.5 mb-3 max-md:mt-3">
+						<SearchInput
+							size="sm"
+							label={null}
 							aria-label="Search id or family"
-							className="h-8 w-full rounded-control border border-line bg-surface-raised pr-8 pl-8 text-[13px] text-fg shadow-sm transition-[border-color,box-shadow] placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 max-md:h-11"
+							placeholder="Search id or family…"
+							raw
+							value={filters.query ?? ""}
+							onChange={(q) => setFilters((f) => ({ ...f, query: q || undefined }))}
 						/>
-						{filters.query ? (
-							<button
-								type="button"
-								onClick={() => setFilters({ ...filters, query: undefined })}
-								aria-label="Clear search"
-								className="absolute top-1/2 right-1 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-fg-muted hover:bg-surface-overlay hover:text-fg max-md:size-10"
-							>
-								<X size={13} />
-							</button>
-						) : null}
 					</div>
 
 					{/* Geometry, kind and tile class are the browse sidebar now: its chips and its tree. */}
@@ -2807,23 +3228,92 @@ export function ReferenceShelf({
 						</FilterGroup>
 					) : null}
 
-					<FilterGroup title={kGroupTitle} summary={filters.kValue ?? null}>
-						<OptionWall
-							columns={6}
-							fill={false}
-							options={[{ value: ALL_NUM, label: "All" }, ...kChips.map((k) => ({ value: k, label: k }))]}
-							selected={filters.kValue ?? ALL_NUM}
-							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
-						/>
+					<FilterGroup
+						title={axis === "edge" ? "Edge orbits (e)" : axis === "face" ? "Face orbits (t)" : kGroupTitle}
+						summary={
+							axis === "edge"
+								? (filters.eValue ?? null)
+								: axis === "face"
+									? (filters.tValue ?? null)
+									: (filters.kValue ?? null)
+						}
+					>
+						{/* Which orbit count this row picks by. Offered where tilings carry edge orbits, and face orbits
+						    inside a classification. */}
+						{edgeAxisAvailable || faceAxisAvailable ? (
+							<OptionWall
+								columns={edgeAxisAvailable && faceAxisAvailable ? 3 : 2}
+								options={[
+									{ value: "vertex" as OrbitAxis, label: "Vertex orbits" },
+									...(edgeAxisAvailable ? [{ value: "edge" as OrbitAxis, label: "Edge orbits" }] : []),
+									...(faceAxisAvailable ? [{ value: "face" as OrbitAxis, label: "Face orbits" }] : []),
+								]}
+								selected={axis}
+								onChange={switchOrbitAxis}
+							/>
+						) : null}
+						{axis === "face" ? (
+							<ColumnPicker
+								columns={countColumns(tChips, "t", tCounts, tTotals, tNarrowed)}
+								value={filters.tValue ?? "all"}
+								onChange={(v) => setTValue(v === "all" ? undefined : v)}
+								axis="t"
+								ghost={tNarrowed ? GHOST : undefined}
+							/>
+						) : axis === "edge" ? (
+							<ColumnPicker
+								columns={countColumns(
+									eChips,
+									"e",
+									eCounts,
+									eTotals,
+									eNarrowed,
+									ePending,
+									(e) => edgeComplete != null && e > edgeComplete,
+								)}
+								value={filters.eValue ?? "all"}
+								onChange={(v) => setEValue(v === "all" ? undefined : v)}
+								axis="e"
+								ghost={eNarrowed ? GHOST : undefined}
+							/>
+						) : (
+							<ColumnPicker
+								columns={countColumns(
+									kChips,
+									"k",
+									kCounts,
+									kTotals,
+									kNarrowed,
+									isEuclidean ? kPending : undefined,
+									(k) => PARTIAL_K.includes(k),
+								)}
+								value={filters.kValue ?? "all"}
+								onChange={(v) => setKValue(v === "all" ? undefined : v)}
+								axis="k"
+								ghost={kNarrowed ? GHOST : undefined}
+							/>
+						)}
+						{axis === "face" ? (
+							<GroupNote>
+								A classification&apos;s list is complete, so it is whole at every number of face orbits.
+							</GroupNote>
+						) : null}
+						{axis === "edge" ? (
+							<GroupNote>
+								{edgeComplete != null ? `Complete up to e = ${edgeComplete}. ` : ""}A tiling with e edge orbits has at
+								most e + 1 vertex orbits (at most e with regular polygons), so past that the list holds only the tilings
+								within the k the shelf ships. Shards for k ≥ 8 load on demand.
+								{filters.tileClass && filters.tileClass !== TILE_CLASSES.STAR
+									? ""
+									: " Star families with a free angle have no e yet, so the star lists leave them out."}
+							</GroupNote>
+						) : null}
 						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
 						    the plane, and none in the other two segments, whose k isn't a vertex-orbit count. */}
-						{isEuclidean && inTilings ? (
-							<label className="flex h-7 cursor-pointer items-center justify-between text-xs text-fg-secondary max-md:h-11 max-md:text-sm">
-								Maximal (M = k)
-								<Switch size="sm" checked={!!filters.maximalOnly} onCheckedChange={toggleMaximal} />
-							</label>
+						{axis !== "vertex" ? null : isEuclidean && inTilings ? (
+							<Checkbox label="Maximal (M = k)" checked={!!filters.maximalOnly} onCheckedChange={toggleMaximal} />
 						) : null}
-						{showFreedrawKind ? (
+						{axis !== "vertex" ? null : showFreedrawKind ? (
 							<GroupNote>
 								Orbits of GRID POINTS under the pattern&apos;s own symmetry group — including points with no drawn edge.
 								Not vertex orbits of a tiling.
@@ -2831,16 +3321,22 @@ export function ReferenceShelf({
 						) : (tileClass === "convex" || tileClass === "scaled") && kChips.some((k) => k >= 3) ? (
 							<GroupNote>k ≥ 3 loads on demand.</GroupNote>
 						) : kChips.some((k) => k >= 8) ? (
-							<GroupNote>k ≥ 8 loads on demand.</GroupNote>
+							<GroupNote>
+								k ≥ 8 loads on demand.
+								{kChips.some((k) => PARTIAL_K.includes(k))
+									? ` Every k up to ${REGULAR_COMPLETE_K} is complete; above it a k holds only the tilings targeted searches found.`
+									: ""}
+							</GroupNote>
 						) : null}
 					</FilterGroup>
 					{showM ? (
 						<FilterGroup title="Distinct configs (M)" summary={filters.mValue ?? null} note="M ≤ k" defaultOpen={false}>
-							<OptionWall
-								columns={6}
-								options={[{ value: ALL_NUM, label: "All" }, ...mOptions.map((m) => ({ value: m, label: m }))]}
-								selected={filters.mValue ?? ALL_NUM}
-								onChange={(v) => setMValue(v === ALL_NUM ? undefined : v)}
+							<ColumnPicker
+								columns={countColumns(mOptions, "M", mCounts, mTotals, mNarrowed)}
+								value={filters.mValue ?? "all"}
+								onChange={(v) => setMValue(v === "all" ? undefined : v)}
+								axis="M"
+								ghost={mNarrowed ? GHOST : undefined}
 							/>
 							{partitionOptions.length > 0 ? (
 								<>
@@ -2856,6 +3352,17 @@ export function ReferenceShelf({
 									/>
 								</>
 							) : null}
+						</FilterGroup>
+					) : null}
+					{tOptions.length ? (
+						<FilterGroup title="Tile orbits (t)" summary={filters.tValue ?? null} note="t ≤ e + 1" defaultOpen={false}>
+							<ColumnPicker
+								columns={countColumns(tOptions, "t", tCounts, tTotals, tNarrowed)}
+								value={filters.tValue ?? "all"}
+								onChange={(v) => setTValue(v === "all" ? undefined : v)}
+								axis="t"
+								ghost={tNarrowed ? GHOST : undefined}
+							/>
 						</FilterGroup>
 					) : null}
 					{/* Marek Čtrnáct's five levels of increasing complexity, from his own classification of the
@@ -2876,14 +3383,14 @@ export function ReferenceShelf({
 									label: (
 										<span className="flex w-full items-baseline justify-between gap-2 px-1">
 											<span>{TILING_LEVEL_LABEL[l]}</span>
-											<span className="font-mono text-[10.5px] text-fg-muted tabular-nums">
+											<span className="font-mono text-micro text-fg-muted tabular-nums">
 												{(levelCounts.get(l) ?? 0).toLocaleString("en-US")}
 											</span>
 										</span>
 									),
 									tooltip: TILING_LEVEL_NOTE[l],
 									tooltipSide: "right" as const,
-									tooltipDelay: 0,
+									tooltipDelay: "instant",
 								}))}
 								selected={filters.levels ?? []}
 								onChange={toggleLevel}
@@ -2911,9 +3418,9 @@ export function ReferenceShelf({
 								<button
 									type="button"
 									onClick={() => setPolygonModalOpen(true)}
-									className="flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-control border border-line bg-surface-raised px-2.5 py-1.5 text-left text-[13px] text-fg shadow-sm transition-colors hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:min-h-11"
+									className="ta-field flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left text-ui text-fg hover:border-line-strong max-md:min-h-11"
 								>
-									<Shapes size={14} className="shrink-0 text-fg-muted" />
+									<Shapes className="size-icon-sm shrink-0 text-fg-muted" />
 									{filters.polygonNames?.length || filters.polygonExclude?.length ? (
 										<span className="min-w-0 flex-1 truncate">
 											{[
@@ -2928,18 +3435,19 @@ export function ReferenceShelf({
 									) : (
 										<span className="flex-1 text-fg-muted">Pick polygons…</span>
 									)}
-									<ChevronRight size={13} className="shrink-0 text-fg-muted" />
+									<ChevronRight className="size-icon-sm shrink-0 text-fg-muted" />
 								</button>
 								{filters.polygonNames?.length || filters.polygonExclude?.length ? (
-									<button
-										type="button"
-										onClick={clearPolygons}
-										aria-label="Clear polygon selection"
-										title="Clear polygon selection"
-										className="flex w-8 shrink-0 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg max-md:w-11"
-									>
-										<X size={14} />
-									</button>
+									<Tooltip label="Clear polygon selection">
+										<Button
+											variant="ghost"
+											size="icon"
+											icon={X}
+											onClick={clearPolygons}
+											aria-label="Clear polygon selection"
+											className="shrink-0"
+										/>
+									</Tooltip>
 								) : null}
 							</div>
 						</FilterGroup>
@@ -3109,7 +3617,7 @@ export function ReferenceShelf({
 											// Wikipedia Bravais-lattice diagram on hover/focus.
 											tooltip: <LatticeTooltip lattice={s} />,
 											tooltipSide: "right" as const,
-											tooltipDelay: 0,
+											tooltipDelay: "instant",
 										}))}
 										selected={selectedLattice ?? null}
 										onChange={selectShape}
@@ -3132,7 +3640,7 @@ export function ReferenceShelf({
 												// Wikipedia cell diagram(s) on hover/focus; opens into the main pane, not off-edge.
 												tooltip: <WallpaperGroupTooltip group={g} />,
 												tooltipSide: "right" as const,
-												tooltipDelay: 0,
+												tooltipDelay: "instant",
 											}))}
 										selected={filters.wallpaperGroups ?? []}
 										onChange={toggleGroup}

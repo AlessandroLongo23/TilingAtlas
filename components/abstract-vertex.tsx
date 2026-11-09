@@ -163,18 +163,16 @@ export function AbstractVertex({ word = "3.4.6.4" }: { word?: string }) {
 
 	if (!model) {
 		return (
-			<div className="not-prose rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-sm text-fg-muted">
-				{word} is not a configuration
-			</div>
+			<div className="ta-well not-prose p-4 text-center text-body text-fg-muted">{word} is not a configuration</div>
 		);
 	}
 
 	return (
 		<figure className="not-prose m-0 flex flex-col items-center gap-2">
-			<div ref={host} className="bg-surface-base relative aspect-square h-[46vh] rounded-2xl border border-line">
+			<div ref={host} className="ta-well relative aspect-square h-[46vh]">
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
-			<figcaption className="max-w-[36rem] text-center text-[clamp(0.6rem,0.85vh+0.2vw,0.86rem)] leading-snug text-fg-muted">
+			<figcaption className="max-w-[36rem] text-center text-[clamp(0.6rem,0.85vh+0.2vw,0.86rem)] leading-tight text-fg-muted">
 				<span className="font-mono text-fg-secondary">
 					{model.ns.join(".")}&nbsp;&nbsp;{model.units.join(" + ")} = {model.sum} = D
 				</span>

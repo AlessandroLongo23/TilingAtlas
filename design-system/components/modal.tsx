@@ -1,0 +1,120 @@
+"use client";
+
+import * as Dialog from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { cn } from "@/lib/utils/cn";
+import { useLayerEntry } from "@/lib/hooks/useModalLayer";
+import { SheetGrabBar, useSwipeDismiss } from "./bottom-sheet";
+
+type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
+
+const SIZE_CLASSES: Record<ModalSize, string> = {
+	sm: "max-w-md",
+	md: "max-w-xl",
+	lg: "max-w-4xl",
+	xl: "max-w-6xl",
+	full: "max-w-[95vw]",
+};
+
+interface ModalProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	title?: string;
+	/** Preset size. Ignored if `maxWidth` is provided. */
+	size?: ModalSize;
+	/** Escape hatch for a specific Tailwind `max-w-*` class. */
+	maxWidth?: string;
+	/** Accessible description, announced after the title. Rendered visually hidden. Radix warns in dev
+	 *  for any dialog without one; pass a sentence saying what the dialog is for. */
+	description?: string;
+	showHeader?: boolean;
+	header?: ReactNode;
+	/** Optional action bar under the body. On a phone the body scrolls and this stays pinned in view. */
+	footer?: ReactNode;
+	children: ReactNode;
+}
+
+export function Modal({
+	open: isOpen,
+	onOpenChange,
+	title = "",
+	size = "lg",
+	maxWidth,
+	description,
+	showHeader = true,
+	header,
+	footer,
+	children,
+}: ModalProps) {
+	const widthClass = maxWidth ?? SIZE_CLASSES[size];
+	// Phone: a sheet among the others, so Back closes it and a pull down on its header dismisses it.
+	// Radix keeps its own focus trap and Esc; the layer stack only has to know it is on top.
+	const contentRef = useRef<HTMLDivElement>(null);
+	const close = () => onOpenChange(false);
+	useLayerEntry(isOpen, close);
+	const swipe = useSwipeDismiss(contentRef, close);
+	// Where focus was when the modal opened, so closing can put it back. Radix returns focus to its own
+	// Dialog.Trigger, and this modal is opened from outside (a toolbar button, a store), so without this
+	// focus fell to <body>. A layout effect runs before Radix moves focus into the portal.
+	const opener = useRef<HTMLElement | null>(null);
+	useLayoutEffect(() => {
+		if (isOpen) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+	}, [isOpen]);
+	return (
+		<Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
+			<Dialog.Portal>
+				<Dialog.Overlay className="ta-overlay fixed inset-0 z-modal bg-scrim backdrop-blur-scrim" />
+				<Dialog.Content
+					ref={contentRef}
+					// a Dropdown inside opens its list here (dropdown.tsx): outside, this dialog lets no click through
+					data-modal=""
+					onCloseAutoFocus={(e) => {
+						const el = opener.current;
+						if (el?.isConnected && el !== document.body) {
+							e.preventDefault();
+							el.focus({ preventScroll: true });
+						}
+					}}
+					className={cn(
+						"fixed top-1/2 left-1/2 z-modal -translate-x-1/2 -translate-y-1/2",
+						"w-full rounded-overlay bg-surface-raised shadow-modal ring-1 ring-line-subtle",
+						widthClass,
+						// Enter and exit live in globals.css (.ta-dialog): a scale-and-fade on a desktop, a sheet
+						// on a phone. Radix holds the closing dialog until its animation ends.
+						"ta-dialog",
+						// Phone: a bottom sheet. Full width, square bottom corners on the screen edge, at most
+						// 92dvh tall with the body scrolling, clear of the home indicator.
+						"max-md:inset-x-0 max-md:top-auto max-md:bottom-0 max-md:translate-x-0 max-md:translate-y-0",
+						"max-md:flex max-md:max-h-[92dvh] max-md:max-w-none max-md:flex-col max-md:rounded-t-sheet max-md:rounded-b-none",
+						"max-md:pb-[env(safe-area-inset-bottom)]",
+					)}
+				>
+					{description ? <Dialog.Description className="sr-only">{description}</Dialog.Description> : null}
+					{showHeader ? (
+						<div
+							{...swipe}
+							className="flex items-center justify-between border-b border-line-subtle px-5 py-4 max-md:relative max-md:shrink-0 max-md:touch-none max-md:py-2 max-md:pr-2"
+						>
+							<SheetGrabBar />
+							<Dialog.Title className="text-title font-semibold tracking-tight text-fg">{title}</Dialog.Title>
+							<div className="flex items-center gap-2">
+								{header}
+								<Dialog.Close
+									className="rounded-control p-1 text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg max-md:flex max-md:size-control-touch max-md:items-center max-md:justify-center"
+									aria-label="Close modal"
+								>
+									<X className="size-icon-lg" />
+								</Dialog.Close>
+							</div>
+						</div>
+					) : null}
+					<div className="max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-contain">
+						{children}
+					</div>
+					{footer ? <div className="border-t border-line-subtle px-5 py-3 max-md:shrink-0">{footer}</div> : null}
+				</Dialog.Content>
+			</Dialog.Portal>
+		</Dialog.Root>
+	);
+}

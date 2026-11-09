@@ -72,6 +72,8 @@ export async function uploadTilingScreenshot(
 	try {
 		await ensureFolderExists(sanitizedGroupId);
 
+		// The legacy tables load here, on the first upload, and not on every page of the app.
+		await tilingStore.initialize();
 		const dbTiling = tilingStore.getTilingByRulestring(dbRulestring);
 		const currentImageUrl = isDual ? dbTiling?.dual_image_url : dbTiling?.image_url;
 

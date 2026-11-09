@@ -1,0 +1,159 @@
+/* SEMANTIC TOKENS (themed): the colour and elevation roles, light in :root and dark under .dark. Both blocks
+   declare every role, so adding one is two lines, one per block. Every value is a core colour or a
+   translucent tint of one, written `oklch(from var(--palette-…) l c h / a)`; no literal colour is written here.
+   The colours that stay the same in both themes (the scrim, the hazard tape) are in semantic.css. */
+
+:root {
+	/* ─── Surfaces ───
+	   The page sits a step below white; panels and chrome ARE white; the one recessed surface is the
+	   segmented-control track (sunken). */
+	--color-surface-base: var(--palette-neutral-50);
+	--color-surface-raised: var(--palette-white);
+	--color-surface-chrome: var(--palette-white);
+	--color-surface-overlay: var(--palette-neutral-100);
+	--color-surface-sunken: var(--palette-neutral-150);
+	/* The selected option of a segmented control and its ring: the one lifted surface. */
+	--color-tab-on: var(--palette-white);
+	--color-tab-ring: var(--palette-neutral-200);
+
+	/* ─── Text ─── */
+	--color-text-primary: var(--palette-neutral-900);
+	--color-text-secondary: var(--palette-neutral-700);
+	--color-text-muted: var(--palette-neutral-550);
+	--color-text-disabled: var(--palette-neutral-400);
+	--color-text-inverse: var(--palette-neutral-50);
+	--color-text-accent: var(--palette-ultramarine-500);
+
+	/* ─── Borders ─── */
+	--color-border-subtle: var(--palette-neutral-200);
+	--color-border-default: var(--palette-neutral-300);
+	--color-border-strong: var(--palette-neutral-400);
+	--color-border-focus: var(--palette-neutral-900);
+
+	/* ─── Accent: actions and links. Selection inside the chrome (.ta-tab) stays ink and paper. ─── */
+	--color-accent: var(--palette-ultramarine-500);
+	--color-accent-hover: var(--palette-ultramarine-600);
+	--color-accent-active: var(--palette-ultramarine-700);
+	--color-accent-subtle: oklch(from var(--palette-ultramarine-500) l c h / 0.1);
+
+	/* ─── Status ───
+	   Danger keeps its red. Success, warning and info are ink at different strengths: a hue on every
+	   status would compete with the tilings, which carry all the colour on this site. */
+	--color-danger: var(--palette-red-600);
+	--color-danger-subtle: oklch(from var(--palette-red-500) l c h / 0.14);
+	--color-success: var(--palette-neutral-900);
+	--color-success-subtle: oklch(from var(--palette-neutral-900) l c h / 0.08);
+	--color-warning: var(--palette-neutral-700);
+	--color-warning-subtle: oklch(from var(--palette-neutral-900) l c h / 0.06);
+	--color-info: var(--palette-neutral-700);
+	--color-info-subtle: oklch(from var(--palette-neutral-900) l c h / 0.06);
+
+	/* Signals: the two hues a small indicator may carry (a run's dot, a timer running out, a pass or fail
+	   mark), where the hue IS the information. Never a text role or a fill: statuses above stay ink. */
+	--color-signal-positive: var(--palette-green-500);
+	--color-signal-attention: var(--palette-amber-500);
+
+	/* ─── Elevation: by what is lifted ───
+	   raised   a field or a box resting on the page          float    a panel floating over a canvas
+	   handle   a thumb or a selected pill on its track       overlay  a popover or a menu
+	   lift     a card picked up under the pointer            modal    a dialog
+	                                                          sheet    a phone's sheet, casting upward */
+	--shadow-raised: 0 1px 2px oklch(from var(--palette-neutral-900) l c h / 0.06);
+	--shadow-handle: 0 1px 3px oklch(from var(--palette-neutral-900) l c h / 0.16);
+	--shadow-lift: 0 10px 24px -12px oklch(from var(--palette-neutral-900) l c h / 0.25);
+	--shadow-float:
+		0 0 0 1px var(--color-border-subtle),
+		0 4px 16px oklch(from var(--palette-neutral-900) l c h / 0.1);
+	--shadow-overlay:
+		0 8px 24px oklch(from var(--palette-neutral-900) l c h / 0.1),
+		0 2px 4px oklch(from var(--palette-neutral-900) l c h / 0.05);
+	--shadow-modal:
+		0 20px 48px oklch(from var(--palette-neutral-900) l c h / 0.12),
+		0 4px 8px oklch(from var(--palette-neutral-900) l c h / 0.06);
+	--shadow-sheet: 0 -6px 24px oklch(from var(--palette-neutral-900) l c h / 0.14);
+
+	/* ─── Component tokens: the automata canvas ───
+	   WebGL cannot parse oklch(), so these are plain RGB triples in 0 to 1, read into a uniform
+	   (components/automata/automata-canvas.tsx). A live cell is ink on paper. */
+	--automata-live: 0.07 0.07 0.09;
+	--automata-dead: 0.97 0.97 0.97;
+	--automata-decay: 0.62 0.62 0.66;
+	--automata-guide: 0.45 0.45 0.5;
+}
+
+.dark {
+	/* Panels one step up from the page; the track one step ABOVE the panel (a darker track would equal
+	   the page and vanish wherever it sits on it), and the selected pill one step above the track. */
+	--color-surface-base: var(--palette-neutral-925);
+	--color-surface-raised: var(--palette-neutral-850);
+	--color-surface-chrome: var(--palette-neutral-875);
+	--color-surface-overlay: var(--palette-neutral-800);
+	--color-surface-sunken: var(--palette-neutral-800);
+	--color-tab-on: var(--palette-neutral-700);
+	--color-tab-ring: oklch(from var(--palette-white) l c h / 0.1);
+
+	--color-text-primary: var(--palette-neutral-50);
+	--color-text-secondary: var(--palette-neutral-300);
+	--color-text-muted: var(--palette-neutral-400);
+	--color-text-disabled: var(--palette-neutral-600);
+	--color-text-inverse: var(--palette-neutral-950);
+	/* Accent text sits on the dark page, so it is lighter than the fill: 5.1:1 or more on every dark surface,
+	   the accent's own tint included. */
+	--color-text-accent: var(--palette-ultramarine-300);
+
+	--color-border-subtle: oklch(from var(--palette-white) l c h / 0.07);
+	--color-border-default: oklch(from var(--palette-white) l c h / 0.12);
+	--color-border-strong: oklch(from var(--palette-white) l c h / 0.2);
+	--color-border-focus: var(--palette-neutral-50);
+
+	/* The fill: white on it is 5.3:1, and it darkens under the pointer so the white stays readable. Accent
+	   TEXT is the lighter --color-text-accent above. */
+	--color-accent: var(--palette-ultramarine-450);
+	--color-accent-hover: var(--palette-ultramarine-500);
+	--color-accent-active: var(--palette-ultramarine-600);
+	--color-accent-subtle: oklch(from var(--palette-ultramarine-350) l c h / 0.18);
+
+	--color-danger: var(--palette-red-400);
+	--color-danger-subtle: oklch(from var(--palette-red-400) l c h / 0.16);
+	--color-success: var(--palette-neutral-50);
+	--color-success-subtle: oklch(from var(--palette-white) l c h / 0.1);
+	--color-warning: var(--palette-neutral-200);
+	--color-warning-subtle: oklch(from var(--palette-white) l c h / 0.08);
+	--color-info: var(--palette-neutral-200);
+	--color-info-subtle: oklch(from var(--palette-white) l c h / 0.08);
+
+	--color-signal-positive: var(--palette-green-400);
+	--color-signal-attention: var(--palette-amber-400);
+
+	/* Darker and more pronounced: a light shadow vanishes on a near-black surface. */
+	--shadow-raised: 0 1px 2px oklch(from var(--palette-black) l c h / 0.35);
+	--shadow-handle: 0 1px 3px oklch(from var(--palette-black) l c h / 0.4);
+	--shadow-lift: 0 10px 24px -12px oklch(from var(--palette-black) l c h / 0.6);
+	--shadow-float:
+		0 0 0 1px var(--color-border-subtle),
+		0 4px 16px oklch(from var(--palette-black) l c h / 0.4);
+	--shadow-overlay:
+		0 8px 24px oklch(from var(--palette-black) l c h / 0.5),
+		0 2px 4px oklch(from var(--palette-black) l c h / 0.3);
+	--shadow-modal:
+		0 20px 48px oklch(from var(--palette-black) l c h / 0.55),
+		0 4px 8px oklch(from var(--palette-black) l c h / 0.35);
+	--shadow-sheet: 0 -6px 24px oklch(from var(--palette-black) l c h / 0.5);
+
+	--automata-live: 0.96 0.96 0.97;
+	--automata-dead: 0.09 0.09 0.11;
+	--automata-decay: 0.4 0.4 0.46;
+	--automata-guide: 0.62 0.62 0.68;
+}
+
+/* A phone: disabled text shares muted's step, 4.5:1 or more on every surface it is shown on, the sunken
+   track included (light 5.1:1, dark 4.5:1). The desktop keeps the lighter disabled ink for disabled controls;
+   readable text never uses it (text-fg-muted). */
+@media (width < theme(--breakpoint-md)) {
+	:root {
+		--color-text-disabled: var(--palette-neutral-550);
+	}
+	.dark {
+		--color-text-disabled: var(--palette-neutral-450);
+	}
+}

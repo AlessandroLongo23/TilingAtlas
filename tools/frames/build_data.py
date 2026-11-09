@@ -196,8 +196,8 @@ def build(meta_path):
     for i, (shape, regions) in enumerate(shapes):
         for k in range(0, len(regions), FRAME_SHARD):
             chunk = [{key: f[key] for key in ('n', 'h', 'p', 'm', 'c', 't') if key in f} for f in regions[k:k + FRAME_SHARD]]
-            write_json(OUT / f'{sid}-{i}-{k // FRAME_SHARD}.json.gz', {'frames': chunk}, separators=(',', ':'))
-    write_json(OUT / f'{sid}.json.gz', {'grid': meta['grid'], 'period': period, 'shapes': [s for s, _ in shapes]}, separators=(',', ':'))
+            write_json(OUT / f'{sid}-{i}-{k // FRAME_SHARD}.json.br', {'frames': chunk}, separators=(',', ':'))
+    write_json(OUT / f'{sid}.json.br', {'grid': meta['grid'], 'period': period, 'shapes': [s for s, _ in shapes]}, separators=(',', ':'))
     by_n = [sum(s['byN'][n] for s, _ in shapes) for n in range(N + 1)]
     by_m = [sum(s['byM'][n][m] for s, _ in shapes for n in range(N + 1)) for m in range(8)]
     mirror, rotated, either = by_m[5] + by_m[7], by_m[6] + by_m[7], sum(by_m[4:])
@@ -217,7 +217,7 @@ def main():
     metas = sorted(SRC.glob('*.json'), key=lambda p: (p.stem.rstrip('0123456789'), int(p.stem[len(p.stem.rstrip('0123456789')):])))
     with multiprocessing.Pool(6) as pool:
         sets = pool.map(build, metas, chunksize=1)
-    write_json(OUT / 'index.json.gz', {'sets': sets}, separators=(',', ':'))
+    write_json(OUT / 'index.json.br', {'sets': sets}, separators=(',', ':'))
 
 
 if __name__ == '__main__':

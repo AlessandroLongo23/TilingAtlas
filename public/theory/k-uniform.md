@@ -1,6 +1,6 @@
 # k-uniform tilings
 
-The eleven uniform tilings have one kind of vertex: a symmetry of the tiling carries any vertex onto any other. Allow two kinds, or three, or k, and the count grows quickly: 20 tilings with two kinds, 61 with three, 673 with six, and 103,082 with thirteen. This page explains what "kind of vertex" means here, why only fifteen arrangements of polygons can appear at a vertex at all, and who counted the tilings at each k.
+The eleven uniform tilings have one kind of vertex: a symmetry of the tiling carries any vertex onto any other. Allow two kinds, or three, or k, and the count grows quickly: 20 tilings with two kinds, 61 with three, 673 with six, 103,082 with thirteen and 933,637 with sixteen. This page explains what "kind of vertex" means here, why only fifteen arrangements of polygons can appear at a vertex at all, and who counted the tilings at each k.
 
 ## The rules: regular polygons, edge to edge
 
@@ -81,13 +81,16 @@ The number of k-uniform tilings is OEIS sequence A068599. Its known terms, and t
 | 11 | 24,459 | Marek Čtrnáct (2021) |
 | 12 | 49,794 | Marek Čtrnáct (2021) |
 | 13 | 103,082 | Marek Čtrnáct (2021) |
+| 14 | 212,631 | The Atlas, with Čtrnáct's algorithm (2026) |
+| 15 | 445,289 | The Atlas, with Čtrnáct's algorithm (2026) |
+| 16 | 933,637 | The Atlas, with Čtrnáct's algorithm (2026) |
 
-Kepler drew all eleven uniform tilings in the second book of *Harmonices Mundi*. Krötenheerdt's classification gave the twenty 2-uniform tilings. Darrah Chavey found the 61 three-uniform tilings in his 1984 doctoral thesis at the University of Wisconsin and published a catalogue of tilings by regular polygons in 1989. From k = 4 the counts come from computers: Brian Galebach's search produced k = 2 to 6 in 2002, k = 7 in 2003 and k = 8 in 2020, and posted every tiling as a drawing. Marek Čtrnáct reached k = 13 in 2021, and his count at k = 8 agreed with Galebach's 2,850; the k = 13 term was announced on the Tiling List on 21 December 2021. In 2021 José Ezequiel Soto Sánchez, Tim Weyrich, Asla Medeiros e Sá and Luiz Henrique de Figueiredo turned Galebach's drawings, which had no coordinates, into exact integer descriptions and confirmed the number of orbits of each tiling.
+Kepler drew all eleven uniform tilings in the second book of *Harmonices Mundi*. Krötenheerdt's classification gave the twenty 2-uniform tilings. Darrah Chavey found the 61 three-uniform tilings in his 1984 doctoral thesis at the University of Wisconsin and published a catalogue of tilings by regular polygons in 1989. From k = 4 the counts come from computers: Brian Galebach's search produced k = 2 to 6 in 2002, k = 7 in 2003 and k = 8 in 2020, and posted every tiling as a drawing. Marek Čtrnáct reached k = 13 in 2021, and his count at k = 8 agreed with Galebach's 2,850; the k = 13 term was announced on the Tiling List on 21 December 2021, and OEIS stops there. The Atlas ran Čtrnáct's algorithm on to k = 16 in 2026; no other count of those three terms has been published to compare with. In 2021 José Ezequiel Soto Sánchez, Tim Weyrich, Asla Medeiros e Sá and Luiz Henrique de Figueiredo turned Galebach's drawings, which had no coordinates, into exact integer descriptions and confirmed the number of orbits of each tiling.
 
-<ku-counts set="regular" caption="Tilings by regular polygons with k vertex orbits, on a logarithmic scale. Click a bar for its count and its source; outlined bars are published terms the catalogue does not hold yet. By vertex types splits each bar, in proportion, by the number m of distinct configurations, lighter for larger m. Up to k = 7 the lightest band is m = k, Krötenheerdt's case; after that it is empty. No tiling with two or more orbits has a single configuration.">
+<ku-counts set="regular" caption="Tilings by regular polygons with k vertex orbits, on a logarithmic scale. Click a bar for its count and its source. By vertex types splits each bar, in proportion, by the number m of distinct configurations, lighter for larger m. Up to k = 7 the lightest band is m = k, Krötenheerdt's case; from k = 8 on no tiling has k configurations. No tiling with two or more orbits has a single configuration.">
 </ku-counts>
 
-The [catalogue](/catalogue) holds every term up to k = 10, 23,396 tilings, computed with Marek Čtrnáct's engine, and its count agrees with the published one at every k. From k = 4 on the counts are the output of exhaustive computer searches, and what supports them is that independent programs, written years apart, agree. The vertex-type split shows a pattern the totals hide: from k = 8 on no tiling uses all of its orbits on different configurations, and the most configurations any tiling with up to ten orbits combines is eight.
+The [catalogue](/catalogue) holds every term up to k = 16, 1,792,288 tilings, computed with Marek Čtrnáct's engine; its count agrees with the published one at every k to 13, and k = 14 to 16 have no published count to check against. From k = 4 on the counts are the output of exhaustive computer searches, and what supports them is that independent programs, written years apart, agree. The vertex-type split shows a pattern the totals hide: from k = 8 on no tiling uses all of its orbits on different configurations, and the most configurations any tiling with up to sixteen orbits combines is eleven, reached by one tiling at k = 15 and one at k = 16.
 
 ## Credits
 

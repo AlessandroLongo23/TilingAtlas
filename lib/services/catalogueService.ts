@@ -131,6 +131,9 @@ export interface CatalogueTiling {
 	// NOTES §9.4). Absent for star tilings and for every hyperbolic/spherical entry.
 	wallpaperGroup?: WallpaperGroup;
 	latticeShape?: LatticeShape;
+	// Edge and tile orbits carried through from ReferenceTiling; absent when not computed.
+	edgeOrbits?: number;
+	faceOrbits?: number;
 }
 
 // Pure transform: collapse found_tilings (a tiling is rediscovered once per run that finds it) into

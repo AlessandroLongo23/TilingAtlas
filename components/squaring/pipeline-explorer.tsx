@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ChevronRight, List } from "lucide-react";
+import { ArrowLeft, List } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { Notice } from "@/design-system/components/notice";
+import { FoldChevron } from "@/design-system/components/disclosure";
+import { Reveal } from "@/design-system/components/reveal";
 import { buildPipelineRecord, squaringFingerprint } from "@/lib/squaring/pipeline";
 import {
 	PIPELINE_CATEGORIES,
@@ -238,12 +241,13 @@ export function PipelineExplorer({
 					<div className="shrink-0 border-b border-line-subtle px-3 pb-2">
 						<Link
 							href="/catalogue/about/squared-rectangles"
-							className="flex items-center gap-1 py-2 text-[11px] text-fg-muted transition-colors hover:text-fg max-md:min-h-11 max-md:text-sm"
+							className="flex items-center gap-1 py-2 text-caption text-fg-muted transition-colors hover:text-fg max-md:min-h-11 max-md:text-body"
 						>
-							<ArrowLeft size={12} /> Back to the article
+							<ArrowLeft className="size-icon-xs" /> Back to the article
 						</Link>
 					</div>
-					<div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+					<div className="relative min-h-0 flex-1 overflow-y-auto px-2 py-2">
+						<HoverPill />
 						{grouped.map(({ category, entries }) => (
 							<Folder
 								key={category}
@@ -271,7 +275,7 @@ export function PipelineExplorer({
 
 						{torusGrouped.length > 0 ? (
 							<div className="mt-4 border-t border-line-subtle pt-3">
-								<p className="px-1 pb-1.5 text-[10px] leading-snug text-fg-muted max-md:text-[13px]">
+								<p className="px-1 pb-1.5 text-micro leading-tight text-fg-muted max-md:text-ui">
 									<span className="text-fg">Genus 1.</span> A periodic tiling divided by its own lattice is a graph on a
 									torus, and the battery is replaced by a homology class.
 								</p>
@@ -302,7 +306,7 @@ export function PipelineExplorer({
 
 						{cylinderIndex.entries.length > 0 ? (
 							<div className="mt-4 border-t border-line-subtle pt-3">
-								<p className="px-1 pb-1.5 text-[10px] leading-snug text-fg-muted max-md:text-[13px]">
+								<p className="px-1 pb-1.5 text-micro leading-tight text-fg-muted max-md:text-ui">
 									<span className="text-fg">Hyperbolic.</span> Infinite, so there is nothing to divide by: square a ball
 									with its boundary shorted, and the answer is a cylinder.
 								</p>
@@ -333,8 +337,8 @@ export function PipelineExplorer({
 					{ballEntry ? (
 						<>
 							<header className="mb-3 shrink-0">
-								<h1 className="text-xl leading-tight font-semibold text-fg">{ballEntry.name}</h1>
-								<p className="mt-1 font-mono text-[11px] text-fg-muted max-md:text-xs">
+								<h1 className="text-heading leading-tight font-semibold text-fg">{ballEntry.name}</h1>
+								<p className="mt-1 font-mono text-caption text-fg-muted">
 									{ballEntry.geometry} · radii {ballEntry.radii[0]}–{ballEntry.radii[ballEntry.radii.length - 1]} · up
 									to {ballEntry.maxOrder} squares · circumference {ballEntry.conductance[0].toFixed(3)} →{" "}
 									{ballEntry.conductance[ballEntry.conductance.length - 1].toFixed(3)}
@@ -345,8 +349,8 @@ export function PipelineExplorer({
 					) : torusEntry ? (
 						<>
 							<header className="mb-3 shrink-0">
-								<h1 className="text-xl leading-tight font-semibold text-fg">{torusEntry.name}</h1>
-								<p className="mt-1 font-mono text-[11px] text-fg-muted max-md:text-xs">
+								<h1 className="text-heading leading-tight font-semibold text-fg">{torusEntry.name}</h1>
+								<p className="mt-1 font-mono text-caption text-fg-muted">
 									quotient: {torusEntry.counts.vertices} vertices · {torusEntry.counts.edges} edges ·{" "}
 									{torusEntry.counts.faces} faces · V−E+F = 0 · {torusEntry.classes} certified classes,{" "}
 									{torusEntry.perfect} perfect
@@ -357,9 +361,9 @@ export function PipelineExplorer({
 					) : (
 						<>
 							<header className="mb-3 shrink-0">
-								<h1 className="text-xl leading-tight font-semibold text-fg">{entry?.name ?? "…"}</h1>
+								<h1 className="text-heading leading-tight font-semibold text-fg">{entry?.name ?? "…"}</h1>
 								{entry ? (
-									<p className="mt-1 font-mono text-[11px] text-fg-muted max-md:text-xs">
+									<p className="mt-1 font-mono text-caption text-fg-muted">
 										{entry.counts.vertices} vertices · {entry.counts.edges} edges · {entry.counts.faces} faces ·{" "}
 										{entry.squarings} distinct rectangle{entry.squarings === 1 ? "" : "s"}
 										{entry.symmetryOrder !== null ? ` · symmetry order ${entry.symmetryOrder}` : ""}
@@ -368,9 +372,9 @@ export function PipelineExplorer({
 							</header>
 
 							{error ? (
-								<p className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">{error}</p>
+								<Notice className="p-4">{error}</Notice>
 							) : !record ? (
-								<p className="p-4 text-sm text-fg-muted">Loading…</p>
+								<p className="p-4 text-body text-fg-muted">Loading…</p>
 							) : (
 								<StageBoard
 									control={
@@ -383,7 +387,7 @@ export function PipelineExplorer({
 													: "Click an edge in stage 1 or 2; the other three stages resolve for that choice."
 											}
 										>
-											<dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-mono text-[10px] max-md:text-xs">
+											<dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-mono text-micro">
 												<Fact label="rectangle" value={`${record.squaring.width} x ${record.squaring.height}`} wide />
 												<Fact label="order" value={String(record.squaring.order)} />
 												<Fact
@@ -398,31 +402,31 @@ export function PipelineExplorer({
 												) : null}
 											</dl>
 											{solveError ? (
-												<p className="mt-2 text-[11px] text-fg">Could not solve that edge: {solveError}</p>
+												<p className="mt-2 text-caption text-fg">Could not solve that edge: {solveError}</p>
 											) : null}
 											{!isShippedBattery ? (
-												<p className="mt-2 text-[11px] text-fg-muted max-md:text-[13px]">
+												<p className="mt-2 text-caption text-fg-muted max-md:text-ui">
 													{sameAsShipped
 														? "Same rectangle as the shelf's pick: this edge is in the same symmetry orbit."
 														: "A different rectangle from the shelf's pick."}{" "}
 													<button
 														type="button"
 														onClick={() => setBattery(null)}
-														className="underline transition-colors hover:text-fg max-md:min-h-11"
+														className="ta-link-quiet max-md:min-h-11"
 													>
 														Reset to the shelf&apos;s edge
 													</button>
 												</p>
 											) : null}
-											<p className="mt-2 font-mono text-[9px] leading-relaxed break-all text-fg-muted max-md:hidden">
+											<p className="mt-2 font-mono text-micro leading-relaxed break-all text-fg-muted max-md:hidden">
 												{record.squaring.bouwkamp}
 											</p>
 											{/* Up to twenty lines of code above the stages on a stacked phone column: folded there. */}
 											<details className="mt-2 md:hidden">
-												<summary className="flex min-h-11 cursor-pointer items-center text-xs text-fg-muted">
+												<summary className="flex min-h-11 cursor-pointer items-center text-small text-fg-muted">
 													Bouwkamp code
 												</summary>
-												<p className="font-mono text-[11px] leading-relaxed break-all text-fg-muted">
+												<p className="font-mono text-caption leading-relaxed break-all text-fg-muted">
 													{record.squaring.bouwkamp}
 												</p>
 											</details>
@@ -477,7 +481,7 @@ export function PipelineExplorer({
 										<button
 											type="button"
 											onClick={() => setBattery(inspected)}
-											className="ml-auto h-11 shrink-0 rounded-control bg-fg px-3 text-sm font-medium text-fg-inverse"
+											className="ml-auto h-11 shrink-0 rounded-control bg-fg px-3 text-body font-medium text-fg-inverse"
 										>
 											Make it the battery
 										</button>
@@ -492,26 +496,23 @@ export function PipelineExplorer({
 	);
 }
 
+// A picker row. The list's hover pill lights it; the open one keeps its own fill.
+const pickerRow = (active: boolean) =>
+	`mb-1.5 flex w-full gap-2.5 border px-2.5 py-2.5 text-left transition-colors ${
+		active ? "border-line bg-surface-overlay text-fg" : "border-transparent text-fg-muted hover:text-fg"
+	}`;
+
 // One row of the hyperbolic picker. The number that matters is the circumference, so the row shows
 // where it starts and where it has got to: climbing means transient, which is the whole point.
 function BallRow({ entry, active, onSelect }: { entry: CylinderIndexEntry; active: boolean; onSelect: () => void }) {
 	const first = entry.conductance[0];
 	const last = entry.conductance[entry.conductance.length - 1];
 	return (
-		<button
-			type="button"
-			onClick={onSelect}
-			aria-current={active ? "true" : undefined}
-			className={`mb-1.5 flex w-full gap-2.5 border px-2.5 py-2.5 text-left transition-colors ${
-				active
-					? "border-line bg-surface-overlay text-fg"
-					: "border-transparent text-fg-muted hover:border-line-subtle hover:bg-surface-overlay/40 hover:text-fg"
-			}`}
-		>
+		<button type="button" onClick={onSelect} aria-current={active ? "true" : undefined} className={pickerRow(active)}>
 			<BallThumb thumb={entry.thumb} size={54} />
 			<span className="flex min-w-0 flex-1 flex-col gap-1">
-				<span className="truncate text-[11px] leading-tight text-fg max-md:text-sm">{entry.name}</span>
-				<span className="font-mono text-[12px] leading-none text-fg">
+				<span className="truncate text-caption leading-tight text-fg max-md:text-body">{entry.name}</span>
+				<span className="font-mono text-small leading-none text-fg">
 					{first.toFixed(2)}
 					<span className="text-fg-muted"> {last > first ? "↑" : "↓"} </span>
 					{last.toFixed(3)}
@@ -519,7 +520,7 @@ function BallRow({ entry, active, onSelect }: { entry: CylinderIndexEntry; activ
 				<span className="flex flex-wrap items-center gap-1">
 					{entry.geometry === GEOMETRIES.HYPERBOLIC ? <Badge tone="strong">transient</Badge> : <Badge>recurrent</Badge>}
 				</span>
-				<span className="font-mono text-[9px] leading-none text-fg-muted max-md:text-xs">
+				<span className="font-mono text-micro leading-none text-fg-muted">
 					r ≤ {entry.radii[entry.radii.length - 1]} · {entry.maxOrder} squares
 				</span>
 			</span>
@@ -533,20 +534,11 @@ function BallRow({ entry, active, onSelect }: { entry: CylinderIndexEntry; activ
 // start. The patch is still where the solids turn, because a plane tiling has no front and back.
 function TilingRow({ entry, active, onSelect }: { entry: TorusIndexEntry; active: boolean; onSelect: () => void }) {
 	return (
-		<button
-			type="button"
-			onClick={onSelect}
-			aria-current={active ? "true" : undefined}
-			className={`mb-1.5 flex w-full gap-2.5 border px-2.5 py-2.5 text-left transition-colors ${
-				active
-					? "border-line bg-surface-overlay text-fg"
-					: "border-transparent text-fg-muted hover:border-line-subtle hover:bg-surface-overlay/40 hover:text-fg"
-			}`}
-		>
+		<button type="button" onClick={onSelect} aria-current={active ? "true" : undefined} className={pickerRow(active)}>
 			<TorusThumb thumb={entry.thumb} size={54} />
 			<span className="flex min-w-0 flex-1 flex-col gap-1">
-				<span className="truncate text-[11px] leading-tight text-fg max-md:text-sm">{entry.name}</span>
-				<span className="font-mono text-[12px] leading-none text-fg">
+				<span className="truncate text-caption leading-tight text-fg max-md:text-body">{entry.name}</span>
+				<span className="font-mono text-small leading-none text-fg">
 					order {entry.bestOrder}
 					<span className="text-fg-muted"> at </span>({entry.bestClass[0]}, {entry.bestClass[1]})
 				</span>
@@ -558,7 +550,7 @@ function TilingRow({ entry, active, onSelect }: { entry: TorusIndexEntry; active
 					)}
 					{entry.halfTurn ? <Badge>half-turn</Badge> : null}
 				</span>
-				<span className="font-mono text-[9px] leading-none text-fg-muted max-md:text-xs">
+				<span className="font-mono text-micro leading-none text-fg-muted">
 					tiles {entry.tiles.join(".")} · {entry.counts.edges}E · {entry.classes} classes
 				</span>
 			</span>
@@ -586,20 +578,11 @@ function PolyhedronRow({
 	onSelect: () => void;
 }) {
 	return (
-		<button
-			type="button"
-			onClick={onSelect}
-			aria-current={active ? "true" : undefined}
-			className={`mb-1.5 flex w-full gap-2.5 border px-2.5 py-2.5 text-left transition-colors ${
-				active
-					? "border-line bg-surface-overlay text-fg"
-					: "border-transparent text-fg-muted hover:border-line-subtle hover:bg-surface-overlay/40 hover:text-fg"
-			}`}
-		>
+		<button type="button" onClick={onSelect} aria-current={active ? "true" : undefined} className={pickerRow(active)}>
 			<PolyhedronThumb vertices={entry.vertices} edges={entry.edges} size={54} phase={phase} />
 			<span className="flex min-w-0 flex-1 flex-col gap-1">
-				<span className="truncate text-[11px] leading-tight text-fg max-md:text-sm">{entry.name}</span>
-				<span className="font-mono text-[12px] leading-none text-fg">
+				<span className="truncate text-caption leading-tight text-fg max-md:text-body">{entry.name}</span>
+				<span className="font-mono text-small leading-none text-fg">
 					{entry.width}
 					<span className="text-fg-muted"> x </span>
 					{entry.height}
@@ -608,7 +591,7 @@ function PolyhedronRow({
 					{entry.perfect ? <Badge tone="strong">perfect</Badge> : <Badge>{entry.distinct} sizes</Badge>}
 					{entry.simple ? <Badge>simple</Badge> : <Badge>compound</Badge>}
 				</span>
-				<span className="font-mono text-[9px] leading-none text-fg-muted max-md:text-xs">
+				<span className="font-mono text-micro leading-none text-fg-muted">
 					order {entry.order} · {entry.counts.vertices}V · {entry.counts.edges}E · {entry.squarings} rect
 					{entry.squarings === 1 ? "" : "s"}
 				</span>
@@ -620,8 +603,8 @@ function PolyhedronRow({
 function Badge({ children, tone }: { children: React.ReactNode; tone?: "strong" }) {
 	return (
 		<span
-			className={`border px-1 py-px font-mono text-[9px] leading-none max-md:text-xs ${
-				tone === "strong" ? "border-accent text-accent" : "border-line-subtle text-fg-muted"
+			className={`border px-1 py-px font-mono text-micro leading-none ${
+				tone === "strong" ? "border-accent text-fg-accent" : "border-line-subtle text-fg-muted"
 			}`}
 		>
 			{children}
@@ -630,14 +613,8 @@ function Badge({ children, tone }: { children: React.ReactNode; tone?: "strong" 
 }
 
 /**
- * A collapsible folder of solids.
- *
- * Hand-rolled instead of <details>, for two reasons that come as a pair: the open state has to live
- * outside the element (so selecting a solid cannot close it) and it has to animate, which <details>
- * gives no hook for — the browser shows and hides its content in one frame.
- *
- * Height animates from 0 to the measured content height and back, and lands on `auto` so a folder whose
- * contents change size afterwards is not stuck at a stale pixel value. Honours reduced-motion.
+ * A collapsible folder of solids. The open state lives outside it (so selecting a solid cannot close it)
+ * and the body folds with the library's Fold.
  */
 function Folder({
 	category,
@@ -652,42 +629,21 @@ function Folder({
 	onToggle: () => void;
 	children: React.ReactNode;
 }) {
-	const reduceMotion = useReducedMotion();
-	const transition = reduceMotion ? { duration: 0 } : { duration: 0.24, ease: [0.32, 0.72, 0, 1] as const };
-
 	return (
 		<div className="mb-1">
 			<button
 				type="button"
 				onClick={onToggle}
 				aria-expanded={open}
-				className="flex w-full cursor-pointer items-center gap-1.5 px-1 py-1.5 text-left text-[10px] tracking-wide text-fg-muted uppercase transition-colors hover:text-fg max-md:min-h-11 max-md:text-xs"
+				className="flex w-full cursor-pointer items-center gap-1.5 px-1 py-1.5 text-left max-md:min-h-11"
 			>
-				<motion.span
-					className="flex shrink-0"
-					animate={{ rotate: open ? 90 : 0 }}
-					transition={transition}
-					initial={false}
-				>
-					<ChevronRight size={11} />
-				</motion.span>
-				{category}
-				<span className="font-mono text-fg-muted/70 normal-case max-md:text-fg-muted">{count}</span>
+				<FoldChevron open={open} size={11} />
+				<span className="ta-label">{category}</span>
+				<span className="font-mono text-micro text-fg-muted">{count}</span>
 			</button>
-			<AnimatePresence initial={false}>
-				{open ? (
-					<motion.div
-						key="body"
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={transition}
-						className="overflow-hidden"
-					>
-						<div className="pb-1">{children}</div>
-					</motion.div>
-				) : null}
-			</AnimatePresence>
+			<Reveal show={open}>
+				<div className="pb-1">{children}</div>
+			</Reveal>
 		</div>
 	);
 }

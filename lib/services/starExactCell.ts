@@ -1,7 +1,7 @@
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import { ExactStarPolygon } from "@/classes/polygons/ExactStarPolygon";
-import type { Polygon } from "@/classes";
+import type { Polygon } from "@/classes/polygons/Polygon";
 
 /**
  * Exact cell of a STAR tiling, as emitted by tools/ctrnact-oracle/export_atlas_cells.py.

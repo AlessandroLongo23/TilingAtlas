@@ -8,7 +8,7 @@
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/design-system/components/slider";
 import { Figure, OUTLINE, Stage, tileFill } from "@/components/about/figure";
 import { buildCell, type PentagonCell } from "@/lib/pentagon/build";
 import { defaultParams, pentagonType, type ParamSpec } from "@/lib/pentagon/types";
@@ -72,12 +72,12 @@ export function PentTypeFigure({ types, sliders, caption }: { types?: string; sl
 				<div className="grid gap-4 md:grid-cols-2 md:items-center">
 					<div>
 						<Pentagon cell={res.cell} />
-						<p className="mt-2 flex flex-wrap justify-center gap-x-3 font-mono text-xs text-fg-muted tabular-nums">
+						<p className="mt-2 flex flex-wrap justify-center gap-x-3 font-mono text-small text-fg-muted tabular-nums">
 							{res.cell.angles.map((a, i) => (
 								<span key={`a${i}`} className="whitespace-nowrap">{`${CORNERS[i]} ${a.toFixed(1)}°`}</span>
 							))}
 						</p>
-						<p className="flex flex-wrap justify-center gap-x-3 font-mono text-xs text-fg-muted tabular-nums">
+						<p className="flex flex-wrap justify-center gap-x-3 font-mono text-small text-fg-muted tabular-nums">
 							{res.cell.sides.map((x, i) => (
 								<span key={`s${i}`} className="whitespace-nowrap">{`${"abcde"[i]} ${x.toFixed(3)}`}</span>
 							))}
@@ -86,7 +86,7 @@ export function PentTypeFigure({ types, sliders, caption }: { types?: string; sl
 					<ParametricLive cell={res.cell} framing={String(id)} label={`Type ${id} tiling`} />
 				</div>
 			) : (
-				<div className="flex h-48 items-center justify-center text-sm text-fg-muted">
+				<div className="flex h-48 items-center justify-center text-body text-fg-muted">
 					No tiling here: {res.reason}. Move the slider back.
 				</div>
 			)}
@@ -128,11 +128,11 @@ export function PentTypeFigure({ types, sliders, caption }: { types?: string; sl
 						))}
 					</div>
 				) : (
-					<p className="text-center text-xs text-fg-muted">
+					<p className="text-center text-small text-fg-muted">
 						Type {id} has no free parameter: up to size, it is one pentagon.
 					</p>
 				)}
-				<div className="grid gap-1 font-mono text-xs tabular-nums">
+				<div className="grid gap-1 font-mono text-small tabular-nums">
 					{t.constraints.map((c) => (
 						<div
 							key={c.text}
@@ -253,11 +253,11 @@ export function PentHistoryFigure({ caption }: { caption?: string }) {
 				{cells.map(({ id, cell }) => (
 					<div key={id} className="border border-line-subtle p-1.5">
 						{cell && <ParametricLive cell={cell} framing={String(id)} label={`Type ${id} tiling`} />}
-						<p className="mt-1 text-center font-mono text-xs text-fg">Type {id}</p>
+						<p className="mt-1 text-center font-mono text-small text-fg">Type {id}</p>
 					</div>
 				))}
 			</div>
-			<p className="mt-3 min-h-[3lh] text-sm leading-snug text-fg-secondary">{e.text}</p>
+			<p className="mt-3 min-h-[3lh] text-body leading-tight text-fg-secondary">{e.text}</p>
 			<div className="mt-3">
 				<Segmented
 					options={ERAS.map(({ v, label, sub }) => ({ v, label, sub }))}

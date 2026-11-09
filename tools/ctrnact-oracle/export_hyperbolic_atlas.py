@@ -4,8 +4,8 @@ files, deduping by TILING IDENTITY and filtering to the tilings that actually de
 
   python3 export_hyperbolic_atlas.py \
     --cells scratch-hyp-p7k2/cells.json \
-    --developed ../../public/hyperbolic-developed.json.gz \
-    --reference ../../public/reference-atlas-hyperbolic.json.gz \
+    --developed ../../public/hyperbolic-developed.json.br \
+    --reference ../../public/reference-atlas-hyperbolic.json.br \
     --rebuild [--write]
 
 IDENTITY (rewritten 2026-07-23, third attempt — NOTES §80 holds the graveyard). A tiling's identity is
@@ -317,7 +317,7 @@ def warm_cache_parallel(recs, args, cache, jobs=None):
 
 
 def star_shard(developed):
-    """public/hyperbolic-developed-stars.json.gz beside the base file (lib/tilings/hyp-developed.ts)."""
+    """public/hyperbolic-developed-stars.json.br beside the base file (lib/tilings/hyp-developed.ts)."""
     return developed.replace("hyperbolic-developed", "hyperbolic-developed-stars")
 
 
@@ -331,8 +331,8 @@ def id_for(orbits, k):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cells", required=True, nargs="+", help="develop_hyperbolic.py cells JSON(s)")
-    ap.add_argument("--developed", required=True, help="public/hyperbolic-developed.json.gz (patches)")
-    ap.add_argument("--reference", required=True, help="public/reference-atlas-hyperbolic.json.gz (entries)")
+    ap.add_argument("--developed", required=True, help="public/hyperbolic-developed.json.br (patches)")
+    ap.add_argument("--reference", required=True, help="public/reference-atlas-hyperbolic.json.br (entries)")
     ap.add_argument("--max-valence", type=int, default=8)
     ap.add_argument("--max-side", type=int, default=8,
                     help="reject tilings with a polygon larger than this — the developed-patch renderer "

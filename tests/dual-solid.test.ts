@@ -1,7 +1,7 @@
 // The polar reciprocal, checked against the one dual family the literature enumerates.
 import { describe, expect, it } from "vitest";
 import { dualCompound, dualIsIsohedral, faceOrbits, midradius, vertexOrbits, polarDual } from "@/lib/render/dualSolid";
-import { polyhedronForId, SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolids";
+import { polyhedronForId, SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolidsAll";
 import { facePlane } from "@/lib/render/dualSolid";
 import type { Polyhedron, Vec3 } from "@/lib/render/platonicSolids";
 

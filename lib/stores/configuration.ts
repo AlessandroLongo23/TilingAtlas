@@ -49,7 +49,7 @@ export interface ConfigurationState {
 	// Global hue rotation (degrees, 0–359) applied to every TILE FILL at draw time — all render paths
 	// (flat p5 + WebGL, hyperbolic disk, inversive, Islamic fills) and the catalogue thumbnails shift
 	// together, preserving the pairwise hue distances between tiles. Overlays (orbit dots, symmetry
-	// elements, parity two-tone) keep their own colors. Set by the hue ring (components/ui/hue-ring.tsx).
+	// elements, parity two-tone) keep their own colors. Set by the hue ring (design-system/components/hue-ring.tsx).
 	hueOffset: number;
 	speed: number;
 	parameter: number;
@@ -104,6 +104,10 @@ export interface ConfigurationState {
 	showSymmetryElements: boolean;
 	showFundamentalDomain: boolean;
 	showVertexOrbits: boolean;
+	// What the Orbits overlay (showVertexOrbits, kept by its old name) partitions: vertices (dots), edges
+	// (strokes in their orbit's colour) or tiles (fills in theirs). Edges and tiles need a tiling whose exact
+	// cell gives edge and tile orbits; where it does not, the overlay falls back to vertices.
+	orbitMode: "vertex" | "edge" | "face";
 	// Draw the tiling's MIRROR image. A chiral tiling and its mirror are ONE catalogue entry (the
 	// A068599 convention — see lib/services/chirality.ts), so the second hand has nowhere to live except
 	// as a view of the first. Render-only: it reflects float geometry and never touches a count or an id.
@@ -481,6 +485,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showSymmetryElements: false,
 	showFundamentalDomain: false,
 	showVertexOrbits: false,
+	orbitMode: "vertex",
 	mirrorFlip: false,
 	bubbleEdgeStyle: DEFAULT_BUBBLE_EDGE_STYLE,
 	bubbleKochLevel: BUBBLE_KOCH_LEVELS.default,

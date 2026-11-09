@@ -361,7 +361,7 @@ export function PipelineStages() {
 
 	useEffect(() => {
 		let alive = true;
-		fetch("/defense/period-figure.json.gz")
+		fetch("/defense/period-figure.json.br")
 			.then((r) => shardBody<FigureData>(r))
 			.then((d: FigureData) => {
 				if (alive) setData(d);

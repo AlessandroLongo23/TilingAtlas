@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system/components/button";
 import { Segmented } from "@/components/shelf";
 import { copyPolygons } from "@/lib/heesch/data";
 import { loadFrameSet, loadFrames, type Frame, type FrameShape } from "@/lib/frames/data";
@@ -239,11 +239,11 @@ export function DebtFigure({
 					aria-label="Next step"
 					onClick={() => setK(Math.min(order.length, k + 1))}
 				/>
-				<span className="ml-2 font-mono text-xs text-fg-muted tabular-nums">
+				<span className="ml-2 font-mono text-small text-fg-muted tabular-nums">
 					step {k} of {order.length}
 				</span>
 			</div>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				{k === 1
 					? "Tiling 1's tile on the lowest triangle. All of it is debt for tiling 2."
 					: done

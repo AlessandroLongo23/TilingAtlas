@@ -68,7 +68,15 @@
     ".next-prod/types/**/*.ts",
     ".next-prod/dev/types/**/*.ts",
     ".next-studio/types/**/*.ts",
-    ".next-studio/dev/types/**/*.ts"
+    ".next-studio/dev/types/**/*.ts",
+    ".next-bench-before/types/**/*.ts",
+    ".next-bench-before/dev/types/**/*.ts",
+    ".next-bench/types/**/*.ts",
+    ".next-bench/dev/types/**/*.ts",
+    ".next-debug/types/**/*.ts",
+    ".next-debug/types/**/*.ts",
+    ".next-bench2/types/**/*.ts",
+    ".next-bench2/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

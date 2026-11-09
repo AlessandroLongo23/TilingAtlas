@@ -261,7 +261,8 @@ export function PatchCard({ patch, label, interactive = true }: PatchCardProps) 
 		<figure className="not-prose m-0">
 			<div
 				ref={wrapRef}
-				className="relative aspect-square w-full overflow-hidden rounded-xl border border-line bg-white"
+				// ds-check: keep (white on purpose: the canvas paints the patch on #fff in both themes, the frame matches it)
+				className="relative aspect-square w-full overflow-hidden rounded-overlay border border-line bg-white"
 			>
 				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 			</div>

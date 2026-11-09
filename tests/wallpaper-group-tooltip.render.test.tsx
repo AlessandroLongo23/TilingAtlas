@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
-import { ButtonGroup } from "@/components/ui/button-group";
+import { OptionWall } from "@/design-system/components/option-wall";
 
 describe("WallpaperGroupTooltip content", () => {
 	it("renders every diagram for a multi-lattice group with captions + orbifold", () => {
@@ -35,10 +35,10 @@ describe("WallpaperGroupTooltip content", () => {
 	});
 });
 
-describe("ButtonGroup with a per-option tooltip", () => {
+describe("OptionWall with a per-option tooltip", () => {
 	it("mounts the tooltip-wrapped button (ref forwarding) without throwing", () => {
 		render(
-			<ButtonGroup
+			<OptionWall
 				multi
 				options={[{ value: "p1", label: "p1", tooltip: <WallpaperGroupTooltip group="p1" /> }]}
 				selected={[]}

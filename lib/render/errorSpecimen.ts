@@ -48,8 +48,8 @@ export interface ErrorSpecimen {
 	paths: ErrorSpecimenPath[];
 }
 
-export const HERO_INDEX_URL = "/hero-index.json.gz";
-export const heroCellUrl = (id: string) => `/hero-cells/${id}.json.gz`;
+export const HERO_INDEX_URL = "/hero-index.json.br";
+export const heroCellUrl = (id: string) => `/hero-cells/${id}.json.br`;
 
 /** One entry of /hero-cells/<id>.json. */
 export interface HeroCell {

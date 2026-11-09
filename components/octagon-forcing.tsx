@@ -192,7 +192,7 @@ const FRAMES: PanelSpec[] = [
 
 export function OctagonForcing() {
 	return (
-		<div className="not-prose mx-auto flex w-full max-w-[62rem] flex-wrap items-start justify-center gap-7">
+		<div className="not-prose mx-auto flex w-full max-w-[62rem] flex-wrap items-start justify-center gap-8">
 			{FRAMES.map((f) => (
 				<FigurePanel key={f.title} panel={f} aspect="1/1" />
 			))}

@@ -16,7 +16,7 @@
 // members would be a contradiction, and is reported.
 import type { Board } from "./board";
 import { cornerShapes, type Shape } from "./corners";
-import { decode, vertexWords, type Darts } from "./develop";
+import { decode, vertexWordsOf, type Darts } from "./develop";
 
 /** A corner's label with a star's α left out; any other corner keeps its own name. */
 function abstractOf(board: Board): (sym: string) => string {
@@ -133,7 +133,7 @@ export async function foldFamilies(
 	for (let i = 0; i < certs.length; i++) {
 		if (i % 100 === 0 && progress) (progress(i), await new Promise((r) => setTimeout(r)));
 		const { text, k } = certs[i];
-		dims[i] = flexDim(shapes, vertexWords(text));
+		dims[i] = flexDim(shapes, vertexWordsOf(text, board));
 		let key: string;
 		try {
 			key = `${k}|${canonical(decode(text, board), label)}`;

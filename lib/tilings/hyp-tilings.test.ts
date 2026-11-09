@@ -22,7 +22,7 @@ import {
 // that the runtime derivation agrees with the one the emitter used — a generated table nobody checks is
 // a hand-written table with extra steps.
 
-const ATLAS = "public/reference-atlas-hyperbolic.json.gz";
+const ATLAS = "public/reference-atlas-hyperbolic.json.br";
 const shipped: { k: number; family: string }[] = existsSync(ATLAS)
 	? decodeAtlas<{ k: number; family: string }>(JSON.parse(readDataText(ATLAS)))
 	: [];

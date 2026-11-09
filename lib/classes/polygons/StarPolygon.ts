@@ -1,10 +1,9 @@
-import { Polygon, Vector } from "@/classes";
-import { map, isWithinTolerance } from "@/utils";
+import { Polygon } from "@/classes/polygons/Polygon";
+import { Vector } from "@/classes/Vector";
+import { StarVertexTypes } from "./PolygonType";
+import { map, isWithinTolerance } from "@/utils/math";
 
-export enum StarVertexTypes {
-	INNER = "inner",
-	OUTER = "outer",
-}
+export { StarVertexTypes } from "./PolygonType";
 
 export class StarPolygon extends Polygon {
 	alpha!: number;

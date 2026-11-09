@@ -4,7 +4,10 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/design-system/components/badge";
+import { Button } from "@/design-system/components/button";
+import { HoverPill } from "@/design-system/components/hover-pill";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { ChangeImages } from "@/components/updates/change-images";
 import { ChangeText } from "@/components/updates/change-text";
 import { KIND_LABEL, KIND_ORDER, type ChangeKind, type UpdateEntry } from "@/lib/updates/entries";
@@ -13,7 +16,7 @@ import { previewHref, previewLabel } from "@/lib/updates/preview-ids";
 import { releaseLevel } from "@/lib/updates/version";
 import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
-import { Dropdown } from "@/components/ui/dropdown";
+import { Dropdown } from "@/design-system/components/dropdown";
 
 // The history behind the modal: every release, newest first, with the tilings it added shown live
 // and not as thumbnails. Unlike the modal, this page keeps each release as its own block —
@@ -104,28 +107,30 @@ export function UpdatesClient({
 					aria-label="Releases"
 					className="ta-scroll-fade sticky top-0 hidden h-[100cqh] flex-col overflow-y-auto border-r border-line-subtle pr-4 lg:flex"
 				>
-					<div className="flex flex-col gap-4 pt-12 pb-16">
+					<div className="relative flex flex-col gap-4 pt-12 pb-16">
+						<HoverPill />
 						{months.map((group) => (
 							<div key={group.month} className="flex flex-col">
 								<h2 className="ta-label sticky top-0 z-10 bg-surface px-2 py-1.5 text-fg-muted">{group.month}</h2>
 								{group.items.map((entry) => (
-									<button
-										key={entry.version}
-										type="button"
-										onClick={() => jumpTo(entry.version)}
-										title={`v${entry.version} · ${entry.title}`}
-										className={cn(
-											"flex shrink-0 cursor-pointer items-baseline rounded-control px-2 py-[5px] text-left text-[13px] leading-[18px] transition-colors",
-											active === entry.version
-												? "relative bg-(--color-tab-on) font-medium text-fg shadow-[0_0_0_1px_var(--color-tab-ring),0_1px_2px_oklch(0_0_0/0.12)]"
-												: "text-fg-secondary hover:bg-surface-overlay hover:text-fg",
-										)}
-									>
-										<span className="w-12 shrink-0 font-mono text-[11px] text-fg-muted tabular-nums">
-											{entry.version}
-										</span>
-										<span className="line-clamp-2">{entry.title}</span>
-									</button>
+									// The full title, for a row whose title the clamp cuts.
+									<Tooltip key={entry.version} label={`v${entry.version} · ${entry.title}`} side="right">
+										<button
+											type="button"
+											onClick={() => jumpTo(entry.version)}
+											className={cn(
+												"flex shrink-0 cursor-pointer items-baseline rounded-control px-2 py-1 text-left text-ui transition-colors",
+												active === entry.version
+													? "ta-tab-on relative font-medium text-fg"
+													: "text-fg-secondary hover:text-fg",
+											)}
+										>
+											<span className="w-12 shrink-0 font-mono text-caption text-fg-muted tabular-nums">
+												{entry.version}
+											</span>
+											<span className="line-clamp-2">{entry.title}</span>
+										</button>
+									</Tooltip>
 								))}
 							</div>
 						))}
@@ -136,8 +141,8 @@ export function UpdatesClient({
 					{/* Phone: the release index is a select pinned to the top of the scroller, following the
 					    release being read like the lg-only index does. */}
 					{entries.length > 0 ? (
-						<div className="sticky top-0 z-20 -mx-4 mb-4 border-b border-line-subtle bg-surface/95 px-4 py-2 backdrop-blur md:hidden">
-							<div className="flex items-center gap-3 text-xs text-fg-muted">
+						<div className="sticky top-0 z-20 -mx-4 mb-4 border-b border-line-subtle bg-surface/95 px-4 py-2 backdrop-blur-float md:hidden">
+							<div className="flex items-center gap-3 text-small text-fg-muted">
 								<span className="shrink-0">Jump to release</span>
 								<Dropdown
 									value={active}
@@ -150,21 +155,21 @@ export function UpdatesClient({
 									)}
 									onChange={jumpTo}
 									className="h-11 flex-1"
-									ariaLabel="Jump to release"
+									aria-label="Jump to release"
 								/>
 							</div>
 						</div>
 					) : null}
 					<header className="mb-10 flex flex-col gap-3 max-md:mb-8">
-						<h1 className="text-[28px] leading-tight font-semibold tracking-[-0.01em] text-fg">Updates</h1>
-						<p className="text-[15px] leading-[1.6] text-fg-secondary">
+						<h1 className="text-headline leading-tight font-semibold tracking-tight text-fg">Updates</h1>
+						<p className="text-reading text-fg-secondary">
 							What has changed in the Atlas, newest first. New tilings are shown as they arrived;
 							<span className="max-md:hidden"> drag to pan, scroll to zoom,</span>
 							<span className="md:hidden"> tap one to explore it (drag to pan, pinch to zoom),</span> or open any of
 							them where it lives.
 						</p>
 						{entries.length > 0 ? (
-							<p className="font-mono text-xs text-fg-muted">
+							<p className="font-mono text-small text-fg-muted">
 								{entries.length} releases · since {formatDate(entries[entries.length - 1].date)}
 							</p>
 						) : null}
@@ -191,12 +196,12 @@ export function UpdatesClient({
 									className="flex flex-col gap-6 py-12 first:pt-0 max-md:scroll-mt-16 max-md:py-10"
 								>
 									<div className="flex flex-col gap-1.5">
-										<h2 className="text-lg font-semibold tracking-[-0.01em] text-fg">{entry.title}</h2>
-										<div className="flex items-center gap-2 font-mono text-xs text-fg-muted">
+										<h2 className="text-heading font-semibold tracking-tight text-fg">{entry.title}</h2>
+										<div className="flex items-center gap-2 font-mono text-small text-fg-muted">
 											<span>
 												v{entry.version} · {formatDate(entry.date)}
 											</span>
-											<Badge mono className="bg-transparent ring-1 ring-line ring-inset max-md:text-xs">
+											<Badge tone="line" mono className="max-md:text-small">
 												{BUMP_LABEL[kind]}
 											</Badge>
 										</div>
@@ -210,7 +215,7 @@ export function UpdatesClient({
 													const previews = (change.tilings ?? []).filter((id) => cells[id]);
 													const textOnly = (change.tilings ?? []).filter((id) => !cells[id]);
 													return (
-														<li key={j} className="text-[15px] leading-[1.6] text-fg-secondary">
+														<li key={j} className="text-reading text-fg-secondary">
 															{change.href ? (
 																<Link href={change.href} className="transition-colors hover:text-fg">
 																	<ChangeText text={change.text} />
@@ -252,6 +257,7 @@ export function UpdatesClient({
 															{change.images?.length ? (
 																<ChangeImages
 																	images={change.images}
+																	alt={change.text.replaceAll("**", "")}
 																	href={change.href}
 																	className="not-prose mt-3 sm:grid-cols-3"
 																/>
@@ -260,14 +266,15 @@ export function UpdatesClient({
 															{textOnly.length > 0 ? (
 																<div className="mt-2 flex flex-wrap gap-2">
 																	{textOnly.map((id) => (
-																		<Link
+																		<Button
 																			key={id}
 																			href={previewHref(id)}
-																			className="inline-flex items-center gap-1 rounded-control border border-line px-2 py-1 font-mono text-xs text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:px-3"
-																		>
-																			{previewLabel(id)}
-																			<ArrowRight size={12} aria-hidden="true" className="shrink-0" />
-																		</Link>
+																			variant="secondary"
+																			size="xs"
+																			label={previewLabel(id)}
+																			iconRight={ArrowRight}
+																			className="font-mono max-md:px-3"
+																		/>
 																	))}
 																</div>
 															) : null}
@@ -282,7 +289,7 @@ export function UpdatesClient({
 						})}
 					</div>
 
-					<footer className="mt-16 border-t border-line-subtle pt-6 text-xs text-fg-muted">
+					<footer className="mt-16 border-t border-line-subtle pt-6 text-small text-fg-muted">
 						Entries before 30 July 2026 were reconstructed from the commit history, and are coarser than the ones
 						written at release time.
 					</footer>

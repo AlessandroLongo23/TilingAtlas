@@ -6,8 +6,9 @@ import { tileFill } from "@/lib/render/tilePalette";
 import { cn } from "@/lib/utils/cn";
 import type { Run, Status } from "./bridge";
 import { Archive, ArchiveRestore, FolderOpen, SquareArrowOutUpRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ContextMenu } from "@/components/ui/context-menu";
+import { Button } from "@/design-system/components/button";
+import { ContextMenu } from "@/design-system/components/context-menu";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { baseOf, bytes, duration, packable, packItems, packOf, PackMark, packRuns, parentOf, stateLabel, when } from "./runs";
 import { RunPreviews } from "./tilings";
 
@@ -25,7 +26,7 @@ const hueOf = (folders: string[], run: Run) => (folders.indexOf(parentOf(run.dir
 /** The dot of a run not complete, as the run list wears it. */
 const DOT: Partial<Record<Run["state"], string>> = {
 	running: "animate-pulse bg-accent",
-	stopped: "bg-yellow-400",
+	stopped: "bg-signal-attention",
 	failed: "bg-danger",
 };
 
@@ -125,54 +126,56 @@ export function DiskMap({ status, onSelect }: { status: Status; onSelect: (id: s
 	return (
 		<div className="flex h-full flex-col gap-3 p-5">
 			<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-				<h2 className="text-base font-semibold text-fg">Disk use</h2>
-				<span className="text-sm text-fg-secondary">
+				<h2 className="text-title font-semibold text-fg">Disk use</h2>
+				<span className="text-body text-fg-secondary">
 					{bytes(total)} in {status.runs.length} run{status.runs.length === 1 ? "" : "s"}
 					{status.freeBytes > 0 ? `, ${bytes(status.freeBytes)} free` : ""}
 					{measuring ? ", still measuring" : ""}
 				</span>
 				<span className="flex-1" />
-								<span className="text-xs text-fg-muted">Colour: the folder.</span>
+								<span className="text-small text-fg-muted">Colour: the folder.</span>
 				{(Object.keys(DOT) as Run["state"][]).map((s) => (
-					<span key={s} className="flex items-center gap-1.5 text-xs text-fg-muted">
+					<span key={s} className="flex items-center gap-1.5 text-small text-fg-muted">
 						<span className={cn("h-2 w-2 rounded-full", DOT[s])} />
 						{s === "stopped" ? "unfinished" : s}
 					</span>
 				))}
 			</div>
 			<div className="-mt-2 flex flex-wrap items-center gap-2">
-				<p className="flex-1 text-xs text-fg-muted">
+				<p className="flex-1 text-small text-fg-muted">
 					Select a run in the list, or click one here; right-click for its actions. Esc comes back to this map.
 				</p>
 				{squeeze.take.length ? (
-					<Button
-						size="sm"
-						icon={Archive}
-						disabled={packingNow}
-						label={`Compress ${squeeze.take.length} finished run${squeeze.take.length === 1 ? "" : "s"} (${bytes(squeeze.bytes)})`}
-						title="Gzips their certificate files in place: 10 to 90 times smaller by kind, and still read here as they are"
-						onClick={() => void packRuns(squeeze.take, false, setError)}
-					/>
+					<Tooltip label="Gzips their certificate files in place: 10 to 90 times smaller by kind, and still read here as they are">
+						<Button
+							size="sm"
+							icon={Archive}
+							disabled={packingNow}
+							label={`Compress ${squeeze.take.length} finished run${squeeze.take.length === 1 ? "" : "s"} (${bytes(squeeze.bytes)})`}
+							onClick={() => void packRuns(squeeze.take, false, setError)}
+						/>
+					</Tooltip>
 				) : null}
 				{expand.take.length ? (
-					<Button
-						size="sm"
-						icon={ArchiveRestore}
-						disabled={packingNow}
-						label={`Decompress all (${bytes(expand.bytes)})`}
-						title="Turns every gzipped certificate file back into plain text: needs the room they take unpacked"
-						onClick={() => void packRuns(expand.take, true, setError)}
-					/>
+					<Tooltip label="Turns every gzipped certificate file back into plain text: needs the room they take unpacked">
+						<Button
+							size="sm"
+							icon={ArchiveRestore}
+							disabled={packingNow}
+							label={`Decompress all (${bytes(expand.bytes)})`}
+							onClick={() => void packRuns(expand.take, true, setError)}
+						/>
+					</Tooltip>
 				) : null}
 			</div>
-			{error ? <p className="-mt-1 text-xs text-danger">{error}</p> : null}
+			{error ? <p className="-mt-1 text-small text-danger">{error}</p> : null}
 			<div
 				ref={box}
-				className="relative min-h-0 flex-1 overflow-hidden rounded-surface bg-surface-sunken"
+				className="ta-well relative min-h-0 flex-1 overflow-hidden"
 				onMouseLeave={() => showRef.current(null)}
 			>
 				{!total ? (
-					<p className="absolute inset-0 flex items-center justify-center text-sm text-fg-muted">
+					<p className="absolute inset-0 flex items-center justify-center text-body text-fg-muted">
 						{measuring ? "Measuring the run folders…" : "No runs on disk yet."}
 					</p>
 				) : null}
@@ -180,11 +183,12 @@ export function DiskMap({ status, onSelect }: { status: Status; onSelect: (id: s
 					node.kind === "folder" ? (
 						<div
 							key={node.path}
+							/* ds-check: keep (a treemap's folder outline, part of the drawing) */
 							className="pointer-events-none absolute rounded-control border border-line-subtle"
 							style={{ left: r.x, top: r.y, width: r.w, height: r.h, zIndex: depth }}
 						>
 							{r.h > HEADER * 2.5 && r.w > 60 ? (
-								<div className="truncate px-1.5 text-[11px] leading-[18px] font-medium text-fg-secondary">
+								<div className="truncate px-1.5 text-caption leading-relaxed font-medium text-fg-secondary">
 									{baseOf(node.path)} · {bytes(node.size)}
 								</div>
 							) : null}
@@ -241,6 +245,10 @@ const RunTile = memo(function RunTile({
 				...packItems(run, setError),
 			]}
 			onContextMenu={() => showRef.current(null)}
+			// A picture of the run list beside it, for the pointer: every run is a full-size row there, which is
+			// the way in for a keyboard and a screen reader. A tile can be a few pixels wide, under any
+			// target size, so it is no control of its own (WCAG 2.5.8, an equivalent control).
+			aria-hidden
 			className="absolute"
 			style={{
 				left: r.x + GAP / 2,
@@ -250,16 +258,14 @@ const RunTile = memo(function RunTile({
 				zIndex: depth + 1,
 			}}
 		>
-			<button
-				type="button"
+			<div
 				onClick={() => selectRef.current(run.id)}
 				onMouseMove={(e) => {
 					const b = box.current!.getBoundingClientRect();
 					showRef.current({ run, x: e.clientX - b.left, y: e.clientY - b.top });
 				}}
-				aria-label={`${run.name}, ${bytes(size)}`}
 				className={cn(
-					"block h-full w-full overflow-hidden rounded-[3px] text-left outline-none hover:brightness-105 hover:saturate-150 focus-visible:ring-2 focus-visible:ring-accent",
+					"block h-full w-full cursor-pointer overflow-hidden rounded-tag text-left hover:brightness-105 hover:saturate-150",
 					run.state === "running" && "ring-2 ring-accent ring-inset",
 				)}
 				style={{
@@ -269,15 +275,15 @@ const RunTile = memo(function RunTile({
 			>
 				{r.w > 70 && r.h > 34 ? (
 					<>
-						<span className="flex items-center gap-1 truncate px-1.5 pt-1 text-xs font-medium text-black/80">
+						<span className="flex items-center gap-1 truncate px-1.5 pt-1 text-small font-medium text-black/80">
 							{DOT[run.state] ? <span className={cn("h-2 w-2 shrink-0 rounded-full", DOT[run.state])} /> : null}
 							<span className="truncate">{run.name}</span>
 							<PackMark run={run} className="[&_svg]:text-black/55" />
 						</span>
-						<span className="block truncate px-1.5 text-xs text-black/60">{bytes(size)}</span>
+						<span className="block truncate px-1.5 text-small text-black/60">{bytes(size)}</span>
 					</>
 				) : null}
-			</button>
+			</div>
 		</ContextMenu>
 	);
 });
@@ -302,7 +308,7 @@ function HoverCard({
 	if (!shown || !hover) return null;
 	return (
 			<div
-				className="pointer-events-none absolute z-50 space-y-2 rounded-surface border border-line-subtle bg-surface-raised p-3 shadow-lg"
+				className="ta-float pointer-events-none absolute z-popup space-y-2 p-3"
 				style={{
 					width: CARD,
 					left: hover.x + 16 + CARD > size.w ? Math.max(4, hover.x - 16 - CARD) : hover.x + 16,
@@ -319,10 +325,10 @@ const CardBody = memo(function CardBody({ run: shown, total }: { run: Run; total
 	return (
 		<>
 					<div>
-						<div className="truncate text-sm font-semibold text-fg">{shown.name}</div>
-						<div className="text-xs text-fg-secondary">{stateLabel(shown)}</div>
+						<div className="truncate text-body font-semibold text-fg">{shown.name}</div>
+						<div className="text-small text-fg-secondary">{stateLabel(shown)}</div>
 					</div>
-					<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+					<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-small">
 						<dt className="text-fg-muted">On disk</dt>
 						<dd className="text-fg">
 							{bytes(shown.disk ?? 0)}

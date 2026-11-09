@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync } from "node:fs";
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { polyhedronForId } from "@/lib/render/sphericalSolidsAll";
 import { sphereMapOf } from "@/lib/bubble/sphere";
 import { readDataText } from "../../scripts/atlas/io.mjs";
 
@@ -61,9 +61,9 @@ describe("spherical bubble shelf", () => {
 
 	it("names a shard for every file on disk, and a file for every shard", () => {
 		const onDisk = readdirSync(DIR)
-			.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("manifest."))
+			.filter((f) => /\.json(\.br)?$/.test(f) && !f.startsWith("manifest."))
 			.sort();
-		expect(manifest.flatMap((b) => b.shards.map((s) => `${s}.gz`)).sort()).toEqual(onDisk);
+		expect(manifest.flatMap((b) => b.shards.map((s) => `${s}.br`)).sort()).toEqual(onDisk);
 	});
 
 	// ⚑ The arc CLASSIFIER that used to be checked here is gone with the code it tested. It offset each

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { relaxStep } from "@/lib/squaring/tutte";
 import type { PipelineRecord } from "@/lib/squaring/shelf";
-import { EdgeHitLine, FIGURE_BUTTON, FigureControls } from "./stage-board";
+import { Button } from "@/design-system/components/button";
+import { EdgeHitLine, FigureControls } from "./stage-board";
 import { edgeKey, project, voltageColor, ratio } from "./stage-shared";
 
 // Stage 2: the graph pulled flat by springs, which is Tutte's 1963 method.
@@ -179,7 +180,7 @@ export function TutteSprings({ record, size = SIZE, hovered, onHover, onPickBatt
 				})}
 			</svg>
 			<FigureControls>
-				<span className="truncate font-mono text-[10px] leading-tight text-fg-muted max-md:text-xs max-md:whitespace-normal">
+				<span className="truncate font-mono text-micro leading-tight text-fg-muted max-md:whitespace-normal">
 					{settled ? (
 						<>
 							settled · {drift !== null && drift < 0.01 ? "matches the direct solve" : "relaxed"} ·{" "}
@@ -190,9 +191,7 @@ export function TutteSprings({ record, size = SIZE, hovered, onHover, onPickBatt
 						"springs relaxing…"
 					)}
 				</span>
-				<button type="button" onClick={reset} className={FIGURE_BUTTON}>
-					replay
-				</button>
+				<Button size="xs" className="shrink-0" label="replay" onClick={reset} />
 			</FigureControls>
 		</div>
 	);

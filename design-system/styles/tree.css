@@ -1,0 +1,96 @@
+/* TREES: a folder's rows unfolding and the rail that joins a tree's rows, shared by the atlas's browse tree,
+   the catalogue list and the Searcher's run tree. */
+
+/* The catalogue tree's reveal (components/sidebar/catalogue-list-panel.tsx): the rows a folder opens
+   into fade up to full ink. An animation, not a transition — the block MOUNTS when the row opens, and
+   only an animation runs on an element's first paint.
+
+   OPACITY ONLY, and the two rules behind that are worth keeping.
+
+   No height collapse: every header in that tree is `position: sticky`, and folding a height needs
+   `overflow: hidden` (a scroll container) or `overflow: clip` (a clip box) between those headers and
+   the scroller. Either one un-pins them, so animating the fold would break the pinned path the fold
+   just created.
+
+   No transform either, which is subtler and cost a bug first. TileGrid virtualises off
+   `getBoundingClientRect().top` measured against the scroller, and it recomputes on EVERY render with
+   no dep array. A 4px translate on an ancestor moves that rect, so a grid inside a reveal picked its
+   visible row window from the animated offset and painted the wrong tiles until the next commit —
+   a flash of the wrong thumbnails. Opacity moves nothing and measures the same. */
+@keyframes ta-tree-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ta-tree-reveal {
+  animation: ta-tree-reveal var(--duration-glide) var(--ease-feedback) both;
+}
+
+/* The browse tree's rail (components/atlas/browse-tree.tsx) and the Tiling Searcher's run tree
+   (tools/searcher/app/src/runs.tsx). An open node's children hang off a line under its icon, each
+   branching off with a curve; the line stops at the last child's curve. --rail-mid is where a child row
+   is centred (a Searcher run row sets 26px).
+
+   The path to the active node is an overlay (::after) in the text colour on the entries the tree marks:
+   [data-rail-pass] the entries it runs past, a straight piece; [data-rail-on] the one it enters, a curve.
+   A piece draws top-down after its --rail-delay when it appears or changes role (each role has its own
+   keyframes, so the change restarts it); pieces the old and new path share stay as they are. */
+.ta-rail {
+  --rail: color-mix(in oklab, var(--color-fg) 22%, var(--color-surface-chrome));
+  margin-left: 15px;
+}
+.ta-rail > li {
+  position: relative;
+  padding-left: 14px;
+  padding-bottom: 2px;
+}
+.ta-rail > li:not(:last-child) {
+  background: linear-gradient(var(--rail), var(--rail)) no-repeat 0 0 / 1px 100%;
+}
+.ta-rail > li::before,
+.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  pointer-events: none;
+  border-left: 1px solid var(--rail);
+}
+.ta-rail > li::before,
+.ta-rail > li[data-rail-on]::after {
+  width: 10px;
+  height: calc(var(--rail-mid, 18px) + 2px);
+  border-bottom: 1px solid var(--rail);
+  border-bottom-left-radius: 8px;
+}
+.ta-rail > li[data-rail-pass]::after {
+  bottom: 0;
+}
+.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
+  border-color: var(--color-fg);
+  animation: var(--motion-step) linear var(--rail-delay) both;
+}
+.ta-rail > li[data-rail-on]::after {
+  animation-name: ta-rail-draw-on;
+}
+.ta-rail > li[data-rail-pass]::after {
+  animation-name: ta-rail-draw-pass;
+}
+@keyframes ta-rail-draw-on {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+@keyframes ta-rail-draw-pass {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-rail > li::after {
+    animation: none !important;
+  }
+}

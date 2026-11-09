@@ -54,14 +54,13 @@ const litter = stagedFiles.filter((f) => litterRe.test(f));
 if (litter.length) litter.forEach((f) => fail("staged litter (should not be committed): " + f));
 else console.log(grn("  ✓ no staged litter"));
 
-// ── CHECK 1b: plain JSON under public/ (hard fail) ────────────────────────────
-// Shipped data is stored gzipped (CLAUDE.md, "Shipped data under public/ is stored gzipped"). A writer
-// that still emits plain .json must not bring it back; release.json stays plain (polled by the release
-// skill).
-const plainJson = stagedFiles.filter((f) => /^public\/.*\.json$/.test(f) && f !== "public/release.json");
-if (plainJson.length)
-	plainJson.forEach((f) => fail(`plain JSON under public/ (store it as .json.gz: gzip -9 -n ${f}): ${f}`));
-else console.log(grn("  ✓ no plain JSON staged under public/"));
+// ── CHECK 1b: data files under public/ (hard fail) ──────────────────────────────
+// Shipped data is not in git: its master copy is the R2 bucket, published with `pnpm data:sync` (CLAUDE.md,
+// "Shipped data under public/"). .gitignore keeps .json.br and .json.gz out; this catches a forced add and a
+// plain .json. release.json stays tracked (polled by the release skill).
+const data = stagedFiles.filter((f) => /^public\/.*\.json(\.gz|\.br)?$/.test(f) && f !== "public/release.json");
+if (data.length) data.forEach((f) => fail(`data file staged under public/ (publish it with pnpm data:sync): ${f}`));
+else console.log(grn("  ✓ no data files staged under public/"));
 
 // ── CHECK 2: dead cross-links in the CURATED NAV docs (hard fail) ──────────────
 // Only STATUS/SYNC/NEXT must have all-resolving links — they're navigation. Narrative docs

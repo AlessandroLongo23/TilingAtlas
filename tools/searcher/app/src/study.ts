@@ -4,7 +4,8 @@
 // board per row: every subset of the optional faces whose size `subsets` allows, for every combination of the
 // parameters' values. A row's board keeps the faces that are not optional and the optional faces of its subset,
 // requires each of those (a `require face` line apiece), and keeps only the vertex lines whose corners its faces
-// have. So a row answers "which tilings use exactly these optional faces", the question a census asks.
+// have. So a row answers "which tilings use exactly these optional faces", the question a census asks. A subset
+// holding no face of a `require face` line over optional faces (Require any) is no row (requiredGroups).
 //
 // Before any search each row is checked, and a row is ruled out only with a reason that holds for every k:
 // a required face has a corner no vertex line can hold (here); the engine's balance check leaves no vertex for
@@ -18,15 +19,16 @@ import {
 	parse,
 	removeVertices,
 	requiredFaceKeys,
-	requiresFaces,
 	serialize,
 	faceId,
+	withoutFaces,
 	withPermutations,
 	withRequiredFaces,
 	type Board,
 	type Face,
 	type Problem,
 } from "./board";
+import type { FaceTally, StudyRow } from "./bridge";
 
 /** Rows past this many are refused: each one is a search, and a check before it. */
 export const MAX_ROWS = 10_000;
@@ -154,23 +156,57 @@ const binomial = (n: number, k: number) => {
 	return Math.round(r);
 };
 
-/** How many subsets the board's optional faces give. */
+/** Required groups past this many are refused: the row count takes a term per choice of them. */
+export const MAX_GROUPS = 20;
+
+/**
+ * The `require face` lines a row meets only through its optional faces (Require any over them), each as the
+ * optional faces it names, by position among them. A line naming a face that is always on the board, every row
+ * meets; a line holding all of another's faces is met with it, so it is left out.
+ */
+export function requiredGroups(b: Board): number[][] {
+	const opt = optionalFaces(b);
+	const ids = b.faces.map(faceId);
+	const groups = b.require.flatMap((r) => {
+		if (!r.faces) return [];
+		const want = new Set(requiredFaceKeys(r));
+		const named = ids.flatMap((k, i) => (want.has(k) ? [i] : []));
+		return named.some((i) => !b.faces[i].optional) ? [] : [named.map((i) => opt.indexOf(i))];
+	});
+	return groups.filter((g, j) => !groups.some((h, i) => i !== j && h.every((x) => g.includes(x)) && (h.length < g.length || i < j)));
+}
+
+/** How many rows the optional faces give: subsets of a size allowed that hold a face of every required group, by
+ *  inclusion–exclusion (each term counts the subsets missing a choice of groups, signed by how many). */
 export function subsetCount(b: Board): number {
 	const n = optionalFaces(b).length;
 	const [lo, hi] = sizesOf(b);
+	const groups = requiredGroups(b);
 	let total = 0;
-	for (let k = lo; k <= hi; k++) total += binomial(n, k);
+	for (let m = 0; m < 2 ** Math.min(groups.length, MAX_GROUPS); m++) {
+		const miss = new Set(groups.flatMap((g, j) => (m & (1 << j) ? g : [])));
+		let sign = 1;
+		for (let x = m; x; x &= x - 1) sign = -sign;
+		for (let k = lo; k <= hi; k++) total += sign * binomial(n - miss.size, k);
+	}
 	return total;
 }
 
-/** The subsets, smallest first and in board order within a size, as Marek's census lists them. */
+/**
+ * The rows' subsets, smallest first and in board order within a size, as Marek's census lists them. A subset
+ * holding no face of a required group asks what the board excludes, so it is no row.
+ */
 export function subsetsOf(b: Board): number[][] {
 	const opt = optionalFaces(b);
 	const [lo, hi] = sizesOf(b);
+	const groups = requiredGroups(b);
 	const out: number[][] = [];
 	const pick = (from: number, k: number, acc: number[]) => {
-		if (!k) return void out.push(acc);
-		for (let i = from; i <= opt.length - k; i++) pick(i + 1, k - 1, [...acc, opt[i]]);
+		// a group whose faces all come before what is left to pick, none of them picked, is missed
+		const end = k ? from : opt.length;
+		if (groups.some((g) => g.every((x) => x < end && !acc.includes(x)))) return;
+		if (!k) return void out.push(acc.map((i) => opt[i]));
+		for (let i = from; i <= opt.length - k; i++) pick(i + 1, k - 1, [...acc, i]);
 	};
 	for (let k = lo; k <= hi; k++) pick(0, k, []);
 	return out;
@@ -208,13 +244,8 @@ export function rowMaker(b: Board) {
 	const cornersOf = b.vertices.map((v) => [...new Set(v.word)]);
 	const linesOf = new Map<string, number[]>();
 	cornersOf.forEach((cs, j) => cs.forEach((c) => linesOf.set(c, [...(linesOf.get(c) ?? []), j])));
-	// each optional face's own `require face` line, none when the board already asks for just that face
-	const required = new Map(
-		optionalFaces(b).flatMap((i) => {
-			const f = { ...b.faces[i], optional: undefined };
-			return requiresFaces(b, [f]) ? [] : [[i, withRequiredFaces({ ...b, require: [] }, [f]).require[0]] as const];
-		}),
-	);
+	// each optional face's own `require face` line
+	const alone = new Map(optionalFaces(b).map((i) => [i, withRequiredFaces({ ...b, require: [] }, [b.faces[i]]).require[0]]));
 	const kept = (take: number[]) => {
 		const keep = new Set(take);
 		const faces = b.faces.map((f, i) => !f.optional || keep.has(i));
@@ -240,14 +271,19 @@ export function rowMaker(b: Board) {
 					return `No vertex on this row holds corner ${c} of ${names.get(i) ?? faceName(b, b.faces[i])}.`;
 		return null;
 	};
-	/** The row's board: its faces, the lines they can make, and a `require face` line per optional face it holds. */
+	/**
+	 * The row's board: its faces, the lines they can make, and a `require face` line per optional face it holds.
+	 * The faces it leaves out leave the board's `require face` lines too (the engine refuses a face it has no
+	 * angles for), and a line that names one of the row's own faces goes, as that face's line already meets it.
+	 */
 	const board = (take: number[], name: string): Board => {
 		const { faces, lines } = kept(take);
+		const cut = withoutFaces(b, faces.flatMap((on, i) => (on ? [] : [i])));
 		const row = removeVertices(
-			{ ...b, faces: b.faces.filter((_, i) => faces[i]).map(({ optional: _, ...f }) => f) },
+			{ ...cut, faces: cut.faces.map(({ optional: _, ...f }) => f) },
 			lines.flatMap((on, j) => (on ? [] : [j])),
 		);
-		const extra = take.flatMap((i) => (required.has(i) ? [required.get(i)!] : []));
+		const own = new Set(take.map((i) => ids[i]));
 		const used = new Set([...row.faces.flatMap((f) => f.word), ...row.vertices.flatMap((v) => v.word)]);
 		return {
 			...row,
@@ -255,7 +291,7 @@ export function rowMaker(b: Board) {
 			// the edge's minimal polynomial goes with the row, so its runs can show it
 			header: b.header.filter((h) => /^minpoly\s/.test(h)),
 			subsets: undefined,
-			require: [...row.require, ...extra],
+			require: [...row.require.filter((r) => !requiredFaceKeys(r).some((k) => own.has(k))), ...take.map((i) => alone.get(i)!)],
 			angles: b.angles.filter((a) => used.has(a.sym)),
 			extra: row.extra.filter((e) => !/^vary\b/.test(e.text)),
 		};
@@ -335,6 +371,55 @@ export function withParam(text: string, name: string, values: string | null): st
 	return [...ls.slice(0, after + 1), line, ...ls.slice(after + 1)].join("\n");
 }
 
+/** The text with its `subsets` line saying `lo` to `hi`: rewritten in place (its comment kept), or added last. */
+export function withSubsets(text: string, [lo, hi]: [number, number]): string {
+	const ls = text.split("\n");
+	const at = ls.findIndex((l) => tokens(l)[0] === "subsets");
+	const line = `subsets ${lo} ${hi}`;
+	if (at < 0) return `${text.trimEnd()}\n${line}\n`;
+	const hash = ls[at].indexOf("#");
+	ls[at] = hash < 0 ? line : `${line} ${ls[at].slice(hash)}`;
+	return ls.join("\n");
+}
+
+/**
+ * The study board without optional face `name` (optionalNames): its line, the vertex lines no face left has
+ * every corner of, and the angles nothing uses any more; a `require face` line loses it. Rows without the face
+ * keep the same board, as a row only ever had the lines its own faces make. Null on a board with parameters,
+ * whose lines are edited as text.
+ */
+export function withoutOptionalFace(text: string, name: string): string | null {
+	if (readParams(text).params.length) return null;
+	const b = parse(text).board;
+	const i = [...optionalNames(b)].find(([, x]) => x === name)?.[0];
+	if (i === undefined) return null;
+	const c = withoutFaces(b, [i]);
+	const corners = new Set(c.faces.flatMap((f) => f.word));
+	const d = removeVertices(c, c.vertices.flatMap((v, j) => (v.word.every((x) => corners.has(x)) ? [] : [j])));
+	const used = new Set([...d.faces, ...d.vertices].flatMap((x) => x.word));
+	return serialize({ ...d, angles: d.angles.filter((a) => used.has(a.sym)) });
+}
+
+/**
+ * What a study's rows found for one optional face: the rows holding it, those with tilings, and for the rest how
+ * far they were searched (the least k, once none is left unsearched), or that each was ruled out at every k.
+ */
+export function faceTally(rows: Pick<StudyRow, "faces" | "state" | "total" | "through">[], face: string): FaceTally {
+	const mine = rows.filter((r) => r.faces.includes(face));
+	const found = mine.filter((r) => r.total > 0);
+	// a row repeating another (same) has that row's tilings; a ruled-out row has none at any k
+	const open = mine.filter((r) => !r.total && r.state !== "ruled-out" && r.state !== "same");
+	const left = open.filter((r) => r.state !== "none" || !r.through).length;
+	return {
+		rows: mine.length,
+		found: found.length,
+		tilings: found.reduce((t, r) => t + r.total, 0),
+		left,
+		...(open.length && !left ? { through: Math.min(...open.map((r) => r.through!)) } : {}),
+		proven: mine.length > 0 && mine.every((r) => r.state === "ruled-out"),
+	};
+}
+
 /** A name for a new parameter: n, then m, p, q, … */
 export const freeParam = (params: Param[]) =>
 	["n", "m", "p", "q", "r", "s", "t"].find((x) => !params.some((p) => p.name === x)) ?? `n${params.length + 1}`;
@@ -358,6 +443,8 @@ export interface StudyPlan {
 	/** The optional faces' names, in board order. */
 	optional: string[];
 	sizes: [number, number];
+	/** How many required groups a row's optional faces must each meet (requiredGroups). */
+	required: number;
 	rows: number;
 	/** Errors that keep the study from running (a bad parameter, a row board that does not parse). */
 	problems: Problem[];
@@ -388,9 +475,17 @@ export function planStudy(text: string, list = true): StudyPlan {
 	const first = substitute(text, grid[0] ?? {});
 	const b0 = parse(first.text).board;
 	const optional = optionalFaces(b0).map((i) => optionalNames(b0).get(i)!);
+	const required = requiredGroups(b0).length;
 	const rows = grid.length * subsetCount(b0);
-	const plan: StudyPlan = { params, optional, sizes: sizesOf(b0), rows, problems: [...problems], list: null, instances: [] };
-	if (problems.length || !list || rows > MAX_ROWS) return plan;
+	const plan: StudyPlan = { params, optional, sizes: sizesOf(b0), required, rows, problems: [...problems], list: null, instances: [] };
+	if (required > MAX_GROUPS)
+		plan.problems.push({
+			severity: "error",
+			line: null,
+			where: { kind: "board" },
+			message: `${required} required sets name only optional faces; a study takes at most ${MAX_GROUPS}, as it counts its rows over every choice of them.`,
+		});
+	if (plan.problems.length || !list || rows > MAX_ROWS) return plan;
 	const out: RowPlan[] = [];
 	for (const values of grid) {
 		const sub = substitute(text, values);

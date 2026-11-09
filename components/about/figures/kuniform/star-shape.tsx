@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/design-system/components/slider";
 import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
 import { polygonFillHue, starHue } from "@/lib/utils/renderTiling";
 
@@ -58,7 +58,7 @@ export function KuStarShape({ caption }: { caption?: string }) {
 			<Stage fit={frame} className="max-h-[280px]">
 				<polygon points={svgPoints(poly)} fill={tileFill(poly)} {...OUTLINE} />
 			</Stage>
-			<p className="mt-2 text-center text-xs text-fg-muted">
+			<p className="mt-2 text-center text-small text-fg-muted">
 				<span className="font-mono text-fg-secondary">
 					{star ? `${n}*` : `${2 * n}-gon`}, α = {a.toFixed(0)}°
 				</span>

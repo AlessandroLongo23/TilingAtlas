@@ -1,4 +1,4 @@
-// Rewrite the sph-ncx-* records in public/reference-atlas-spherical.json.gz from the measured rows that
+// Rewrite the sph-ncx-* records in public/reference-atlas-spherical.json.br from the measured rows that
 // tools/ctrnact-oracle/gen_nonconvex_shelf.py emits.
 //
 // The shelf's TS geometry (lib/render/nonconvexSolids.ts) and its ATLAS ROWS are two different artefacts
@@ -27,7 +27,7 @@ import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ROWS = path.join(ROOT, "tools", "ctrnact-oracle", "nonconvex-rows.json");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.br");
 const DISCOVERER = "Čtrnáct engine + develop_euclid, 2026-08-21";
 const rows = JSON.parse(fs.readFileSync(ROWS, "utf8"));
 // How deep the search has been run — read off the rows, so the claim on every card cannot outrun the

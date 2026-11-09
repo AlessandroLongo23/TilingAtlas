@@ -1,0 +1,95 @@
+/* MOTION: arrivals that belong to no one surface. The toolbar's rise, the skeleton and the fades
+   (ThumbnailSkeleton), the icon swap (SwapIcon). */
+
+/* Something that arrives once and stays (the floating toolbar): it rises 8px into place as it fades in. */
+@keyframes ta-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.ta-rise-in {
+  animation: ta-rise-in var(--duration-arrive) var(--ease-arrive) both;
+}
+
+/* Thumbnail loading (2026-07-22) — see lib/render/thumbnailQueue.ts for why previews arrive late.
+   The skeleton fills the preview slot while its bake is queued or running; the preview then fades in
+   ON TOP of it (opaque media over an opaque placeholder), so there is no muddy 50/50 cross-fade.
+
+   The placeholder's fill (bg-surface-overlay, set by <ThumbnailSkeleton>) is deliberately NOT
+   surface-raised: raised is pure white in light mode, so a pulse on it would be invisible against the
+   card. Overlay is neutral-100 light / neutral-800 dark — legible in both themes. A pulse, not
+   a travelling shimmer band: 25 sweeps at once fight the wall's hairline grid, whereas opacity
+   breathing reads as "working" without adding direction.
+
+   This class carries ONLY the pulse. Once the preview lands the placeholder crossfades out under it
+   (.ta-fade-out, same duration as the preview's .ta-fade-in) — so it never blinks to card-white for
+   the duration of the fade, and no unmount timer is needed. It has to go: the hyperbolic and
+   spherical previews are transparent PNGs, and a placeholder left painted shows through them as a
+   grey plate. */
+@keyframes ta-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.ta-skeleton {
+  animation: ta-skeleton-pulse var(--duration-pulse) var(--ease-pulse) infinite;
+}
+
+/* Spinner's turn (animate-spin). */
+@keyframes ta-spin {
+  to {
+    rotate: 1turn;
+  }
+}
+
+/* An animation, not a transition: this class is applied at the same moment the element first paints
+   (or leaves opacity-0), and an animation runs on mount without the two-frame class-swap dance a
+   transition needs. `both` holds the from-state before the first frame and the to-state after. */
+@keyframes ta-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ta-fade-in {
+  animation: ta-fade-in var(--duration-arrive) var(--ease-feedback) both;
+}
+
+@keyframes ta-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.ta-fade-out {
+  animation: ta-fade-out var(--duration-arrive) var(--ease-feedback) both;
+}
+
+/* Reduced motion: the fades take arrive's time, which is nothing then (semantic.css), so they land on their
+   end state at once; the pulse stops. */
+@media (prefers-reduced-motion: reduce) {
+  .ta-skeleton {
+    animation: none;
+  }
+}
+
+/* <SwapIcon>: a glyph that replaces another (Copy → Check) arrives out of a small blur. */
+@keyframes ta-icon-pop {
+  from {
+    opacity: 0;
+    scale: 0.5;
+    filter: blur(2px);
+  }
+}
+.ta-icon-pop {
+  animation: ta-icon-pop var(--duration-glide) var(--ease-glide);
+}

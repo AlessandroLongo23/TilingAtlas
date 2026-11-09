@@ -1,0 +1,48 @@
+/* BASE: the page itself. Body type and colour, scrollbars, selection, the transition kill switch. */
+
+/* Compact density: text that names no role of its own is interface text (the ui role, 13px on 18px). */
+body {
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--type-ui-size);
+  line-height: var(--type-ui-line);
+  transition:
+    background-color var(--duration-feedback) var(--ease-feedback),
+    color var(--duration-feedback) var(--ease-feedback);
+}
+
+.disable-transitions *,
+.disable-transitions *::before,
+.disable-transitions *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Scrollbars: thin, and in the theme's own ink instead of the OS grey. .scrollbar-hide still wins. */
+:where(html, body, *) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-text-muted) 40%, transparent) transparent;
+}
+::selection {
+  background-color: color-mix(in oklab, var(--color-accent) 24%, transparent);
+}
+
+/* A phone (docs/mobile/DESIGN.md). */
+@media (width < theme(--breakpoint-md)) {
+  /* iOS Safari zooms the whole page into any focused field whose text is under 16px, and does not
+     zoom back out. 16px on phone keeps the layout still when a search box or number field is tapped. */
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

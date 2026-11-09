@@ -10,7 +10,7 @@ import { familyMember } from "@/lib/render/hypStarFamily";
 // (the TS solver and tools/ctrnact-oracle/hyp_geom.py agree), every member across the range must still
 // be a tiling by stars, and the walk must place points inside the star that holds them.
 
-const FILE = "public/hyperbolic-developed-stars.json.gz";
+const FILE = "public/hyperbolic-developed-stars.json.br";
 const families: CataloguePatch[] = existsSync(FILE)
 	? (JSON.parse(readDataText(FILE)) as CataloguePatch[]).filter((p) => p.family)
 	: [];

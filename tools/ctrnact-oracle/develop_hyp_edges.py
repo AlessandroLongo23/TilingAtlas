@@ -27,7 +27,7 @@ The bridge between them is three things, and nothing else:
   3. The digon needs no case at all: α(2, ℓ) = 2·asin(cos(π/2)/cosh(ℓ/2)) = 0, exactly as the
      Euclidean 180 − 360/n gave 0.
 
-WHAT SHIPS. Darts, not baked geometry — matching public/hyperbolic-developed.json.gz, because every
+WHAT SHIPS. Darts, not baked geometry — matching public/hyperbolic-developed.json.br, because every
 render path re-develops under the live view anyway (lib/render/hyperbolicDevelopClient.ts). The
 drawn/undrawn bit is NOT shipped: it is recoverable from the polygon sizes as
 
@@ -130,8 +130,18 @@ def alphabet(config):
 FLAT = "Pi"
 
 
+# Corner counts a board file states for labels that do not (hybrid_2_9830's A30 is a 24-gon). Filled by a
+# developer that has the board; a label found here is never read off its digits.
+FACE_SIZES = {}
+# Star boards: dent label -> point label of each isotoxal star. FACE_SIZES gives both labels the star's
+# side count (2n), and quotient_faces accepts a face that alternates the two.
+STARS = {}
+
+
 def tile_size(letter):
     """'A2' -> 2, 'A7' -> 7, 'Aoo' -> 0 (the apeirogon sentinel of develop_hyperbolic.interior_angle)."""
+    if letter in FACE_SIZES:
+        return FACE_SIZES[letter]
     return 0 if letter[1:] == "oo" else int(letter[1:])
 
 
@@ -321,8 +331,15 @@ def quotient_faces(block, mult=None):
         faces.append({"darts": darts})
     for f in faces:
         letters = {block.tile[h] for h in f["darts"]} - {FLAT}
-        if len(letters) != 1:
+        star = len(letters) == 2 and any(STARS.get(x) in letters for x in letters)
+        if len(letters) != 1 and not star:
             raise DevelopError("quotient face mixes corner letters")
+        if star:
+            # a star's point and dent alternate round it; the face is named by its point
+            seq = [block.tile[h] for h in f["darts"]]
+            if len(seq) % 2 or any(a == b for a, b in zip(seq, seq[1:] + seq[:1])):
+                raise DevelopError("star face whose point and dent do not alternate")
+            letters = {x for x in letters if x not in STARS}
         letter = letters.pop()
         size = tile_size(letter)
         m = (mult or {}).get(letter, 1)
@@ -338,6 +355,7 @@ def quotient_faces(block, mult=None):
         f["letter"] = letter
         f["size"] = size
         f["mult"] = m
+        f["star"] = star
     return face_of, faces
 
 
@@ -572,7 +590,7 @@ def run(source, base_id, out_prefix, ks=None, report_path=None, limit=None, boun
             r["name"] = r["id"]
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json.gz"
+            path = f"{out_prefix}-k{k}.json.br"
             fd.write_json(path, recs, separators=(",", ":"))
             written.append((path, len(recs), os.path.getsize(path)))
 
@@ -641,7 +659,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source", nargs="?", help="certificate directory (or a single .txt)")
     ap.add_argument("--base", default="667", choices=sorted(BASES))
-    ap.add_argument("--out", help="output prefix; writes <prefix>-k<k>.json.gz")
+    ap.add_argument("--out", help="output prefix; writes <prefix>-k<k>.json.br")
     ap.add_argument("--report")
     ap.add_argument("--ks", help="comma-separated k values to decode (default: all present)")
     ap.add_argument("--limit", type=int)

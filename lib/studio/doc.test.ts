@@ -331,7 +331,7 @@ describe("resolveRef", () => {
 
 // --- the shipped catalogue -------------------------------------------------------------------------
 
-const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json.gz");
+const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json.br");
 type Rec = { id: string; exactSource?: ExactCellSource };
 const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(readDataText(atlasPath))) : [];
 

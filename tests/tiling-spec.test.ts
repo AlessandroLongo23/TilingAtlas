@@ -32,6 +32,20 @@ describe("buildTilingSpec", () => {
 		expect(spec.faceOrbits).toBeNull();
 	});
 
+	it("edge and tile orbits: the shipped counts, and the live computation over them", () => {
+		const shipped = buildTilingSpec({ ...euclid, edgeOrbits: 12, faceOrbits: 8 }, null, null);
+		expect(shipped.edgeOrbits).toBe(12);
+		expect(shipped.faceOrbits).toBe(8);
+		const live = buildTilingSpec({ ...euclid, edgeOrbits: 12, faceOrbits: 8 }, null, {
+			k: 7,
+			orbitAt: () => -1,
+			edges: { count: 13, at: () => -1 },
+			faces: { count: 9, at: () => -1 },
+		});
+		expect(live.edgeOrbits).toBe(13);
+		expect(live.faceOrbits).toBe(9);
+	});
+
 	it("euclidean: live symmetryData overrides the build-computed group/lattice", () => {
 		const sd = { group: "p4m", orbifold: "*442", latticeShape: "square" } as unknown as SymmetryData;
 		const spec = buildTilingSpec(euclid, sd, null);

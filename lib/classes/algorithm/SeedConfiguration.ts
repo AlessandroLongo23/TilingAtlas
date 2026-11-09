@@ -1,18 +1,16 @@
-import {
-	Vector,
-	type Polygon,
-	VertexConfiguration,
-	type Gyration,
-	type Reflection,
-	RegularPolygon,
-	StarRegularPolygon,
-	StarParametricPolygon,
-	EquilateralPolygon,
-	GenericPolygon,
-	PolygonType,
-} from "@/classes";
+import { Vector } from "@/classes/Vector";
+import { type Polygon } from "@/classes/polygons/Polygon";
+import { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
+import { type Gyration, type Reflection } from "@/classes/Transform";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { StarRegularPolygon } from "@/classes/polygons/StarRegularPolygon";
+import { StarParametricPolygon } from "@/classes/polygons/StarParametricPolygon";
+import { EquilateralPolygon } from "@/classes/polygons/EquilateralPolygon";
+import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
+import { PolygonType } from "@/classes/polygons/PolygonType";
 import type { EncodedGyration, EncodedReflection } from "@/lib/algorithm/generatorEncoding";
-import { deduplicatePolygons, isWithinTolerance } from "@/utils";
+import { deduplicatePolygons } from "@/utils/geometry";
+import { isWithinTolerance } from "@/utils/math";
 import { Cyclotomic, getActiveRing } from "../Cyclotomic";
 
 function polygonToShort(enc: Record<string, unknown>): Record<string, unknown> {

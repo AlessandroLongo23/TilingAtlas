@@ -17,7 +17,7 @@ import { buildIhEdgePatch, certCellFaces, checkSlotsAreOpposite } from "./edgePa
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataText } from "../../scripts/atlas/io.mjs";
 
-const shardIh = (ih: number, k: number) => `public/isohedral-edges/ie${String(ih).padStart(2, "0")}-k${k}.json.gz`;
+const shardIh = (ih: number, k: number) => `public/isohedral-edges/ie${String(ih).padStart(2, "0")}-k${k}.json.br`;
 const anyShard = existsSync(shardIh(1, 2));
 const readIh = (ih: number, k: number): IhEdgeRecord[] => decodeAtlas(JSON.parse(readDataText(shardIh(ih, k))));
 const read = (k: number): IhEdgeRecord[] => readIh(1, k);

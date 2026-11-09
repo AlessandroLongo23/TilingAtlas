@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Re-encode shipped shelf files through the atlas container format (scripts/atlas/encode.mjs).
 //
-//   node scripts/atlas-compact.mjs                 # every public/reference-atlas*.json.gz, dry run
+//   node scripts/atlas-compact.mjs                 # every public/reference-atlas*.json.br, dry run
 //   node scripts/atlas-compact.mjs --write         # …and actually rewrite them
-//   node scripts/atlas-compact.mjs --write public/reference-atlas-scaled-k7.json.gz
+//   node scripts/atlas-compact.mjs --write public/reference-atlas-scaled-k7.json.br
 //
 // One-shot migration for files that already shipped. New output comes out packed because the builders
 // call stringifyAtlas directly, so this is not part of any build.
@@ -56,9 +56,9 @@ const WRAPPED_DIRS = ["spherical-edges", "schwarz-sph", "schwarz-hyp"];
 /** Wrapper files whose record array sits under a different key than `patterns`. */
 const WRAPPER_KEY = { "vertex-configs": "configs" };
 
-/** The data files in `dir` matching `re`, each once: `x.json` and `x.json.gz` name the same file. */
+/** The data files in `dir` matching `re`, each once: `x.json` and `x.json.br` name the same file. */
 const dataFiles = (dir, re) =>
-	[...new Set(fs.readdirSync(dir).map((f) => f.replace(/\.gz$/, "")))]
+	[...new Set(fs.readdirSync(dir).map((f) => f.replace(/\.(br|gz)$/, "")))]
 		.filter((f) => re.test(f))
 		.sort()
 		.map((f) => dataPath(path.join(dir, f)));
@@ -177,10 +177,10 @@ for (const file of files) {
 	);
 
 	if (write) {
-		// Safety 3: temp + rename, so an interrupt cannot truncate a shelf. Output is always gzipped; a
-		// plain `.json` input is replaced by its `.json.gz`.
-		const out = file.endsWith(".gz") ? file : `${file}.gz`;
-		const tmp = `${file}.tmp-compact.gz`;
+		// Safety 3: temp + rename, so an interrupt cannot truncate a shelf. Output is always brotli; a plain
+		// `.json` or legacy `.json.gz` input is replaced by its `.json.br`.
+		const out = `${file.replace(/\.(br|gz)$/, "")}.br`;
+		const tmp = `${out}.tmp-compact.br`;
 		writeDataFile(tmp, outText);
 		fs.renameSync(tmp, out);
 		if (out !== file) fs.unlinkSync(file);

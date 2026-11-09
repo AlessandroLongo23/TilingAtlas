@@ -22,7 +22,7 @@ function Row({ label, value, children }: { label: string; value: string; childre
 	return (
 		<div className="grid grid-cols-[3.6rem_1fr_auto] items-center gap-3">
 			<span className="text-right text-[clamp(0.7rem,1vh+0.24vw,1rem)] text-fg-muted">{label}</span>
-			<div className="flex h-[1.7rem] overflow-hidden rounded-[4px] bg-surface-overlay">{children}</div>
+			<div className="flex h-[1.7rem] overflow-hidden rounded-tag bg-surface-overlay">{children}</div>
 			<span className="min-w-[4.4rem] text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg tabular-nums">
 				{value}
 			</span>
@@ -32,11 +32,11 @@ function Row({ label, value, children }: { label: string; value: string; childre
 
 function Panel({ title, note, children }: { title: string; note: string; children: React.ReactNode }) {
 	return (
-		<figure className="bg-surface-base m-0 flex min-w-[17rem] flex-1 flex-col gap-3 rounded-2xl border border-line px-5 py-4">
+		<figure className="ta-well m-0 flex min-w-[17rem] flex-1 flex-col gap-3 rounded-sheet px-5 py-4">
 			<figcaption className="text-[clamp(0.8rem,1.15vh+0.28vw,1.15rem)] font-medium text-fg">{title}</figcaption>
 			<div className="flex flex-col gap-2">{children}</div>
 			{/* a div, not a p: the slide wrapper sizes every descendant `p` at body scale and wins on specificity */}
-			<div className="text-[clamp(0.68rem,0.92vh+0.2vw,0.92rem)] leading-snug text-fg-muted">{note}</div>
+			<div className="text-[clamp(0.68rem,0.92vh+0.2vw,0.92rem)] leading-tight text-fg-muted">{note}</div>
 		</figure>
 	);
 }
@@ -89,7 +89,7 @@ export function K4Wall() {
 						["bg-accent/20", "candidates, dedup"],
 					].map(([cls, name]) => (
 						<span key={name} className="flex items-center gap-1.5">
-							<span className={`inline-block h-2.5 w-2.5 rounded-[2px] ${cls}`} />
+							<span className={`inline-block h-2.5 w-2.5 rounded-mark ${cls}`} />
 							{name}
 						</span>
 					))}

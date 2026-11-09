@@ -4,6 +4,8 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { speciesPolygons } from "@/components/polygon-glyph";
+import { CERT_STYLE } from "@/components/reference-card";
+import { Badge } from "@/design-system/components/badge";
 import { polygonSpeciesOf, speciesLabel } from "@/lib/services/polygonSpecies";
 import { type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { distinctConfigsOf, type SortDir, type SortKey } from "@/lib/services/librarySort";
@@ -33,12 +35,6 @@ function TileGlyph({ species }: { species: string }) {
 		</svg>
 	);
 }
-
-const CERT_STYLE: Record<string, string> = {
-	proven: "bg-success-subtle text-success",
-	reproduced: "bg-info-subtle text-info",
-	candidate: "bg-warning-subtle text-warning",
-};
 
 interface Column {
 	label: string;
@@ -81,8 +77,8 @@ export function ResultsTable({
 		{ label: "Status", className: "w-24 max-md:hidden" },
 	];
 	return (
-		<div className="overflow-x-auto rounded-surface ring-1 ring-line-subtle">
-			<table className="w-full min-w-[720px] border-collapse text-left text-[13px]">
+		<div className="ta-card overflow-x-auto">
+			<table className="w-full min-w-[720px] border-collapse text-left text-ui">
 				<thead className="bg-surface-chrome">
 					<tr>
 						{columns.map((c) => (
@@ -91,7 +87,7 @@ export function ResultsTable({
 								scope="col"
 								aria-sort={c.sort && c.sort === sortKey ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
 								className={cn(
-									"border-b border-line-subtle px-3 py-2 text-[11px] font-medium text-fg-muted",
+									"border-b border-line-subtle px-3 py-2 text-caption font-medium text-fg-muted",
 									c.className,
 								)}
 							>
@@ -100,12 +96,18 @@ export function ResultsTable({
 										type="button"
 										onClick={() => onSort(c.sort!)}
 										className={cn(
-											"inline-flex cursor-pointer items-center gap-1 rounded-sm hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+											"inline-flex cursor-pointer items-center gap-1 rounded-tag hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 											c.sort === sortKey && "text-fg",
 										)}
 									>
 										{c.label}
-										{c.sort === sortKey ? sortDir === "asc" ? <ArrowUp size={11} /> : <ArrowDown size={11} /> : null}
+										{c.sort === sortKey ? (
+											sortDir === "asc" ? (
+												<ArrowUp className="size-icon-xs" />
+											) : (
+												<ArrowDown className="size-icon-xs" />
+											)
+										) : null}
 									</button>
 								) : (
 									c.label
@@ -133,7 +135,7 @@ export function ResultsTable({
 											<TileGlyph key={s} species={s} />
 										))}
 										{species.length > 5 ? (
-											<span className="text-[11px] text-fg-muted">+{species.length - 5}</span>
+											<span className="text-caption text-fg-muted">+{species.length - 5}</span>
 										) : null}
 									</span>
 								</td>
@@ -145,19 +147,20 @@ export function ResultsTable({
 											e.preventDefault();
 											onOpen(t);
 										}}
-										className="block font-mono text-[11.5px] break-all text-fg group-hover:underline after:absolute after:inset-0 focus:outline-none focus-visible:underline"
+										// ds-check: keep (the row's stretched link: an ink id underlined while the row is hovered, not a link in running text)
+										className="block font-mono text-caption break-all text-fg group-hover:underline after:absolute after:inset-0 focus:outline-none focus-visible:underline"
 										title={t.id}
 									>
 										{t.id}
 									</Link>
 									{t.variants && t.variants > 1 ? (
-										<span className="text-[11px] text-fg-muted">
+										<span className="text-caption text-fg-muted">
 											variant {t.variant} of {t.variants}
 										</span>
 									) : null}
 								</td>
-								<td className="px-3 py-2 text-right align-top font-mono text-[12px] tabular-nums">{t.k}</td>
-								<td className="px-3 py-2 align-top font-mono text-[12px] text-fg-secondary tabular-nums">
+								<td className="px-3 py-2 text-right align-top font-mono text-small tabular-nums">{t.k}</td>
+								<td className="px-3 py-2 align-top font-mono text-small text-fg-secondary tabular-nums">
 									{m != null ? (
 										<>
 											{m}
@@ -166,29 +169,26 @@ export function ResultsTable({
 											) : null}
 										</>
 									) : (
-										<span className="text-fg-disabled">—</span>
+										<span className="text-fg-muted">—</span>
 									)}
 								</td>
 								<td className="px-3 py-2 align-top">
 									<span className="flex flex-wrap gap-1">
 										{vcs.length ? (
 											vcs.map((vc, i) => (
-												<span
-													key={vc}
-													className="rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[11.5px] text-fg"
-												>
+												<Badge key={vc} mono className="text-caption text-fg">
 													{compactVC(vc)}
 													{mult && mult[i] > 1 ? <span className="text-fg-muted"> ×{mult[i]}</span> : null}
-												</span>
+												</Badge>
 											))
 										) : (
-											<span className="text-[12px] text-fg-disabled">{t.family}</span>
+											<span className="text-small text-fg-muted">{t.family}</span>
 										)}
 									</span>
 								</td>
 								<td
 									className={cn(
-										"px-3 py-2 align-top font-mono text-[12px] tabular-nums",
+										"px-3 py-2 align-top font-mono text-small tabular-nums",
 										hyperbolic ? "text-right" : "",
 									)}
 								>
@@ -196,21 +196,19 @@ export function ResultsTable({
 										? t.edge != null
 											? t.edge.toFixed(3)
 											: "—"
-										: (t.wallpaperGroup ?? <span className="text-fg-disabled">—</span>)}
+										: (t.wallpaperGroup ?? <span className="text-fg-muted">—</span>)}
 								</td>
-								<td className="truncate px-3 py-2 align-top text-[12px] text-fg-secondary max-lg:hidden">
+								<td className="truncate px-3 py-2 align-top text-small text-fg-secondary max-lg:hidden">
 									{t.discoverer}
 								</td>
 								<td className="px-3 py-2 align-top max-md:hidden">
 									{t.certification ? (
-										<span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", CERT_STYLE[t.certification])}>
-											{t.certification}
-										</span>
+										<Badge tone={CERT_STYLE[t.certification].tone}>{CERT_STYLE[t.certification].label}</Badge>
 									) : null}
 									{t.candidate ? (
-										<span className="ml-1 rounded bg-warning-subtle px-1.5 py-0.5 text-[11px] font-medium text-warning">
+										<Badge tone="warn" className="ml-1">
 											new
-										</span>
+										</Badge>
 									) : null}
 								</td>
 							</tr>

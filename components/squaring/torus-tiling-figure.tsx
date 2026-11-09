@@ -128,7 +128,7 @@ export function TorusTilingFigure({ map, squaring, mode, hovered, onHover, onPic
 									cy={p[1]}
 									r={7}
 									fill={voltageColor(t)}
-									stroke="var(--color-bg)"
+									stroke="var(--color-surface-base)"
 									strokeWidth={1.5}
 								/>
 							);

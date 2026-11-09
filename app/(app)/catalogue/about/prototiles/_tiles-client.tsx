@@ -4,8 +4,9 @@ import { useMemo, useState, type CSSProperties } from "react";
 import { Shapes, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { ShelfArticleNav } from "@/components/about/shelf-article-nav";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Button } from "@/components/ui/button";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { Badge } from "@/design-system/components/badge";
+import { Button } from "@/design-system/components/button";
 import { useMobileSheet } from "@/stores/mobileSheet";
 import { PrototileCard } from "@/components/prototile-card";
 import { allPrototiles, FAMILY_LABELS, type TileFamily } from "@/lib/tiles/prototiles";
@@ -16,9 +17,8 @@ import { allPrototiles, FAMILY_LABELS, type TileFamily } from "@/lib/tiles/proto
 // off-grid members stay reachable. Display-only float geometry.
 type FamilyFilter = TileFamily | "all";
 
-const FAMILY_OPTIONS: { value: FamilyFilter; label: string; classes?: string }[] = [
-	// "All" is the one short label in the row; on a phone it keeps a finger-wide cell.
-	{ value: "all", label: "All", classes: "max-md:min-w-11" },
+const FAMILY_OPTIONS: { value: FamilyFilter; label: string }[] = [
+	{ value: "all", label: "All" },
 	{ value: "regular", label: FAMILY_LABELS.regular },
 	{ value: "scaled", label: FAMILY_LABELS.scaled },
 	{ value: "polyomino", label: FAMILY_LABELS.polyomino },
@@ -61,7 +61,7 @@ export function TilesClient() {
 						) : null}
 						<Button
 							variant="primary"
-							classes="flex-1"
+							className="flex-1"
 							label={`Show ${tiles.length} shapes`}
 							onClick={() => useMobileSheet.getState().setOpen(false)}
 						/>
@@ -77,28 +77,28 @@ export function TilesClient() {
 					<div className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto max-md:order-1 max-md:flex-none max-md:overflow-visible">
 						{/* The sheet's title says Filters and its footer carries Clear. */}
 						<div className="flex items-center justify-between px-3 pt-3 max-md:hidden">
-							<span className="text-xs font-medium tracking-wider text-fg-muted uppercase">Filters</span>
+							<span className="ta-label">Filters</span>
 							{family !== "all" ? (
 								<button
 									onClick={() => setFamily("all")}
-									className="flex items-center gap-1 text-xs text-fg-muted transition-colors hover:text-danger"
+									className="flex items-center gap-1 text-small text-fg-muted transition-colors hover:text-danger"
 								>
-									<X size={11} /> Clear
+									<X className="size-icon-xs" /> Clear
 								</button>
 							) : null}
 						</div>
 
-						<div className="flex flex-col gap-4 p-3 text-sm">
+						<div className="flex flex-col gap-4 p-3 text-body">
 							<section className="flex flex-col gap-2">
-								<h3 className="text-xs font-medium tracking-wider text-fg-muted uppercase">Tile class</h3>
-								<ButtonGroup variant="chip" options={FAMILY_OPTIONS} selected={family} onChange={setFamily} />
+								<h3 className="ta-label">Tile class</h3>
+								<OptionWall columns={3} options={FAMILY_OPTIONS} selected={family} onChange={setFamily} />
 							</section>
 
 							{showGrid ? (
 								<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
-									<h3 className="text-xs font-medium tracking-wider text-fg-muted uppercase">Isotoxal angle grid</h3>
-									<ButtonGroup variant="chip" options={GRID_OPTIONS} selected={isoGrid} onChange={setIsoGrid} />
-									<p className="text-[11px] leading-relaxed text-fg-disabled max-md:text-[13px] max-md:text-fg-muted">
+									<h3 className="ta-label">Isotoxal angle grid</h3>
+									<OptionWall options={GRID_OPTIONS} selected={isoGrid} onChange={setIsoGrid} />
+									<p className="text-caption leading-relaxed text-fg-muted max-md:text-ui">
 										15° adds the off-grid members (regular octagon, 105°/135° hexagon) the 30° grid can’t express. Only
 										affects the isotoxal family.
 									</p>
@@ -107,23 +107,22 @@ export function TilesClient() {
 
 							{/* A phone always shows two columns, so there is nothing for this to set there. */}
 							<section className="flex flex-col gap-2 border-t border-line-subtle pt-3 max-md:hidden">
-								<h3 className="text-xs font-medium tracking-wider text-fg-muted uppercase">Columns</h3>
-								<ButtonGroup variant="chip" options={COLUMN_OPTIONS} selected={columns} onChange={setColumns} />
+								<h3 className="ta-label">Columns</h3>
+								<OptionWall options={COLUMN_OPTIONS} selected={columns} onChange={setColumns} />
 							</section>
 						</div>
 					</div>
 				</div>
 			</PageSidebar>
 
-			<main className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
+			{/* Focusable: nothing in it takes focus, and a scroller has to for a keyboard to scroll it. */}
+			<main tabIndex={0} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
 				<div className="mb-1 flex items-center gap-3">
-					<Shapes size={18} className="text-accent" />
-					<h1 className="text-base font-semibold text-fg">Prototiles</h1>
-					<span className="border border-line bg-surface-overlay px-2 py-0.5 text-xs text-fg-muted">
-						{tiles.length} shapes
-					</span>
+					<Shapes className="size-icon-lg text-fg-accent" />
+					<h1 className="text-title font-semibold text-fg">Prototiles</h1>
+					<Badge mono>{tiles.length} shapes</Badge>
 				</div>
-				<p className="mb-5 max-w-3xl text-xs leading-relaxed text-fg-muted max-md:text-[13px]">
+				<p className="mb-5 max-w-3xl text-small leading-relaxed text-fg-muted max-md:text-ui">
 					The individual tile shapes behind the tilings — regular, convex-irregular, star and isotoxal. Star and
 					isotoxal are the two branches of one construction (n points of angle α alternating with β, α + β = 360 −
 					360/n): reflex β makes a star, convex β makes an isotoxal tile. The{" "}

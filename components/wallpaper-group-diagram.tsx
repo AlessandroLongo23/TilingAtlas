@@ -10,6 +10,7 @@ import {
 	type WallpaperGroup,
 } from "@/lib/classes/symmetry/types";
 import { cn } from "@/lib/utils/cn";
+import { cssEase, MOTION } from "@/design-system/motion";
 
 /** Coarse-to-fine, which is also specialization order: every later shape is a special case of oblique. */
 export const LATTICE_SHAPES = ["oblique", "rectangular", "rhombic", "square", "hexagonal"] as const;
@@ -127,7 +128,7 @@ export function WallpaperGroupDiagrams({
 			{diagrams.map((d) => (
 				<figure key={d.key} className="flex flex-col items-center gap-1">
 					{/* Fixed white card so the black symmetry lines stay legible in dark mode. */}
-					<span className="rounded-md bg-white p-1 shadow-sm">
+					<span className="rounded-control bg-white p-1 shadow-raised">
 						{/* Static public-dir SVG; next/image adds no value for a tiny inline vector. */}
 						{/* eslint-disable-next-line @next/next/no-img-element */}
 						<img
@@ -139,7 +140,7 @@ export function WallpaperGroupDiagrams({
 							className="block size-[var(--size)] object-contain max-md:size-[var(--phone-size)]"
 						/>
 					</span>
-					<figcaption className="text-[10px] text-fg-muted">{d.lattice}</figcaption>
+					<figcaption className="text-micro text-fg-muted">{d.lattice}</figcaption>
 				</figure>
 			))}
 		</div>
@@ -355,7 +356,7 @@ function Arrangement({
 					{line.map((cluster) => (
 						<section
 							key={cluster.key}
-							className="flex flex-col items-center gap-[0.2em] rounded-lg bg-surface-overlay/45 px-[0.4em] pt-[0.2em] pb-[0.35em]"
+							className="flex flex-col items-center gap-[0.2em] rounded-surface bg-surface-overlay/45 px-[0.4em] pt-[0.2em] pb-[0.35em]"
 						>
 							<h3 className="flex items-baseline gap-[0.3em] leading-none">
 								<span className="text-[clamp(0.55rem,0.8vh+0.26vw,0.95rem)] font-semibold text-fg">
@@ -491,8 +492,8 @@ export function WallpaperGroupWall({ signatures }: { signatures?: string }) {
 			// have stayed put shimmer.
 			if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
 			el.animate?.([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }], {
-				duration: 520,
-				easing: "cubic-bezier(0.2, 0.75, 0.25, 1)",
+				duration: MOTION.settle.ms,
+				easing: cssEase(MOTION.settle.ease),
 			});
 		}
 	}, [mode]);
@@ -515,6 +516,7 @@ export function WallpaperGroupWall({ signatures }: { signatures?: string }) {
 						["lattice", "by lattice shape"],
 					] as const
 				).map(([value, label]) => (
+					// ds-check: keep (a slide control on /defense: its type scales with the viewport, OptionWall's sizes are fixed)
 					<button
 						key={value}
 						type="button"
@@ -555,7 +557,7 @@ export function WallpaperGroupTooltip({ group }: { group: WallpaperGroup }) {
 		<div className="flex w-fit flex-col gap-2">
 			<div className="flex items-baseline gap-1.5">
 				<span className="font-medium text-fg">{group}</span>
-				<span className="font-mono text-xs text-fg-muted">{ORBIFOLD_SIGNATURE[group]}</span>
+				<span className="font-mono text-small text-fg-muted">{ORBIFOLD_SIGNATURE[group]}</span>
 			</div>
 			<WallpaperGroupDiagrams group={group} />
 		</div>

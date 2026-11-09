@@ -21,7 +21,7 @@
 // the cycles pair up under `twin` with a free binary choice per pair — 2^(cycles/2).
 //
 //   pnpm tsx scripts/bubble-sphere-census.ts [solidId ...]
-import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { polyhedronForId } from "@/lib/render/sphericalSolidsAll";
 import { byK, fixedDecorations, kDistribution, lowK, sphereAutomorphisms, sphereMapOf } from "@/lib/bubble/sphere";
 
 /** The 28 boards the spherical shelf ships at k=1: 5 Platonic, 13 Archimedean, 5 prisms, 5 antiprisms. */

@@ -1,7 +1,8 @@
 "use client";
 
-import { ButtonGroup } from "@/components/ui/button-group";
-import { HueRing } from "@/components/ui/hue-ring";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { HueRing } from "@/design-system/components/hue-ring";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { useIsDark } from "@/components/freedraw/freedraw-canvas";
 import { cellFill, type ColorChoice } from "@/lib/colors/render";
 import { slotFill, slotHue, STUDIO_PALETTE } from "@/lib/studio/palette";
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils/cn";
 /** Swatch geometry, so the slot buttons and the two fixed ones line up without repeating the classes. */
 // A phone's swatches are 40px, 36px under 380px wide so the slots, the ring and the two fixed colours
 // still share one row there.
-const SWATCH = "h-7 w-7 rounded border transition-colors max-md:h-10 max-md:w-10 max-[380px]:h-9 max-[380px]:w-9";
+const SWATCH = "h-7 w-7 rounded-tag border transition-colors max-md:h-10 max-md:w-10 max-xs:h-9 max-xs:w-9";
 
 export function PaletteStrip() {
 	const tool = useStudio((s) => s.tool);
@@ -50,35 +51,35 @@ export function PaletteStrip() {
 	if (tool !== "paint") return null;
 
 	return (
-		<div className="ta-float absolute bottom-16 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 p-2 max-md:static max-md:shrink-0 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center">
+		<div className="ta-float absolute bottom-16 left-1/2 z-chrome flex -translate-x-1/2 items-center gap-3 p-2 max-md:static max-md:shrink-0 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center">
 			{/* The slot row. Its LENGTH comes from STUDIO_PALETTE and its colours through slotFill, which
 			    falls back per slot, so a palette left short by an older session still shows ten buttons. */}
 			<div className="flex items-center gap-1 max-md:grid max-md:grid-cols-5 max-md:gap-1.5">
 				{STUDIO_PALETTE.map((_, i) => (
-					<button
-						key={i}
-						type="button"
-						aria-pressed={slot === i}
-						aria-label={`Palette slot ${i + 1}`}
-						title={`Slot ${i + 1}`}
-						onClick={() => useStudio.getState().set({ slot: i })}
-						className={cn(SWATCH, slot === i ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong")}
-						style={{ background: slotFill(palette, i, dark) }}
-					/>
+					<Tooltip key={i} label={`Slot ${i + 1}`}>
+						{/* ds-check: keep (a colour swatch: the slot's colour is the option) */}
+						<button
+							type="button"
+							aria-pressed={slot === i}
+							aria-label={`Palette slot ${i + 1}`}
+							onClick={() => useStudio.getState().set({ slot: i })}
+							className={cn(SWATCH, slot === i ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong")}
+							style={{ background: slotFill(palette, i, dark) }}
+						/>
+					</Tooltip>
 				))}
 			</div>
 
 			<div className="self-stretch border-l border-line max-md:hidden" />
 
-			<ButtonGroup
-				wrap={false}
-				classes="max-md:order-last max-md:w-full max-md:justify-center"
+			<OptionWall
+				className="flex-nowrap max-md:order-last max-md:w-full max-md:justify-center"
 				selected={scope}
 				onChange={(v: PaintScope) => useStudio.getState().set({ paintScope: v })}
 				options={PAINT_SCOPES.map((s) => ({ value: s.value, label: s.label, tooltip: s.help }))}
 			/>
 			{/* The chips' glosses are hover tooltips on the desktop; a phone prints the chosen one under them. */}
-			<p className="hidden w-full text-center text-xs leading-snug text-fg-muted max-md:order-last max-md:block">
+			<p className="hidden w-full text-center text-small leading-tight text-fg-muted max-md:order-last max-md:block">
 				{PAINT_SCOPES.find((s) => s.value === scope)?.help}
 			</p>
 
@@ -92,21 +93,26 @@ export function PaletteStrip() {
 				<HueRing size={54} value={slotHue(palette, slot)} onChange={writeSlot} />
 			</div>
 			<div className="flex flex-col gap-1">
-				{(["cream", "dark"] as const).map((s) => (
-					<button
-						key={s}
-						type="button"
-						aria-pressed={palette[slot] === s}
-						title={s === "cream" ? "Cream: the warm near-white" : "Dark: the almost-black complement"}
-						onClick={() => writeSlot(s)}
-						className={cn(
-							SWATCH,
-							"h-[26px] max-[380px]:h-9 max-md:h-10",
-							palette[slot] === s ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong",
-						)}
-						style={{ background: cellFill(s, false) }}
-					/>
-				))}
+				{(["cream", "dark"] as const).map((s) => {
+					const name = s === "cream" ? "Cream: the warm near-white" : "Dark: the almost-black complement";
+					return (
+						<Tooltip key={s} label={name}>
+							{/* ds-check: keep (a colour swatch: cream or dark is the option) */}
+							<button
+								type="button"
+								aria-pressed={palette[slot] === s}
+								aria-label={name}
+								onClick={() => writeSlot(s)}
+								className={cn(
+									SWATCH,
+									"h-[26px] max-md:h-10 max-xs:h-9",
+									palette[slot] === s ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong",
+								)}
+								style={{ background: cellFill(s, false) }}
+							/>
+						</Tooltip>
+					);
+				})}
 			</div>
 		</div>
 	);

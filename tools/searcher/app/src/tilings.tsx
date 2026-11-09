@@ -2,31 +2,34 @@
 // large, with its certificate beside it. Every drawing is the site's own: a tiling of the plane through
 // the flat cell renderer of the /theory cards (a colouring through its palette), an edge system through
 // the freedraw canvas, and the hyperbolic plane through the disk, each steered as on the site.
-import { Check, ChevronLeft, ChevronRight, Copy, Shuffle } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Maximize, Minimize, Shuffle } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ParametricEdgesCanvas } from "@/components/freedraw/parametric-edges-view";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
 import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/copy-button";
-import { Dropdown } from "@/components/ui/dropdown";
-import { FloatingToolbar } from "@/components/ui/floating-toolbar";
-import { InfoDot } from "@/components/ui/info-dot";
-import { Toggle } from "@/components/ui/toggle";
-import { ToggleButton } from "@/components/ui/toggle-button";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Badge } from "@/design-system/components/badge";
+import { Button } from "@/design-system/components/button";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { CopyButton } from "@/design-system/components/copy-button";
+import { ColumnPicker, type Column } from "@/design-system/components/column-chart";
+import { Popover } from "@/design-system/components/popover";
+import { FloatingToolbar } from "@/design-system/components/floating-toolbar";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { RangeInput } from "@/design-system/components/range-input";
+import { Tooltip } from "@/design-system/components/tooltip";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { useFlatCellPreview } from "@/lib/hooks/useFlatCellPreview";
 import { useDiskInput } from "@/lib/render/diskInput";
 import type { HypDiskMode, HypDiskTiling } from "@/lib/render/hypDisk";
+import { dartShapeIds, patchShapeIds, rankShapes, type ShapeRanks } from "@/lib/render/tileShapes";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { cn } from "@/lib/utils/cn";
 import { useConfiguration } from "@/lib/stores/configuration";
-import { edgeTypes, minpolyAt, minpolys, parse, polyText, type Board } from "./board";
+import { edgeTypes, minpolyAt, minpolys, parse, polyText, searchesFaces, type Board } from "./board";
 import type { OutFile, Run } from "./bridge";
 import { morphTurn, pointsAt, useFold, type Family } from "./fold";
 import {
@@ -40,10 +43,10 @@ import {
 	marksEdges,
 	geometry,
 	hyperbolicDarts,
-	vertexWords,
+	vertexWordsOf,
 	withSymbols,
 } from "./develop";
-import { bytes } from "./runs";
+import { bytes, parentOf } from "./runs";
 
 /** Enough of a file for its first tiling, in the one-per-file view. */
 const FIRST_BYTES = 64 * 1024;
@@ -85,7 +88,7 @@ function prepare(
 	try {
 		// abstract: each apeirogon drawn as the polygon its rings close up into (abstractBoard)
 		if (abstract) board = abstractBoard(board, decode(cert, board)) ?? board;
-		const g = geometry(board, vertexWords(cert));
+		const g = geometry(board, vertexWordsOf(cert, board));
 		if (g.kind === "none") return g;
 		const d = decode(cert, board);
 		if (g.kind === "plane") {
@@ -98,7 +101,8 @@ function prepare(
 			return { kind: "edges", pattern, cells: Math.max(10, span * 1.6) };
 		}
 		const darts = hyperbolicDarts(d, g, board, byShape);
-		if (darts.sizes.includes(2))
+		// an edge system: digons, or drawn and hidden sides
+		if (darts.sizes.includes(2) || darts.drawn)
 			return { kind: "disk", tiling: { id, edge: g.edge, darts }, mode: "edges", plain: false };
 		// faces of one shape told apart by their corners (bubble tiles, a colouring): one colour per board face
 		if (isColoring(board))
@@ -125,7 +129,7 @@ function GridToggle({ on, flip, edges }: { on: boolean; flip: () => void; edges?
 					: "Every tile's outline; without it the colours alone show where tiles meet"
 			}
 		>
-			<ToggleButton size="sm" pressed={on} onPressedChange={flip} label="Grid" />
+			<Button size="sm" variant="ghost" pressed={on} onClick={flip} label="Grid" />
 		</Tooltip>
 	);
 }
@@ -158,12 +162,16 @@ function CellView({
 		symmetryData,
 		showSymmetryElements: show.symmetry,
 		showFundamentalDomain: show.domain,
-		homePeriods: 3,
+		// opens at 3.5 periods across, or at 16 px an edge where that draws them smaller (a large cell shows fewer)
+		homePeriods: 3.5,
+		homeZoomMin: 16,
 		active: true,
 		keepView: true,
 		lineWidth: plain && !show.grid ? 0 : 1,
 		// zoomed all the way out, about five periods of this tiling across, large cell or small
 		zoomOutPeriods: 5,
+		// fullscreen enlarges the same view
+		scaleWithHost: true,
 	});
 	return (
 		<div
@@ -179,10 +187,13 @@ function CellView({
 /** A hyperbolic tiling's edge, and the minimal polynomial of cosh of it when its board names one. */
 function EdgeLine({ edge, poly }: { edge: number; poly: string | null }) {
 	return (
-		<div className="flex shrink-0 items-center gap-2 border-b border-line-subtle px-4 py-2 text-xs text-fg-secondary">
+		<div className="flex shrink-0 items-center gap-2 border-b border-line-subtle px-4 py-2 text-small text-fg-secondary">
 			<span className="ta-label">Edge</span>
 			<span className="font-mono text-fg tabular-nums">{+edge.toFixed(7)}</span>
-			<span className="min-w-0 flex-1 truncate font-mono" title={poly ? `cosh of the edge is a root of ${polyText(poly)}` : undefined}>
+			<span
+				className="min-w-0 flex-1 truncate font-mono"
+				title={poly ? `cosh of the edge is a root of ${polyText(poly)}` : undefined}
+			>
 				{poly ? `cosh: ${polyText(poly)}` : ""}
 			</span>
 			{poly ? <CopyButton text={poly} /> : null}
@@ -207,8 +218,26 @@ function DiskView({ tiling, mode, outline }: { tiling: HypDiskTiling; mode: HypD
 	);
 }
 
+/** A disk edge system's tiling with the run's shape colour order, the same object while both stay. */
+const useRanked = (drawing: Drawing, ranks?: ShapeRanks) =>
+	useMemo(
+		() => (drawing.kind === "disk" && ranks ? { ...drawing.tiling, shapeRanks: ranks } : drawing.kind === "disk" ? drawing.tiling : null),
+		[drawing, ranks],
+	);
+
 /** The selected tiling, large and steerable. Keyed per tiling by the caller, so each opens centred. */
-function BigView({ drawing, show, symmetry }: { drawing: Drawing; show: Overlays; symmetry: SymmetryData | null }) {
+function BigView({
+	drawing,
+	show,
+	symmetry,
+	ranks,
+}: {
+	drawing: Drawing;
+	show: Overlays;
+	symmetry: SymmetryData | null;
+	ranks?: ShapeRanks;
+}) {
+	const tiling = useRanked(drawing, ranks);
 	if (drawing.kind === "cell")
 		return (
 			<CellView
@@ -222,26 +251,30 @@ function BigView({ drawing, show, symmetry }: { drawing: Drawing; show: Overlays
 	if (drawing.kind === "edges")
 		return (
 			<div className={FRAME}>
-				<ParametricEdgesCanvas built={{ pattern: drawing.pattern, reason: null, cells: drawing.cells }} />
+				<ParametricEdgesCanvas
+					built={{ pattern: drawing.pattern, reason: null, cells: drawing.cells }}
+					shapeRanks={ranks}
+				/>
 			</div>
 		);
 	if (drawing.kind === "disk")
-		return <DiskView tiling={drawing.tiling} mode={drawing.mode} outline={!drawing.plain || show.grid} />;
+		return <DiskView tiling={tiling!} mode={drawing.mode} outline={!drawing.plain || show.grid} />;
 	return (
-		<div className="flex h-full w-full items-center justify-center bg-surface-sunken p-6 text-center text-sm text-fg-muted">
+		<div className="flex h-full w-full items-center justify-center bg-surface-sunken p-6 text-center text-body text-fg-muted">
 			{drawing.message}
 		</div>
 	);
 }
 
-function Thumb({ drawing, grid }: { drawing: Drawing; grid: boolean }) {
+function Thumb({ drawing, grid, ranks }: { drawing: Drawing; grid: boolean; ranks?: ShapeRanks }) {
+	const tiling = useRanked(drawing, ranks);
 	if (drawing.kind === "cell")
 		return <TilingThumbnail translationalCell={drawing.cell} periodsAcross={2} outline={!drawing.plain || grid} />;
-	if (drawing.kind === "edges") return <FreedrawThumbnail pattern={drawing.pattern} />;
+	if (drawing.kind === "edges") return <FreedrawThumbnail pattern={drawing.pattern} shapeRanks={ranks} />;
 	if (drawing.kind === "disk")
-		return <HyperbolicThumbnail tiling={drawing.tiling} mode={drawing.mode} outline={!drawing.plain || grid} />;
+		return <HyperbolicThumbnail tiling={tiling!} mode={drawing.mode} outline={!drawing.plain || grid} />;
 	return (
-		<div className="flex h-full w-full items-center justify-center p-2 text-center text-[11px] text-fg-muted">
+		<div className="flex h-full w-full items-center justify-center p-2 text-center text-caption text-fg-muted">
 			Not drawn
 		</div>
 	);
@@ -267,13 +300,16 @@ export function RunPreviews({ run, count = 3 }: { run: Run; count?: number }) {
 		// a run the pointer only crosses is never read: reading and drawing start once it rests on one
 		const wait = setTimeout(
 			() =>
-				void Promise.all(ps.map((p) => window.tilesearch.readFile(p, FIRST_BYTES))).then((texts) => {
-					const per = texts.map((t) => certificatesIn(t));
-					const picks = per.flatMap((c) => c.slice(0, 1));
-					for (const c of per[0] ?? []) if (picks.length < count && !picks.includes(c)) picks.push(c);
-					const symbols = JSON.parse(symbolsKey) as Record<string, string>;
-					if (live) setCerts(picks.slice(0, count).map((c) => withSymbols(c, symbols)));
-				}, () => {}),
+				void Promise.all(ps.map((p) => window.tilesearch.readFile(p, FIRST_BYTES))).then(
+					(texts) => {
+						const per = texts.map((t) => certificatesIn(t));
+						const picks = per.flatMap((c) => c.slice(0, 1));
+						for (const c of per[0] ?? []) if (picks.length < count && !picks.includes(c)) picks.push(c);
+						const symbols = JSON.parse(symbolsKey) as Record<string, string>;
+						if (live) setCerts(picks.slice(0, count).map((c) => withSymbols(c, symbols)));
+					},
+					() => {},
+				),
 			80,
 		);
 		return () => {
@@ -290,7 +326,7 @@ export function RunPreviews({ run, count = 3 }: { run: Run; count?: number }) {
 		if (previewCache.size > 100) previewCache.delete(previewCache.keys().next().value!);
 	}, [certs, drawn, key]);
 	const shown = cached ?? drawn;
-	if (!cached && certs && !certs.length) return <p className="text-xs text-fg-muted">No tilings yet.</p>;
+	if (!cached && certs && !certs.length) return <p className="text-small text-fg-muted">No tilings yet.</p>;
 	return (
 		<div className="grid grid-cols-3 gap-1.5">
 			{Array.from({ length: count }, (_, j) => (
@@ -305,7 +341,11 @@ export function RunPreviews({ run, count = 3 }: { run: Run; count?: number }) {
 /** The thumbnails draw one per frame, so a grid of them never blocks the window; with `near`, only those in
  *  view or close to it. A k = 21 tiling takes 0.1 s to develop, so sixty were six seconds of a stuttering
  *  window, most of them for thumbnails out of sight. */
-function useQueued<T>(items: T[], make: (t: T, i: number) => Drawing, near?: ReadonlySet<number>): (Drawing | undefined)[] {
+function useQueued<T>(
+	items: T[],
+	make: (t: T, i: number) => Drawing,
+	near?: ReadonlySet<number>,
+): (Drawing | undefined)[] {
 	type Made = { items: T[]; make: typeof make; out: (Drawing | undefined)[] };
 	const [done, setDone] = useState<Made | null>(null);
 	// what is made so far, for these items and this maker: kept while `near` grows
@@ -327,58 +367,253 @@ function useQueued<T>(items: T[], make: (t: T, i: number) => Drawing, near?: Rea
 	return done?.items === items && done.make === make ? done.out : [];
 }
 
-/** Which tilings are shown: k (the vertex orbits), then the edge orbits; "all" takes every value. */
-export type Group = { k: number | "all"; edges: number | "all" };
+/** Which tilings are shown: k (the vertex orbits), the edge orbits and the face orbits; "all" takes every value. */
+export type Group = { k: number | "all"; edges: number | "all"; faces: number | "all" };
 
-const holds = (g: Group, f: OutFile) => (g.k === "all" || f.k === g.k) && (g.edges === "all" || f.edges === g.edges);
+// a file's name gives its k and edge orbits; its face orbits differ tiling to tiling, counted in it (OutFile.faces),
+// so a file not counted yet may hold some
+const holds = (g: Group, f: OutFile) =>
+	(g.k === "all" || f.k === g.k) &&
+	(g.edges === "all" || f.edges === g.edges) &&
+	(g.faces === "all" || !f.faces || !!f.faces[g.faces]);
 /** The certificate files a group reads. */
 export const filesOf = (run: Run, g: Group) => run.files.filter((f) => holds(g, f));
 
-/** The group shown: the one asked for when the run has files for it, else the first k, every edge orbit. */
+const ALL: Omit<Group, "k"> = { edges: "all", faces: "all" };
+/** The group shown: the one asked for when the run has files for it, else the first k, every orbit count. */
 export function resolveGroup(run: Run, group: Group | null): Group | null {
 	if (group && filesOf(run, group).length) return group;
 	const f = run.files[0];
-	return f ? { k: f.k, edges: "all" } : null;
+	return f ? { k: f.k, ...ALL } : null;
 }
 
-/** Another k, keeping the edge orbits picked when that k has them. */
-export const groupOfK = (run: Run, k: Group["k"], edges: Group["edges"] = "all"): Group =>
-	filesOf(run, { k, edges }).length ? { k, edges } : { k, edges: "all" };
+/** Another k, keeping the edge and face orbits picked where that k has them. */
+export function groupOfK(run: Run, k: Group["k"], from?: Group | null): Group {
+	const tries: Group[] = [{ ...ALL, ...from, k }, { ...ALL, k, edges: from?.edges ?? "all" }, { k, ...ALL }];
+	return tries.find((g) => filesOf(run, g).length) ?? tries[2];
+}
 
 const sorted = (xs: number[]) => [...new Set(xs)].sort((a, b) => a - b);
 
-/** The two pickers, k and then the edge orbits, for the panel's head. */
+/** The pickers for the panel's head: k, then the edge orbits and the face orbits, each a chart of its tilings. */
 export function GroupPicker({ run, group, onGroup }: { run: Run; group: Group | null; onGroup: (g: Group) => void }) {
 	const g = resolveGroup(run, group);
+	const [open, setOpen] = useState<"edges" | "faces" | null>(null);
+	// a tile-orbit search (`search faces`) ran on the board with faces and vertices swapped: its k counts tile
+	// orbits, and the face lines of its certificates are this board's vertex orbits
+	const swapped = useMemo(() => searchesFaces(parse(run.board).board), [run.board]);
+	const faceNoun = swapped ? "vertex orbit" : "face orbit";
+	// the counts are read from the files themselves (electron/runs.ts countTilings), once, when a picker opens:
+	// from each run the files come from (a study's whole board reads many)
+	const sizes = run.files.map((f) => `${f.path}:${f.bytes}`).join("|");
+	useEffect(() => {
+		if (open)
+			for (const dir of new Set(run.files.map((f) => parentOf(parentOf(f.path))))) void window.tilesearch.countFiles(dir);
+	}, [open, sizes]); // eslint-disable-line react-hooks/exhaustive-deps
 	if (!g) return null;
-	const ks = sorted(run.files.map((f) => f.k));
-	const edgeCounts = sorted(filesOf(run, { k: g.k, edges: "all" }).map((f) => f.edges));
 	const files = filesOf(run, g).length;
+	// the tilings at this k by edge orbits (of the face orbits picked) and by face orbits (of the edge orbits
+	// picked), each over a ghost of every tiling at this k while the other picker filters
+	const inK = filesOf(run, { k: g.k, ...ALL });
+	const inEdges = inK.filter((f) => g.edges === "all" || f.edges === g.edges);
+	const withFaces = (x: number) => (f: OutFile) => (f.faces ? (f.faces[x] ?? 0) : null);
+	const byEdges = sorted(inK.map((f) => f.edges)).map((e) => {
+		const of = inK.filter((f) => f.edges === e);
+		const all = tally(of, (f) => f.tilings);
+		return column(e, "edge orbit", g.faces === "all" ? all : tally(of, withFaces(g.faces)), g.faces === "all" ? null : all, g.faces, faceNoun);
+	});
+	const byFaces = sorted(inK.flatMap((f) => Object.keys(f.faces ?? {}).map(Number))).map((x) => {
+		const all = tally(inK, withFaces(x));
+		return column(x, faceNoun, g.edges === "all" ? all : tally(inEdges, withFaces(x)), g.edges === "all" ? null : all, g.edges, "edge orbit");
+	});
+	const counting = inK.filter((f) => !f.faces).length;
+	// a pick the other picker's choice has no tilings for lets that choice go
+	const pick = (key: "edges" | "faces") => (v: number | "all") => {
+		const want = { ...g, [key]: v };
+		onGroup(filesOf(run, want).length ? want : { ...want, [key === "edges" ? "faces" : "edges"]: "all" });
+		setOpen(null);
+	};
 	return (
 		<>
 			<InfoDot side="bottom" label="What these are">
-				k is the number of vertex orbits, then the number of edge orbits. These tilings come from{" "}
+				The numbers of edge and {faceNoun}s, at the k picked in the chart of tilings per k (k is the number of{" "}
+				{swapped ? "tile" : "vertex"} orbits; click the picked column again for every k). These tilings come from{" "}
 				{files === 1
 					? "one certificate file."
 					: `${files} certificate files, which differ in the corners they use and in orientability.`}
 			</InfoDot>
-			<Dropdown<Group["k"]>
-				value={g.k}
-				options={[{ value: "all", label: "All k" }, ...ks.map((k) => ({ value: k, label: `k = ${k}` }))]}
-				onChange={(k) => onGroup(groupOfK(run, k, g.edges))}
-				ariaLabel="Vertex orbits"
-			/>
-			<Dropdown<Group["edges"]>
+			<OrbitPicker
+				noun="edge orbit"
+				axis="e"
+				at={g.k}
 				value={g.edges}
-				options={[
-					{ value: "all", label: "All edge orbits" },
-					...edgeCounts.map((e) => ({ value: e, label: `${e} edge orbit${e === 1 ? "" : "s"}` })),
-				]}
-				onChange={(edges) => onGroup({ k: g.k, edges })}
-				ariaLabel="Edge orbits"
+				columns={byEdges}
+				onPick={pick("edges")}
+				open={open === "edges"}
+				onOpen={(o) => setOpen(o ? "edges" : null)}
+				ghost={g.faces === "all" ? null : `with any number of ${faceNoun}s`}
+				note={inK.some((f) => f.tilings === null || (g.faces !== "all" && !f.faces)) ? "Counting the tilings in the files…" : null}
+			/>
+			<OrbitPicker
+				noun={faceNoun}
+				axis={swapped ? "v" : "t"}
+				at={g.k}
+				value={g.faces}
+				columns={byFaces}
+				onPick={pick("faces")}
+				open={open === "faces"}
+				onOpen={(o) => setOpen(o ? "faces" : null)}
+				ghost={g.edges === "all" ? null : "with any number of edge orbits"}
+				note={
+					counting
+						? `Counting the ${faceNoun}s in ${counting === inK.length ? "the" : `${counting} more of the`} files…`
+						: null
+				}
 			/>
 		</>
 	);
+}
+
+type Tally = { count?: number; part: boolean };
+/** The tilings of `files` by `of`, as far as they are counted: their sum, and whether a file is not counted yet. */
+function tally(files: OutFile[], of: (f: OutFile) => number | null): Tally {
+	const known = files.map(of).filter((c): c is number => c !== null);
+	return { count: known.length ? known.reduce((a, b) => a + b, 0) : undefined, part: known.length < files.length };
+}
+
+/**
+ * A column of an orbit picker: the tilings with x orbits under the other picker's choice (`other`, `otherNoun`),
+ * and while that choice filters, every tiling with x orbits (`all`) as a ghost behind them.
+ */
+function column(x: number, noun: string, shown: Tally, all: Tally | null, other: Group["edges"], otherNoun: string): Column {
+	const many = (v: number, w: string) => `${v.toLocaleString("en")} ${w}${v === 1 ? "" : "s"}`;
+	const { count, part } = shown;
+	const ghost = all?.count;
+	const tip =
+		count === undefined
+			? "not counted yet"
+			: all
+				? `${count ? count.toLocaleString("en") : "none"} with ${many(+other, otherNoun)}, of ${many(ghost ?? 0, "tiling")}${count ? "" : ". Picking it shows them all"}`
+				: many(count, "tiling");
+	return {
+		x,
+		count,
+		behind: all ? ghost : undefined,
+		part: part || !!all?.part,
+		disabled: !part && !count && !ghost,
+		tip: `${many(x, noun)}: ${tip}${part && count !== undefined ? " so far" : ""}`,
+	};
+}
+
+/** A choice of how many orbits, as columns of the tilings with each number, in a popover off a field. */
+function OrbitPicker({
+	noun,
+	axis,
+	at,
+	value,
+	columns,
+	onPick,
+	open,
+	onOpen,
+	ghost,
+	note,
+}: {
+	noun: string;
+	/** The letter under the scale: e, t (face orbits are tile orbits) or v. */
+	axis: string;
+	/** The k the columns count, for the title. */
+	at: Group["k"];
+	value: number | "all";
+	columns: Column[];
+	onPick: (v: number | "all") => void;
+	open: boolean;
+	onOpen: (open: boolean) => void;
+	/** What the pale columns behind stand for, while the other picker filters. */
+	ghost: string | null;
+	/** Why the columns are not all there yet. */
+	note: string | null;
+}) {
+	return (
+		<Popover
+			face={value === "all" ? `All ${noun}s` : `${value} ${noun}${value === 1 ? "" : "s"}`}
+			aria-label={noun[0].toUpperCase() + noun.slice(1) + "s"}
+			open={open}
+			onOpenChange={onOpen}
+			popupClassName="p-3"
+		>
+			<div className="max-w-full" style={{ width: Math.max(340, 64 + columns.length * 28) }}>
+				<ColumnPicker
+					columns={columns}
+					value={value}
+					onChange={onPick}
+					axis={axis}
+					title={`Tilings by ${noun}s, ${at === "all" ? "every k" : `k = ${at}`}`}
+					allLabel={`All ${noun}s`}
+					ghost={ghost}
+					note={note}
+				/>
+			</div>
+		</Popover>
+	);
+}
+
+/** How many of a run's tilings its shape colour order is read from: the first in k order, where its small
+ *  shapes turn up, within this much of their text. */
+const RANK_SAMPLE = 400;
+const RANK_BYTES = 2 * 2 ** 20;
+
+/** The shape ids of a drawing's tiles: a plane edge system's components, a disk edge system's faces. */
+const shapeIdsOf = (d: Drawing): string[] =>
+	d.kind === "edges" && d.pattern.patch
+		? patchShapeIds(d.pattern.patch)
+		: d.kind === "disk" && d.mode === "edges"
+			? dartShapeIds(d.tiling.darts, d.tiling.edge)
+			: [];
+
+/**
+ * A run's colour order for its edge systems' tile shapes (lib/render/tileShapes.ts), so a shape keeps one colour
+ * across the run: the shapes in most of its first tilings (k ascending) first. A finished run's order is saved
+ * as shapes.json in its folder and read back from there, so it never moves; a running one's is worked out anew.
+ */
+function useShapeRanks(run: Run, board: Board): ShapeRanks | undefined {
+	const [ranks, setRanks] = useState<{ dir: string; ranks: ShapeRanks } | null>(null);
+	const edges = marksEdges(board);
+	const finished = run.state === "finished";
+	const filesKey = run.files.map((f) => f.path).join("|");
+	const symbolsKey = JSON.stringify(run.symbols);
+	useEffect(() => {
+		if (!edges || !filesKey) return;
+		let live = true;
+		const sep = run.dir.includes("\\") ? "\\" : "/";
+		void (async () => {
+			const saved = await window.tilesearch
+				.readFile(run.dir + sep + "shapes.json", 0)
+				.then((t) => (JSON.parse(t) as { shapes: string[] }).shapes)
+				.catch(() => null);
+			if (saved?.length) return live && setRanks({ dir: run.dir, ranks: new Map(saved.map((s, i) => [s, i])) });
+			const symbols = JSON.parse(symbolsKey) as Record<string, string>;
+			const files = [...run.files].sort((a, b) => a.k - b.k || a.name.localeCompare(b.name));
+			const tilings: string[][] = [];
+			let left = RANK_BYTES;
+			for (const f of files) {
+				if (!live || tilings.length >= RANK_SAMPLE || left <= 0) break;
+				const text = await window.tilesearch.readFile(f.path, left);
+				left -= text.length;
+				for (const c of certificatesIn(text).slice(0, RANK_SAMPLE - tilings.length)) {
+					tilings.push(shapeIdsOf(prepare(board, withSymbols(c, f.symbols ?? symbols), `rank#${tilings.length}`)));
+					// a tiling at a time, between frames: the page stays live while the order is read
+					await new Promise((r) => setTimeout(r));
+					if (!live) return;
+				}
+			}
+			if (!live || !tilings.length) return;
+			const order = rankShapes(tilings);
+			setRanks({ dir: run.dir, ranks: order });
+			if (finished) void window.tilesearch.saveShapes(run.dir, JSON.stringify({ shapes: [...order.keys()] }));
+		})().catch(() => {});
+		return () => void (live = false);
+	}, [run.dir, edges, finished, filesKey, symbolsKey, board]); // eslint-disable-line react-hooks/exhaustive-deps
+	return ranks?.dir === run.dir ? ranks.ranks : undefined;
 }
 
 const editable = (t: EventTarget | null) =>
@@ -400,7 +635,7 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	const files = g ? filesOf(run, g) : [];
 	// one per file: each file's first tiling, which spans the corners, edge orbits and orientability at once
 	const [firsts, setFirsts] = useState(false);
-	const id = g ? `${g.k}/${g.edges}${firsts ? "/firsts" : ""}` : "";
+	const id = g ? `${g.k}/${g.edges}/${g.faces}${firsts ? "/firsts" : ""}` : "";
 	// the selected tiling, per group: another group opens at its first
 	const [pick, setPick] = useState({ id: "", i: 0 });
 	const i = pick.id === id ? pick.i : 0;
@@ -408,14 +643,18 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	const [names, setNames] = useState("board");
 	const stage = useRef<HTMLDivElement>(null);
 	const [copying, setCopying] = useState<"capturing" | "copied" | null>(null);
+	// the drawing over the whole window
+	const [full, setFull] = useState(false);
 	const [show, setShow] = useState<Overlays>({ orbits: false, symmetry: false, domain: false, grid: false });
 	// an edge pattern's grid is the freedraw renderer's scaffold, a setting of its own store
 	useEffect(() => useConfiguration.getState().set({ freedrawScaffold: show.grid }), [show.grid]);
 	const flip = (key: keyof Overlays) => setShow((s) => ({ ...s, [key]: !s[key] }));
-	const filesKey = `${firsts}|` + files.map((f) => `${f.path}:${f.bytes}`).join("|");
+	const filesKey = `${firsts}|${g?.faces ?? "all"}|` + files.map((f) => `${f.path}:${f.bytes}`).join("|");
 	useEffect(() => {
 		let live = true;
-		const [heads, ...rest] = filesKey.split("|");
+		const [heads, faces, ...rest] = filesKey.split("|");
+		// a face orbit count picked: the app reads out only those certificates, each whole
+		const only = faces === "all" ? undefined : Number(faces);
 		const paths = rest.filter(Boolean).map((p) => p.slice(0, p.lastIndexOf(":")));
 		// The budget counts the text as read: a gzipped file's size on disk says little of it (a 30 KB file
 		// held 1.1 MB). A file that ends short of its closing "---" was cut there.
@@ -428,10 +667,10 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 					break;
 				}
 				const max = heads === "true" ? Math.min(FIRST_BYTES, left) : left;
-				const t = await window.tilesearch.readFile(p, max);
+				const t = await window.tilesearch.readFile(p, max, only);
 				texts.push(t);
 				left -= t.length;
-				if (heads !== "true" && (t.length >= max || !/---\n\s*$/.test(t))) cut = true;
+				if (heads !== "true" && (t.length >= max || (only === undefined && !/---\n\s*$/.test(t)))) cut = true;
 			}
 			if (live) setRead({ key: filesKey, texts, cut });
 		})().catch(() => {}); // the run deleted under it (a raise's run replacing it): the next status moves on
@@ -441,6 +680,7 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 	}, [filesKey]); // keyed on the paths and sizes: the file objects are new on every status update
 	const fresh = read.key === filesKey ? read.texts : null;
 	const board = useMemo(() => parse(run.board).board, [run.board]);
+	const ranks = useShapeRanks(run, board);
 	// the edge's minimal polynomial: a study row's board carries it (since 2026-11-05), an older run's study has it
 	const [studyHeader, setStudyHeader] = useState<string[]>([]);
 	useEffect(() => {
@@ -529,8 +769,8 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 		() => (wantSymmetry && big?.kind === "cell" && big.symmetry ? big.symmetry() : null),
 		[big, wantSymmetry],
 	);
-	// ← and → step through the tilings, and O, S and D toggle the overlays as on /play, unless the keys
-	// belong to a field or a dialog
+	// ← and → step through the tilings, O, S and D toggle the overlays as on /play and F fullscreen, unless
+	// the keys belong to a field or a dialog
 	const count = certs.length;
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
@@ -539,6 +779,7 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 				e.key.toLowerCase() as "o" | "s" | "d" | "g"
 			];
 			if (overlay) return flip(overlay);
+			if (e.key.toLowerCase() === "f" && count) return setFull((f) => !f);
 			if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
 			e.preventDefault();
 			setPick({ id, i: Math.max(0, Math.min(count - 1, shown + (e.key === "ArrowLeft" ? -1 : 1))) });
@@ -546,6 +787,17 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [id, shown, count]);
+	// Esc leaves fullscreen, caught before the app's own Esc, which would close the run
+	useEffect(() => {
+		if (!full) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key !== "Escape" || editable(e.target)) return;
+			e.stopImmediatePropagation();
+			setFull(false);
+		};
+		window.addEventListener("keydown", onKey, true);
+		return () => window.removeEventListener("keydown", onKey, true);
+	}, [full]);
 	const grid = useRef<HTMLDivElement>(null);
 	useEffect(() => {
 		grid.current?.querySelector("[aria-current=true]")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -568,17 +820,17 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 		return (
 			<div className="flex h-full flex-col">
 				<div className="relative min-h-0 flex-1">
-					<BigView key={latestText} drawing={latest} show={show} symmetry={null} />
+					<BigView key={latestText} drawing={latest} show={show} symmetry={null} ranks={ranks} />
 				</div>
-				<p className="border-t border-line-subtle px-5 py-2.5 text-xs text-fg-muted">
-					The latest tiling found, in a root still open; it changes every 30 seconds or so. A run shows its
-					tilings once their roots finish, and a stop drops the roots still open, this one with them.
+				<p className="border-t border-line-subtle px-5 py-2.5 text-small text-fg-muted">
+					The latest tiling found, in a root still open; it changes every 30 seconds or so. A run shows its tilings once
+					their roots finish, and a stop drops the roots still open, this one with them.
 				</p>
 			</div>
 		);
 	if (!g)
 		return (
-			<div className="flex h-full items-center justify-center p-8 text-sm text-fg-muted">
+			<div className="flex h-full items-center justify-center p-8 text-body text-fg-muted">
 				{run.options?.find
 					? run.find?.done
 						? "No tiling was found, so there is nothing to show."
@@ -606,22 +858,26 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 				: "";
 	return (
 		<div className="grid h-full grid-cols-[auto_minmax(0,1fr)]">
+			{/* the stage's place in the layout, kept while the stage itself fills the window */}
+			<div className="relative aspect-square h-full border-r border-line-subtle">
 			<div
 				ref={stage}
 				className={cn(
-					"relative aspect-square h-full overflow-hidden border-r border-line-subtle bg-surface",
+					"overflow-hidden bg-surface",
+					// ds-check: keep (the stage lifts itself over the window, its live canvas and view intact; a Modal would remount it in a portal)
+					full ? "fixed inset-0 z-modal" : "absolute inset-0",
 					// the controls over the drawing stay out of a copied image
 					copying === "capturing" && "[&>*:not(:first-child)]:invisible",
 				)}
 			>
 				{big ? (
-					<BigView key={`${id}#${shown}`} drawing={big} show={show} symmetry={symmetry} />
+					<BigView key={`${id}#${shown}`} drawing={big} show={show} symmetry={symmetry} ranks={ranks} />
 				) : (
 					<div className="h-full w-full animate-pulse bg-surface-sunken" />
 				)}
 				{fam ? (
-					<div className="absolute inset-x-3 top-14 rounded-control bg-surface-raised/95 px-3 py-2 shadow-sm ring-1 ring-line-subtle backdrop-blur-sm">
-						<div className="flex items-center justify-between gap-2 text-xs text-fg-secondary">
+					<div className="ta-float absolute inset-x-3 top-14 px-3 py-2">
+						<div className="flex items-center justify-between gap-2 text-small text-fg-secondary">
 							<span className="font-medium text-fg">Family of {fam.members.length}</span>
 							<span className="font-mono tabular-nums">
 								{[...pointsAt(fam, t)]
@@ -629,80 +885,86 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 									.join(" · ")}
 							</span>
 						</div>
-						<input
-							type="range"
+						<RangeInput
 							min={0}
 							max={fam.members.length - 1}
 							step={0.02}
 							value={t}
-							onChange={(e) => setSlide({ key: `${id}#${shown}`, t: Number(e.target.value) })}
+							onChange={(v) => setSlide({ key: `${id}#${shown}`, t: v })}
 							aria-label="Move the stars' points through the family"
-							className="mt-1.5 w-full accent-[var(--color-accent)]"
+							className="mt-1.5 w-full"
 						/>
 					</div>
 				) : null}
 				{where ? (
-					<div className="absolute top-3 left-3 flex rounded-full bg-surface-raised/95 p-1 shadow-sm ring-1 ring-line-subtle backdrop-blur-sm">
+					<div className="ta-float absolute top-3 left-3 flex p-1">
 						<InfoDot side="right" label="How to move the drawing">
 							{where}
 						</InfoDot>
 					</div>
 				) : null}
-				{big?.kind === "disk" && big.plain ? (
-					<div className="absolute top-3 right-3 flex rounded-control bg-surface-raised/95 p-1 shadow-sm backdrop-blur-sm">
-						<GridToggle on={show.grid} flip={() => flip("grid")} />
-					</div>
-				) : null}
-				{big?.kind === "edges" ? (
-					<div className="absolute top-3 right-3 flex rounded-control bg-surface-raised/95 p-1 shadow-sm backdrop-blur-sm">
-						<GridToggle on={show.grid} flip={() => flip("grid")} edges />
-					</div>
-				) : null}
-				{big?.kind === "cell" ? (
-					<div className="absolute top-3 right-3 flex gap-1 rounded-control bg-surface-raised/95 p-1 shadow-sm backdrop-blur-sm">
-						{big.plain ? <GridToggle on={show.grid} flip={() => flip("grid")} /> : null}
-						<Tooltip label="Dot every vertex by its orbit; hover a dot to light its orbit" shortcut="O">
-							<ToggleButton
-								size="sm"
-								pressed={show.orbits}
-								onPressedChange={() => flip("orbits")}
-								label="Vertex orbits"
-							/>
-						</Tooltip>
-						{(
-							[
-								[
-									"symmetry",
-									symmetry ? `Symmetry ${symmetry.group}` : "Symmetry",
-									"Mirrors, glides and rotation centres",
-								],
-								["domain", "Fundamental domain", "One fundamental domain of the wallpaper group, in its cell"],
-							] as const
-						).map(([key, label, title]) => {
-							// on but with no group: a colouring, or angles off the 15° grid the exact analysis needs
-							const none = !big.symmetry || (wantSymmetry && !symmetry);
-							return (
-								<Tooltip
-									key={key}
-									shortcut={big.symmetry && !none ? (key === "symmetry" ? "S" : "D") : undefined}
-									label={
-										big.symmetry
-											? none
-												? "No wallpaper group: an angle of this board is off the 15° grid"
-												: title
-											: "A colouring's symmetry is not worked out here"
-									}
-								>
-									<ToggleButton
-										size="sm"
-										pressed={show[key] && !none}
-										onPressedChange={() => flip(key)}
-										disabled={!big.symmetry}
-										label={label}
-									/>
-								</Tooltip>
-							);
-						})}
+				{/* the drawing's toggles, one bar: the grid where a drawing has one, and a tiling's overlays */}
+				{big && big.kind !== "none" && (big.kind !== "disk" || big.plain || big.mode === "edges") ? (
+					// held clear of the top-left dot ("How to move the drawing"): a narrow drawing wraps the bar to a second line
+					// instead of laying it over the dot
+					<div className="pointer-events-none absolute top-3 right-3 left-14 flex justify-end">
+						<div className="ta-float pointer-events-auto flex flex-wrap justify-end gap-1 p-1">
+							{big.kind === "edges" || big.plain || (big.kind === "disk" && big.mode === "edges") ? (
+								<GridToggle
+									on={show.grid}
+									flip={() => flip("grid")}
+									edges={big.kind === "edges" || (big.kind === "disk" && big.mode === "edges")}
+								/>
+							) : null}
+							{big.kind === "cell" ? (
+								<>
+									<Tooltip label="Dot every vertex by its orbit; hover a dot to light its orbit" shortcut="O">
+										<Button
+											size="sm"
+											variant="ghost"
+											pressed={show.orbits}
+											onClick={() => flip("orbits")}
+											label="Vertex orbits"
+										/>
+									</Tooltip>
+									{(
+										[
+											[
+												"symmetry",
+												symmetry ? `Symmetry ${symmetry.group}` : "Symmetry",
+												"Mirrors, glides and rotation centres",
+											],
+											["domain", "Fundamental domain", "One fundamental domain of the wallpaper group, in its cell"],
+										] as const
+									).map(([key, label, title]) => {
+										// on but with no group: a colouring, or angles off the 15° grid the exact analysis needs
+										const none = !big.symmetry || (wantSymmetry && !symmetry);
+										return (
+											<Tooltip
+												key={key}
+												shortcut={big.symmetry && !none ? (key === "symmetry" ? "S" : "D") : undefined}
+												label={
+													big.symmetry
+														? none
+															? "No wallpaper group: an angle of this board is off the 15° grid"
+															: title
+														: "A colouring's symmetry is not worked out here"
+												}
+											>
+												<Button
+													size="sm"
+													variant="ghost"
+													pressed={show[key] && !none}
+													onClick={() => flip(key)}
+													disabled={!big.symmetry}
+													label={label}
+												/>
+											</Tooltip>
+										);
+									})}
+								</>
+							) : null}
+						</div>
 					</div>
 				) : null}
 				{certs.length ? (
@@ -717,7 +979,7 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 								onClick={() => setI(shown - 1)}
 							/>
 						</Tooltip>
-						<span className="min-w-16 px-1 text-center font-mono text-xs whitespace-nowrap text-fg-secondary tabular-nums">
+						<span className="min-w-16 px-1 text-center font-mono text-small whitespace-nowrap text-fg-secondary tabular-nums">
 							{(shown + 1).toLocaleString("en")} / {total}
 						</span>
 						<Tooltip label="Next tiling">
@@ -749,8 +1011,19 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 								onClick={() => void copy()}
 							/>
 						</Tooltip>
+						<Tooltip label={full ? "Exit fullscreen" : "Fullscreen"} shortcut={full ? "F or Esc" : "F"}>
+							<Button
+								size="icon"
+								variant="ghost"
+								icon={full ? Minimize : Maximize}
+								aria-label={full ? "Exit fullscreen" : "Fullscreen"}
+								pressed={full}
+								onClick={() => setFull(!full)}
+							/>
+						</Tooltip>
 					</FloatingToolbar>
 				) : null}
+			</div>
 			</div>
 
 			<div className="flex min-h-0 min-w-0 flex-col">
@@ -766,27 +1039,40 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 					</span>
 					{truncated ? (
 						<InfoDot side="bottom" label="Why the count ends in +">
-							Showing the tilings in the first {bytes(READ_BUDGET)} of these {files.length} files&apos; text; the whole files
-							are in the run folder.
+							Showing the tilings in the first {bytes(READ_BUDGET)} of these {files.length} files&apos; text; the whole
+							files are in the run folder.
 						</InfoDot>
 					) : null}
 					<span className="ml-auto flex gap-1">
 						{canAbstract ? (
 							<Tooltip label="Each apeirogon drawn as a finite polygon: the fewest sides its faces close up into in the tiling's period. A picture of the tiling's combinatorics, not of its geometry">
-								<ToggleButton size="sm" pressed={abstract} onPressedChange={() => setAbstract(!abstractOn)} label="Abstract" />
+								<Button
+									size="sm"
+									variant="ghost"
+									pressed={abstract}
+									onClick={() => setAbstract(!abstractOn)}
+									label="Abstract"
+								/>
 							</Tooltip>
 						) : null}
 						{canShape ? (
 							<Tooltip label="A colour for each face of the board, not for each number of sides: an A3 and a B3 differ">
-								<ToggleButton size="sm" pressed={byShape} onPressedChange={() => setShapes(!shapes)} label="By shape" />
+								<Button
+									size="sm"
+									variant="ghost"
+									pressed={byShape}
+									onClick={() => setShapes(!shapes)}
+									label="By shape"
+								/>
 							</Tooltip>
 						) : null}
 						{files.length > 1 ? (
 							<Tooltip label="The first tiling of each certificate file: one for each set of corners, edge orbits and orientability">
-								<ToggleButton
+								<Button
 									size="sm"
+									variant="ghost"
 									pressed={firsts}
-									onPressedChange={() => setFirsts(!firsts)}
+									onClick={() => setFirsts(!firsts)}
 									label="One per file"
 								/>
 							</Tooltip>
@@ -804,46 +1090,52 @@ export function TilingsView({ run, group }: { run: Run; group: Group | null }) {
 								aria-current={j === shown}
 								aria-label={`Tiling ${j + 1}`}
 								className={cn(
-									"group relative aspect-square cursor-pointer overflow-hidden rounded-control bg-surface ring-1 transition-[box-shadow] duration-150",
+									"group relative aspect-square cursor-pointer overflow-hidden rounded-control bg-surface ring-1 transition-[box-shadow] motion-feedback",
 									j === shown ? "ring-2 ring-accent" : "ring-line-subtle hover:ring-line-strong",
 								)}
 							>
 								{drawn[j] ? (
-									<Thumb drawing={drawn[j]!} grid={show.grid} />
+									<Thumb drawing={drawn[j]!} grid={show.grid} ranks={ranks} />
 								) : (
 									<div className="h-full w-full animate-pulse bg-surface-sunken" />
 								)}
 								{family?.has(certs[j]) ? (
-									<span className="absolute top-1 left-1 rounded-[4px] bg-accent px-1 font-mono text-[10px] text-accent-contrast tabular-nums">
+									<Badge tone="solid" mono className="absolute top-1 left-1">
 										×{family.get(certs[j])!.members.length}
-									</span>
+									</Badge>
 								) : null}
-								<span
-									className={cn(
-										"absolute right-1 bottom-1 rounded-[4px] px-1 font-mono text-[10px] tabular-nums",
-										j === shown ? "bg-accent text-accent-contrast" : "bg-surface-raised/90 text-fg-muted",
-									)}
-								>
+								<Badge tone={j === shown ? "solid" : "raised"} mono className="absolute right-1 bottom-1">
 									{j + 1}
-								</span>
+								</Badge>
 							</button>
 						))}
 					</div>
 				</div>
 				<div className="flex h-[38%] min-h-36 shrink-0 flex-col border-t border-line-subtle">
 					{big?.kind === "disk" ? (
-						<EdgeLine edge={big.tiling.edge} poly={minpolyAt(board.header, big.tiling.edge) ?? minpolyAt(studyHeader, big.tiling.edge)} />
+						<EdgeLine
+							edge={big.tiling.edge}
+							poly={minpolyAt(board.header, big.tiling.edge) ?? minpolyAt(studyHeader, big.tiling.edge)}
+						/>
 					) : null}
 					<div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2">
 						<span className="ta-label flex-1">Certificate {certs.length ? shown + 1 : ""}</span>
 						{Object.keys(run.symbols).length ? (
 							<div className="w-40">
-								<Toggle leftValue="board" rightValue="engine" value={names} onChange={setNames} padding="py-0.5 px-2" />
+								<OptionWall
+									columns={2}
+									options={[
+										{ value: "board", label: "Board" },
+										{ value: "engine", label: "Engine" },
+									]}
+									selected={names}
+									onChange={setNames}
+								/>
 							</div>
 						) : null}
 						{body ? <CopyButton text={body} /> : null}
 					</div>
-					<pre className="min-h-0 flex-1 overflow-auto px-4 pb-3 font-mono text-[11px] leading-relaxed text-fg">
+					<pre tabIndex={0} className="min-h-0 flex-1 overflow-auto px-4 pb-3 font-mono text-caption leading-relaxed text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
 						{body || (certs.length ? "" : "This file has no complete tiling yet.")}
 					</pre>
 				</div>

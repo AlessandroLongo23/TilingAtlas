@@ -11,14 +11,14 @@ import {
 } from "react";
 import { Download, Grid3x3, Palette } from "lucide-react";
 import { ParquetStrip } from "@/components/parquet-strip";
-import { CornerControls } from "@/components/ui/corner-controls";
+import { CornerControls } from "@/design-system/components/corner-controls";
 import { PageSidebar } from "@/components/page-sidebar";
 import { PeekTitle } from "@/components/dock-peek";
-import { Slider } from "@/components/ui/slider";
-import { OptionWall } from "@/components/ui/option-wall";
-import { InfoDot } from "@/components/ui/info-dot";
-import { FloatingToolbar, ToolbarButton, ToolbarDivider } from "@/components/ui/floating-toolbar";
-import { VelocityPad } from "@/components/ui/velocity-pad";
+import { Slider } from "@/design-system/components/slider";
+import { OptionWall } from "@/design-system/components/option-wall";
+import { InfoDot } from "@/design-system/components/info-dot";
+import { FloatingToolbar, ToolbarButton, ToolbarDivider } from "@/design-system/components/floating-toolbar";
+import { VelocityPad } from "@/design-system/components/velocity-pad";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { onViewReset, useTouchGestures } from "@/lib/render/touchGestures";
 import { MODE_PATCH, useParquet } from "@/lib/stores/parquet";
@@ -86,7 +86,7 @@ function Row({
 	return (
 		<div className="grid gap-2">
 			<div className="flex items-center gap-1.5">
-				<span className="text-[13px] font-medium text-fg-secondary">{label}</span>
+				<span className="text-ui font-medium text-fg-secondary">{label}</span>
 				{info && <InfoDot>{info}</InfoDot>}
 				{right && <span className="ml-auto">{right}</span>}
 			</div>
@@ -350,11 +350,7 @@ export function ParquetClient() {
 
 	const driftControl = (label: string, hint: string, value: Vec2, onChange: (v: Vec2) => void) => {
 		const stop = isMoving(value) && (
-			<button
-				type="button"
-				className="text-xs text-fg-muted underline underline-offset-2 hover:text-fg"
-				onClick={() => onChange({ x: 0, y: 0 })}
-			>
+			<button type="button" className="ta-link-quiet text-small" onClick={() => onChange({ x: 0, y: 0 })}>
 				stop
 			</button>
 		);
@@ -368,7 +364,7 @@ export function ParquetClient() {
 					labelX="x"
 					labelY="y"
 					size={112}
-					ariaLabel={`${label}: drag to hold a direction and speed`}
+					aria-label={`${label}: drag to hold a direction and speed`}
 					formatValue={(v) => `x ${v.x.toFixed(2)}, y ${v.y.toFixed(2)}`}
 				/>
 			</Row>
@@ -416,8 +412,8 @@ export function ParquetClient() {
 				>
 					<div className="flex h-full flex-col gap-6 overflow-y-auto px-4 pt-4 pb-10 max-md:overflow-x-hidden max-md:overscroll-contain max-md:[mask-image:linear-gradient(to_bottom,#000_calc(100%-24px),transparent)] max-md:pt-2">
 						<header>
-							<h1 className="text-[15px] font-semibold text-fg max-md:hidden">Parquet deformation</h1>
-							<p className="mt-0.5 text-xs text-fg-muted">Edges evolve across the plane, yet every shape tiles.</p>
+							<h1 className="text-title font-semibold text-fg max-md:hidden">Parquet deformation</h1>
+							<p className="mt-0.5 text-small text-fg-muted">Edges evolve across the plane, yet every shape tiles.</p>
 						</header>
 
 						<Group title="Shape" first>
@@ -527,7 +523,7 @@ export function ParquetClient() {
 								(v) => set({ fieldDrift: v }),
 							)}
 							{!noise && !D_PROFILE_META[dProfile].periodic && isMoving(fieldDrift) && (
-								<p className="text-xs leading-relaxed text-fg-muted">
+								<p className="text-small leading-relaxed text-fg-muted">
 									{D_PROFILE_META[dProfile].label} runs end to end, so a drifting field sweeps it across once and then
 									holds. Pick a periodic D(x) to loop forever.
 								</p>
@@ -569,7 +565,7 @@ export function ParquetClient() {
 			</div>
 
 			{/* Patch, with the view-level actions (colour, base tiling, export) parked over it. */}
-			<main className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto bg-surface-raised px-10 pt-10 pb-20 text-fg max-md:touch-none max-md:px-3 max-md:pt-16 max-md:pb-[calc(var(--sheet-offset,64px)+68px)] max-md:transition-[padding] max-md:duration-300">
+			<main className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto bg-surface-raised px-10 pt-10 pb-20 text-fg max-md:touch-none max-md:px-3 max-md:pt-16 max-md:pb-[calc(var(--sheet-offset,64px)+68px)] max-md:transition-[padding] max-md:motion-travel">
 				<div ref={frameRef} className="h-full w-full max-md:overflow-hidden" {...pinchHandlers}>
 					{/* The server cannot know it is drawing for a phone, so on one the desktop's horizontal strip
               would flash until hydration turns it upright: kept invisible until then. */}
@@ -592,7 +588,7 @@ export function ParquetClient() {
 						onClick={() => set({ colour: !colour })}
 						className="max-md:w-auto max-md:px-3"
 					>
-						<Palette size={16} />
+						<Palette className="size-icon-md" />
 						<span className="md:hidden">Colour</span>
 					</ToolbarButton>
 					<ToolbarButton
@@ -601,7 +597,7 @@ export function ParquetClient() {
 						onClick={() => set({ showGuides: !showGuides })}
 						className="max-md:w-auto max-md:px-3"
 					>
-						<Grid3x3 size={16} />
+						<Grid3x3 className="size-icon-md" />
 						<span className="md:hidden">Base</span>
 					</ToolbarButton>
 					<ToolbarDivider />
@@ -612,7 +608,7 @@ export function ParquetClient() {
 							downloadSvg(parquetToSvgString(tileOutlines, guideOutlines), `parquet-${mode}-${tiling}-${fieldKind}.svg`)
 						}
 					>
-						<Download size={14} />
+						<Download className="size-icon-sm" />
 						Export SVG
 					</ToolbarButton>
 				</FloatingToolbar>

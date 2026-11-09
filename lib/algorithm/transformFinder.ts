@@ -1,4 +1,6 @@
-import { SeedConfiguration, Vector, type Reflection } from "@/classes";
+import { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
+import { Vector } from "@/classes/Vector";
+import { type Reflection } from "@/classes/Transform";
 import { gyrationOrders } from "@/classes/TilingChecker";
 
 /** Orders to check, ascending. An order N is only checked if all its divisors in this set have already succeeded. */

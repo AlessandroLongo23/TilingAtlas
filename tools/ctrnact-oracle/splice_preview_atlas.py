@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Splice a partial-solve preview cells file into public/reference-atlas.json.gz IN PLACE.
+"""Splice a partial-solve preview cells file into public/reference-atlas.json.br IN PLACE.
 
 Fast path for previewing an in-progress run without the ~10 min full atlas rebuild: drops any
 prior entries sharing the cells file's id-prefix, maps each cell record to a ReferenceTiling, and
@@ -13,7 +13,7 @@ alpha, exactly as lib/utils/paramCell.ts:evaluateParamCell does. Without this, e
 re-add the family members as standalone cards and visually un-group the families on each run.
 
 Usage:
-  python3 splice_preview_atlas.py --cells <preview.cells.json> --atlas ../../public/reference-atlas.json.gz \
+  python3 splice_preview_atlas.py --cells <preview.cells.json> --atlas ../../public/reference-atlas.json.br \
       [--families ../../experiments/star-oracle/ctrnact-star-families.cells.json]
 """
 import argparse

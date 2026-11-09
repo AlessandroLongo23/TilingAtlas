@@ -12,6 +12,8 @@ import {
 	tileFill,
 } from "@/lib/utils/renderTiling";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
+import { Button } from "@/design-system/components/button";
+import { Tooltip } from "@/design-system/components/tooltip";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 
 // One vertex CONFIGURATION drawn as its tiles fanned around the vertex (the dot at the origin). Fill
@@ -102,15 +104,16 @@ export function VertexConfigCard({ config, unitsAcross }: { config: VertexConfig
 				<circle cx={dot.x} cy={dot.y} r={1.6} fill="#111" stroke="#fff" strokeWidth={0.5} />
 			</svg>
 			{SCREENSHOT_BUTTONS_ENABLED ? (
-				<button
-					type="button"
-					onClick={handleScreenshot}
-					title="Screenshot"
-					aria-label="Take screenshot"
-					className="absolute top-1.5 right-1.5 rounded-md border border-line-strong bg-surface-overlay/80 p-1.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-overlay hover:text-fg focus:opacity-100 max-md:opacity-100"
-				>
-					<Camera size={13} />
-				</button>
+				<Tooltip label="Screenshot">
+					<Button
+						variant="secondary"
+						size="icon"
+						icon={Camera}
+						onClick={handleScreenshot}
+						aria-label="Take screenshot"
+						className="absolute top-1.5 right-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 max-md:opacity-100"
+					/>
+				</Tooltip>
 			) : null}
 		</>
 	);

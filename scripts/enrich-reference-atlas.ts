@@ -1,4 +1,4 @@
-/* Enrich public/reference-atlas.json.gz IN PLACE with the vertex-type classification and exact wallpaper
+/* Enrich public/reference-atlas.json.br IN PLACE with the vertex-type classification and exact wallpaper
  * symmetry. SURGICAL: only ADDS four fields to each existing entry — never reorders, drops, or
  * re-derives the geometry pipeline. It reconstructs each regular cell from the `exactSource` the entry
  * already carries, so it cannot regress the atlas the multi-phase build produced.
@@ -23,10 +23,21 @@
  *
  * Every unclassified tiling is logged with a count (a characterization gap is a finding, never silent).
  *
- *   pnpm tsx scripts/enrich-reference-atlas.ts
+ * `--orbits` adds only `edgeOrbits` and `faceOrbits`: the edge and tile orbits under the full symmetry group
+ * (KUniformityChecker.edgeFaceOrbits, exact, with its Euler checks), for every entry with an exactSource,
+ * stars included. A tiling whose vertex orbits do not come out as its k, or whose checks fail, gets neither
+ * field and is listed. It is about half a second a tiling, so each file is split over `--jobs` processes.
+ *
+ *   pnpm tsx scripts/enrich-reference-atlas.ts [--vcs-only | --orbits [--jobs N]] [files...]
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
+import { exactCellOf } from "@/lib/services/orbitsFromExactSource";
+import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
+import { ringOrderOf } from "@/lib/services/starExactCell";
+import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import { CyclotomicRing, setActiveRing, type Cyclotomic } from "@/classes/Cyclotomic";
 import { reconstructOracleCell } from "./oracle-match";
 import { serializeCell, deserializeCell } from "@/classes/algorithm/cellCodec";
@@ -38,16 +49,22 @@ import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types"
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 import { stringifyAtlas } from "./atlas/encode.mjs";
-import { canonicalVC, parseVC } from "@/lib/services/vertexConfig";
+import { canonicalVC, classifyVCs, parseVC } from "@/lib/services/vertexConfig";
 
-const ATLAS_PATH = path.join(process.cwd(), "public", "reference-atlas.json.gz");
+const ATLAS_PATH = path.join(process.cwd(), "public", "reference-atlas.json.br");
 const CTRNACT_PATH = path.join(process.cwd(), "figures", "data", "ctrnact.json");
 const STAR_DIR = path.join(process.cwd(), "experiments", "star-oracle");
+const ORBITS = process.argv.includes("--orbits");
+const WORKER = process.argv.indexOf("--orbits-worker"); // --orbits-worker <file> <i> <n> <out.json>
 const LOG_PATH = path.join(
 	process.cwd(),
 	"experiments",
 	"results",
-	process.argv.includes("--vcs-only") ? "reference-atlas-vcs-2026-10-23.log" : "reference-atlas-enrich-2026-07-11.log",
+	ORBITS || WORKER >= 0
+		? "reference-atlas-orbits-2026-11-06.log"
+		: process.argv.includes("--vcs-only")
+			? "reference-atlas-vcs-2026-10-23.log"
+			: "reference-atlas-enrich-2026-07-11.log",
 );
 
 const localRing = CyclotomicRing.create(24);
@@ -55,7 +72,11 @@ setActiveRing(localRing);
 
 // ── logging (synchronous file + stderr, per the experiments logging rule) ──
 fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
-const logStream = fs.createWriteStream(LOG_PATH, { flags: "w" });
+// Every run appends under a dated header (the --orbits workers append too), so a later run on other files
+// keeps the earlier lines.
+if (WORKER < 0)
+	fs.appendFileSync(LOG_PATH, `\n# ${new Date().toLocaleString("sv")} ${process.argv.slice(2).join(" ")}\n`);
+const logStream = fs.createWriteStream(LOG_PATH, { flags: "a" });
 function log(msg = ""): void {
 	logStream.write(msg + "\n");
 	console.error(msg);
@@ -67,7 +88,7 @@ type ExactSource =
 	| { kind: "startiles"; exact: unknown };
 interface AtlasEntry {
 	id: string;
-	source: "galebach" | "ctrnact" | "ctrnact-star" | "myers";
+	source: "galebach" | "ctrnact" | "ctrnact-star" | "myers" | "tilesearch";
 	k: number;
 	family: string;
 	exactSource?: ExactSource;
@@ -75,17 +96,11 @@ interface AtlasEntry {
 	partition?: number[];
 	wallpaperGroup?: WallpaperGroup;
 	latticeShape?: LatticeShape;
+	edgeOrbits?: number;
+	faceOrbits?: number;
 	[k: string]: unknown;
 }
 
-// Distinct vertex-config count, descending multiplicity partition, and the distinct configs themselves in
-// that same order (ties by name, so the order is stable), from per-orbit canonical config strings.
-function classify(configKeys: string[]): { m: number; partition: number[]; vcs: string[] } {
-	const counts = new Map<string, number>();
-	for (const key of configKeys) counts.set(key, (counts.get(key) ?? 0) + 1);
-	const order = [...counts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
-	return { m: counts.size, partition: order.map(([, n]) => n), vcs: order.map(([vc]) => vc) };
-}
 const VCS_ONLY = process.argv.includes("--vcs-only");
 
 // ctrnact's own notation for the gate: "M" when M === k (all singletons), else "M (parts)".
@@ -112,10 +127,10 @@ function reconstructCell(e: AtlasEntry): { cell: PeriodCell } | { error: string 
 }
 
 // ── source-data indexes (loaded once, shared across every target file) ──
-log("=== load source data ===");
+if (!ORBITS && WORKER < 0) log("=== load source data ===");
 
 const ctrnactById = new Map<string, { vertexConfigs: number[][]; distinctTypePartition: string }>();
-{
+if (!ORBITS && WORKER < 0) {
 	const src = JSON.parse(fs.readFileSync(CTRNACT_PATH, "utf8")).tilings as {
 		id: string;
 		vertexConfigs: number[][];
@@ -129,7 +144,7 @@ const ctrnactById = new Map<string, { vertexConfigs: number[][]; distinctTypePar
 // id → per-orbit config strings (star cells). Strip the trailing symmetry flag so config identity
 // matches the regular convention (flag R4/F/A distinguishes symmetry ROLE, not the vertex type).
 const starOrbitsById = new Map<string, string[]>();
-{
+if (!ORBITS && WORKER < 0) {
 	let files = 0;
 	for (const f of fs.readdirSync(STAR_DIR).filter((f) => f.endsWith(".cells.json"))) {
 		let data: unknown;
@@ -173,17 +188,20 @@ function enrichFile(atlasPath: string): void {
 		mFail: [] as { id: string; reason: string }[],
 	};
 	const groupHist: Record<string, number> = {};
-	const regularCount = atlas.filter((e) => e.source === "galebach" || e.source === "ctrnact").length;
+	// The regular shelf's sources. Čtrnáct's orbits come from ctrnact.json, the others' (Galebach's list and
+	// the Tiling Searcher's targeted runs) from the cell's geometry.
+	const regular = (e: AtlasEntry) => e.source === "galebach" || e.source === "ctrnact" || e.source === "tilesearch";
+	const regularCount = atlas.filter(regular).length;
 	let regularDone = 0;
 
 	for (const e of atlas) {
-		const isRegular = e.source === "galebach" || e.source === "ctrnact";
+		const isRegular = regular(e);
 
 		// --- reconstruct once (regular only: needed for symmetry, and for galebach orbits) ---
 		let cell: PeriodCell | null = null;
-		// --vcs-only needs a cell only where the orbits come from geometry (galebach); ctrnact's come from
+		// --vcs-only needs a cell only where the orbits come from geometry; ctrnact's come from
 		// ctrnact.json, and reconstructing its k = 8..10 cells for nothing would cost hours.
-		if (isRegular && (!VCS_ONLY || e.source === "galebach")) {
+		if (isRegular && (!VCS_ONLY || e.source !== "ctrnact")) {
 			const rec = reconstructCell(e);
 			if ("cell" in rec) cell = rec.cell;
 			else stat.symFail.push({ id: e.id, error: `reconstruct: ${rec.error}` });
@@ -195,17 +213,17 @@ function enrichFile(atlasPath: string): void {
 		if (e.source === "ctrnact") {
 			const src = ctrnactById.get(e.id);
 			if (src) {
-				classified = classify(src.vertexConfigs.map((cfg) => canonicalVC(cfg.map(String))));
+				classified = classifyVCs(src.vertexConfigs.map((cfg) => canonicalVC(cfg.map(String))));
 				const computed = ctrnactKey(classified.m, classified.partition, e.k);
 				if (computed !== src.distinctTypePartition)
 					stat.gateMismatch.push({ id: e.id, src: src.distinctTypePartition, computed });
 			} else stat.mFail.push({ id: e.id, reason: "not in ctrnact.json" });
-		} else if (e.source === "galebach") {
+		} else if (isRegular) {
 			if (cell && cellRing) {
 				try {
 					setActiveRing(cellRing);
 					const orb = assignOrbits(serializeCell(cell));
-					classified = classify(orb.vcOfOrbit.map((vc) => canonicalVC(vc.split(","))));
+					classified = classifyVCs(orb.vcOfOrbit.map((vc) => canonicalVC(vc.split(","))));
 				} catch (err) {
 					stat.mFail.push({ id: e.id, reason: `assignOrbits: ${err instanceof Error ? err.message : err}` });
 				}
@@ -214,7 +232,7 @@ function enrichFile(atlasPath: string): void {
 			// star: per-orbit orbits[] if we have it; k=1 is trivially m=1
 			const orbits = starOrbitsById.get(e.id);
 			const parsed = orbits?.map(parseVC);
-			if (parsed?.every((p): p is string => p !== null)) classified = classify(parsed);
+			if (parsed?.every((p): p is string => p !== null)) classified = classifyVCs(parsed);
 			else if (orbits) stat.mFail.push({ id: e.id, reason: `unparsed star orbit ${orbits.join(" ")}` });
 			else if (e.k === 1) {
 				// One orbit, no per-orbit file: the family string IS the one figure when it parses as one.
@@ -322,11 +340,122 @@ function enrichFile(atlasPath: string): void {
 }
 
 // Default: enrich the base atlas. With file args: enrich exactly those (e.g. the k=8..10 shards),
-// leaving the base atlas untouched. Relative paths resolve from cwd; a `.json` name means its `.json.gz`.
-const targets = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-const files = (targets.length ? targets : [ATLAS_PATH]).map((f) =>
-	(path.isAbsolute(f) ? f : path.join(process.cwd(), f)).replace(/\.json$/, ".json.gz"),
-);
-for (const f of files) enrichFile(f);
+// leaving the base atlas untouched. Relative paths resolve from cwd; a `.json` name means its `.json.br`.
+// ── --orbits: edge and tile orbits ──
 
-logStream.end();
+/** [edge orbits, tile orbits], or why there are none. */
+function orbitCounts(e: AtlasEntry): [number, number] | string {
+	const ring = CyclotomicRing.create(ringOrderOf(e as never));
+	setActiveRing(ring);
+	const cell = exactCellOf(ring, e.id, e.exactSource as ExactCellSource);
+	if (!cell) return "no cell";
+	const checker = new KUniformityChecker();
+	const [u, v] = cell.basisExact;
+	const vertices = checker.vertexOrbits(cell.cellPolygons, u, v);
+	if (!vertices) return "no symmetry";
+	if (vertices.orbits !== e.k) return `${vertices.orbits} vertex orbits, k = ${e.k}`;
+	const ef = checker.edgeFaceOrbits(cell.cellPolygons, u, v, vertices);
+	if (!ef) return "not edge-to-edge, or an exact check failed";
+	return [ef.edges.count, ef.faces.count];
+}
+
+/** One worker's share of a file: entries i, i + n, … of those with an exactSource. */
+function orbitWorker(file: string, i: number, n: number, out: string): void {
+	const mine = decodeAtlas<AtlasEntry>(readDataJson(file))
+		.filter((e) => e.exactSource)
+		.filter((_, j) => j % n === i);
+	const result: Record<string, [number, number] | string> = {};
+	const t0 = Date.now();
+	mine.forEach((e, j) => {
+		try {
+			result[e.id] = orbitCounts(e);
+		} catch (err) {
+			result[e.id] = `threw: ${err instanceof Error ? err.message : err}`;
+		}
+		if ((j + 1) % 250 === 0 || j + 1 === mine.length) {
+			const s = (Date.now() - t0) / 1000;
+			log(
+				`  ${path.basename(file)} worker ${i + 1}/${n}: ${j + 1}/${mine.length}, ${s.toFixed(0)} s, ~${(((s / (j + 1)) * (mine.length - j - 1)) / 60).toFixed(1)} min left`,
+			);
+		}
+	});
+	fs.writeFileSync(out, JSON.stringify(result));
+}
+
+async function orbitFile(file: string, jobs: number): Promise<void> {
+	const t0 = Date.now();
+	log(`\n=== edge and tile orbits: ${path.relative(process.cwd(), file)}, ${jobs} processes ===`);
+	const outs = Array.from({ length: jobs }, (_, i) => path.join(os.tmpdir(), `orbits-${process.pid}-${i}.json`));
+	await Promise.all(
+		outs.map(
+			(out, i) =>
+				new Promise<void>((resolve, reject) =>
+					spawn(
+						process.execPath,
+						[...process.execArgv, process.argv[1], "--orbits-worker", file, String(i), String(jobs), out],
+						{
+							stdio: ["ignore", "ignore", "inherit"],
+						},
+					).on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`worker ${i} exited ${code}`)))),
+				),
+		),
+	);
+	const counts: Record<string, [number, number] | string> = Object.assign(
+		{},
+		...outs.map((o) => JSON.parse(fs.readFileSync(o, "utf8"))),
+	);
+	for (const o of outs) fs.rmSync(o);
+	const atlas = decodeAtlas<AtlasEntry>(readDataJson(file));
+	const gaps: string[] = [];
+	const byK: Record<number, Record<string, number>> = {};
+	for (const e of atlas) {
+		const c = counts[e.id];
+		if (Array.isArray(c)) {
+			e.edgeOrbits = c[0];
+			e.faceOrbits = c[1];
+			const row = (byK[e.k] ??= {});
+			row[`e${c[0]}`] = (row[`e${c[0]}`] ?? 0) + 1;
+		} else {
+			delete e.edgeOrbits;
+			delete e.faceOrbits;
+			gaps.push(`${e.id}: ${c ?? "no exactSource"}`);
+		}
+	}
+	writeDataFile(file, stringifyAtlas(atlas));
+	log(`edge orbits by k (k: {e: count}):`);
+	for (const k of Object.keys(byK)
+		.map(Number)
+		.sort((a, b) => a - b))
+		log(`  k=${k}: ${JSON.stringify(byK[k])}`);
+	if (gaps.length) {
+		log(`⚑ ${gaps.length} entr${gaps.length === 1 ? "y" : "ies"} without edge/tile orbits:`);
+		for (const g of gaps.slice(0, 60)) log(`    ${g}`);
+	}
+	log(`★ wrote ${path.relative(process.cwd(), file)} in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+}
+
+// Default: enrich the base atlas. With file args: enrich exactly those (e.g. the k=8..10 shards),
+// leaving the base atlas untouched. Relative paths resolve from cwd; a `.json` name means its `.json.br`.
+if (WORKER >= 0) {
+	const [file, i, n, out] = process.argv.slice(WORKER + 1, WORKER + 5);
+	orbitWorker(file, Number(i), Number(n), out);
+	logStream.end();
+} else {
+	const jobsAt = process.argv.indexOf("--jobs");
+	const jobs = jobsAt >= 0 ? Number(process.argv[jobsAt + 1]) : Math.max(1, os.cpus().length - 2);
+	const targets = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && all[i - 1] !== "--jobs");
+	const files = (targets.length ? targets : [ATLAS_PATH]).map((f) =>
+		(path.isAbsolute(f) ? f : path.join(process.cwd(), f)).replace(/\.json$/, ".json.br"),
+	);
+	(async () => {
+		for (const f of files) {
+			if (ORBITS) await orbitFile(f, jobs);
+			else enrichFile(f);
+		}
+		logStream.end();
+	})().catch((err) => {
+		log(`⚑ ${err instanceof Error ? err.message : err}`);
+		process.exitCode = 1;
+		logStream.end();
+	});
+}

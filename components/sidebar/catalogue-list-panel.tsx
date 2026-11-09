@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronRight, ChevronsDownUp, Download } from "lucide-react";
+import { ChevronsDownUp, Download } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import {
 	compactVertexConfig,
@@ -14,6 +14,7 @@ import {
 	type TileClass,
 } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
+import { FoldChevron } from "@/design-system/components/disclosure";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { kNounOf } from "@/lib/services/shelfRegistry";
@@ -42,10 +43,17 @@ interface CatalogueListPanelProps {
 // parent, so an open path reads as an indented tree pinned to the top of the scrollport. A phone's rows
 // are a finger tall, and its strip scrolls away with the filters above it (catalogue-tab.tsx), so there
 // the stack starts at the very top.
-const TREE_VARS = "[--tree-row:32px] [--tree-bar:32px] max-md:[--tree-row:44px] max-md:[--tree-bar:0px]";
+const TREE_VARS =
+	"[--tree-row:var(--control-md)] [--tree-bar:var(--control-md)] max-md:[--tree-row:var(--control-touch)] max-md:[--tree-bar:0px]";
+// Every level sits ABOVE a tile's z-10 selection/hover ring (tile-grid.tsx): the ring and these headers share
+// one stacking context, so a header at the ring's own z-10 only tied it and — later in DOM order — the ring
+// won, bleeding its outline up over the pinned k-row. Shallower levels sit over deeper ones, all under the
+// collapse-all strip's z-20. The scroller isolates this context (catalogue-tab.tsx), so these values never
+// reach the canvas overlay buttons.
 const treeRowStyle = (depth: number) => ({
 	height: "var(--tree-row)",
 	top: `calc(var(--tree-bar) + (var(--tree-row) + 1px) * ${depth})`,
+	zIndex: 19 - depth,
 });
 
 // Ink ranks the levels: a class heading is the heaviest thing in the list, its members lighter. The
@@ -53,11 +61,11 @@ const treeRowStyle = (depth: number) => ({
 // label (the rails that used to draw this are gone with the wall, 2026-09-24).
 type Depth = 0 | 1 | 2 | 3 | 4;
 const DEPTH_TEXT: Record<Depth, string> = {
-	0: "text-[13px] font-semibold text-fg",
-	1: "text-[13px] font-medium text-fg-secondary",
-	2: "text-[12.5px] text-fg-secondary",
-	3: "text-[12.5px] text-fg-secondary",
-	4: "text-[12.5px] text-fg-secondary",
+	0: "text-ui font-semibold text-fg",
+	1: "text-ui font-medium text-fg-secondary",
+	2: "text-small text-fg-secondary",
+	3: "text-small text-fg-secondary",
+	4: "text-small text-fg-secondary",
 };
 
 // A board on the base hyperbolic shelf ("hyt-…") earns the configuration level only when the level
@@ -607,7 +615,8 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 				// A phone drops the strip while nothing is open: the tab already says Catalogue, and the row is
 				// worth more to the half-open sheet than a disabled button.
 				className={cn(
-					"ta-sticky-rule sticky top-0 z-50 flex items-center justify-between bg-surface-chrome pr-[17px] pl-2 max-md:static",
+					// ds-check: keep (17px: the tree rows' 9px inset plus their 8px right padding, so the button lines up with them)
+					"ta-sticky-rule sticky top-0 z-20 flex items-center justify-between bg-surface-chrome pr-[17px] pl-2 max-md:static",
 					openCount === 0 && "max-md:hidden",
 				)}
 				style={{ height: "var(--tree-row)" }}
@@ -618,15 +627,15 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 					onClick={() => toggleAll(false)}
 					disabled={openCount === 0}
 					className={cn(
-						"flex cursor-pointer items-center gap-1.5 rounded-control text-xs text-fg-muted max-md:h-11",
+						"flex cursor-pointer items-center gap-1.5 rounded-control text-small text-fg-muted max-md:h-11",
 						"transition-colors hover:text-fg",
 						"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 						"disabled:pointer-events-none disabled:opacity-40",
 					)}
 				>
-					<ChevronsDownUp size={12} className="shrink-0" aria-hidden />
+					<ChevronsDownUp className="size-icon-xs shrink-0" aria-hidden />
 					Collapse all
-					{openCount > 0 ? <span className="font-mono text-[11px] tabular-nums">· {openCount}</span> : null}
+					{openCount > 0 ? <span className="font-mono text-caption tabular-nums">· {openCount}</span> : null}
 				</button>
 			</div>
 			{byClass.map((g) => {
@@ -678,44 +687,33 @@ function TreeRow({
 				// ta-sticky-rule (globals.css): a pinned row paints its own 1px gaps, so tiles scrolling
 				// behind a stuck row never show through them. The row itself stays opaque chrome edge to edge; the grey sits on the inner span, inset
 				// to the tile wall's own left edge (scroller padding + the wall's outer lane and hairline).
+				// ds-check: keep (9px: the left edge of the tile wall, its 8px lane plus the 1px hairline)
 				"group ta-sticky-rule sticky flex cursor-pointer bg-surface-chrome px-[9px] text-left",
 				"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-inset",
-				// Every level sits ABOVE a tile's z-10 selection/hover ring (tile-grid.tsx): the ring and
-				// these headers share one stacking context, so a header at the ring's own z-10 only tied it
-				// and — later in DOM order — the ring won, bleeding its outline up over the pinned k-row. Keep
-				// the depth order (class over grid over k) but start it past 10. The scroller isolates this
-				// context (catalogue-tab.tsx), so these values never reach the canvas overlay buttons.
-				depth === 0 ? "z-40" : depth === 1 ? "z-30" : depth === 2 ? "z-20" : depth === 3 ? "z-[15]" : "z-[12]",
 			)}
 			style={treeRowStyle(depth)}
 		>
 			<span
-				className={cn(
-					"flex min-w-0 flex-1 items-center gap-1.5 rounded-control pr-2 transition-colors group-hover:bg-surface-overlay",
-					depth === 0 ? "pl-2" : depth === 1 ? "pl-6" : depth === 2 ? "pl-10" : depth === 3 ? "pl-14" : "pl-18",
-				)}
+				className="flex min-w-0 flex-1 items-center gap-1.5 rounded-control pr-2 transition-colors group-hover:bg-surface-overlay"
+				style={{ paddingLeft: `calc(var(--space-unit) * 2 + var(--space-tree-step) * ${depth})` }}
 			>
 				{pending ? (
 					// A download glyph, not a chevron: this row fetches, it does not unfold. The count beside
 					// it is the manifest's, so it is honest before anything has been loaded.
 					<Download
-						size={14}
-						className={cn("shrink-0", pending === "loading" ? "animate-pulse text-fg" : "text-fg-muted")}
+						className={cn(
+							"size-icon-sm",
+							"shrink-0",
+							pending === "loading" ? "animate-pulse text-fg" : "text-fg-muted",
+						)}
 					/>
 				) : (
 					// ONE glyph that turns, not two that swap: a swap remounts the element and lands the new
 					// arrow with no travel, which is what made opening a folder feel like a jump cut.
-					<ChevronRight
-						size={14}
-						className={cn(
-							"shrink-0 text-fg-muted transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]",
-							"motion-reduce:transition-none",
-							open && "rotate-90",
-						)}
-					/>
+					<FoldChevron open={open} size={14} />
 				)}
-				<span className={cn("min-w-0 flex-1 truncate max-md:text-[15px]", DEPTH_TEXT[depth])}>{label}</span>
-				<span className="shrink-0 font-mono text-[11px] text-fg-muted tabular-nums max-md:text-xs">
+				<span className={cn("min-w-0 flex-1 truncate max-md:text-reading", DEPTH_TEXT[depth])}>{label}</span>
+				<span className="shrink-0 font-mono text-caption text-fg-muted tabular-nums">
 					{count.toLocaleString("en-US")}
 				</span>
 			</span>

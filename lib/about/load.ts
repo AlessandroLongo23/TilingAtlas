@@ -35,7 +35,7 @@ export async function loadAtlasCells(ids: string[]) {
 	const sources: Record<string, ExactCellSource> = {};
 	const wanted = new Set(ids);
 	if (!wanted.size) return { cells, sources };
-	const files = (await readdir(PUBLIC)).filter((f) => /^reference-atlas.*\.json(\.gz)?$/.test(f));
+	const files = (await readdir(PUBLIC)).filter((f) => /^reference-atlas.*\.json(\.br)?$/.test(f));
 	const sized = await Promise.all(files.map(async (f) => ({ f, size: (await stat(path.join(PUBLIC, f))).size })));
 	for (const { f } of sized.sort((a, b) => a.size - b.size)) {
 		const atlas = hydrateRenderCells(
