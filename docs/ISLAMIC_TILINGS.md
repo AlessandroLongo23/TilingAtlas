@@ -165,6 +165,19 @@ combinatorial candidates developed to float geometry (area- and coverage-verifie
 certified); no external reference count; periodic k-uniform tilings, not the famous aperiodic designs. Full
 detail in `experiments/results/girih-enumeration-2026-07-18.md`.
 
+### Corrected 2026-11-10: 585 tilings to k = 4, not 185
+
+The count above was wrong, and so was the shelf built from it. (k, tile multiset, cell area) is not an identity:
+different tilings share it, and the dedup kept one of each. The palette's tables also predate mirror-twin
+corners, so some tilings came out only under a k too high. Searched again by the Tiling Searcher on tables
+compiled today (`scripts/build-girih-from-searcher.sh`), the girih kit has **10 / 42 / 140 / 393 tilings at
+k = 1 / 2 / 3 / 4** (mirror images counted once), 585 in all, each a different tiling by its dart map and corner
+angles, each passing the coverage validator. Three at k = 1 are the curated bobbin, rhombus and bowtie, so
+**582 ship beside the 10 curated: 592 Islamic tilings.** All 179 tilings the old shelf held are among them (its
+182 records included three repeats), 168 under their old ids. The search also gives 1,087 at k = 5 and 2,733 at
+k = 6, which are not on the shelf yet (they need lazy shards by k). Detail: `docs/DEVELOPMENT_NOTES.md`,
+"The three shelves swapped in".
+
 ## Cyclotomic reach — engine summary
 
 | Family | Angle | Field | `star*`/develop status |
@@ -194,7 +207,7 @@ plus exactly-once point coverage) — nothing ships that doesn't provably tile.
 
 Deferred, with reasons (do not fake these — a wrong tiling is worse than an absent one):
 
-- **Iconic multi-decagon girih tilings — CLOSED via the engine (2026-07-18).** Regular decagons cannot
+- **Iconic multi-decagon girih tilings — CLOSED via the engine (2026-07-18; recounted 2026-11-10, 582 ship).** Regular decagons cannot
   share edges on any crystallographic lattice (10-fold is non-crystallographic), so these were the gap the
   hand-curation could not reach. The Čtrnáct engine + `develop_girih.py` now enumerate and render them; 185
   distinct primitive fivefold girih tilings (k≤4, incl. the decagon-and-bowtie ring-of-ten-stars), of which

@@ -15,6 +15,7 @@ import type { ReferenceTiling, IslamicSystem } from "@/lib/services/referenceAtl
 import { stringifyAtlas } from "./atlas/encode.mjs";
 import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 import {
 	assemble,
 	validateTiling,
@@ -26,7 +27,6 @@ import {
 	polygonHue,
 	parallelohexagonCell,
 	parallelogramCell,
-	area,
 	type Placement,
 	type Basis,
 	type RenderCell,
@@ -34,7 +34,10 @@ import {
 } from "./islamic/lib";
 
 const ROOT = process.cwd();
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas-islamic.json.br");
+// --out=<file> writes the shelf somewhere else (a rebuild to check before it replaces the shipped one)
+const OUT_PATH =
+	process.argv.find((a) => a.startsWith("--out="))?.slice(6) ??
+	path.join(ROOT, "public", "reference-atlas-islamic.json.br");
 const LOG_PATH = path.join(ROOT, "experiments", "results", "islamic-atlas-build.log");
 const ATLAS_PATH = path.join(ROOT, "public", "reference-atlas.json.br");
 
@@ -233,162 +236,73 @@ const SPECS: Spec[] = [
 	},
 ];
 
-// ── engine-developed girih tilings ─────────────────────────────────────────────────────────────────────
-// The Čtrnáct engine enumerates fivefold girih k-uniform tilings (girih palette, D=20); develop_girih.py
-// reconstructs their float geometry (area-certified). Here we deduplicate them by (k, tile multiset, cell
-// area), re-validate each representative through the coverage validator (a second, independent geometric
-// check beyond the developer's area cert), and import the distinct ones. These are combinatorial candidates
-// developed to float geometry — genuinely new tilings the hand-curation could not reach (esp. decagonal).
-const DEVELOPED_PATH = path.join(ROOT, "experiments", "results", "girih-developed.cells.json");
-const GIRIH_N: Record<string, number> = {
-	"10": 10,
-	"5": 5,
-	"rhomb-4.6.4.6": 4,
-	"bobbin-4.8.8.4.8.8": 6,
-	"bowtie-4.4.12.4.4.12": 6,
-};
-interface DevRec {
-	id: string;
-	k: number;
-	T1: number[];
-	T2: number[];
-	areaOk: boolean;
-	faces: { tile: string; verts: number[][] }[];
-}
+// ── girih tilings from the Tiling Searcher ─────────────────────────────────────────────────────────────
+// The fivefold girih k-uniform tilings, searched and developed by the Tiling Searcher
+// (scripts/build-girih-from-searcher.sh: the girih palette as a board, the search, float cells, ids). Each is
+// re-validated here through the coverage validator before it ships. The engine writes each tiling once, on its
+// primitive cell, so nothing is merged here.
+// (Until 2026-11-10 the source was eu_solver's developed cells, kept one per (k, tile multiset, cell area):
+// that key is not an identity, and the shelf had 182 of the 585 tilings to k = 4, 14 of them under too high a k.)
+const GIRIH_DIR = path.join(ROOT, "experiments", "girih-searcher");
+const GIRIH_MAX_K = 4;
 
-// Congruence-invariant fingerprint of a translational tiling: (k, sorted multiset of tile areas, |detΛ|).
-// Rotation, reflection, and translation preserve all three, so two congruent tilings share it. Used to drop
-// engine-developed tilings that duplicate a CURATED one — the single-tile bobbin/rhombus/bowtie appear in
-// both the hand-authored fivefold set and the engine's k=1 output (that's the visible cross-set dup). Side
-// counts can't separate bobbin from bowtie (both n=6); tile AREA can, which is why the fingerprint uses it.
-function tilingFingerprint(k: number, tileVerts: Pt[][], b1: number[], b2: number[]): string {
-	const areas = tileVerts
-		.map((v) => area(v))
-		.sort((a, b) => a - b)
-		.map((a) => a.toFixed(3));
-	const det = Math.abs(b1[0] * b2[1] - b1[1] * b2[0]).toFixed(3);
-	return `${k}|${areas.join(",")}|${det}`;
-}
-function cellFingerprint(k: number, cell: RenderCell): string {
-	return tilingFingerprint(
-		k,
-		cell.cellPolygons.map((p) => p.vertices),
-		cell.basis[0],
-		cell.basis[1],
-	);
-}
-
-// A developed tiling is NON-PRIMITIVE (a supercell) if it has a tile-preserving translation FINER than its
-// own basis — i.e. the true tiling repeats inside the cell. The engine's combinatorial enumeration emits
-// such supercell descriptions for the girih palette (a side effect of admitting valence-2 vertices), which
-// inflates the counts and mislabels k (an 8-bobbin supercell of a k=1 tiling gets tagged k=4). We drop
-// them: every distinct PRIMITIVE geometry is also produced by a genuinely-primitive tiling (verified), so
-// this is lossless, and the survivors carry a trustworthy k. Keyed by the true tile NAME (bobbin≠bowtie,
-// both n=6), so a translation may not map one tile type onto another.
-function isNonPrimitive(faces: DevRec["faces"], T1: number[], T2: number[]): boolean {
-	const d = T1[0] * T2[1] - T1[1] * T2[0];
-	const frac = (x: number, y: number): [number, number] => {
-		const u = (x * T2[1] - y * T2[0]) / d,
-			w = (T1[0] * y - T1[1] * x) / d;
-		return [u - Math.floor(u + 1e-7), w - Math.floor(w + 1e-7)];
-	};
-	const cents = faces.map((f) => {
-		const vs = f.verts,
-			n = vs.length;
-		return { cx: vs.reduce((s, v) => s + v[0], 0) / n, cy: vs.reduce((s, v) => s + v[1], 0) / n, t: f.tile };
-	});
-	const keyOf = (cx: number, cy: number, t: string) => {
-		const [a, b] = frac(cx, cy);
-		return `${Math.round(a * 1000)}:${Math.round(b * 1000)}:${t}`;
-	};
-	const cset = new Set(cents.map((c) => keyOf(c.cx, c.cy, c.t)));
-	const a = cents[0];
-	for (const bb of cents) {
-		const vx = bb.cx - a.cx,
-			vy = bb.cy - a.cy;
-		if (Math.abs(vx) < 1e-6 && Math.abs(vy) < 1e-6) continue;
-		if (cents.every((c) => cset.has(keyOf(c.cx + vx, c.cy + vy, c.t)))) return true;
-	}
-	return false;
-}
-
-function developedGirihTilings(curatedFps: Set<string>): ReferenceTiling[] {
-	if (!fs.existsSync(DEVELOPED_PATH)) {
-		log("  ⚑ no girih-developed.cells.json — engine import skipped (run develop_girih.py)");
+function searchedGirihTilings(): ReferenceTiling[] {
+	if (!fs.existsSync(path.join(GIRIH_DIR, "ids.json"))) {
+		log("  ⚑ no experiments/girih-searcher — girih import skipped (run scripts/build-girih-from-searcher.sh)");
 		return [];
 	}
-	const rawRecs = JSON.parse(fs.readFileSync(DEVELOPED_PATH, "utf8")) as DevRec[];
-	// Drop non-primitive (supercell) tilings first — they are combinatorial artifacts with mislabeled k, and
-	// every distinct primitive geometry survives via a genuinely-primitive tiling (lossless, verified).
-	const recs = rawRecs.filter((r) => !isNonPrimitive(r.faces, r.T1, r.T2));
-	const droppedNonPrim = rawRecs.length - recs.length;
-	// coarse pre-dedup on (k, full tile multiset, |detΛ|) — collapses congruent/rescaled duplicates so we
-	// validate only the ~distinct representatives.
-	const repSeen = new Set<string>();
-	const repsAll: DevRec[] = [];
-	for (const r of recs) {
-		const tiles = r.faces.map((f) => GIRIH_N[f.tile] ?? f.verts.length).sort((a, b) => a - b);
-		const det = Math.abs(r.T1[0] * r.T2[1] - r.T1[1] * r.T2[0]);
-		const key = `${r.k}|${tiles.join(",")}|${det.toFixed(3)}`;
-		if (repSeen.has(key)) continue;
-		repSeen.add(key);
-		repsAll.push(r);
-	}
-	// Cross-set dedup: drop reps that are congruent to a CURATED tiling (the single-tile bobbin/rhombus/bowtie
-	// live in both sets — that's the visible k=1 duplication). Keep the curated version (historical name +
-	// Bonner citation); the engine keeps only what hand-curation didn't already ship.
-	let droppedCurated = 0;
-	const reps = repsAll.filter((r) => {
-		const fp = tilingFingerprint(
-			r.k,
-			r.faces.map((f) => f.verts as Pt[]),
-			r.T1,
-			r.T2,
-		);
-		if (curatedFps.has(fp)) {
-			droppedCurated++;
-			return false;
-		}
-		return true;
-	});
+	const cells = JSON.parse(fs.readFileSync(path.join(GIRIH_DIR, "cells.json"), "utf8")) as {
+		id: string;
+		k: number;
+		renderCell: { cellPolygons: { n: number; vertices: Pt[] }[]; basis: Pt[] };
+	}[];
+	// {run id: final id}: a tiling the shelf already has keeps its id, and one whose id is not a girih id is a
+	// curated tiling (the bobbin, rhombus and bowtie alone), which keeps its historical entry above.
+	const ids = JSON.parse(fs.readFileSync(path.join(GIRIH_DIR, "ids.json"), "utf8")) as Record<string, string>;
+	const round = ([x, y]: Pt): Pt => [Math.round(x * 1e9) / 1e9, Math.round(y * 1e9) / 1e9];
 	const out: ReferenceTiling[] = [];
 	const counters: Record<number, number> = {};
-	let rejected = 0;
-	for (const r of reps) {
-		const cellPolygons = r.faces.map((f) => {
-			const n = GIRIH_N[f.tile] ?? f.verts.length;
-			return { vertices: f.verts.map(([x, y]) => [x, y] as Pt), n, hue: polygonHue(n) };
-		});
-		const cell: RenderCell = { cellPolygons, basis: [r.T1 as Pt, r.T2 as Pt] };
-		const v = validateTiling(cell, 1600);
-		if (!v.ok) {
+	let rejected = 0,
+		curated = 0;
+	for (const r of cells) {
+		if (r.k > GIRIH_MAX_K) continue;
+		if (!ids[r.id].startsWith("isl-girih-")) {
+			curated++;
+			continue;
+		}
+		const cellPolygons = r.renderCell.cellPolygons.map((p) => ({
+			vertices: p.vertices.map(round),
+			n: p.n,
+			hue: polygonHue(p.n),
+		}));
+		const cell: RenderCell = { cellPolygons, basis: r.renderCell.basis.map(round) as Basis };
+		if (!validateTiling(cell, 1600).ok) {
 			rejected++;
 			continue;
 		}
-		const sides = r.faces.map((f) => GIRIH_N[f.tile] ?? f.verts.length);
-		const family = [...new Set(sides)].sort((a, b) => a - b).join(".");
 		counters[r.k] = (counters[r.k] ?? 0) + 1;
 		out.push({
-			id: `isl-girih-k${r.k}-${String(counters[r.k]).padStart(3, "0")}`,
+			id: ids[r.id],
 			source: "islamic",
 			k: r.k,
-			family,
+			family: [...new Set(cellPolygons.map((p) => p.n))].sort((a, b) => a - b).join("."),
 			renderCell: cell as ReferenceTiling["renderCell"],
 			islamicSystem: "fivefold",
-			discoverer: "Čtrnáct engine",
+			discoverer: "Čtrnáct engine (Tiling Searcher)",
 			note:
-				"Fivefold girih k-uniform tiling — enumerated by the Čtrnáct engine (girih palette, D=20) and " +
-				"developed to float geometry (area-certified Σface=|detΛ|, coverage-verified). A combinatorial " +
-				"candidate developed for rendering, not exact-geometry certified. See docs/ISLAMIC_TILINGS.md.",
+				"Fivefold girih k-uniform tiling, found by the Čtrnáct engine in the Tiling Searcher (the five girih tiles, " +
+				"k from 1 to 4) and developed to float geometry (the tiles of a period cell cover it exactly once: " +
+				"area-certified and coverage-verified). A combinatorial candidate developed for rendering, not " +
+				"exact-geometry certified. See docs/ISLAMIC_TILINGS.md.",
 		});
 	}
-	log(
-		`  developed girih: ${out.length} distinct primitive tilings imported (${droppedNonPrim} non-primitive supercells dropped, ${droppedCurated} curated duplicates dropped, ${rejected} failed coverage; ${rawRecs.length} developed → ${recs.length} primitive → ${repsAll.length} reps → ${reps.length} non-curated → ${out.length})`,
-	);
+	out.sort((a, b) => a.k - b.k || a.id.localeCompare(b.id));
+	log(`  girih: ${out.length} tilings from the Searcher (${curated} are curated entries, ${rejected} failed coverage)`);
 	for (const k of Object.keys(counters)
 		.map(Number)
 		.sort((a, b) => a - b))
 		log(`    k=${k}: ${counters[k]}`);
+	if (rejected) process.exitCode = 1;
 	return out;
 }
 
@@ -398,7 +312,8 @@ function loadReuseCells(ids: Set<string>): Map<string, ReferenceTiling["renderCe
 		log(`  ⚑ base atlas missing (${path.relative(ROOT, ATLAS_PATH)}) — reuse entries will be skipped`);
 		return out;
 	}
-	const atlas = decodeAtlas<{ id: string; renderCell: ReferenceTiling["renderCell"] }>(readDataJson(ATLAS_PATH));
+	// hydrated: the base atlas ships no renderCell where its exact source reproduces it
+	const atlas = hydrateRenderCells(decodeAtlas<ReferenceTiling>(readDataJson(ATLAS_PATH)));
 	for (const t of atlas) if (ids.has(t.id)) out.set(t.id, t.renderCell);
 	return out;
 }
@@ -449,10 +364,7 @@ function main(): void {
 		});
 	}
 
-	// Fingerprint every curated tiling so the engine import can drop geometric duplicates of them.
-	const curatedFps = new Set<string>();
-	for (const t of out) curatedFps.add(cellFingerprint(t.k, t.renderCell as unknown as RenderCell));
-	out.push(...developedGirihTilings(curatedFps));
+	out.push(...searchedGirihTilings());
 
 	fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
 	writeDataFile(OUT_PATH, stringifyAtlas(out) + "\n");
