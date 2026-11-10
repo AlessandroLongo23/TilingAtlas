@@ -6,15 +6,16 @@
 > entry of each ledger. **Never write history here.** — last updated 2026-08-23, CC
 > (acting as TA too, AL authorization 2026-07-10). Last touched 2026-09-06.
 
-## public/ is brotli now; the budget and where the data goes next (2026-11-09)
+## Data on R2, experiments local, release 1.49.0 (2026-11-10)
 
-Shipped data is `.json.br` (CLAUDE.md "Shipped data under public/"): `public/` 506 MB, under
-the 650 MB budget (693 MB with everything in flight before). Tracked `public/` is one copy per kept deployment and
-every shard version stays in git (pack 784 MB), so compression only buys time. Production now reads the data from
-R2 (`data.thetilingatlas.com`, `fetchData`, `scripts/data-sync.mjs`; all 21,003 files uploaded), live once the
-code is pushed. Open: recompress the q9 fast pass at q10 (about 13% off hyperbolic-poly); store half of each
-hyperbolic glue involution (about 31% off that shelf); whether `public/` data leaves git. Detail: DEVELOPMENT_NOTES
-"Shipped data moves from gzip to brotli" and "Production reads the data from Cloudflare R2".
+Pushed f38b8bb1 (v1.49.0, "Every k-uniform tiling to k = 16"). Shipped data is brotli `.json.br` mastered on R2
+(`data.thetilingatlas.com`, bucket `tiling-atlas-data`), not in git; builds pull it, production reads it through
+`fetchData`, publish with `pnpm data:sync` (CLAUDE.md "Shipped data under public/"). `experiments/` is local too
+(CLAUDE.md "Experiments"); builder plans are in `scripts/atlas/plans/`. The Searcher download serves 0.5.0.
+Open: recompress the q9 brotli pass at q10 (about 13% off hyperbolic-poly); halve the hyperbolic glue arrays
+(about 31% more); the faster record builder (polygons from eu_develop) before k = 17 and 18 (6.2 M tilings in
+the Searcher run); the sidebar count after a deep link into a split k; the Discord message still links
+the-tiling-atlas.vercel.app and /play. Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.0".
 
 ## /catalogue is the page; classifications and the regular shelf past k = 10 (2026-11-07)
 

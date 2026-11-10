@@ -3443,3 +3443,7 @@ Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.
 them) removed from the 15 unpushed commits; old history on backup/before-experiments-cleanup, hashes changed (c9cc86a4 ->
 0f961f1e, e22c3d40 -> 60dcd6fb, 24934bf8 -> 4cf01090). Builder plans now in scripts/atlas/plans/, one fixture in
 tests/fixtures/. Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.0".
+2026-11-10 · CC · Released v1.49.0 "Every k-uniform tiling to k = 16" (f38b8bb1, pushed with the 17 commits before it).
+The first R2 build pulled, generated and uploaded nothing, but still shipped all 21,013 data files: Next 16 on Vercel copies
+public/ into the output inside `next build` (adapter onBuildComplete), before the prune. data-sync now deletes them there too.
+Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.0".

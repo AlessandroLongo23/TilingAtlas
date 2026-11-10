@@ -171,8 +171,8 @@ every version of every shard forever (pack 784 MB on 2026-11-09). R2's free tier
   `lib/services/atlasCodec.ts`, which prefixes `PUBLIC_DATA_URL` (set on Vercel for production and preview, unset
   locally so development reads `public/`). A bare `fetch` of a `.json.br` breaks production.
 - **Vercel builds** (`scripts/data-sync.mjs`): pull everything from R2, generate (hero cells, update cells) and
-  build, then production uploads what the build generated and every build deletes the data from its output, so
-  no deployment carries it. Guards: pruning runs only in Vercel's container (`/vercel/...`) and only with
+  build, then production uploads what the build generated and every build deletes the data from `public/` and from
+  the build output (Vercel's adapter copies `public/` there inside `next build`), so no deployment carries it. Guards: pruning runs only in Vercel's container (`/vercel/...`) and only with
   `PUBLIC_DATA_URL` set; a build without R2 keys fails. Keys live in the Vercel project (secrets) and in
   `.env.local` here (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`), never `PUBLIC_*`.
 - **Backups.** R2 keeps no old versions, so the copies are the bucket and this Mac's `public/`. Never delete local
