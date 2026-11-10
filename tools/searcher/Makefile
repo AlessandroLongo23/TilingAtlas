@@ -5,12 +5,14 @@ ENGINE = covering_tiling embedding hyperbolic_geometry solutions_processor threa
          tiling_search tiling_writer vertex_classification vertices
 CXX ?= clang++
 CXXFLAGS ?= -std=c++20 -O2
+# shared with the atlas solver: the covering test
+SHARED = ../ctrnact-oracle/congruence.hpp
 
-tilesearch: tilesearch.cpp find.h balance.h $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
+tilesearch: tilesearch.cpp find.h balance.h $(SHARED) $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
 	$(CXX) $(CXXFLAGS) -I$(MAREK_SRC)/include $(filter %.cpp,$^) -lz -o $@
 
 # tileestimate compiles tilesearch.cpp into itself (its main renamed), so it walks the engine's own search.
-tileestimate: tileestimate.cpp tilesearch.cpp find.h balance.h $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
+tileestimate: tileestimate.cpp tilesearch.cpp find.h balance.h $(SHARED) $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
 	$(CXX) $(CXXFLAGS) -I$(MAREK_SRC)/include -I. tileestimate.cpp $(ENGINE:%=$(MAREK_SRC)/src/%.cpp) -lz -o $@
 
 # Windows, cross-compiled from a Mac with mingw-w64 (brew install mingw-w64). ZLIB_WIN is a zlib built
@@ -20,8 +22,8 @@ tileestimate: tileestimate.cpp tilesearch.cpp find.h balance.h $(ENGINE:%=$(MARE
 WINCXX ?= x86_64-w64-mingw32-g++
 WINFLAGS = -std=c++20 -O2 -static -Iwin -I$(ZLIB_WIN) -include condition_variable -include win/gzwide.h
 
-tilesearch.exe: tilesearch.cpp find.h balance.h $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
+tilesearch.exe: tilesearch.cpp find.h balance.h $(SHARED) $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
 	$(WINCXX) $(WINFLAGS) -I$(MAREK_SRC)/include $(filter %.cpp,$^) -L$(ZLIB_WIN) -lz -o $@
 
-tileestimate.exe: tileestimate.cpp tilesearch.cpp find.h balance.h $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
+tileestimate.exe: tileestimate.cpp tilesearch.cpp find.h balance.h $(SHARED) $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
 	$(WINCXX) $(WINFLAGS) -I$(MAREK_SRC)/include -I. tileestimate.cpp $(ENGINE:%=$(MAREK_SRC)/src/%.cpp) -L$(ZLIB_WIN) -lz -o $@

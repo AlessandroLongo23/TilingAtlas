@@ -28,6 +28,7 @@
 #include <sys/resource.h>
 #include <zlib.h>
 #include <atomic>
+#include <bit>
 #include <climits>
 #include <memory>
 #include <condition_variable>
@@ -54,6 +55,7 @@
 #include <utility>
 #include <vector>
 
+#include "../ctrnact-oracle/congruence.hpp"
 #include "face_types.h"
 #include "solutions_processor.h"
 #include "tiling_extender.h"
@@ -686,47 +688,26 @@ static void find_recolorings(Board const& b) {
 
 // ── coverings, rejected by congruence closure (eu_solver's congruence.hpp, 2026-11-06) ──
 // A complete tiling is connected and opposite, left, right and mirror permute its half-edges, so the classes
-// canonical_form refines to are a block system with blocks of one size: it covers a smaller quotient iff the
-// anchor half-edge a shares its class with some b of the same label, iff the union-find closure of (a, b) under
-// the four links never merges two labels (that closure lies inside any congruence holding the pair). A wrong b
-// fails within a few steps, where the refinement runs to its end. Exact, so it only decides the coverings early;
-// a half-edge without a mirror (which canonical_form reads as index -1) leaves the verdict to canonical_form.
-// TILESEARCH_CONGRUENCE=0 turns it off.
+// canonical_form refines to are a block system with blocks of one size: it covers a smaller quotient iff it has a
+// nontrivial congruence, which eu_solver's test decides (congruence.hpp, shared since 2026-11-10: the label and the
+// vertex figure, which a covering keeps as it keeps the label, are the seed). Exact, so it only decides the coverings
+// early; a half-edge without a mirror (which canonical_form reads as index -1) leaves the verdict to canonical_form.
+// 1: it covers a smaller quotient; 0: it does not; -1: not decided here. TILESEARCH_CONGRUENCE=0 turns it off.
 static bool const congruence_test = !std::getenv("TILESEARCH_CONGRUENCE") || std::string(std::getenv("TILESEARCH_CONGRUENCE")) != "0";
-static bool covers_quotient(tiling_t const& t) {
+static int covers_quotient(tiling_t const& t) {
     int const n = t.num_halfedges();
-    thread_local std::vector<int> par, touched;
-    thread_local std::vector<std::pair<int, int>> work;
-    for (int i = (int)par.size(); i < n; i++) par.push_back(i);
-    auto lab = [&](int x) { return t.left_label(index_t{ x }); };
-    auto find = [&](int x) { while (par[x] != x) par[x] = par[par[x]], x = par[x]; return x; };
-    for (int i = 0; i < n; i++)
-        if (!t.mirror(index_t{ i }).has_value()) return false;   // canonical_form decides these
-    int const a = 0, la = lab(0);   // any anchor gives the same verdict
-    bool const figs = figures();   // and the vertex figure, which a covering keeps as it keeps the label
-    for (int b = 1; b < n; b++) {
-        if (lab(b) != la || (figs && figure_of(t, index_t{ b }) != figure_of(t, index_t{ a }))) continue;
-        bool ok = true;
-        work.assign(1, { a, b });
-        while (ok && !work.empty()) {
-            auto const [u, v] = work.back();
-            work.pop_back();
-            int const x = find(u), y = find(v);
-            if (x == y) continue;
-            if (lab(x) != lab(y) || (figs && figure_of(t, index_t{ x }) != figure_of(t, index_t{ y }))) { ok = false; break; }
-            par[y] = x, touched.push_back(y);
-            index_t const iu{ u }, iv{ v };
-            index_t const mu = t.mirror(iu), mv = t.mirror(iv);
-            work.push_back({ t.opposite(iu).value, t.opposite(iv).value });
-            work.push_back({ t.left_neighbour(iu).value, t.left_neighbour(iv).value });
-            work.push_back({ t.right_neighbour(iu).value, t.right_neighbour(iv).value });
-            work.push_back({ mu.value, mv.value });
-        }
-        for (int x : touched) par[x] = x;
-        touched.clear();
-        if (ok) return true;
+    thread_local std::vector<int> link;   // right, left, mirror, opposite: four rows of n
+    thread_local std::vector<long long> seed;
+    link.resize(4 * n), seed.resize(n);
+    bool const figs = figures();
+    for (int i = 0; i < n; i++) {
+        index_t const ix{ i };
+        if (!t.mirror(ix).has_value()) return -1;   // canonical_form decides these
+        link[i] = t.right_neighbour(ix).value, link[n + i] = t.left_neighbour(ix).value;
+        link[2 * n + i] = t.mirror(ix).value, link[3 * n + i] = t.opposite(ix).value;
+        seed[i] = (long long)(figs ? figure_of(t, ix) : 0) << 32 | (uint32_t)t.left_label(ix);
     }
-    return false;
+    return has_congruence(n, link.data(), link.data() + n, link.data() + 2 * n, link.data() + 3 * n, seed.data());
 }
 
 // The run's own test: as fingerprint_if_minimal, but a key already seen is dropped before the recolourings are
@@ -734,8 +715,31 @@ static bool covers_quotient(tiling_t const& t) {
 // 720 refinements per duplicate. TILESEARCH_EARLY_SEEN=0 turns it off.
 static bool const early_seen = !std::getenv("TILESEARCH_EARLY_SEEN") || std::string(std::getenv("TILESEARCH_EARLY_SEEN")) != "0";
 static bool const check_force = std::getenv("TILESEARCH_CHECK_FORCE") != nullptr;
+// NO KEY WHERE ORDERLY GENERATION IS EXACT (2026-11-10). Coupled orderly generation builds every closed configuration
+// once: at a closed node each other root's code is larger (dropped), smaller (the node is cut) or equal (an
+// automorphism), never left open. The one "decide nothing" exit of replay_from needs a full open face of the replay
+// whose two ends the node did not glue to each other, and a closed node has none: the replay's vertices are distinct
+// vertices of the node, so the stretch is q distinct corners of one closed face F, and if F had more, the word reading
+// F would read the stretch and be longer, so the stretch would not be full. A tiling is found only from its least
+// vertex type, so roots share nothing either. The canonical form and its fingerprint then only fed a `seen` that
+// never said no, at 25% of regulars k <= 12; the leaf test is the congruence test alone. Not on a board with
+// recolourings (their classes compare forms), not decoupled (a replay there can stay undecided), not with
+// TILESEARCH_KEYS. TILESEARCH_KEYLESS=0 turns it off; TILESEARCH_CHECK_ORDERLY=1 computes every key beside it and aborts
+// on a repeat, on a verdict the form does not share, or on an automorphism tie (Extender::auto_cover) that is minimal.
+static bool keyless = false;
+static bool const check_orderly = std::getenv("TILESEARCH_CHECK_ORDERLY") != nullptr;
 template<class Seen> static bool new_minimal(tiling_t const& t, Fingerprints::Key& key, Seen& seen) {
     thread_local std::vector<uint32_t> form, other;
+    if (keyless) {
+        int const c = congruence_test ? covers_quotient(t) : -1;
+        if (c >= 0 && !check_orderly) return c == 0;
+        bool const minimal = canonical_form(t, nullptr, form);
+        if (check_orderly && ((c >= 0 && minimal != (c == 0)) || (minimal && !seen.first_time(Fingerprints::of(form))))) {
+            std::cerr << "TILESEARCH_CHECK_ORDERLY: " << (c >= 0 && minimal != (c == 0) ? "the congruence test and the canonical form disagree" : "a tiling was built twice") << "\n";
+            std::abort();
+        }
+        return minimal;
+    }
     // Which test first: the union-find decides a covering in a few steps but is wasted on a minimal tiling, whose
     // refinement runs anyway for its key. Per thread, the observed covering rate picks the order (both give the
     // same verdict): union-find first while coverings are at least 30% of leaves (regular boards: 55-85%), the
@@ -744,7 +748,7 @@ template<class Seen> static bool new_minimal(tiling_t const& t, Fingerprints::Ke
     thread_local bool uf_first = true;
     auto covered = [&] { n_covers++; return false; };
     if (++n_leaves == 1024) uf_first = n_covers * 10 >= n_leaves * 3, n_leaves /= 2, n_covers /= 2;
-    if (congruence_test && uf_first && covers_quotient(t)) return covered();
+    if (congruence_test && uf_first && covers_quotient(t) == 1) return covered();
     if (!canonical_form(t, nullptr, form)) return covered();
     key = Fingerprints::of(form);
     if (early_seen && !seen.first_time(key)) return false;
@@ -801,7 +805,7 @@ template<class Seen> static bool new_minimal(tiling_t const& t, Fingerprints::Ke
 
 static bool fingerprint_if_minimal(tiling_t const& t, Fingerprints::Key& key) {
     thread_local std::vector<uint32_t> form, other;
-    if (congruence_test && covers_quotient(t)) return false;
+    if (congruence_test && covers_quotient(t) == 1) return false;
     if (!canonical_form(t, nullptr, form)) return false;
     for (auto const& lab : recolorings) {
         canonical_form(t, &lab, other);
@@ -841,10 +845,21 @@ static bool orientable(tiling_t const& t) {
 static bool const fast_writer = !std::getenv("TILESEARCH_FAST_WRITER") || std::string(std::getenv("TILESEARCH_FAST_WRITER")) != "0";
 static bool const check_writer = std::getenv("TILESEARCH_CHECK_WRITER") != nullptr;
 static void put_int(std::string& out, int v) { char b[16]; out.append(b, std::to_chars(b, b + sizeof b, v).ptr); }
-struct StrOut { std::string& s; };   // what corner_decoder's operator<< writes to
-static StrOut& operator<<(StrOut& o, char const* x) { o.s += x; return o; }
-static StrOut& operator<<(StrOut& o, char x) { o.s += x; return o; }
-static StrOut& operator<<(StrOut& o, int x) { put_int(o.s, x); return o; }
+// The edges and faces go through a cursor into the string's own storage, grown ahead (2026-11-10: appending a
+// character at a time was a capacity check and a size store each, a third of the writer).
+struct StrOut {   // also what corner_decoder's operator<< writes to
+    std::string& s;
+    char* p;
+    explicit StrOut(std::string& str) : s(str), p(str.data() + str.size()) {}
+    ~StrOut() { s.resize(size_t(p - s.data())); }
+    void room(size_t n) {   // n more bytes may be written
+        size_t const used = size_t(p - s.data());
+        if (s.size() < used + n) s.resize(used + n), p = s.data() + used;
+    }
+};
+static StrOut& operator<<(StrOut& o, char const* x) { while (*x) *o.p++ = *x++; return o; }
+static StrOut& operator<<(StrOut& o, char x) { *o.p++ = x; return o; }
+static StrOut& operator<<(StrOut& o, int x) { o.p = std::to_chars(o.p, o.p + 12, x).ptr; return o; }
 // conway_representation_t: the half-edge's place in its vertex (its mirror's, starred), the vertex as primes to 3, @n after
 struct ConwayRep { bool mirrored; int ix, v; };
 static ConwayRep conway_rep(tiling_t const& t, index_t ix) {
@@ -852,11 +867,11 @@ static ConwayRep conway_rep(tiling_t const& t, index_t ix) {
     bool const m = !(ix <= n.mirror);
     return { m, (m ? n.mirror : ix) - n.vertex_start, n.vertex_ix };
 }
-static void put_rep(std::string& out, ConwayRep r, bool star) {
-    if (star && r.mirrored) out += '*';
-    put_int(out, r.ix);
-    if (r.v > 3) out += '@', put_int(out, r.v);
-    else out.append(r.v, '\'');
+static void put_rep(StrOut& out, ConwayRep r, bool star) {
+    if (star && r.mirrored) out << '*';
+    out << r.ix;
+    if (r.v > 3) out << '@' << r.v;
+    else for (int i = 0; i < r.v; i++) out << '\'';
 }
 // for_each_vertex's orbit from the vertex's first half-edge, read as for_each_vertex_type reads it
 static int vertex_symbol(tiling_t const& t, vertex_classification const& vc, index_t start) {
@@ -900,31 +915,41 @@ static void write_certificate(std::string& out, tiling_t const& t, vertex_classi
         if (j - i > 1) out += 'x', put_int(out, int(j - i));
     }
     out += '\n';
+    StrOut so{ out };
+    int const n = t.num_halfedges();
+    so.room(size_t(n) * 192 + 16);   // an edge is under 64 bytes and a corner under 128, and there are at most n of each
     for (auto ix : complete_edges_of(t)) {   // conwaysymbols
         ConwayRep const a = conway_rep(t, ix), b = conway_rep(t, t.opposite(ix));
         bool const flip = a.mirrored != b.mirrored;
-        out += flip ? '[' : '(';
-        put_rep(out, a, false);
-        if (a.ix != b.ix || a.v != b.v) out += ' ', put_rep(out, b, false);
-        out += flip ? ']' : ')';
+        so << (flip ? '[' : '(');
+        put_rep(so, a, false);
+        if (a.ix != b.ix || a.v != b.v) so << ' ', put_rep(so, b, false);
+        so << (flip ? ']' : ')');
     }
-    out += '\n';
-    StrOut so{ out };
-    for (auto& face : faces_of(t)) {
-        bool first = true;
-        for (auto& c : face) {
-            if (!first) out += " - ";
-            put_rep(out, conway_rep(t, c.back), true);
-            out += '/';
-            put_rep(out, conway_rep(t, c.forward), true);
-            out += '(';
-            so << corner_decoder{ t.right_label(c.forward) };
-            out += ')';
-            first = false;
+    so << '\n';
+    // faces_of(t) on a complete tiling, each face walked once: the faces in the order of their least unmet half-edge,
+    // a face's mirror image marked and not written. His loop copied the marks per face and walked every face twice.
+    thread_local std::vector<char> met;
+    met.assign(n, 0);
+    for (int i = 0; i < n; i++) {
+        if (met[i]) continue;
+        index_t forward{ i }, back = t.right_neighbour(forward);
+        index_t const image = t.mirror(back);   // where the mirror image's walk starts
+        bool met_image = false, first = true;
+        for (; forward.has_value() && !met[forward.value]; back = t.opposite(forward), forward = back.has_value() ? t.left_neighbour(back) : index_t{}) {
+            if (!first) so << " - ";
+            put_rep(so, conway_rep(t, back), true);
+            so << '/';
+            put_rep(so, conway_rep(t, forward), true);
+            so << '(' << corner_decoder{ t.right_label(forward) } << ')';
+            met[forward.value] = 1, met_image = met_image || image == forward, first = false;
         }
-        out += '\n';
+        so << '\n';
+        if (met_image || !image.has_value()) continue;
+        for (forward = image; forward.has_value() && !met[forward.value]; back = t.opposite(forward), forward = back.has_value() ? t.left_neighbour(back) : index_t{})
+            met[forward.value] = 1;
     }
-    out += "---\n\n";
+    so << "---\n\n";
 }
 // The certificate of t into out (replacing it): `types` is each vertex's search type, or null to look each one up
 static void certificate(std::string& out, original_tiling_writer& writer, tiling_t const& t, vertex_classification const& vc,
@@ -955,9 +980,16 @@ static int const WRITE_FAILED = 5;
     std::cerr << "cannot " << what << " " << file.string() << ": " << (e ? std::strerror(e) : "failed") << std::endl;
     std::_Exit(WRITE_FAILED);
 }
-/** `text` written to `file` (opened with `mode`: std::ios::app to append), and closed: a write fails on the close too. */
+/** `text` written to `file` (opened with `mode`: std::ios::app to append), and closed: a write fails on the close too.
+ *  Through a megabyte of buffer: libc++'s own 4 KB made a megabyte of certificates 256 system calls. */
+static void big_buffer(std::ofstream& f) {
+    thread_local std::vector<char> buf(1 << 20);
+    f.rdbuf()->pubsetbuf(buf.data(), (std::streamsize)buf.size());
+}
 static void write_file(fs::path const& file, std::string_view text, std::ios::openmode mode = {}) {
-    std::ofstream f(file, mode | std::ios::out);
+    std::ofstream f;
+    big_buffer(f);
+    f.open(file, mode | std::ios::out);
     f.write(text.data(), std::streamsize(text.size()));
     f.close();
     if (!f) io_failed("write", file);
@@ -978,14 +1010,23 @@ static void drop_torn_line(fs::path const& file) {
     if (ec) errno = ec.value(), io_failed("write", file);
 }
 
-// from's bytes appended to to, a block at a time (`out << in.rdbuf()` moved them one character at a time: 2-18% of
-// the CPU on the output boards, and the merge of the last root is the end of an 8-thread run)
-static void append_file(fs::path const& from, fs::path const& to) {
+// The pieces of one file appended to `to` under one open, in order: a file's bytes, a block at a time (`out <<
+// in.rdbuf()` moved them one character at a time: 2-18% of the CPU on the output boards, and the merge of the last
+// root is the end of an 8-thread run), then a text held in memory.
+struct Piece { fs::path file; std::string const* text = nullptr; };
+static void append_pieces(std::vector<Piece> const& pieces, fs::path const& to) {
     thread_local std::vector<char> buf(1 << 20);
-    std::ifstream in(from, std::ios::binary);
-    std::ofstream out(to, std::ios::app | std::ios::binary);
-    while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) out.write(buf.data(), in.gcount());
-    if (!in.eof()) io_failed("read", from);
+    std::ofstream out;
+    big_buffer(out);
+    out.open(to, std::ios::app | std::ios::binary);
+    for (auto const& p : pieces) {
+        if (!p.file.empty()) {
+            std::ifstream in(p.file, std::ios::binary);
+            while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) out.write(buf.data(), in.gcount());
+            if (!in.eof()) io_failed("read", p.file);
+        }
+        if (p.text) out.write(p.text->data(), (std::streamsize)p.text->size());
+    }
     out.close();
     if (!out) io_failed("write", to);
 }
@@ -1486,9 +1527,20 @@ struct FastFaces {
         return l < 0 ? -1 : trie_next[(size_t)node * letters.size() + l];
     }
     int trie_slack(int node) const { return trie_dense ? trie_rem[node] : trie[node].rem; }
+    // THE FACE TESTS BY THE TRIE (2026-11-10). With every word finite, a stretch is some word's exactly when the trie
+    // reads it (it holds every reading up to each word's length), so the glue test and the forced-closure test step
+    // the trie along their walk, one read per corner, where they matched the stretch against every word carrying its
+    // first letter. trie_closes: a reading that, as a whole closed face, is a word's quotient (the loop test's rule).
+    // trie_last: no word reads a longer stretch (face_full). trie_rems: bit r when a word reading the stretch lacks r
+    // corners, trie_long when one lacks 64 or more (the ring check's readings). by_trie is off on a board with an
+    // apeirogon, whose stretches leave the trie; TILESEARCH_CROSSCHECK=1 runs Marek's checker beside every glue test.
+    std::vector<char> trie_closes, trie_last, trie_long;
+    std::vector<uint64_t> trie_rems;
+    bool by_trie = false;
     // Every finite word one length m and no apeirogons: every walk at a node passed the face check, so a word reads it
-    // and its slack is m minus its corners, the walk-length rule's order exactly. No trie is built then (2026-11-07:
-    // the hyperbolic bubble boards paid 8% for trie walks that picked the same half-edges).
+    // and its slack is m minus its corners, the walk-length rule's order exactly. The slack is then read off the walk's
+    // length, not the trie (2026-11-07: the hyperbolic bubble boards paid 8% for trie walks that picked the same
+    // half-edges); the trie is still built, for the face tests.
     int uniform_m = -1;
     void build_trie() {
         uniform_m = 0;
@@ -1496,8 +1548,9 @@ struct FastFaces {
             if (w.size() == 0 || (uniform_m && w.size() != uniform_m)) { uniform_m = -1; break; }
             uniform_m = w.size();
         }
-        if (uniform_m > 0) return;
+        by_trie = !words.empty() && std::none_of(words.begin(), words.end(), [](auto const& w) { return w.size() == 0; });
         trie.assign(1, TrieNode{ 1 << 20, {} });
+        trie_closes.assign(1, 0), trie_long.assign(1, 0), trie_rems.assign(1, 0);
         for (auto const& w : words) {
             int const m = w.size();
             if (m == 0) continue;   // apeirogons: no slack to read
@@ -1507,12 +1560,16 @@ struct FastFaces {
                     for (int i = 0; i < m; i++) {
                         int const c = w.letter(p + d * i);
                         int k = trie_child(node, c);
-                        if (k < 0) { k = (int)trie.size(); trie[node].kids.push_back({ c, k }); trie.push_back(TrieNode{ 1 << 20, {} }); }
+                        if (k < 0) { k = (int)trie.size(); trie[node].kids.push_back({ c, k }); trie.push_back(TrieNode{ 1 << 20, {} }); trie_closes.push_back(0), trie_long.push_back(0), trie_rems.push_back(0); }
                         node = k;
                         trie[node].rem = std::min(trie[node].rem, m - (i + 1));
+                        if (m - (i + 1) < 64) trie_rems[node] |= 1ULL << (m - (i + 1)); else trie_long[node] = 1;
+                        if (m % (i + 1) == 0 && (i + 1) % w.rotational_generator() == 0) trie_closes[node] = 1;
                     }
                 }
         }
+        trie_last.resize(trie.size());
+        for (size_t v = 0; v < trie.size(); v++) trie_last[v] = trie[v].kids.empty();
         size_t const L = letters.size();
         // Dense rows cost nodes x letters x 4 bytes. The worst of 4,027 saved boards needs 54 MB; past 256 MB (a board
         // with ~100 labels and long words) keep the child lists instead.
@@ -1544,6 +1601,18 @@ struct FastFaces {
         return a >= 0 && b >= 0 && (adj[a * stride + b / 64] >> (b % 64) & 1);
     }
     bool check_adjacent_cw_face(tiling_t const& conf, index_t ix) const {
+        if (by_trie) {   // the walk below, the stretch stepped through the trie
+            index_t b = ix;
+            bool loop = false;
+            for (index_t nb; (nb = conf.opposite(conf.right_neighbour(b))).has_value(); b = nb)
+                if (nb == ix) { loop = true; break; }
+            int node = 0;
+            for (index_t h = b;;) {
+                if ((node = trie_step(node, conf.right_label(h))) < 0) return false;
+                if (conf.is_free(h) || (h = conf.cw_step(h)) == b) break;
+            }
+            return !loop || trie_closes[node];
+        }
         counterclockwise_corner<tiling_t> c{ conf, ix };
         auto const [n, is_loop] = advance_to_back_or_loop(c, c.end());
         (void)n;
@@ -1583,6 +1652,24 @@ struct FastFaces {
         return false;
     }
     bool check_adjacent_ccw_face(tiling_t const& conf, index_t ix) const { return check_adjacent_cw_face(conf, conf.mirror(ix)); }
+    /** Whether the face on g's clockwise side, as the face check walks it, is open and full (face_full), with its two
+     *  free ends: its one move is then to glue them. */
+    bool full_open_face(tiling_t const& c, index_t g, index_t& far, index_t& end) const {
+        index_t b = g;
+        for (index_t nb; (nb = c.opposite(c.right_neighbour(b))).has_value(); b = nb)
+            if (nb == g) return false;   // closed
+        far = c.right_neighbour(b);
+        thread_local std::vector<int> seg;
+        seg.clear();
+        int node = 0;
+        for (index_t h = b;;) {
+            if (!by_trie) seg.push_back(c.right_label(h));
+            else if (node >= 0) node = trie_step(node, c.right_label(h));
+            if (c.is_free(h)) { end = h; break; }
+            if ((h = c.cw_step(h)) == b) return false;
+        }
+        return by_trie ? node < 0 || trie_last[node] : face_full(seg);
+    }
     /** Whether an open face reading `seg` (the face check's walk) can take no more corners: no apeirogon and no word
      *  longer than it reads it. Gluing its end to anything but its other end then makes it longer, so fails. */
     bool face_full(std::vector<int> const& seg) const {
@@ -2256,25 +2343,15 @@ static bool faces_close(tiling_t const& c, std::vector<int> const& types, RingTa
         if (loop || seg.size() >= 256) continue;
         int const a = cls(f), g = cls(c.right_neighbour(x)), q = (int)seg.size();
         bool ok = false;
-        uint64_t tried = 0;   // the missing lengths already tested
-        auto reading = [&](int wi, int r) {
-            if (F.words[wi].size() == 0 || r >= 64) { ok = true; return; }   // an apeirogon, or past the cache key: alive
-            if (!(tried >> r & 1)) tried |= 1ULL << r, ok = closes(a, r, g);
-        };
-        if (F.indexed) {   // the readings of exactly this stretch, by its hash (FastFaces' index)
-            if (!F.infinite.empty()) continue;
-            uint64_t h = FastFaces::HASH0;
-            for (int s : seg) h = FastFaces::step(h, s);
-            auto it = F.stretches.find(h);
-            if (it == F.stretches.end()) continue;
-            for (auto const& o : it->second) {
-                if (ok || o.len != q) continue;
-                auto const& w = F.words[o.word];
-                bool same = true;
-                for (int i = 0; i < q && same; i++) same = seg[i] == w.letter(o.offset + o.dir * i);
-                if (same) reading(o.word, w.size() - q);
-            }
-        } else {
+        if (F.by_trie) {   // the readings of exactly this stretch: its trie node's
+            int node = 0;
+            for (int i = 0; i < q && node >= 0; i++) node = F.trie_step(node, seg[i]);
+            if (node < 0) continue;   // no word reads it: the face test's to say
+            ok = F.trie_long[node];   // past the cache key: alive
+            for (uint64_t rems = F.trie_rems[node]; rems && !ok; rems &= rems - 1) ok = closes(a, std::countr_zero(rems), g);
+        } else if (F.indexed) continue;   // a board with an apeirogon: any stretch stays alive
+        else {
+            uint64_t tried = 0;   // the missing lengths already tested
             int const s0 = F.id(seg[0]);
             if (s0 < 0) continue;
             for (auto [wi, p] : F.starts[s0]) {
@@ -2283,7 +2360,10 @@ static bool faces_close(tiling_t const& c, std::vector<int> const& types, RingTa
                 bool fwd = true, rev = true;
                 for (int i = 1; i < q && fwd; i++) fwd = seg[i] == w.letter(p + i);
                 for (int i = 1; i < q && rev; i++) rev = seg[i] == w.letter(p - i);
-                if (fwd || rev) reading(wi, w.size() - q);
+                if (!fwd && !rev) continue;
+                int const r = w.size() - q;
+                if (w.size() == 0 || r >= 64) ok = true;   // an apeirogon, or past the cache key: alive
+                else if (!(tried >> r & 1)) tried |= 1ULL << r, ok = closes(a, r, g);
             }
         }
         if (!ok) return false;
@@ -2405,23 +2485,6 @@ struct OrderlyTables {
 static OrderlyTables const* run_orderly = nullptr;
 static inline long long enc_exist(int i) { return (1LL << 50) + i; }
 static inline long long enc_new(int g, int r) { return ((1LL << 32) - g) * 4096 + r; }
-/** open_face's walk on any configuration: labels into seg, the two free ends (far, end); false for a loop. */
-static bool open_face_in(tiling_t const& c, index_t g, index_t& far, index_t& end, std::vector<int>& seg) {
-    counterclockwise_corner<tiling_t> cc{ c, g };
-    auto const [n, is_loop] = advance_to_back_or_loop(cc, cc.end());
-    (void)n;
-    if (is_loop) return false;
-    seg.clear();
-    index_t const start = cc.back;
-    for (index_t h = start;;) {
-        seg.push_back(c.right_label(h));
-        if (c.is_free(h)) { end = h; break; }
-        h = c.cw_step(h);
-        if (h == start) return false;
-    }
-    far = c.right_neighbour(start);
-    return far.has_value() && c.is_free(far);
-}
 /** The face rule's half-edge (choose_halfedge with face_first), on any configuration. */
 static index_t face_rule_choice(tiling_t const& c, FastFaces const& F) {
     if (slack_rule) return F.face_pick(c);
@@ -2462,10 +2525,15 @@ struct Extender {
     CtxCache ctx;            // the free half-edges' passing pairs, kept between nodes
     Sides sides;             // chiral: each vertex's side
 
+    /** Room for a vertex of type t in c, grown geometrically: push_vertex_from reserves exactly what it needs, so every
+     *  push reallocated the whole half-edge vector (the search's, and each replay's). */
+    void make_room(tiling_t& c, int t) const {
+        auto& h = c.*HalfedgesOf::member;
+        size_t const need = h.size() + vc->valence_of(t);
+        if (h.capacity() < need) h.reserve(std::max({ 2 * h.capacity(), need, size_t(64) }));
+    }
     void add_vertex(int t) {
-        auto& h = conf.*HalfedgesOf::member;
-        size_t need = h.size() + vc->valence_of(t);
-        if (h.capacity() < need) h.reserve(std::max(2 * h.capacity(), need));
+        make_room(conf, t);
         ++(is_flat(*vc, t) ? num_flat : num_vertices_added);
         int const base = conf.num_halfedges();
         vc->push_vertex_to(conf, t);
@@ -2480,36 +2548,16 @@ struct Extender {
     struct Forced { index_t a, b; int settled; CtxCache::Changed changed; };
     std::vector<Forced> forced;   // the glues propagate made, undone by unwind
     std::vector<index_t> queue;
-    mutable index_t open_end{};   // open_face's free end on the walk (the other is `far`)
     void enqueue_owners(index_t a) {   // the free half-edges whose faces the glue at a touched
         auto const ch = CtxCache::changed_by(conf, a);
         for (int i = 0; i < ch.n; i++)
             if (conf.is_free(index_t{ ch.h[i] })) queue.push_back(index_t{ ch.h[i] });
-    }
-    /** The open face on g's clockwise side, as the face check walks it: its corner labels into seg, and the free
-     *  half-edge at its far end; false when the walk closes on itself. */
-    bool open_face(index_t g, index_t& far, std::vector<int>& seg) const {
-        counterclockwise_corner<tiling_t> c{ conf, g };
-        auto const [n, is_loop] = advance_to_back_or_loop(c, c.end());
-        (void)n;
-        if (is_loop) return false;
-        seg.clear();
-        index_t const start = c.back;
-        for (index_t h = start;;) {
-            seg.push_back(conf.right_label(h));
-            if (conf.is_free(h)) { open_end = h; break; }
-            h = conf.cw_step(h);
-            if (h == start) return false;
-        }
-        far = conf.right_neighbour(start);
-        return far.has_value() && conf.is_free(far);
     }
     /** Glue every forced closure, to a fixpoint; false when the node is dead or cut. A face changes only when an edge is
      *  glued into it, so after each glue the two faces through the new edge (the face check's two: a's clockwise face
      *  and its mirror's) are walked; one that is open and full (face_full) has one possible move, gluing its two
      *  free ends, which is made at once. */
     bool propagate(index_t a) {
-        thread_local std::vector<int> seg;
         queue.clear();
         queue.push_back(a);
         while (!queue.empty()) {
@@ -2517,9 +2565,8 @@ struct Extender {
             queue.pop_back();
             for (index_t x : { e, conf.mirror(e) }) {
                 if (!x.has_value() || conf.is_free(x)) continue;
-                index_t far{};
-                if (!open_face(x, far, seg) || !ids->face_full(seg)) continue;
-                index_t const g = far, partner = open_end;   // the face's two free ends
+                index_t g{}, partner{};   // the face's two free ends
+                if (!ids->full_open_face(conf, x, g, partner)) continue;
                 if (!partner.has_value() || partner == g || !conf.is_free(g) || !conf.is_free(partner)) continue;
                 if (check_force) verify_forced(g, partner);
                 if (!can_join(conf, *faces, g, partner)) return false;                  // its one move fails: dead
@@ -2566,6 +2613,13 @@ struct Extender {
     int depth = 0;                    // branch moves on the path to this node
     long long pending = 0;            // the move try_joining is about to make
     std::vector<long long> moves;     // moves[d]: the branch move at code position d
+    std::vector<int> branch;          // branch[d]: the half-edge that move glued (the face rule's choice there)
+    std::vector<size_t> fmark;        // fmark[d]: where that move's forced closures begin in `forced`
+    // A COUPLED REPLAY KEEPS NO COPY (2026-11-10, from eu_solver). While another root's code equals ours for s moves,
+    // the copy its replay built is our own ancestor after s moves, half-edge for half-edge: the same type first, then
+    // the same moves at the same indices, the same forced closures. So the replay holds only where each of the
+    // ancestor's vertices lies on this node (qv2p, qaut, pv2q), and reads the face rule's choice and the forced
+    // closures off the path (branch, fmark). Q, qtype, qstart, code and the rest are the decoupled replays'.
     struct RState { tiling_t Q; std::vector<int> qv2p, qaut, pv2q, qtype, qstart; std::vector<long long> code; int s = 0, nfree = 0, low = 0; bool done = false, broken = false; };
     struct Alt { int v, a, wait, st; };
     std::deque<RState> pool;
@@ -2574,12 +2628,17 @@ struct Extender {
     std::vector<std::vector<Alt>> alive;
     std::vector<int> alive_nv;
     int replay_wait = -1;
-    enum { R_TIED, R_PRUNE, R_DROP };
+    int first_ff = -1;   // the face rule's half-edge on the root's type alone: every root's first choice
+    // A root whose whole code equals ours on a closed node is an automorphism of the configuration moving the root, so
+    // the configuration covers its quotient by it and is never written: the leaf needs no test (eu_solver's ORD_AUTO).
+    bool auto_cover = false;
+    enum { R_TIED, R_PRUNE, R_DROP, R_SAME };
     int pool_alloc() { if (pool_used == (int)pool.size()) pool.emplace_back(); return pool_used++; }
     std::vector<int> pstart;   // P's vertex -> its first half-edge (rebuilt per test)
     void rs_add(RState& R, int g, int pv, int a) {
         int const before = R.Q.num_halfedges();
         R.qstart.push_back(before);
+        make_room(R.Q, g);
         vc->push_vertex_to(R.Q, g);
         R.nfree += R.Q.num_halfedges() - before;
         R.qv2p.push_back(pv), R.qaut.push_back(a), R.qtype.push_back(g);
@@ -2601,49 +2660,47 @@ struct Extender {
         R.Q.add_edge(a, b);
         for (int i = 0; i < 4; i++) if (was >> i & 1 && !R.Q.is_free(xs[i])) R.nfree--;
     }
-    /** Continue the replay R on this node (code length D). full: the node is closed. */
-    int replay_from(RState& R, int D, bool full) {
+    /** Continue the replay R on this node (code length D): R_TIED with R.s == D when every move is ours. */
+    int replay_from(RState& R, int D) {
+        auto const& T = *run_orderly;
         replay_wait = -1;
         R.pv2q.resize(types.size(), -1);
-        thread_local std::vector<int> seg;
-        thread_local std::vector<index_t> work;
+        auto image = [&](index_t d) {   // where the root's frame puts the ancestor's half-edge d
+            auto const& nb = conf.neighbourhood(d);
+            return index_t{ pstart[R.qv2p[nb.vertex_ix]] + T.autinv[types[nb.vertex_ix]][R.qaut[nb.vertex_ix]][d.get_value() - nb.vertex_start.get_value()] };
+        };
         for (;; R.s++) {
             int const s = R.s;
-            if (R.nfree == 0) return full && s < D ? R_PRUNE : R_TIED;   // a strict prefix is smaller; equal = automorphism
-            index_t const ff = face_rule_choice(R.Q, *ids);
-            index_t const x{ q2p(R, ff) }, y = conf.opposite(x);
+            if (s == D) return R_TIED;
+            index_t const x = image(index_t{ branch[s] }), y = conf.opposite(x);
             if (!y.has_value()) { replay_wait = x.get_value(); return R_TIED; }
             auto const& nb = conf.neighbourhood(y);
             int const pv = nb.vertex_ix, qv = R.pv2q[pv], g = types[pv], qy = y.get_value() - nb.vertex_start.get_value();
-            long long code;
-            int partner = -1;
-            if (qv >= 0) { partner = R.qstart[qv] + run_orderly->aut[g][R.qaut[qv]][qy]; code = enc_exist(partner); }
-            else code = enc_new(g, run_orderly->repof[g][qy]);
-            if (s >= D) return full ? R_DROP : R_TIED;
+            long long const code = qv >= 0 ? enc_exist(pstart[qv] + T.aut[g][R.qaut[qv]][qy]) : enc_new(g, T.repof[g][qy]);
             if (code != moves[s]) return code < moves[s] ? R_PRUNE : R_DROP;
-            if (qv < 0) {
-                int const base = R.Q.num_halfedges();
-                rs_add(R, g, pv, run_orderly->torep[g][qy]);
-                partner = base + run_orderly->repof[g][qy];
-            }
-            rs_glue(R, ff, index_t{ partner });
-            if (!forcing) continue;
-            work.assign(1, ff);   // forced closure, as propagate makes it, read off this node
-            while (!work.empty()) {
-                index_t const e = work.back();
-                work.pop_back();
-                for (index_t z : { e, R.Q.mirror(e) }) {
-                    if (!z.has_value() || R.Q.is_free(z)) continue;
-                    index_t far{}, end{};
-                    if (!open_face_in(R.Q, z, far, end, seg) || !ids->face_full(seg)) continue;
-                    if (!end.has_value() || end == far) continue;
-                    // the node made this closure too (it is at its forcing fixpoint); if not, decide nothing
-                    if (conf.opposite(index_t{ q2p(R, far) }) != index_t{ q2p(R, end) }) return R_TIED;
-                    rs_glue(R, far, end);
-                    work.push_back(far);
+            if (qv < 0) R.pv2q[pv] = (int)R.qv2p.size(), R.qv2p.push_back(pv), R.qaut.push_back(T.torep[g][qy]);
+            // the ancestor's forced closures after this move: the node made each too (it is at its forcing fixpoint);
+            // if not, decide nothing
+            for (size_t i = fmark[s], e = s + 1 < D ? fmark[s + 1] : forced.size(); i < e; i++)
+                if (conf.opposite(image(forced[i].a)) != image(forced[i].b)) {
+                    if (qv < 0) R.pv2q[pv] = -1, R.qv2p.pop_back(), R.qaut.pop_back();
+                    return R_TIED;
                 }
-            }
         }
+    }
+    /** A root's first move read off the node, with no replay copy (most roots are decided by it): R_PRUNE or R_DROP when
+     *  it differs from ours, R_SAME when it is ours, R_TIED when it cannot be compared yet (replay_wait as replay_from). */
+    int first_move(int v, int a, int D, bool full) {
+        auto const& T = *run_orderly;
+        int const t0 = types[0];
+        replay_wait = -1;
+        index_t const x{ pstart[v] + T.autinv[t0][a][first_ff] }, y = conf.opposite(x);
+        if (!y.has_value()) { replay_wait = x.get_value(); return R_TIED; }
+        if (D == 0) return full ? R_DROP : R_TIED;
+        auto const& nb = conf.neighbourhood(y);
+        int const pv = nb.vertex_ix, g = types[pv], qy = y.get_value() - nb.vertex_start.get_value();
+        long long const code = pv == v ? enc_exist(T.aut[g][a][qy]) : enc_new(g, T.repof[g][qy]);
+        return code == moves[0] ? R_SAME : code < moves[0] ? R_PRUNE : R_DROP;
     }
     // ── decoupled (fail-first runs): the search branches by its own rule, so OUR code is a replay too. Every root's code
     // is read off this node by a rule that is a function of its replay copy alone (the lowest free half-edge, then the
@@ -2657,7 +2714,6 @@ struct Extender {
         replay_wait = -1;
         if (R.broken) return;
         R.pv2q.resize(types.size(), -1);
-        thread_local std::vector<int> seg;
         thread_local std::vector<index_t> work;
         for (;;) {
             if (R.nfree == 0) { R.done = true; return; }
@@ -2684,7 +2740,7 @@ struct Extender {
                 for (index_t z : { e, R.Q.mirror(e) }) {
                     if (!z.has_value() || R.Q.is_free(z)) continue;
                     index_t far{}, end{};
-                    if (!open_face_in(R.Q, z, far, end, seg) || !ids->face_full(seg)) continue;
+                    if (!ids->full_open_face(R.Q, z, far, end)) continue;
                     if (!end.has_value() || end == far) continue;
                     if (conf.opposite(index_t{ q2p(R, far) }) != index_t{ q2p(R, end) }) { R.broken = true; return; }   // decide nothing
                     rs_glue(R, far, end);
@@ -2744,6 +2800,7 @@ struct Extender {
             }
             int const res = compare_codes(pool[os], pool[slot]);
             if (res == R_PRUNE) { pool_end[D] = pool_used; return false; }
+            if (res == R_TIED && full && pool[os].done && pool[slot].done) auto_cover = true;
             if (res == R_DROP) { if (fresh && slot == pool_used - 1) pool_used--; continue; }
             out.push_back({ r.v, r.a, w, slot });
         }
@@ -2752,6 +2809,7 @@ struct Extender {
     }
     /** False = cut this node (full: reject the closure). */
     bool orderly_ok(bool full) {
+        auto_cover = false;
         if (orderly_dec) return orderly_ok_dec(full);
         int const D = depth, nv = (int)types.size(), t0 = types[0];
         auto const& T = *run_orderly;
@@ -2773,17 +2831,26 @@ struct Extender {
         if (cand.empty()) return true;
         pstart.assign(nv, 0);
         for (int v = 1; v < nv; v++) pstart[v] = pstart[v - 1] + vc->valence_of(types[v - 1]);
+        if (first_ff < 0) {
+            tiling_t one;
+            vc->push_vertex_to(one, t0);
+            first_ff = face_rule_choice(one, *ids).get_value();
+        }
         for (Alt const& r : cand) {
-            if (!full && r.st >= 0 && r.wait >= 0 && conf.is_free(index_t{ r.wait })) { out.push_back(r); continue; }
+            if (!full && r.wait >= 0 && conf.is_free(index_t{ r.wait })) { out.push_back(r); continue; }
+            if (r.st < 0) {
+                int const res = first_move(r.v, r.a, D, full);
+                if (res == R_PRUNE) { pool_end[D] = pool_used; return false; }
+                if (res == R_TIED) out.push_back({ r.v, r.a, replay_wait, -1 });
+                if (res != R_SAME) continue;
+            }
             int const slot = pool_alloc();
             RState& R = pool[slot];
             if (r.st >= 0) R = pool[r.st];
-            else {
-                R.Q = tiling_t{}, R.qv2p.clear(), R.qaut.clear(), R.qtype.clear(), R.qstart.clear(), R.code.clear(), R.low = 0, R.done = R.broken = false, R.pv2q.assign(nv, -1), R.s = 0, R.nfree = 0;
-                rs_add(R, t0, r.v, r.a);
-            }
-            int const res = replay_from(R, D, full);
+            else R.qv2p.assign(1, r.v), R.qaut.assign(1, r.a), R.pv2q.assign(nv, -1), R.pv2q[r.v] = 0, R.s = 0;
+            int const res = replay_from(R, D);
             if (res == R_PRUNE) { pool_end[D] = pool_used; return false; }
+            if (res == R_TIED && full && R.s == D) auto_cover = true;
             if (res == R_DROP) { pool_used--; continue; }
             out.push_back({ r.v, r.a, replay_wait, slot });
         }
@@ -2848,7 +2915,8 @@ struct Extender {
             size_t const mark = forced.size();
             if (!forcing || propagate(a)) {
                 if (orderly_on) {
-                    if ((int)moves.size() <= depth) moves.resize(depth + 1);
+                    if ((int)moves.size() <= depth) moves.resize(depth + 1), branch.resize(depth + 1), fmark.resize(depth + 1);
+                    branch[depth] = a.get_value(), fmark[depth] = mark;
                     moves[depth++] = pending;
                     if (orderly_ok(false)) last = a, extend(), last = was;
                     depth--;
@@ -2942,7 +3010,16 @@ static void search(std::vector<int> const& roots, int kmax, vertex_classificatio
                 pool.push([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
                 return false;
             },
-            [&](auto const& s) { my_complete++; cur_types = &s.types; on_tiling(s.first_vertex, s.unit, s.conf, (int)s.num_vertices_added); cur_types = nullptr; } };
+            [&](auto const& s) {
+                my_complete++;
+                cur_types = &s.types;
+                if (!s.auto_cover) on_tiling(s.first_vertex, s.unit, s.conf, (int)s.num_vertices_added);
+                else if (Fingerprints::Key key; check_orderly && fingerprint_if_minimal(s.conf, key)) {
+                    std::cerr << "TILESEARCH_CHECK_ORDERLY: a configuration with an automorphism is minimal\n";
+                    std::abort();
+                }
+                cur_types = nullptr;
+            } };
         s.add_vertex(r);
         s.first_vertex = r;
         s.part = &state[r]->units[0];
@@ -4022,6 +4099,8 @@ int main(int argc, char** argv) {
              std::cout << "orderly: on (" << (orderly_dec ? "decoupled, lowest free half-edge" : "coupled, face rule") << ")" << std::endl;
     }
     if (sym_break) root_syms = std::make_unique<RootSyms>(vc, roots), run_syms = root_syms.get();
+    keyless = orderly_on && !orderly_dec && recolorings.empty() && !std::getenv("TILESEARCH_KEYS") &&
+              !(std::getenv("TILESEARCH_KEYLESS") && std::string(std::getenv("TILESEARCH_KEYLESS")) == "0");
     original_tiling_writer writer{ vc };
     if (!resuming) {
         char const* forced = std::getenv("TILESEARCH_UNITS");
@@ -4093,20 +4172,37 @@ int main(int argc, char** argv) {
         }
     }
     // a unit's folder under .part/ is made when it first has output: most have none, and making 77,075 of
-    // them up front took 12 s on a star board
-    auto spill = [&](int r, int u, Unit& p) {   // caller holds the root's mutex, or is the only one left
-        if (!p.out.empty()) make_dirs(unit_dir(r, u));
-        for (auto& [name, text] : p.out) {
-            if (!gzip) { write_file(unit_dir(r, u) / name, text, std::ios::app | std::ios::binary); continue; }
-            // one gzip member per spill; level 1: this text compresses ~10x even so, and level 6 costs more time
-            fs::path const gz = unit_dir(r, u) / (name + ".gz");
-            gzFile z = gzopen(gz.c_str(), "ab1");
-            if (!z) io_failed("write", gz);
-            bool const wrote = gzwrite(z, text.data(), (unsigned)text.size()) == (int)text.size();
-            if (gzclose(z) != Z_OK || !wrote) io_failed("write", gz);
+    // them up front took 12 s on a star board.
+    // An append is an open and a close, and a board of hundreds of files paid one per file per megabyte (regulars
+    // k <= 12: 1.2 s of system time in 5 s). So a unit holds up to SPILL_AT bytes, and a spill before its end writes
+    // its largest files only, down to `keep` bytes held; what stays is written at its end, or by the merge straight
+    // into the real file.
+    static size_t const SPILL_AT = 32 << 20;
+    auto spill = [&](int r, int u, Unit& p, size_t keep = 0) {   // caller holds the root's mutex, or is the only one left
+        size_t least = 0;   // the size from which a file is written
+        if (keep) {
+            std::vector<size_t> sizes;
+            for (auto const& [name, text] : p.out) sizes.push_back(text.size());
+            std::sort(sizes.rbegin(), sizes.rend());
+            size_t held = p.buffered;
+            for (size_t i = 0; i < sizes.size() && held > keep; i++) held -= least = sizes[i];
         }
-        p.out.clear();
-        p.buffered = 0;
+        bool made = false;
+        for (auto it = p.out.begin(); it != p.out.end();) {
+            auto const& [name, text] = *it;
+            if (text.size() < least) { ++it; continue; }
+            if (!made) make_dirs(unit_dir(r, u)), made = true;
+            if (!gzip) write_file(unit_dir(r, u) / name, text, std::ios::app | std::ios::binary);
+            else {   // one gzip member per spill; level 1: this text compresses ~10x even so, and level 6 costs more time
+                fs::path const gz = unit_dir(r, u) / (name + ".gz");
+                gzFile z = gzopen(gz.c_str(), "ab1");
+                if (!z) io_failed("write", gz);
+                bool const wrote = gzwrite(z, text.data(), (unsigned)text.size()) == (int)text.size();
+                if (gzclose(z) != Z_OK || !wrote) io_failed("write", gz);
+            }
+            p.buffered -= text.size();
+            it = p.out.erase(it);
+        }
     };
     auto t0 = std::chrono::steady_clock::now();
     auto report = [&] {
@@ -4137,7 +4233,7 @@ int main(int argc, char** argv) {
         for (auto& [file, text] : batch.out) p.out[file] += text;
         p.keys.insert(p.keys.end(), batch.keys.begin(), batch.keys.end());
         p.buffered += batch.bytes;
-        if (p.buffered > (1 << 20)) spill(batch.root, batch.unit, p);
+        if (p.buffered > SPILL_AT) spill(batch.root, batch.unit, p, SPILL_AT / 2);
         batch = Batch{};
     };
     // k: the vertex orbits that count (`flat_max`); the certificate still lists every orbit
@@ -4156,33 +4252,39 @@ int main(int argc, char** argv) {
                     io_failed("write", keys); }
         }
         // solutions_processor::process, with its streams and the std::set of corners kept per thread
-        thread_local std::ostringstream name;
-        thread_local std::string text;
-        thread_local std::vector<corner_t> corners;
-        name.str("");
-        corners.clear();
-        for (auto ix : conf.indices()) corners.push_back(conf.label(ix));
-        std::sort(corners.begin(), corners.end());
-        corners.erase(std::unique(corners.begin(), corners.end()), corners.end());
-        name << b.name << "solver_" << (k < 10 ? "0" : "") << k << "_";
-        {
+        // The name up to its corners depends on k and on which vertex types the tiling holds (a vertex's corners are
+        // its type's), so it is kept per such pair; sorting every half-edge's corner and printing through two
+        // streams was 5% of regulars k <= 13.
+        thread_local std::map<std::pair<int, std::vector<int>>, std::string> stems;
+        thread_local std::pair<int, std::vector<int>> held;
+        thread_local std::string name, text;
+        held.first = k, held.second = *cur_types;
+        std::sort(held.second.begin(), held.second.end());
+        held.second.erase(std::unique(held.second.begin(), held.second.end()), held.second.end());
+        if (stems.size() > 4096) stems.clear();   // a board of many types has as many sets as tilings
+        auto const [stem, fresh] = stems.try_emplace(held);
+        if (fresh) {
+            std::vector<corner_t> corners;
+            for (auto ix : conf.indices()) corners.push_back(conf.label(ix));
+            std::sort(corners.begin(), corners.end());
+            corners.erase(std::unique(corners.begin(), corners.end()), corners.end());
             // the corners in hex, as Marek's binaries name files; free symbols by name unless that runs too long
-            thread_local std::ostringstream cs;
-            cs.str("");
+            std::ostringstream cs;
             cs << std::hex;
             for (auto c : corners) cs << corner_decoder{ c };
             std::string named = in_name.empty() ? cs.str() : relabel(cs.str(), in_name, "0123456789abcdef");
-            name << (named.size() <= 160 ? named : cs.str());
+            stem->second = b.name + "solver_" + (k < 10 ? "0" : "") + std::to_string(k) + "_" + (named.size() <= 160 ? named : cs.str());
         }
-        name << (orientable(conf) ? "_o" : "") << "_" << conf.num_edges() << "." << writer.extension();
+        name = stem->second;
+        name += orientable(conf) ? "_o_" : "_", put_int(name, conf.num_edges()), name += '.', name += writer.extension();
         certificate(text, writer, conf, vc, cur_types);
         if (!in_text.empty()) text = relabel(text, in_text, "0123456789");
         if (first_only) {
             static std::mutex m;
             std::lock_guard<std::mutex> l(m);
-            write_file(dir / name.str(), text, std::ios::binary);
+            write_file(dir / name, text, std::ios::binary);
             write_file(dir / "census.txt", "k=" + std::to_string(k) + " -- 1\nMAX\n");
-            std::cout << "first " << k << " " << name.str() << std::endl;
+            std::cout << "first " << k << " " << name << std::endl;
             std::_Exit(0);
         }
         // latest.txt: one tiling to show while no root has closed, for display only (a stop still drops an open
@@ -4201,9 +4303,9 @@ int main(int argc, char** argv) {
         if (batch.root != r || batch.unit != u) hand_over();
         batch.root = r, batch.unit = u;
         batch.counts[k]++;
-        if (unit_depth) batch.keys.push_back(key);
+        if (unit_depth && !keyless) batch.keys.push_back(key);
         batch.bytes += text.size();
-        batch.out[name.str()] += text;
+        batch.out[name] += text;
         if (batch.bytes > (1 << 18)) hand_over();
     };
     // Finished units and roots are written by one thread of their own, in the order they finish: a worker
@@ -4233,19 +4335,20 @@ int main(int argc, char** argv) {
     };
     auto merge = [&](int r) {
         Root& st = *state[r];
-        for (auto& [u, p] : st.units) spill(r, u, p);
-        std::map<int, fs::path> units;   // by number: a file gets its units' text in their order
+        if (gzip) for (auto& [u, p] : st.units) spill(r, u, p);   // a member per spill, so through .part
+        // per file, its pieces in unit order (a file gets its units' text in their order): a unit's file under
+        // .part, then the text the unit still holds
+        std::map<fs::path, std::map<int, Piece>> names;
         if (fs::exists(part / std::to_string(r)))
-            for (auto const& e : fs::directory_iterator(part / std::to_string(r))) units[std::stoi(e.path().filename().string())] = e.path();
-        std::vector<fs::path> files;
-        std::set<fs::path> names;
-        for (auto const& [u, d] : units)
-            for (auto const& e : fs::directory_iterator(d))
-                if (e.path().filename() != "keys") files.push_back(e.path()), names.insert(e.path().filename());
+            for (auto const& d : fs::directory_iterator(part / std::to_string(r)))
+                for (auto const& e : fs::directory_iterator(d.path()))
+                    if (e.path().filename() != "keys") names[e.path().filename()][std::stoi(d.path().filename().string())].file = e.path();
+        for (auto const& [u, p] : st.units)
+            for (auto const& [name, text] : p.out) names[name][u].text = &text;
         {   // whole or not at all: a half-written list would undo the wrong files (written under .part, then moved)
             std::ostringstream pf;
             pf << r << "\n";
-            for (auto const& f : names)
+            for (auto const& [f, pieces] : names)
                 pf << (fs::exists(dir / f) ? (long long)fs::file_size(dir / f) : -1LL) << " " << f.string() << "\n";
             make_dirs(part);
             write_file(part / "merge.pending", pf.str());
@@ -4253,8 +4356,12 @@ int main(int argc, char** argv) {
             fs::rename(part / "merge.pending", pending_file, ec);
             if (ec) errno = ec.value(), io_failed("write", pending_file);
         }
-        for (auto const& f : files)
-            append_file(f, dir / f.filename());
+        std::vector<Piece> in_order;
+        for (auto const& [f, pieces] : names) {
+            in_order.clear();
+            for (auto const& [u, piece] : pieces) in_order.push_back(piece);
+            append_pieces(in_order, dir / f);
+        }
         {
             std::ostringstream df;
             df << r;
