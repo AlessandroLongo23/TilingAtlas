@@ -36,7 +36,9 @@ import path from "node:path";
 import { trueVertexOrbitCount } from "@/classes/algorithm/composable/canonicalTilingKey";
 import { exactComposableKeys, type ExactComposableCell } from "@/classes/algorithm/composable/exactComposableDedup";
 import { stringifyAtlas } from "./atlas/encode.mjs";
-import { writeDataFile } from "./atlas/io.mjs";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { annotatePolygonFacets } from "@/lib/services/polygonFacets";
 
 // The 7 composite convex tiles that dissect into regular polygons (the decomposable palette).
 const DECOMPOSABLE = new Set([
@@ -220,7 +222,58 @@ function dedupeComposable(out: ComposableTiling[]): ComposableTiling[] {
 	return survivors;
 }
 
+// --append-searcher=<cells.json>,<ids.json>: add to the shipped main file the tilings of a Tiling Searcher run that
+// it lacks. <cells.json> is scripts/tilesearch-float-cells.ts's dump of a run of the composite-convex board,
+// <ids.json> tools/ctrnact-oracle/check_rigid_shelf.py --merged --ids's map from scripts/atlas/plans/composable-ids.json,
+// so a tiling already on the shelf comes with its shelf id and is left alone.
+// Why: the palette's tables predate CLASS_SIGMA, and eu_solver's cells of k <= 4 lack 10 tilings of k = 2
+// (2026-11-10, docs/superpowers/specs/2026-11-08-one-engine-audit.md). A full rebuild should read the Searcher.
+function appendSearcher(arg: string): void {
+	const [cellsFile, idsFile] = arg.split(",");
+	type Run = {
+		id: string;
+		k: number;
+		types: string[][];
+		renderCell: ComposableTiling["renderCell"];
+	};
+	const cells = JSON.parse(fs.readFileSync(cellsFile, "utf8")) as Run[];
+	const ids = JSON.parse(fs.readFileSync(idsFile, "utf8")) as Record<string, string>;
+	const shelf = decodeAtlas<ComposableTiling>(readDataJson(OUT_PATH));
+	const have = new Set(shelf.map((t) => t.id));
+	// a board symbol back to the palette's name: A3 is 3, Acx6-2.5.5.2.5.5.1 is cx6-2.5.5.2.5.5@1
+	const name = (sym: string): string => sym.slice(1).replace(/^(cx.*)\.(\d+)$/, "$1@$2");
+	const added: ComposableTiling[] = [];
+	for (const r of cells) {
+		const tiles = [...new Set(r.types.flatMap((w) => w.map((f) => name(f).replace(/@\d+$/, ""))))];
+		if (r.k > MAIN_MAX_K || have.has(ids[r.id]) || !tiles.some((t) => t.startsWith("cx"))) continue;
+		added.push({
+			id: ids[r.id],
+			source: "composable",
+			k: r.k,
+			family: r.types.map((w) => `(${w.map(name).join(",")})`).join(", "),
+			renderCell: {
+				cellPolygons: r.renderCell.cellPolygons.map((cp) => ({ n: cp.n, vertices: cp.vertices, star: false })),
+				basis: r.renderCell.basis,
+			},
+			discoverer: "Čtrnáct engine (Tiling Searcher)",
+			decomposableOnly: isDecomposableOnly(tiles),
+			note: NOTE,
+		});
+	}
+	added.sort((a, b) => a.k - b.k || a.id.localeCompare(b.id));
+	annotatePolygonFacets(added);
+	// --out=<file>: somewhere else than the shelf, to check it first
+	const out = process.argv.find((a) => a.startsWith("--out="))?.slice(6) ?? OUT_PATH;
+	writeDataFile(out, stringifyAtlas([...shelf, ...added]) + "\n");
+	log(
+		`appended ${added.length} tilings from the Searcher → ${path.relative(ROOT, out)}: ${added.map((t) => t.id).join(" ")}`,
+	);
+	fs.appendFileSync(LOG_PATH, logLines.join("\n") + "\n");
+}
+
 function main(): void {
+	const append = process.argv.find((a) => a.startsWith("--append-searcher="));
+	if (append) return appendSearcher(append.slice(18));
 	const t0 = Date.now();
 	log("=== build-composable-atlas ===");
 	const out: ComposableTiling[] = [];
