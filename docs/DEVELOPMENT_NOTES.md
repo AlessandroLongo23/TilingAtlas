@@ -22795,3 +22795,35 @@ and hybrids no star fixes on its own lines (about 10^12 candidates; needs a tili
 ⚑ `sieve_pinned.py` misses dent lines with points under 0.075% of the largest point; `sieve_mixed.py`'s check against
 it at 400 anchors found them.
 ⚑ Still none ships: `develop_ai1.py --study` needs several stars, and the storage question stands.
+
+## Searcher 0.5.0, experiments out of git, release 1.49.0 (2026-11-10, CC)
+
+AL approved the 1.49.0 notes (without the accessibility line) and asked that the download serve the latest stable
+Searcher. The published one was 0.4.0 of 2026-11-04, before engine rc4.2.x and the `tilingsearcher://` links the
+catalogue's "Open in the Searcher" needs, so AL chose to cut 0.5.0 first.
+
+- **Searcher 0.5.0.** Version bumped in `tools/searcher/app/package.json` (nothing else carries it). Windows engines
+  rebuilt with mingw against zlib 1.3.1 from its GitHub release (zlib.net now 404s for it; SHA-256 9a93b2b7…df23
+  matches), then checked under Wine against the Mac engine on the same boards: stars k <= 5 (6), edge patterns k <= 3
+  (1,420 = 13 + 153 + 1,254, as for 0.4.0) and the hyperbolic hybrid example k <= 2 (696,399), identical censuses and
+  certificates; `--gzip` output identical unpacked. Only the root order and `roots.done` differ (tied roots sort
+  differently under libc++ and libstdc++; completion order is thread timing). The packaged Mac engine differs from
+  `tools/searcher/tilesearch` only by electron-builder's ad hoc signature (same census). Published with
+  `release.mjs publish`, which kept 0.4.0's 26 downloads in `downloads.tsv`; all three public files downloaded back
+  byte-identical; reinstalled here with the previous build kept. Includes another session's fix for a study's first
+  balance check freezing the window (`electron/runs.ts`, `electron/studies.ts`).
+- **experiments/ out of git.** A session flagged that c9cc86a4 had swept in `experiments/star-hybrid` and
+  `experiments/hybrid-exact` (Marek-derived; AL's rule: the repo is public, Marek-derived files stay local). Mapped
+  the folder: 52 GB, 92,000 files on disk, 640 MB tracked; nothing the site or its build reads, no CI. The repo needed
+  five builder plans (mixed and isotoxal merge, mixed range and coupled, period range: they decide merges and keep
+  family ids stable) and one test fixture; they moved to `scripts/atlas/plans/` and `tests/fixtures/`. The 524 paths
+  the 15 unpushed commits had added were removed from that history by a plumbing rewrite (commit-tree per commit,
+  messages, authors and dates kept, every commit identical outside `experiments/`); the 1,637 files already on GitHub
+  were untracked in b964071c. `.gitignore` covers `experiments/`; CLAUDE.md "Experiments" says so.
+- **The preview builder** never searched the regular k >= 8 shards (its pattern wanted a shelf name before `-k`),
+  and once it did, it derived a cell for every record of a shard before picking the asked-for ones (up to 100 ms each).
+  It now filters first: five cells in a minute. The release digest called `decodeAtlas` without importing it, so every
+  shard read "unreadable"; it imports it now and reads HEAD's shards from the local copy.
+- **A swept-in half feature.** c9cc86a4 committed `lib/hooks/useSymmetryData.ts`, which starts
+  `lib/services/symmetry.worker.ts`, but not the worker, created three minutes earlier and missed by a stale untracked
+  list; committed it before the push so a clean checkout builds.

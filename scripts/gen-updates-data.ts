@@ -105,7 +105,7 @@ async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, Ref
 	if (!missing.size) return found;
 	const dir = path.join(process.cwd(), "public");
 	const shards = (await readdir(dir))
-		.filter((f) => /^reference-atlas-.*-k\d+\.json(\.br)?$/.test(f))
+		.filter((f) => /^reference-atlas-(.*-)?k\d+(-p\d+)?\.json(\.br)?$/.test(f))
 		.map((f) => ({ f, size: statSync(path.join(dir, f)).size }))
 		.sort((a, b) => a.size - b.size);
 
@@ -113,7 +113,10 @@ async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, Ref
 		if (!missing.size) break;
 		let records: ReferenceTiling[];
 		try {
-			records = hydrateRenderCells(decodeAtlas<ReferenceTiling>(readDataJson(path.join(dir, f))));
+			// Only the asked-for ids get a cell: deriving one costs up to 100 ms, and a k = 16 part holds 100,000.
+			records = hydrateRenderCells(
+				decodeAtlas<ReferenceTiling>(readDataJson(path.join(dir, f))).filter((t) => missing.has(t.id)),
+			);
 		} catch {
 			continue; // an unreadable shard just leaves its ids without a preview
 		}

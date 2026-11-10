@@ -78,6 +78,54 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.49.0",
+		date: "2026-11-10",
+		title: "Every k-uniform tiling to k = 16",
+		commit: "9dece3a8",
+		changes: [
+			{
+				kind: "content",
+				text: "**Every k-uniform tiling up to k = 16** is in the catalogue, 1,768,892 more tilings by regular polygons at k = 11 to 16 and 933,637 of them at k = 16. The counts agree with OEIS A068599 as far as it goes, to k = 13; k = 14 to 16 have no published count to compare.",
+				items: ["Above k = 16, **6,690 tilings at k = 17 to 22** from targeted searches, marked as partial."],
+				tilings: [
+					"ctrnact-11_346c-3c3_4k2_4l_4m_5b_5d2_6i-1",
+					"ctrnact-16_346c-3a4_3b2_3c_4a2_4c_4m2_5d_5e2_5f-8",
+				],
+			},
+			{
+				kind: "content",
+				text: "**6,782,142 more hyperbolic tilings** by regular polygons and stars.",
+				items: [
+					"**Boards 2.9830 and 2.4578** gain 4,034,403; 2.9830 is now whole at 2,673,362 tilings, and 2.4578 reaches k = 3.",
+					"**32 new boards with star polygons**, found with The Tiling Searcher and filed under Star polygons, Hybrid boards, hold 2,682,012 tilings.",
+					"**Seven boards whose tiles take several edge lengths** add 65,727 tilings.",
+				],
+				images: ["/release-images/hyp-star-hybrid-boards.jpg"],
+			},
+			{
+				kind: "feature",
+				text: "**Four classifications**, each a list proved complete, open from the catalogue's tree.",
+				items: [
+					"**Krötenheerdt's 135 tilings** with as many vertex types as vertex orbits.",
+					"**Brian Galebach's 203 edge-homogeneous tilings**, and the 22 strongly edge-homogeneous ones among them.",
+					"**13,144 face-homogeneous tilings**, up to k = 54.",
+				],
+				tilings: ["ctrnact-07_346c-3c_4a_4c_4d_4k_5d_5e-1", "ctrnact-16_36-3d_3f3_3g_4d4_4e2_4j_5a2_6c_6h-1"],
+				href: "/catalogue?set=face-homogeneous",
+			},
+			{
+				kind: "feature",
+				text: "**The play page and the library are one Catalogue**, browsed board by board; a tiling's board opens in The Tiling Searcher, which has a download page of its own for version 0.5.0.",
+				href: "/catalogue",
+			},
+			{
+				kind: "feature",
+				text: "**Binary tilings** are the aperiodic page's first hyperbolic view, Böröczky's tiles and their duals for any number of children, with standard or random ancestry, panned without end.",
+				href: "/aperiodic?view=binary",
+			},
+		],
+	},
+	{
 		version: "1.48.0",
 		date: "2026-10-29",
 		title: "The Tiling Searcher for macOS and Windows",

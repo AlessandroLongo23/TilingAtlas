@@ -3435,3 +3435,11 @@ Uncommitted. Detail: DEVELOPMENT_NOTES "Production reads the data from Cloudflar
 2026-11-09 · CC · The regular shelf is complete to k = 16: 1,768,892 more tilings (k = 11 to 16, 933,637 at k = 16),
 built from the engine's run by `scripts/build-regular-shards.ts`, split into 100,000-tiling parts from k = 13, on R2.
 Face-homogeneous to k = 16 scanning. Uncommitted. Detail: DEVELOPMENT_NOTES "The regular shelf to k = 16".
+2026-11-10 · CC · The Tiling Searcher 0.5.0 published (AL): engine rc4.2.2, tilingsearcher:// links, studies, update notice,
+a study's start no longer freezing the window. Windows engines cross-built (mingw, zlib 1.3.1 checksum-checked) and checked
+under Wine against the Mac engine (identical censuses); the three assets downloaded back byte-identical; installed here.
+Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.0".
+2026-11-10 · CC · experiments/ is local (AL): 1,637 files untracked (b964071c), and the 524 never pushed (Marek-derived among
+them) removed from the 15 unpushed commits; old history on backup/before-experiments-cleanup, hashes changed (c9cc86a4 ->
+0f961f1e, e22c3d40 -> 60dcd6fb, 24934bf8 -> 4cf01090). Builder plans now in scripts/atlas/plans/, one fixture in
+tests/fixtures/. Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.0".

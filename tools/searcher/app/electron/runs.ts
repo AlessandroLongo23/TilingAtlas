@@ -16,6 +16,7 @@ import type { Estimate, OutFile, RaiseRule, Rule, Run, RunOptions } from "../src
 export const ruleEnv = (rule?: Rule): Record<string, string> =>
 	rule === "fewest" ? { TILESEARCH_FAIL_FIRST: "1" } : rule === "face" ? { TILESEARCH_FACE_FIRST: "1" } : {};
 import { engineText, parse } from "../src/board";
+import { frameKey } from "../src/study";
 
 export const MIN_FREE_BYTES = 10 * 2 ** 30;
 const LOG_LINES = 2000;
@@ -233,6 +234,9 @@ export class RunFolder {
 	/** Where the run lives; renaming or moving the folder changes it. */
 	dir: string;
 	readonly board: string;
+	/** The board's frame with Permutations aside, read while the board is parsed here: a study looks up runs of its
+	 *  rows' frames by it, and parses only those boards again (searchShape on every one took 9 to 19 s). */
+	readonly frame: string;
 	/** The board's name: the engine writes solver_<name>/ under the run folder. */
 	private readonly boardName: string;
 	private readonly symbols: string[];
@@ -294,6 +298,7 @@ export class RunFolder {
 		this.dir = dir;
 		this.board = board;
 		const b = parse(board).board;
+		this.frame = frameKey({ ...b, permutations: false });
 		this.boardName = b.name;
 		this.symbols = b.angles.map((a) => a.sym);
 		this.kRange = [b.kmin, b.kmax];

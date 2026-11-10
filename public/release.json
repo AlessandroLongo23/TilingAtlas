@@ -1,6 +1,6 @@
 {
-  "version": "1.48.0",
-  "date": "2026-10-29",
-  "commit": "b50a6dbf",
-  "title": "The Tiling Searcher for macOS and Windows"
+  "version": "1.49.0",
+  "date": "2026-11-10",
+  "commit": "9dece3a8",
+  "title": "Every k-uniform tiling to k = 16"
 }

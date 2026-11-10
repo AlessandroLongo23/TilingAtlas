@@ -28,6 +28,7 @@ import {
 	aliveKeys,
 	cyclicOrders,
 	faceTally,
+	frameKey,
 	MAX_ORDERS,
 	planStudy,
 	rowText,
@@ -114,8 +115,8 @@ export class Study {
 	private k!: [number, number];
 	private dirty = false;
 	private lastSave = 0;
-	/** Finished runs by frame key, for adoption; built at the first check of a session. */
-	private index: Map<string, ({ run: RunFolder } & ReturnType<typeof searchShape>)[]> | null = null;
+	/** Search shapes of the runs a row's frame matched, by folder, for adoption. */
+	private shapes = new Map<string, ReturnType<typeof searchShape>>();
 
 	private constructor(dir: string, template: string, saved: Saved) {
 		this.dir = dir;
@@ -456,22 +457,15 @@ export class Study {
 				r.reason = split;
 			} else r.check = "open";
 		}
-		this.adopt(ctx, i, b, aliveKeys(b, report));
+		this.adopt(ctx, i, b, () => aliveKeys(b, report!));
 	}
 
-	/** Point a row at a finished run outside the study that did its search (sameSearch), covering its k. */
-	private adopt(ctx: Context, i: number, b: ReturnType<typeof parse>["board"], alive: Set<string>) {
+	/** Point a row at a finished run outside the study that did its search (sameSearch), covering its k. The row's
+	 *  own shape, a quarter second on a big board, is worked out only when a run of its frame is there. */
+	private adopt(ctx: Context, i: number, b: ReturnType<typeof parse>["board"], alive: () => Set<string>) {
 		const r = this.saved.rows[i];
 		if (r.run) return;
-		if (!this.index) {
-			this.index = new Map();
-			for (const run of ctx.runs.runs) {
-				if (run.state !== "finished" || run.dir.startsWith(this.dir + path.sep)) continue;
-				const shape = searchShape(parse(run.board).board);
-				this.index.set(shape.frame, [...(this.index.get(shape.frame) ?? []), { run, ...shape }]);
-			}
-		}
-		const row = { ...searchShape(b), alive };
+		const frame = frameKey({ ...b, permutations: false });
 		const find = this.saved.options.mode === "find";
 		const covers = (run: RunFolder) => {
 			const [lo, hi] = run.kRange;
@@ -479,8 +473,16 @@ export class Study {
 			if (run.options?.find) return find && hi >= b.kmax;
 			return hi >= b.kmax || (find && run.total > 0 && firstK(run.counts)! <= b.kmax);
 		};
-		const best = (this.index.get(row.frame) ?? [])
-			.filter((c) => covers(c.run) && sameSearch(row, c))
+		const shape = (run: RunFolder) =>
+			this.shapes.get(run.dir) ?? this.shapes.set(run.dir, searchShape(parse(run.board).board)).get(run.dir)!;
+		const runs = ctx.runs.runs.filter(
+			(run) => run.frame === frame && run.state === "finished" && !run.dir.startsWith(this.dir + path.sep) && covers(run),
+		);
+		if (!runs.length) return;
+		const row = { ...searchShape(b), alive: alive() };
+		const best = runs
+			.map((run) => ({ run, ...shape(run) }))
+			.filter((c) => sameSearch(row, c))
 			.sort((x, y) => y.run.kRange[1] - x.run.kRange[1])[0];
 		if (best) {
 			r.run = best.run.dir;

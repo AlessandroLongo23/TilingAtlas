@@ -18,6 +18,8 @@ import { readFileSync } from "node:fs";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import { decodeAtlas } from "./atlas/encode.mjs";
+import { readDataText } from "./atlas/io.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sh = (cmd) => {
@@ -228,8 +230,16 @@ if (!NO_ATLAS) {
 				.map((f) => f.replace(/\.(br|gz)$/, "")),
 		),
 	];
-	// The shard's text at `rev`, in whichever form it had there.
+	// The shard's text at `rev`, in whichever form it had there. HEAD reads the local copy: since 2026-11-09 the
+	// data lives in R2, not in git (`pnpm data:pull` brings it), so git holds a shard only up to that commit.
 	const textAt = (rev, shard) => {
+		if (rev === "HEAD") {
+			try {
+				return readDataText(join(REPO, shard));
+			} catch {
+				return "";
+			}
+		}
 		for (const [ext, un] of [[".br", zlib.brotliDecompressSync], [".gz", zlib.gunzipSync], ["", (b) => b]]) {
 			try {
 				const opts = { cwd: REPO, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 30 };
