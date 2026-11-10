@@ -600,8 +600,9 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 // Dev-only: expose the store on window so a headless browser (the Playwright visual-inspection tool —
 // see CLAUDE.md) and manual debugging can read or drive any flag, e.g.
 //   window.__stores.configuration.setState({ euclideanShader: true, showPolygonPoints: true })
-// Stripped from production builds by the NODE_ENV guard.
-if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+// Stripped from production builds by the NODE_ENV guard. Not `typeof window`: Turbopack folds that to true in
+// client code, and the symmetry worker (lib/services/symmetry.worker.ts) loads this store through Polygon.
+if ("window" in globalThis && process.env.NODE_ENV !== "production") {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	((window as any).__stores ??= {}).configuration = useConfiguration;
 }
