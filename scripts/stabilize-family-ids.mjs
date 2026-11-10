@@ -4,7 +4,7 @@
  *
  * Why this exists: export_combined_families.py numbers families k1-01, k1-02, … in catalogue order, so
  * adding one tile to the palette shifts every id after the first new family. Shipped ids are referenced by
- * permalinks, by the merge plan (experiments/results/mixed-merge-plan.json) and by the alias table, and
+ * permalinks, by the merge plan (scripts/atlas/plans/mixed-merge-plan.json) and by the alias table, and
  * `defaultAlphaDeg` follows whichever discrete species seeded the family — so a naive re-export silently
  * renames entries AND moves the default slider position of tilings that were already published.
  *

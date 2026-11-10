@@ -316,3 +316,9 @@ Port was done in 8 phases, each its own commit — replay via `git log`. High-le
 ## Experiments
 
 When run the experiments, log synchronously in a file in /experiments/results folder, so that I can inspect the data as it comes. For the format, log the progress, ETA, and make it human readable.
+
+**`experiments/` is local, not in git (AL, 2026-11-10).** `.gitignore` covers the whole folder: run logs, engine
+outputs, scratch scripts and builder inputs stay on the machine that made them, and so does anything derived from
+Marek's private material (the repo is public). A file the repo itself needs goes elsewhere: a builder's merge or
+range plan in `scripts/atlas/plans/`, a test fixture in `tests/fixtures/`, a tool in `tools/`. The ledgers still
+link into `experiments/`; those links resolve on this machine only.

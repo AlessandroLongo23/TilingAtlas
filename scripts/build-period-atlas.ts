@@ -38,7 +38,7 @@ const IN_DIR = path.join(ROOT, "experiments", "period-oracle");
 const PUBLIC_DIR = path.join(ROOT, "public");
 const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-period.json.br");
 const FAMILIES_PATH = path.join(IN_DIR, "ctrnact-period-families.cells.json");
-const RANGE_PLAN_PATH = path.join(IN_DIR, "period-range-plan.json");
+const RANGE_PLAN_PATH = path.join(ROOT, "scripts", "atlas", "plans", "period-range-plan.json");
 /** Intrinsic parametric cells, keyed on the canonical map. See the attach step at the end of main(). */
 const INTRINSIC_CELLS_PATH = path.join(IN_DIR, "intrinsic-cells.json");
 /**

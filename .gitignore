@@ -63,11 +63,10 @@ figures/out/
 # claude worktrees (concurrent agent sessions)
 .claude/worktrees/
 
-# extended-catalogue chart intermediates (k≥14 per-tiling classify/weight CSVs, ~100+ MB each) —
-# regenerable via eu_develop → eu_classify → ctrnact-wtF; the k≤13 slices stay committed, the compact
-# envelope summary (ctrnact-weight-envelope-k1-16.csv) captures the result.
-experiments/results/ctrnact-symclass-k1-16.csv
-experiments/results/ctrnact-weights-exact-k1-16.csv
+# Experiments are local, not in git (AL, 2026-11-10): run logs, engine outputs and builder inputs stay in
+# experiments/ on the machine that made them. What the repo needs from there lives elsewhere: the builders'
+# merge and range plans in scripts/atlas/plans/, test fixtures in tests/fixtures/.
+experiments/
 
 # native C++ engine — sources (.hpp/.cpp/.ts/Makefile/README) are committed; compiled Mach-O
 # binaries and generated traces are not
@@ -85,7 +84,6 @@ tmp-star-patches/
 tmp-mixed-star-patches/
 
 # scratch / intermediate data (underscore prefix — regenerable, not source-of-truth)
-experiments/results/_*
 figures/data/_*-tmp.json
 
 # raw figure-trace probe output (regenerable via the FIG_NS probe); the curated per-example
@@ -205,12 +203,6 @@ tools/frames/frames
 tools/frames/grid_spec
 tools/heesch-sat/
 
-# Raw census outputs (2.3 GB, single files past GitHub's 100 MB limit), regenerable with
-# tools/frames/census.py and tools/heesch; the logs beside them in experiments/results are committed,
-# and the shipped data is public/frames and public/heesch.
-experiments/results/frames/
-experiments/results/frames-more/
-experiments/results/heesch/
 tools/searcher/tilesearch
 tools/searcher/tilesearch.exe
 tools/searcher/tileestimate
@@ -218,12 +210,6 @@ tools/searcher/tileestimate.exe
 tools/searcher/app/TileSearch.app/
 tools/searcher/app/The Tiling Searcher.app/
 
-# scripts/tilesearch-import.py staging (regenerable from a run folder) and its atlas-key cache
-experiments/tilesearch-import/
 
-# Tiling Searcher engine output kept for reference: Marek's hybrid_2_9830 run (1.5 GB, files up to 398 MB),
-# and the experiments' regenerable outputs. The scripts, boards and logs beside them are committed.
+# Tiling Searcher engine output kept for reference: Marek's hybrid_2_9830 run (1.5 GB, files up to 398 MB).
 tools/searcher/solver_hybrid_*/
-experiments/vertex-order-2026-10-26/verify/
-experiments/search-speedups-2026-10-26/build/
-experiments/k-flat-vertices-2026-10-27/work/

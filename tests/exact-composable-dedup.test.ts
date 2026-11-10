@@ -34,7 +34,7 @@ describe("exactComposableKeys — supercell invariance (exact ℤ[ζ₂₄])", (
 
 describe("exactComposableKeys — data-backed k=1 distinct count", () => {
 	it("dedups the 20 usesComposite k=1 convex solutions to 18 distinct tilings (matches the float heuristic)", () => {
-		const p = path.join(process.cwd(), "experiments/composable-oracle/ctrnact-composite-convex-k1.cells.json");
+		const p = path.join(process.cwd(), "tests/fixtures/ctrnact-composite-convex-k1.cells.json");
 		const recs = (JSON.parse(fs.readFileSync(p, "utf8")).records as Array<Record<string, unknown>>).filter(
 			(r) => r.usesComposite,
 		);

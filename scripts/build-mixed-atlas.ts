@@ -78,9 +78,9 @@ const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json.br");
  * `tools/ctrnact-oracle/develop_any.py` runs the shared ℤ[ζ₂₄] engine instead and certifies 658 of 658.
  */
 const CROSSING_PATH = path.join(ROOT, "experiments", "period-oracle", "star-scaled-crossing-k3.cells.json");
-const PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-merge-plan.json");
-const RANGE_PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-range-plan.json");
-const COUPLED_PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-coupled-plan.json");
+const PLAN_PATH = path.join(ROOT, "scripts", "atlas", "plans", "mixed-merge-plan.json");
+const RANGE_PLAN_PATH = path.join(ROOT, "scripts", "atlas", "plans", "mixed-range-plan.json");
+const COUPLED_PLAN_PATH = path.join(ROOT, "scripts", "atlas", "plans", "mixed-coupled-plan.json");
 const COUPLED_ALIAS_PATH = path.join(ROOT, "lib", "services", "coupledFamilyAliases.json");
 const UNMERGED_PATH = path.join(ROOT, "experiments", "results", "mixed-atlas-unmerged.json");
 const ALIAS_PATH = path.join(ROOT, "lib", "services", "mergedFamilyAliases.json");

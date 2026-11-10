@@ -17,11 +17,11 @@ import { readDataText } from "../../scripts/atlas/io.mjs";
 // Every shelf that carries a merge plan. The invariants are the same for all of them — the mixed shelf just
 // happens to be where the first six arcs were found (§94); isotoxal added three more (§99).
 const SHELVES = [
-	{ name: "mixed", atlas: "public/reference-atlas-mixed.json", plan: "experiments/results/mixed-merge-plan.json" },
+	{ name: "mixed", atlas: "public/reference-atlas-mixed.json", plan: "scripts/atlas/plans/mixed-merge-plan.json" },
 	{
 		name: "isotoxal",
 		atlas: "public/reference-atlas-isotoxal.json",
-		plan: "experiments/results/isotoxal-merge-plan.json",
+		plan: "scripts/atlas/plans/isotoxal-merge-plan.json",
 		shards: ["public/reference-atlas-isotoxal-k3.json", "public/reference-atlas-isotoxal-k4.json"],
 	},
 ];
@@ -228,7 +228,7 @@ type RangePlan = {
 		fold: { centreDeg: number | null; kind: string } | null;
 	}[];
 };
-const RANGE_PLAN = (read("experiments/results/mixed-range-plan.json") as RangePlan).ranges;
+const RANGE_PLAN = (read("scripts/atlas/plans/mixed-range-plan.json") as RangePlan).ranges;
 const WIDENED = RANGE_PLAN.filter((r) => r.gainDeg > 0.01);
 const ALIASES: Record<string, unknown> = read("lib/services/mergedFamilyAliases.json");
 const COUPLED_ALIASES: Record<string, unknown> = read("lib/services/coupledFamilyAliases.json");
@@ -325,7 +325,7 @@ type CoupledPlan = {
 		absorbs: { id: string; deltaUnits: number[]; alpha0Deg: number; axisUnits: number[] | null }[];
 	}[];
 };
-const COUPLED = (read("experiments/results/mixed-coupled-plan.json") as CoupledPlan).families;
+const COUPLED = (read("scripts/atlas/plans/mixed-coupled-plan.json") as CoupledPlan).families;
 
 describe.skipIf(COUPLED.length === 0)("coupled two-parameter families", () => {
 	const byId = new Map(SHELF.map((t) => [t.id, t]));

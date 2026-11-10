@@ -58,7 +58,7 @@ const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-
 const LOG_PATH = path.join(ROOT, "experiments", "results", "isotoxal-atlas-build.log");
 // Dedup/merge pass (scripts/scan-family-joins.py → scripts/merge-plan.ts). Scanned over the WHOLE corpus,
 // not per shard: a duplicate pair could straddle the eager/lazy split, and the census needs one view.
-const PLAN_PATH = path.join(ROOT, "experiments", "results", "isotoxal-merge-plan.json");
+const PLAN_PATH = path.join(ROOT, "scripts", "atlas", "plans", "isotoxal-merge-plan.json");
 const UNMERGED_PATH = path.join(ROOT, "experiments", "results", "isotoxal-atlas-unmerged.json");
 const ALIAS_PATH = path.join(ROOT, "lib", "services", "mergedFamilyAliases.isotoxal.json");
 const NOTE =
