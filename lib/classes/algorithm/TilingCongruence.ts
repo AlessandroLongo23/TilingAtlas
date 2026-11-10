@@ -105,7 +105,8 @@ function detAbsKey(u: Cyclotomic, v: Cyclotomic): string {
 /**
  * True iff the periodic tilings (cellA, Λ_A=(uA,vA)) and (cellB, Λ_B=(uB,vB)) are congruent (one is a
  * grid isometry image of the other, reflections included). See the module header for soundness +
- * completeness.
+ * completeness. `reflections: false` asks for a rotation and translation only, so a tiling and its mirror
+ * image are congruent exactly when the tiling is achiral (the shelves that keep chirality).
  */
 export function tilingsCongruent(
 	cellA: Polygon[],
@@ -115,6 +116,7 @@ export function tilingsCongruent(
 	uB: Cyclotomic,
 	vB: Cyclotomic,
 	memo?: Map<string, string>,
+	reflections = true,
 ): boolean {
 	if (cellA.length === 0 || cellB.length === 0) return false;
 	// --- cheap necessary rejects ---
@@ -152,7 +154,7 @@ export function tilingsCongruent(
 	for (const Q of targets) {
 		const cQ = Q.exactCentroid!;
 		const qKey = Q.exactKey();
-		for (const reflect of [false, true]) {
+		for (const reflect of reflections ? [false, true] : [false]) {
 			for (let r = 0; r < N; r++) {
 				// T pins g(P0) = Q (translation derived from the reference-polygon correspondence)
 				const Mc0 = reflect ? c0.conj().mulZeta(r) : c0.mulZeta(r);
@@ -181,7 +183,7 @@ export function tilingsCongruent(
 }
 
 /** Convenience wrapper over `PeriodCell`s. */
-export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, string>): boolean {
+export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, string>, reflections = true): boolean {
 	return tilingsCongruent(
 		a.cellPolygons,
 		a.basisExact[0],
@@ -190,6 +192,7 @@ export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, 
 		b.basisExact[0],
 		b.basisExact[1],
 		memo,
+		reflections,
 	);
 }
 

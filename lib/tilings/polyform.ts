@@ -12,8 +12,8 @@
 //
 // ⚑ CHIRALITY IS DISTINGUISHED, a deliberate departure from the A068599 mirror-merge convention this
 // atlas otherwise keeps (AL, 2026-08-08). S ≠ Z and J ≠ L; a chiral shape with no traditional second
-// letter is X and X'. Measured on the tetromino board: dropping the twins took k=1 from 27 distinct
-// tilings to 16, and four of them use both handednesses of one piece at once, so they cannot be
+// letter is X and X'. Measured on the tetromino board (2026-11-10): merging the twins takes k=1 from 28
+// tilings to 21, and some use both handednesses of one piece at once, so they cannot be
 // represented at all by a single twin.
 //
 // ⚑ COVERAGE IS A BUDGET, NOT A THEOREM. Each board runs to its own k (`maxK` below) and polyform

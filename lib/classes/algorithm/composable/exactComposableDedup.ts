@@ -221,7 +221,7 @@ function buildPeriodCell(ring: CyclotomicRing, zetas: Cyclotomic[], ec: ExactCom
  * necessary invariants (nameMultiset, |detΛ|), and splits each bucket with the authoritative pairwise
  * `cellsCongruent`.
  */
-export function exactComposableKeys(cells: ExactComposableCell[]): ExactDedupResult {
+export function exactComposableKeys(cells: ExactComposableCell[], reflections = true): ExactDedupResult {
 	const ring = CyclotomicRing.create(24);
 	setActiveRing(ring);
 	const zetas = Array.from({ length: N }, (_, m) => Cyclotomic.zeta(ring, m));
@@ -255,7 +255,7 @@ export function exactComposableKeys(cells: ExactComposableCell[]): ExactDedupRes
 	for (const [bk, items] of buckets) {
 		const classes: { cell: PeriodCell; i: number }[][] = [];
 		for (const item of items) {
-			const cls = classes.find((m) => cellsCongruent(item.cell, m[0].cell, memo));
+			const cls = classes.find((m) => cellsCongruent(item.cell, m[0].cell, memo, reflections));
 			if (cls) cls.push(item);
 			else classes.push([item]);
 		}

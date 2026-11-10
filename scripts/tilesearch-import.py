@@ -15,7 +15,7 @@ goes into the atlas as two separate things:
 
 Nothing here writes to public/. The staging folder is what a shelf build reads.
 
-  python3 scripts/tilesearch-import.py <run folder> [--out DIR] [--workers N]
+  python3 scripts/tilesearch-import.py <run folder> [--out DIR] [--workers N] [--any-k]
 
 Writes DIR/tilings.json.br (the new tilings, atlas record form), DIR/known.json (run tiling → atlas ids),
 DIR/coverage.json, and a progress log in experiments/results/.
@@ -137,6 +137,7 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--cells", default=None, help="reuse a tilesearch-cells.ts dump instead of making one")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 2))
+    ap.add_argument("--any-k", action="store_true", help="match shelf records filed under another k too")
     args = ap.parse_args()
     folder = os.path.basename(os.path.normpath(args.run))
     out = args.out or os.path.join(ROOT, "experiments", "tilesearch-import", folder)
@@ -210,11 +211,14 @@ def main():
     # ── the atlas: only records that could equal a run tiling ──
     # A rigid record must agree on k (an invariant, and the run's k were just counted) and on the exact
     # composition; a family only on the kinds of tile, since its shapes and k move along it.
-    exact = {(t["k"], composition(t["renderCell"], True)) for ts in by_key.values() for t in ts}
+    # --any-k drops the k half: a shelf can file a tiling under another k than the engine's (the polyform shelves
+    # count orbits without the reflections that swap a piece with its mirror twin).
+    kof = (lambda k: 0) if args.any_k else int
+    exact = {(kof(t["k"]), composition(t["renderCell"], True)) for ts in by_key.values() for t in ts}
     coarse = {composition(t["renderCell"], False) for ts in by_key.values() for t in ts}
     n0 = len(atlas)
     atlas = [a for a in atlas if (composition(a["renderCell"], False) in coarse if "paramCell" in a
-                                  else (int(a["k"]), composition(a["renderCell"], True)) in exact)]
+                                  else (kof(a["k"]), composition(a["renderCell"], True)) in exact)]
     # Keys of atlas records are cached per shelf file, invalidated when the file changes.
     cache_path = os.path.join(ROOT, "experiments", "tilesearch-import", "atlas-keys.json.br")
     try:

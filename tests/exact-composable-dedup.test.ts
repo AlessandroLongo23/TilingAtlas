@@ -53,3 +53,23 @@ describe("exactComposableKeys — data-backed k=1 distinct count", () => {
 		expect(exactComposableKeys(cells).distinct).toBe(18);
 	}, 30000);
 });
+
+// The polyform shelf keeps chirality: `reflections = false` carries a tiling onto another by a rotation and a
+// translation only, so a tiling and its mirror image share a key exactly when the tiling is achiral.
+const bar = (y0: number, y1: number) => ({
+	n: 8,
+	name: "I",
+	// a 3×1 bar with its unit points, as the polyform cells carry them
+	exact: [pt(0, y0), pt(1, y0), pt(2, y0), pt(3, y0), pt(3, y1), pt(2, y1), pt(1, y1), pt(0, y1)],
+});
+describe("exactComposableKeys — chirality kept without reflections", () => {
+	it("rows of bars shifted by one are chiral; rows stacked straight are not", () => {
+		const shifted: ExactComposableCell = { cellPolygons: [bar(0, 1)], exactBasis: [pt(3, 0), pt(1, 1)] };
+		const shiftedMirror: ExactComposableCell = { cellPolygons: [bar(0, -1)], exactBasis: [pt(3, 0), pt(1, -1)] };
+		const straight: ExactComposableCell = { cellPolygons: [bar(0, 1)], exactBasis: [pt(3, 0), pt(0, 1)] };
+		const straightMirror: ExactComposableCell = { cellPolygons: [bar(0, -1)], exactBasis: [pt(3, 0), pt(0, -1)] };
+		expect(exactComposableKeys([shifted, shiftedMirror]).distinct).toBe(1);
+		expect(exactComposableKeys([shifted, shiftedMirror], false).distinct).toBe(2);
+		expect(exactComposableKeys([straight, straightMirror], false).distinct).toBe(1);
+	});
+});
