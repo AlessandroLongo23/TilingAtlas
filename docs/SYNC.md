@@ -3458,3 +3458,7 @@ the wrong k. Builder fixed (exact congruence, no reflections); shelf rebuilt fro
 Every tiling a shelf had keeps its id (`scripts/atlas/plans/*-ids.json`); new ones are `<prefix>-k<k>-<digest>`.
 `check_rigid_shelf.py` passes all three. Open: girih k = 5, 6 (3,820, need shards), composable k = 4 never shipped.
 Detail: DEVELOPMENT_NOTES "The three shelves swapped in".
+2026-11-10 · CC · Fifth classification: simple-face-homogeneous (tile and edge neighbours), 346 tilings to k = 14,
+complete for every k. `homogeneous.py face-simple` (face-stars with simple figures claimed, 1 s) and the 13,144
+face-homogeneous filtered agree symbol by symbol; so does a shelf scan to k = 12. List on R2 (`data:sync` now takes
+paths). Detail: DEVELOPMENT_NOTES "Simple-face-homogeneous tilings".

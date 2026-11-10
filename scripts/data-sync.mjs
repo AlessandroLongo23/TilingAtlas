@@ -5,6 +5,7 @@
 // removed by hand, which costs storage and nothing else.
 //
 //   pnpm data:sync            publish: upload every local file that is new or changed
+//   pnpm data:sync <path>...  only the files at or under these paths (keys under public/, e.g. classifications/)
 //   pnpm data:sync --check    list what would be uploaded, upload nothing
 //   pnpm data:pull            download every file missing locally; one that differs is reported, never overwritten
 //   node scripts/data-sync.mjs --vercel   the last build step: production uploads what the build generated
@@ -72,7 +73,8 @@ async function each(keys, verb, job) {
 
 async function upload(r2) {
 	const remote = await remoteEtags(r2);
-	const keys = localKeys();
+	const only = args.filter((a) => !a.startsWith("--"));
+	const keys = localKeys().filter((k) => !only.length || only.some((p) => k === p || k.startsWith(p)));
 	const changed = keys.filter((k) => remote.get(k) !== md5(k));
 	console.log(`data-sync: ${keys.length} local files, ${changed.length} to upload`);
 	if (args.includes("--check")) return changed.forEach((k) => console.log(`  ${k}`));

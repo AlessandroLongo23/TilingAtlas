@@ -102,6 +102,22 @@ export const CLASSIFICATIONS: Classification[] = [
 			"The property is Brian Galebach's. Proved complete in 2026 by {source}, a Delaney–Dress search with no bound on k; the largest has k = 54. Filtering every k-uniform tiling to k = 11 finds the same list.",
 		list: "/classifications/face-homogeneous.json.br",
 	},
+	{
+		slug: "simple-face-homogeneous",
+		title: "Simple-face-homogeneous tilings",
+		cell: "euclidean|tilings",
+		by: "the Atlas, 2026",
+		definition:
+			"Tilings by regular polygons in which two tiles with the same neighbours across their sides, the polygons that share a whole edge with the tile, are always images of each other under a symmetry. A surrounding and its mirror image count as the same.",
+		source: {
+			text: "the Atlas's face-figure search",
+			url: "https://github.com/AlessandroLongo23/TilingAtlas/blob/master/tools/ctrnact-oracle/homogeneous.py",
+		},
+		count: 346,
+		history:
+			"Proved complete in 2026 by {source}, a Delaney–Dress search with no bound on k; the largest has k = 14. Every one is also face-homogeneous, since two tiles with the same corners have the same sides. Filtering every k-uniform tiling to k = 12 finds the same list.",
+		list: "/classifications/simple-face-homogeneous.json.br",
+	},
 ];
 
 export const CLASSIFICATION_BY_SLUG = new Map(CLASSIFICATIONS.map((c) => [c.slug, c]));

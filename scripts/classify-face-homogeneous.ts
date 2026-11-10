@@ -8,7 +8,10 @@
  * each checked by reading its symbol back off the drawn cell. Fails unless every member with k ≤ REGULAR_COMPLETE_K
  * is on the shelf, which holds every k-uniform tiling there. Shelf files and drawings run --jobs processes at a time.
  *
- *   NODE_OPTIONS=--max-old-space-size=16000 pnpm tsx scripts/classify-face-homogeneous.ts [--jobs N] > <log>
+ * With --simple, the simple-face-homogeneous list: no two tile orbits share a simple face figure (the tile with the
+ * tiles across its sides), from the face-simple search (346 tilings, k up to 14, every one on the shelf).
+ *
+ *   NODE_OPTIONS=--max-old-space-size=16000 pnpm tsx scripts/classify-face-homogeneous.ts [--simple] [--jobs N] > <log>
  */
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -21,8 +24,11 @@ import { developSymbol, facts, seedRecord, signature, symbolSignature } from "./
 import { canonicalSymbol, readShelf, regularShelfFiles, writeClassification } from "./atlas/symbols";
 
 const ROOT = process.cwd();
-const SEARCH = path.join(ROOT, "experiments", "results", "homogeneous-2026-11-09", "face-stars-all.json");
-const OUT = path.join(ROOT, "public", "classifications", "face-homogeneous.json.br");
+const SIMPLE = process.argv.includes("--simple");
+const SEARCH = SIMPLE
+	? path.join(ROOT, "experiments", "results", "homogeneous-2026-11-10-simple", "face-simple-all.json")
+	: path.join(ROOT, "experiments", "results", "homogeneous-2026-11-09", "face-stars-all.json");
+const OUT = path.join(ROOT, "public", "classifications", `${SIMPLE ? "simple-" : ""}face-homogeneous.json.br`);
 type Row = { k: number; e: number; dsymbol: [number, ...number[][]] };
 type Member = { id: string; k: number; e: number; dsym: string };
 const time = () => new Date().toTimeString().slice(0, 8);
@@ -103,14 +109,15 @@ async function main(jobs: number): Promise<void> {
 	);
 
 	// A shard still being built is not on disk: its k's members are drawn for now, and a rerun matches them.
-	const absent = REGULAR_SHARD_KS.filter(
+	const ks = REGULAR_SHARD_KS.filter((k) => k <= rows[rows.length - 1].k);
+	const absent = ks.filter(
 		(k) =>
 			!regularShelfFiles([k])
 				.slice(1)
 				.every((f) => fs.existsSync(f)),
 	);
 	if (absent.length) console.log(`${time()}  ⚑ not on disk, so drawn and NOT checked against the shelf: k = ${absent}`);
-	const files = regularShelfFiles(REGULAR_SHARD_KS.filter((k) => !absent.includes(k)));
+	const files = regularShelfFiles(ks.filter((k) => !absent.includes(k)));
 	const t0 = Date.now();
 	const min = () => ((Date.now() - t0) / 60000).toFixed(1);
 	let n = 0;
@@ -147,18 +154,19 @@ async function main(jobs: number): Promise<void> {
 	const todoFile = path.join(tmp, "todo.json");
 	fs.writeFileSync(todoFile, JSON.stringify(todo));
 	n = 0;
+	const slices = todo.length ? jobs * 4 : 0;
 	await pool(
-		Array.from({ length: jobs * 4 }, (_, i) => [
+		Array.from({ length: slices }, (_, i) => [
 			"--draw",
 			todoFile,
 			`${i}`,
-			`${jobs * 4}`,
+			`${slices}`,
 			path.join(tmp, `draw-${i}.jsonl`),
 		]),
 		jobs,
-		() => console.log(`${time()}  drawn ${++n}/${jobs * 4} slices of ${todo.length} tilings, ${min()} min`),
+		() => console.log(`${time()}  drawn ${++n}/${slices} slices of ${todo.length} tilings, ${min()} min`),
 	);
-	const drawn = Array.from({ length: jobs * 4 }, (_, i) =>
+	const drawn = Array.from({ length: slices }, (_, i) =>
 		fs
 			.readFileSync(path.join(tmp, `draw-${i}.jsonl`), "utf8")
 			.split("\n")

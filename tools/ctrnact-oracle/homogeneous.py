@@ -16,6 +16,10 @@ group: one orbit per local figure. Three kinds are searched:
            two face orbits with one figure are a failure. Complete for k <= kmax, and for every k when the run
            reports that the cap cut no branch. FINISHES with no bound: 13,144 tilings, k up to 54 (peak 609 at
            k = 22), 134 million nodes, 28 minutes on 8 processes (--kmax 1000, cap never reached).
+  face-simple  figure = the SIMPLE face figure, the face with the faces across its edges only (the cyclic word of
+           their sizes). The face-stars search with one change: a face orbit claims its simple figure, so two face
+           orbits whose full figures differ but whose simple figures agree are a failure. Equal full figures give
+           equal simple ones, so these tilings are a subset of face-stars'; the run checks that.
 
 METHOD. A periodic tiling is its D-symbol: the flags modulo the symmetry group, with s0 (other end of the edge),
 s1 (other edge of the face at the vertex), s2 (other face across the edge), m01 = face size, m12 = degree.
@@ -47,9 +51,9 @@ completed to a surviving star.
 The depth-first loop is homogeneous_dfs.cpp (built on first use); this file builds the catalogue, runs one
 search per start figure in a process pool, and reads every finished symbol.
 
-usage: homogeneous.py vertex|edge|face-stars [--kmax K] [--jobs N] [--log FILE] [--out FILE] [--figures FILE]
-                       [--catalogue FILE] [--split LABEL:H,... --parts N --depth D]
-  --kmax: face-stars only, and required there. --split: those start units (start star, stabilizer index) run
+usage: homogeneous.py vertex|edge|face-stars|face-simple [--kmax K] [--jobs N] [--log FILE] [--out FILE]
+                       [--figures FILE] [--catalogue FILE] [--split LABEL:H,... --parts N --depth D]
+  --kmax: the face kinds only, and required there. --split: those start units (start star, stabilizer index) run
   as N slices of their tree cut at depth D, for more processes on the heavy ones.
   vertex: 135 tilings, 24,471 nodes. edge: 203 tilings, 126,767 nodes. About a second each; results and logs in
   experiments/results/homogeneous-2026-11-08/. face-stars, the full run (log and result in
@@ -307,6 +311,11 @@ def face_label(C):
     return f"{len(C)}[" + " ".join(word(s) for s in C) + "]"
 
 
+def simple_label(P):
+    """The simple face figure of a placement: the p-gon and the sizes across its edges, up to turning and mirroring."""
+    return f"{len(P)}[" + ".".join(map(str, cyclic_canon([s[1] for s in P]))) + "]"
+
+
 def galebach_figure(a, b):
     """His canonical spelling, the same rule as scripts/classify-edge-homogeneous.ts (string tokens)."""
     U, W = [str(x) for x in a], [str(x) for x in b]
@@ -487,12 +496,16 @@ def catalogue_text(c):
         out.append(" ".join(map(str, [len(subs)] + [o for orbit in subs for o in orbit])))
         for row in c.opts[F]:
             out.append(" ".join(map(str, [len(row)] + [v for o in row for v in o])))
-    if c.kind == "face-stars":                    # the face table: star words, then every placement of each figure
-        imgs = [[face_image(C, g) for g in range(2 * len(C))] for C in c.faces]
-        words = sorted({w for row in imgs for P in row for w in P})
+    if c.kind in FACE_KINDS:                      # the face table: star words, then per figure the figure a closed
+        imgs = [[face_image(C, g) for g in range(2 * len(C))] for C in c.faces]   # face orbit claims, and every
+        words = sorted({w for row in imgs for P in row for w in P})               # placement
         ix = {w: i for i, w in enumerate(words)}
+        owner = {}
+        if c.kind == "face-simple":
+            owner = {F: owner.setdefault(simple_label(C), len(owner)) for F, C in enumerate(c.faces)}
         out += [str(len(words))] + [" ".join(map(str, [len(w), *w])) for w in words] + [str(len(imgs))]
-        out += [" ".join(map(str, [len(row[0]), len(row)] + [ix[w] for P in row for w in P])) for row in imgs]
+        out += [" ".join(map(str, [owner.get(F, F), len(row[0]), len(row)] + [ix[w] for P in row for w in P]))
+                for F, row in enumerate(imgs)]
     return "\n".join(out) + "\n"
 
 
@@ -530,8 +543,9 @@ def orbit_list(sym, i, j):
     return out
 
 
-def read_faces(sym):
-    """Each face orbit's full face figure as the symbol has it: walk the face, read the star at each corner."""
+def read_faces(sym, simple=False):
+    """Each face orbit's full (or simple) face figure as the symbol has it: walk the face, read the star at each
+    corner."""
     out = []
     for orbit in orbit_list(sym, 0, 1):
         x, P = orbit[0], []
@@ -542,7 +556,7 @@ def read_faces(sym):
                 y = sym.s[2][sym.s[1][y]]
             P.append(tuple(star))
             x = sym.s[0][sym.s[1][x]]
-        out.append(face_label(min(face_image(tuple(P), g) for g in range(2 * len(P)))))
+        out.append(simple_label(P) if simple else face_label(min(face_image(tuple(P), g) for g in range(2 * len(P)))))
     return out
 
 
@@ -561,8 +575,8 @@ def describe(c, elems, s):
     if c.kind == "edge":
         figs = sorted(f"{c.label[fig_of[o[0]]]}({edge_tag(mi, o)})" for o in E)
         assert len({f.split('(')[0] for f in figs}) == len(E), "two edge orbits share a figure"
-    elif c.kind == "face-stars":
-        figs = sorted(read_faces(mi))
+    elif c.kind in FACE_KINDS:
+        figs = sorted(read_faces(mi, simple=c.kind == "face-simple"))
         assert len(set(figs)) == len(T), "two face orbits share a figure"
     else:
         figs = sorted(c.label[fig_of[o[0]]] for o in V)
@@ -573,11 +587,12 @@ def describe(c, elems, s):
 # ── driver ──
 
 STATE = {}
+FACE_KINDS = ("face-stars", "face-simple")
 
 
 def catalogue(kind, log=lambda s: None):
     types, stars, figs = usable_stars(log=lambda s: None)
-    if kind == "face-stars":
+    if kind in FACE_KINDS:
         c = vertex_catalogue(types, stars, figs)
         c.kind, c.faces = kind, face_figures(stars)
         log(f"valid full face figures: {len(c.faces)}")
@@ -620,7 +635,7 @@ def main():
     arg = lambda name, d: sys.argv[sys.argv.index(name) + 1] if name in sys.argv else d  # noqa: E731
     jobs = int(arg("--jobs", os.cpu_count()))
     kmax = int(arg("--kmax", 0)) or None
-    assert (kind == "face-stars") == (kmax is not None), "--kmax goes with face-stars, and only there"
+    assert (kind in FACE_KINDS) == (kmax is not None), "--kmax goes with the face kinds, and only there"
     logpath, out, figout = arg("--log", None), arg("--out", None), arg("--figures", None)
     logf = open(logpath, "a") if logpath else None
 

@@ -105,31 +105,36 @@ export function starAt(sym: DSymbol, x: number): number[] {
 }
 
 /** Each tile orbit's full face figure: the polygons round each corner, corner by corner round the tile, as the
- *  least of its rotations and reflections. */
-const faceFigures = (sym: DSymbol): string[] =>
+ *  least of its rotations and reflections. With `simple`, the simple face figure: the polygon across each side. */
+const faceFigures = (sym: DSymbol, simple = false): string[] =>
 	components(sym, 0, 1).map(([x0]) => {
 		const P: number[][] = [];
-		for (let x = x0; P.length < sym.m01[x0]; x = sym.s[0][sym.s[1][x]]) P.push(starAt(sym, x));
+		for (let x = x0; P.length < sym.m01[x0]; x = sym.s[0][sym.s[1][x]])
+			P.push(simple ? [sym.m01[sym.s[2][x]]] : starAt(sym, x));
 		const mirror = P.map((_, i) => P[(P.length - i) % P.length]).map(([f, ...rest]) => [f, ...rest.reverse()]);
 		return [P, mirror].flatMap((Q) => Q.map((_, g) => JSON.stringify([...Q.slice(g), ...Q.slice(0, g)]))).sort()[0];
 	});
 
 /**
  * A hydrated record's entry if no two of its tile orbits share a full face figure (the tile with every tile that
- * shares a corner with it; a figure and its mirror image count as one), else null. Throws if the record has no
- * symbol or its symbol's vertex orbits are not its k.
+ * shares a corner with it; a figure and its mirror image count as one), else null; with `simple`, a simple face
+ * figure (the tile with the tiles across its sides). Throws if the record has no symbol or its symbol's vertex
+ * orbits are not its k.
  */
-export function faceHomogeneous(t: {
-	id: string;
-	k: number;
-	renderCell: Parameters<typeof cellMap>[0];
-}): Proved | null {
+export function faceHomogeneous(
+	t: {
+		id: string;
+		k: number;
+		renderCell: Parameters<typeof cellMap>[0];
+	},
+	simple = false,
+): Proved | null {
 	const map = cellMap(t.renderCell);
 	if (!map) throw new Error(`${t.id}: no symbol`);
 	const sym = minimalBlocks(map.sym).sym;
 	if (kUniformity(sym) !== t.k)
 		throw new Error(`${t.id}: k = ${t.k}, its symbol has ${kUniformity(sym)} vertex orbits`);
-	const figs = faceFigures(sym);
+	const figs = faceFigures(sym, simple);
 	if (new Set(figs).size < figs.length) return null;
 	return { id: t.id, k: t.k, e: edgeOrbits(sym).length, dsym: canonicalSymbol(sym.canonicalForm()) };
 }

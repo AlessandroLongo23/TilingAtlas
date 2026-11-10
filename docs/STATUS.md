@@ -42,8 +42,10 @@ edge-homogeneous where Chavey is quoted at 20 (asked Galebach). Both are member 
 (`public/classifications/*.json.br`), each member paired with the search's symbol by its own record's symbol
 (`scripts/atlas/symbols.ts`); the CSV export of a classification carries the symbols.
 Third: strongly edge-homogeneous (22, 2026-11-09), Chavey's reported 20 still unexplained.
-Fourth: face-homogeneous to k = 10 (1,441, a scan of the complete shelf). Above k = 10 open: the figure search does not
-close it; next idea is a late-commitment search by vertex stars. DEVELOPMENT_NOTES 2026-11-09.
+Fourth: face-homogeneous, 13,144 to k = 54, complete for every k (the face-stars search, `homogeneous.py`).
+Fifth: simple-face-homogeneous (tile and edge neighbours only), 346 to k = 14, complete for every k (the face-simple
+search, 1 s; also the 13,144 filtered; every one on the shelf; list on R2). DEVELOPMENT_NOTES
+"Simple-face-homogeneous tilings".
 
 **Exception to the 2026-08-18 rule below.** The regular shelf is complete to k = 16 (`REGULAR_COMPLETE_K`,
 1,792,288 tilings; k = 11 to 16 built 2026-11-09 by `scripts/build-regular-shards.ts` from the engine's k <= 16 run,

@@ -165,7 +165,9 @@ every version of every shard forever (pack 784 MB on 2026-11-09). R2's free tier
 - **Getting the data:** `pnpm data:pull` downloads every file missing from `public/` (about 585 MB, 21,000 files,
   a few minutes). It never overwrites a local file that differs: it lists them. `pnpm build` pulls first.
 - **Publishing data:** a new or rebuilt file reaches production only through `pnpm data:sync` (uploads every
-  local file whose MD5 differs from the bucket; `--check` lists them). Nothing is ever deleted from the bucket.
+  local file whose MD5 differs from the bucket; `--check` lists them; paths after it, such as `classifications/`,
+  limit it to those files, for when `public/` also holds another session's unpublished output). Nothing is ever
+  deleted from the bucket.
   Run it after any builder writes `public/`; committing code that reads a file R2 does not have breaks production.
 - **Production reads R2, not the deployment.** Browser code fetches data only through `fetchData(path)` in
   `lib/services/atlasCodec.ts`, which prefixes `PUBLIC_DATA_URL` (set on Vercel for production and preview, unset

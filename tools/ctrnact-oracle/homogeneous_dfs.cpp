@@ -7,7 +7,8 @@
 //       stabilizer only; part i of n: only every n-th subtree at that depth, from the i-th): the figures are vertex stars and may recur,
 //       at most kmax cells (vertex orbits) in all; the catalogue ends with the face table. Every face is read as
 //       it grows: an open one must be a run of corners of a valid face figure that no closed face orbit owns yet, a
-//       complete one such a figure, and a closed face orbit claims its figure.
+//       complete one such a figure, and a closed face orbit claims its figure. What a figure claims is the table's
+//       owner number: the figure itself (full face figures), or the class of figures sharing its simple figure.
 //   out: "R <n> F0 f0 F1 f1 ... | s0 | s1 | s2" per symbol (chambers as figure and flag, then the three
 //   involutions); "N <nodes> <cap hits>" last, where a cap hit is a branch the cap on cells cut (none: the
 //   result holds for every k)
@@ -36,7 +37,8 @@ vector<VI> of;                // per cell: flag -> chamber
 vector<VI> cells;             // per figure: its cells
 unordered_map<string, int> WORDS, FULL;  // star word -> index; a face's corner words, any placement -> figure
 unordered_map<string, VI> RUN;  // the first 1 .. p-1 corner words of any placement -> the figures that have them
-vector<char> owned;           // figure -> some closed face orbit has it
+VI OWNER;                     // figure -> what a closed face orbit with it claims
+vector<char> owned;           // owner -> some closed face orbit has it
 long long nodes = 0, hits = 0, cut = 0;
 int PART = 0, PARTS = 1, DEPTH = -1;
 auto T0 = chrono::steady_clock::now();
@@ -92,7 +94,7 @@ bool ok(int x) {
 }
 
 // face-stars: the face of chamber x read corner by corner (corner i+1 = s0 s1 of corner i, each corner's star read
-// from the face). -1: no valid figure fits; >= 0: x's face orbit has just closed and claims this figure; -2: neither.
+// from the face). -1: no valid figure fits; >= 0: x's face orbit has just closed and claims this owner; -2: neither.
 int faceCheck(int x) {
   int p = F[eF[x]].m01[ef[x]], a = x;
   for (int t = 0; t < p && s[0][a] >= 0; t++) a = s[1][s[0][a]];
@@ -105,18 +107,18 @@ int faceCheck(int x) {
     auto it = RUN.find(key);
     if (it != RUN.end())
       for (int id : it->second)
-        if (!owned[id]) return -2;
+        if (!owned[OWNER[id]]) return -2;
     return -1;
   }
   auto it = FULL.find(key);
-  if (it == FULL.end() || owned[it->second]) return -1;
+  if (it == FULL.end() || owned[OWNER[it->second]]) return -1;
   for (int y = x;;) {
     int z = s[0][y];
     if (z < 0) return -2;
     if ((y = s[1][z]) == x) break;
   }
-  owned[it->second] = 1;
-  return it->second;
+  owned[OWNER[it->second]] = 1;
+  return OWNER[it->second];
 }
 
 bool alive() {
@@ -220,8 +222,9 @@ int main(int argc, char** argv) {
     if (nw > 255) { fprintf(stderr, "too many star words\n"); return 1; }
     for (int i = 0; i < nw; i++) WORDS[str(rdv(rd()))] = i;
     int nfig = rd();
-    owned.assign(nfig, 0);
+    OWNER.resize(nfig);
     for (int id = 0; id < nfig; id++) {
+      OWNER[id] = rd();
       int p = rd(), ni = rd();
       for (int i = 0; i < ni; i++) {
         string key = str(rdv(p));
@@ -232,6 +235,7 @@ int main(int argc, char** argv) {
         }
       }
     }
+    owned.assign(*max_element(OWNER.begin(), OWNER.end()) + 1, 0);
     for (auto& g : F) {                   // the star read from each flag's face: (face, across s2, onwards)
       g.word.resize(g.nf);
       for (int f = 0; f < g.nf; f++) {

@@ -22942,3 +22942,39 @@ no longer the shelf's source.
 
 Checked in the running app (new and kept ids on all three shelves draw; counts 1,616 / 592 / 1,461), and
 `data.thetilingatlas.com` serves the three files byte for byte.
+
+## Simple-face-homogeneous tilings: 346, inside the 13,144 (2026-11-10, CC)
+
+AL: the same question for the simple face figure, the tile and the tiles that share a whole side with it (the full
+figure adds those that meet it only at a corner). Same conventions as the face-homogeneous list: a figure and its
+mirror image are one, regular polygons edge to edge.
+
+- **A subset, so no new search was needed for the answer.** Equal full figures give equal simple figures, so asking
+  that tiles with equal simple figures be one orbit is the stronger condition: every simple-face-homogeneous tiling
+  is one of the 13,144 face-homogeneous ones, which the face-stars run proved complete for every k. Reading each of
+  those symbols' simple figures keeps 346: 11, 18, 41, 53, 50, 55, 46, 21, 28, 9, 6, 3, 4, 1 for k = 1 to 14, up
+  to 16 tile orbits.
+- **The search, tweaked as asked** (`homogeneous.py face-simple`). The face-stars search with one change: a closed
+  face orbit claims its simple figure, not its full one. The face table now gives each of the 669 full figures an
+  owner (itself for face-stars, the class of its simple figure for face-simple) and `homogeneous_dfs` keys `owned`
+  by owner; open faces must still fit some valid full figure whose owner is free. With no bound on k the cap never
+  cut: 346 tilings, 188,888 nodes, 1 s on 8 processes (face-stars: 134 million nodes, 28 min). The same symbols as
+  the filter, each with the same figures and k. The full kind is unchanged: to k <= 6, HEAD's code and the edited
+  code write byte-identical results with 140,850 nodes each.
+- **Shelf scan**, independent of the homogeneous search (`faceHomogeneous(t, true)` in `scripts/atlas/symbols.ts` on
+  each record's own symbol): every tiling with k <= 12 read (k = 12 in four slices, 49,794 in all), 341 pass, the
+  search's 341 with k <= 12 exactly. k = 13 and 14 were stopped (hours at load 70 for 5 tilings the builder already
+  matches by symbol).
+- **Figures.** The 669 full figures give 472 simple ones (16 triangles, 26 squares, 45 hexagons, 1 octagon, 384
+  dodecagons: a dodecagon's sides fix its corners); the 346 use 108. At k = 2 the face-homogeneous tiling that
+  fails is 3^6; 3^3.4^2: its two triangle orbits have triangles on all three sides and different corners.
+- **Fifth classification**, `simple-face-homogeneous`, 346 members, all on the regular shelf (k <= 14), none drawn:
+  `scripts/classify-face-homogeneous.ts --simple` writes `public/classifications/simple-face-homogeneous.json.br`
+  (21.6 kB; members matched by each record's own symbol, equal k). The builder now reads only the shards up to the
+  list's largest k and skips the drawing step when nothing is left to draw. Seen at
+  /catalogue?set=simple-face-homogeneous in the dev server; `pnpm build` clean. On R2 through
+  `pnpm data:sync classifications/simple-face-homogeneous.json.br`: data-sync takes paths now, because a plain sync
+  would also have uploaded 11 hero files this build regenerated, beside another session's uncommitted
+  hero-rotator work.
+- Results and logs: `experiments/results/homogeneous-2026-11-10-simple/`. +93/-43 lines, mostly the new
+  classification entry and doc comments.
