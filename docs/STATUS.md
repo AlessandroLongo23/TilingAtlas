@@ -17,6 +17,19 @@ Open: recompress the q9 brotli pass at q10 (about 13% off hyperbolic-poly); halv
 the Searcher run); the sidebar count after a deep link into a split k; the Discord message still links
 the-tiling-atlas.vercel.app and /play. Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.0".
 
+## One engine: three shelves corrected from the Searcher and live (2026-11-10)
+
+**Polyforms 1,616 (was 2,047 records for 1,482 tilings), Islamic 592 (was 192), convex irregular 1,461 (was 1,451).**
+The Tiling Searcher is their source now (`scripts/build-polyform-from-searcher.sh`,
+`scripts/build-girih-from-searcher.sh`, `build-composable-atlas.ts --append-searcher`), every tiling a shelf had
+keeps its id (`scripts/atlas/plans/*-ids.json`), and `tools/ctrnact-oracle/check_rigid_shelf.py` checks a shelf by
+geometry (repeats, missing mirror images, k). On R2.
+
+**Open:** girih k = 5, 6 (3,820 tilings, need shards); composable k = 4 developed and never shipped; composable
+k = 3 not yet compared with the Searcher. Palettes as Searcher boards: 123 agree with eu_solver at k <= 2; still
+unconverted are the four freedraw palettes. Detail: `docs/superpowers/specs/2026-11-08-one-engine-audit.md`,
+DEVELOPMENT_NOTES "The three shelves swapped in".
+
 ## /catalogue is the page; classifications and the regular shelf past k = 10 (2026-11-07)
 
 feat/browse-merge is merged (24934bf8, not pushed): /play and /library are one /catalogue page, grid and tiling

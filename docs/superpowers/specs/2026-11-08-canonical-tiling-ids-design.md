@@ -45,6 +45,19 @@ The minimal image is taken on the labelled symbol, so a symmetry must preserve t
 `minimalBlocks(sym, labels)` already takes labels: `cellDSymbol` passes the star dents that way so a star is
 never folded onto a plain triangle.
 
+**Measured 2026-11-10: the labels are not optional.** The six shipped dihex records at k = 1 have two plain
+symbols between them (they are four tilings). The dart map with every corner angle
+(`tools/ctrnact-oracle/tiling_key.py`, `family_key`) tells all 1,616 polyform tilings apart, agrees with exact
+congruence in Z[zeta_24] on every one, and is the same information as the symbol labelled with corner angles. An
+oriented form of it (one orientation searched) keeps chirality, which the polyform shelf needs
+(`tools/ctrnact-oracle/check_rigid_shelf.py`).
+
+**In use since 2026-11-10 for new tilings on three shelves** (Polyforms, Islamic, convex irregular):
+`<prefix>-k<k>-<digest>`, the digest over that key (oriented on Polyforms, mirror-blind on the other two), written
+by `check_rigid_shelf.py --ids`. Tilings those shelves already had keep their old ids through
+`scripts/atlas/plans/*-ids.json`. The key is a float form (angles to six decimals); P0 should either adopt it as
+the serialization for rigid Euclidean shelves or map these 558 ids when it replaces it.
+
 On a tiling by regular polygons the combinatorial type fixes the tiling up to isometry, so the plain symbol
 is already complete. Measured on 2026-11-08: the 23,395 regular tilings of the shelf from k = 1 to 10
 (t1002 aside) have 23,395 distinct symbols, and a fresh Searcher run gives the same 23,395

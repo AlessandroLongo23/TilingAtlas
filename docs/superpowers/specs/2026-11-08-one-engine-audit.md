@@ -80,34 +80,23 @@ The Searcher writes all 200,730 tilings; the solver's run keeps the 103,082 at k
 
 ## Unknowns to settle before porting
 
-- **Corners with a mirror twin (found 2026-11-09, the largest one).** The two engines disagree on what
-  reflecting a corner means:
-  - eu_solver gives a corner class a mirror twin (`CLASS_SIGMA`; on a dihex the two 120-degree corners beside
-    the 240-degree one are twins), and reflects a vertex by reversing its word and taking each corner's twin.
-  - The Searcher reverses the word only. Marek's corner code (angle number, angle letter, edge byte) has no
-    mirror flag.
-
-  Palettes whose classes are their own twins convert as they are and agree (regular, stars, diamond,
-  composite-convex at k <= 2). On those with twins nothing tried reproduces eu_solver's counts:
-
-  | dihex, k = 1, 2 | Tilings |
-  |---|---|
-  | eu_solver | 8, 18 |
-  | board as converted | 0, 0 |
-  | both orientations as their own lines | 0, 0 |
-  | words through the twin map | 0, 0 |
-  | one symbol per twin pair | 4, 4 |
-
-  (domino: 15, 131 against at best 11, 44.) Either the Searcher learns twin corners (a twin map on corner
-  symbols, applied wherever it reflects a vertex or a face, a kernel change), or the right board encoding
-  exists and is not yet understood. `board_of_tables.py` refuses these palettes until it is settled.
+- **Corners with a mirror twin: settled 2026-11-10, no kernel change.** eu_solver reflects a vertex by reversing
+  its word and taking each corner's twin (`CLASS_SIGMA`); the Searcher reverses the word only. Giving a corner and
+  its twin one symbol makes the two reflections the same, and loses nothing: a face is read clockwise, so its word
+  still says which twin each corner is (the merged word of a tile with three or more corner classes has no
+  rotation the tile lacks). A tile and its mirror image become one face line. `board_of_tables.py` does this.
+  The 2026-11-09 table (dihex 8, 18 against 4, 4) compared against the wrong reference: on a palette with
+  two-corner vertices eu_solver writes one tiling on several period cells and both chiralities, and the shelf
+  builder merges them by geometry. Against the shelves the merged boards are right (results below).
+- **Edge types: settled 2026-11-10 for types a tile fixes.** A board writes them as the Searcher does: an `edge`
+  symbol in the middle of every tile edge, and a two-corner vertex line per pair of types that may meet
+  (like types, unlike ones under `edgeComplement`). Still refused: a type the search chooses (the four
+  freedraw palettes fdsq2, fdtri, fdhex, fdts), which needs the corner symbols split by their edges.
 
 - **Compiler-only features.** Whether every compiler feature survives as a board:
   - `quotientPeriod` makes the search a relaxation;
   - the `mixed` closure mode is explicitly not a complete census;
   - the curved half-tile palettes.
-- **Edge pairing.** Whether the solver's two-corner non-counting vertices and the Searcher's flat vertices
-  count k the same way on every edge-typed palette.
 - **`EU_HYPFEAS`.** It has to be ported (it prunes, so the result is the same without it, only slower), or
   shown not to matter.
 - **Developers.** Each developer (`eu_develop`, `develop_*.py`) reads the solver's raw format. Either they
@@ -121,10 +110,12 @@ The Searcher writes all 200,730 tilings; the solver's run keeps the 103,082 at k
    it is compiled.
 2. **Palette compiler.** Have `gen_alphabet.py` emit boards, and check every palette through step 1 (same
    symbols, same counts per k).
+   `board_of_tables.py` does it from the compiled tables; 123 palettes agree at k <= 2 (cases 2 and 3).
 3. **Solver-only rules.** Port them into the Searcher: hyperbolic feasibility, and star roots as a required
    set.
 4. **Developers.** Feed them from certificates and rebuild one shelf end to end. Its canonical IDs (see
    `2026-11-08-canonical-tiling-ids-design.md`) must come out the same.
+   Done for the polyform shelf, 2026-11-10 (last section), with the builder's ids still.
 5. **Switch over.** Move each atlas build to the Searcher, shelf by shelf, each gated by step 1 and the ID
    checks.
 6. **Delete.** Remove `eu_solver.cpp`, `eu_pruner.cpp` and the raw format once no build uses them.
@@ -209,3 +200,94 @@ spherical and one-edge-length hyperbolic tiling shelf, decorated or not, and on 
   pair (`experiments/cross-engine/repeated-words.ts`).
 
 Detail: `experiments/results/searcher-shelf-audit-2026-11-09.md`.
+
+## Cross-engine check, case 3: edge types and mirror twins (2026-11-10)
+
+The 69 palettes case 2 could not convert (59 with edge types, 8 with mirror twins, girih and composite-decomp), on
+the converter with both (`board_of_tables.py`, "Unknowns" above) and tilesearch rc4.2.2, k <= 2, 120 s a step.
+Log: `experiments/results/cross-engine-palettes-2026-11-10.log`.
+
+| Outcome | Palettes |
+|---|---|
+| same tilings per k | 39 |
+| the solver's count is higher: it writes a tiling more than once (below) | 13 |
+| no board: an edge type the search chooses (fdsq2, fdtri, fdhex, fdts) | 4 |
+| no board: two tiles of one name (planigon-split-lite), conversion past 120 s (bubble-rth) | 2 |
+| empty alphabet at k <= 2 | 3 |
+| alphabet compile or solve past 120 s | 3 + 5 |
+
+The 39 include the bump-and-bite palettes (`edgeComplement`), tri45, Penrose, the planigons and the Euclidean,
+spherical and hyperbolic half-tile palettes. The four freedraw palettes have boards of their own already (the
+Searcher's edge boards), so the open conversion is a cross-check, not a blocker.
+
+**The 13 all have two-corner vertices**: the eight polyform palettes with flat or reflex corners, eu-half-hex-v-split
+and eu-half-sq-mid-split (whose counts are triamond's and domino's in both engines), sph-oct-half-split, girih and
+composite-decomp. There eu_solver writes one tiling on several period cells, so its counts per k are no reference;
+the developed tilings are. For the nine polyform boards (diamond included), to each board's shipped k:
+
+- **Every tiling eu_solver developed is in the Searcher's run, and the run has no other**: 12,217 developed cells
+  are 1,181 tilings up to reflection, the run's 1,181, with the same least k
+  (`experiments/cross-engine/eu-cells-in-run.py`, identity by `tiling_key.family_key`).
+- **The engine's k is the geometry's k** on all of them: vertex orbits recounted from the developed cells alone.
+- girih, k <= 4: the 182 shelf records are all in the run's 585 tilings, which all pass the area test.
+
+So on the polyform palettes the two engines find the same tilings. sph-oct-half-split and composite-decomp are
+not checked this way yet.
+
+## The first shelf rebuilt from the Searcher: Polyforms (2026-11-10)
+
+Plan step 4, on the nine polyform boards. `scripts/build-polyform-from-searcher.sh <out>` runs it end to end in
+about three minutes: palette to board, search, exact cells (`scripts/tilesearch-polyform-cells.ts`: a walk along
+unit edges gives every vertex in Z[zeta_12], and each tile gets its piece's name back from its corner angles), then
+`scripts/build-polyform-atlas.ts`.
+
+The comparison with the shipped shelf found the shelf wrong, not the engines. The builder told tilings apart by the
+pattern of tile centroids, which does not say which way a piece lies. Measured by geometry
+(`tools/ctrnact-oracle/check_rigid_shelf.py`, log `experiments/results/polyform-shelf-census-2026-11-10.log`):
+
+| | Shipped | Rebuilt |
+|---|---|---|
+| records | 2,047 | 1,616 |
+| tilings (chirality kept) | 1,482 | 1,616 |
+| records that repeat another | 565 | 0 |
+| chiral tilings without their mirror image | 75 | 0 |
+| filed under another k than the geometry's | 96 | 0 |
+
+The rebuilt shelf holds every one of the 1,482 and 134 more: the 75 mirror images, and 59 records of 50 tilings
+the shelf lacked altogether, which eu_solver had found and the builder had merged away. The builder now uses the exact congruence test of the
+composable shelf (`exactComposableKeys`) with reflections off, and the check is a second implementation that
+shares no code with it. On shelves known to be right the check finds nothing: the regular shelf to k = 6
+(2,992 records, k equal to Galebach's on every one), planigon and Penrose. Swapped in the same day (AL: yes), with every old tiling under its old
+id (`scripts/atlas/plans/polyform-ids.json`).
+
+**The same kind of key was behind the girih shelf.** It kept one tiling per (k, tile multiset, cell area), 182
+records to k = 4, where the search finds 585 tilings up to reflection. Rebuilt from the Searcher the same day:
+582 girih tilings beside the 10 curated (`scripts/build-girih-from-searcher.sh`). The 10 composable tilings of
+k = 2 are appended too. DEVELOPMENT_NOTES, "The three shelves swapped in".
+
+## Tables compiled before CLASS_SIGMA (found 2026-11-10)
+
+87 of the 194 folders under `tools/ctrnact-oracle/tables/` predate `CLASS_SIGMA`. Compiled again today, 67 have no
+twin corners, 7 have some (composite-convex, composite-decomp, girih, e3cv-star4-z24, tetromino-free, tri45noedge,
+probe-q3) and 13 did not compile in 150 s (the equi and q-flex palettes among them;
+`experiments/results/tables-without-class-sigma-2026-11-10.txt`). For a palette whose tiles are all
+their own mirror image, corner by corner, that changes nothing. For one with twin corners, both engines then treat
+a tile and its reflection as two labellings: a tiling is counted once per labelling, and a mirror through a vertex
+cannot be written, so a tiling can come out only under a k that is too high. Case 2's "same" verdicts on such
+palettes say the engines agree on those tables, not that the counts are counts of tilings.
+
+composite-convex at k <= 2 (30 of its 47 corner classes have a twin):
+
+| Tables | Both engines | By geometry |
+|---|---|---|
+| the repo's, without twins | 34, 298 | 233 tilings |
+| compiled today, twins merged on the board | 30, 241 (Searcher) | 271 tilings, all different |
+
+Of the 271, eu_solver's developed cells have 2 of the k = 1 tilings only at k = 2, 28 of the k = 2 tilings only at
+k = 3, and 10 not at all up to k = 3. The composable shelf, whose builder recounts k, is right where it could be:
+its 231 records at k <= 2 have no repeat and the geometry's k, and are all in the Searcher's run. The 10 are k = 2
+tilings by regular polygons and convex composites that the shelf lacks (each fills its cell exactly once; three
+drawn and looked at).
+
+`experiments/cross-engine/palette.sh` now compiles such tables again before comparing.
+

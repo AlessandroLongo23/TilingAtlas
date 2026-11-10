@@ -3447,3 +3447,14 @@ tests/fixtures/. Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of g
 The first R2 build pulled, generated and uploaded nothing, but still shipped all 21,013 data files: Next 16 on Vercel copies
 public/ into the output inside `next build` (adapter onBuildComplete), before the prune. data-sync now deletes them there too.
 Detail: DEVELOPMENT_NOTES "Searcher 0.5.0, experiments out of git, release 1.49.0".
+2026-11-10 · CC · One engine, step by step: `board_of_tables.py` now turns palettes with mirror-twin corners and
+with fixed edge types into Searcher boards (39 more palettes give the same tilings in both engines; 123 in all).
+On the nine polyform boards eu_solver's 12,217 developed cells are exactly the Searcher's 1,181 tilings. The shipped
+polyform shelf is wrong against both: 2,047 records, 1,482 tilings, 565 repeats, 75 missing mirror images, 96 under
+the wrong k. Builder fixed (exact congruence, no reflections); shelf rebuilt from the Searcher, 1,616 records, in
+`experiments/polyform-searcher/`, not swapped in. Uncommitted. Detail: DEVELOPMENT_NOTES "One engine: palettes with mirror twins".
+2026-11-10 · CC · Three shelves corrected from the Tiling Searcher and live on R2 (AL: yes to all): Polyforms
+1,616 (was 2,047 records, 1,482 tilings), Islamic 592 (girih 182 → 582), convex irregular 1,461 (+10 at k = 2).
+Every tiling a shelf had keeps its id (`scripts/atlas/plans/*-ids.json`); new ones are `<prefix>-k<k>-<digest>`.
+`check_rigid_shelf.py` passes all three. Open: girih k = 5, 6 (3,820, need shards), composable k = 4 never shipped.
+Detail: DEVELOPMENT_NOTES "The three shelves swapped in".

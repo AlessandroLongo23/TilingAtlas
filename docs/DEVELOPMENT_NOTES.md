@@ -22827,3 +22827,118 @@ catalogue's "Open in the Searcher" needs, so AL chose to cut 0.5.0 first.
 - **A swept-in half feature.** c9cc86a4 committed `lib/hooks/useSymmetryData.ts`, which starts
   `lib/services/symmetry.worker.ts`, but not the worker, created three minutes earlier and missed by a stale untracked
   list; committed it before the push so a clean checkout builds.
+
+## One engine: palettes with mirror twins and edge types as boards, and the polyform shelf rebuilt (2026-11-10, CC)
+
+Continues `docs/superpowers/specs/2026-11-08-one-engine-audit.md` (the audit holds the tables). Two things stood
+between the Tiling Searcher and the palettes eu_solver runs, and neither needed a change to the engine.
+
+**Corners with a mirror twin.** eu_solver reflects a vertex by reversing its word and taking each corner's twin
+(`CLASS_SIGMA`); the Searcher reverses the word only. `board_of_tables.py` now gives a corner and its twin one
+symbol, and a tile and its mirror image one face line. With the twins merged, reversing a word is eu_solver's
+reflection, and nothing is lost, because a face is read clockwise and its word still says which twin each corner
+is. Yesterday's reading (dihex 8, 18 in eu_solver against 4, 4, "no mapping reproduces the counts") had the wrong
+reference: on a palette with two-corner vertices eu_solver writes one tiling on several period cells, so its counts
+per k are not counts of tilings.
+
+**Edge types.** A board writes them as the Searcher's own edge boards do: an `edge` symbol in the middle of every
+tile edge and a two-corner vertex line per pair of types that may meet (unlike types under `edgeComplement`). 39 of
+the 59 edge-typed palettes now give the same tilings per k in both engines at k <= 2, the bump-and-bite, tri45,
+Penrose, planigon and half-tile palettes among them. Not converted: a type the search chooses (the four freedraw
+palettes, which have Searcher boards of their own).
+
+**The engines agree on the polyform palettes; the shelf did not agree with either.** Measured three ways that share
+no code: `tiling_key.family_key` on developed cells (Python), a recount of k from the dart map's automorphisms
+(Python, `tools/ctrnact-oracle/check_rigid_shelf.py`), and exact congruence in Z[zeta_24] (TypeScript).
+
+- Every one of eu_solver's 12,217 developed cells on the nine boards is one of the Searcher's 1,181 tilings (up to
+  reflection), with the same least k, and the Searcher has no other.
+- The Searcher's k equals the geometry's k on all 1,181.
+- The shipped shelf (2,047 records) holds 1,482 tilings: 565 records repeat another, 75 chiral tilings lack their
+  mirror image, 96 are filed under k = 2 with one vertex orbit, and 50 tilings (59 with mirror images) eu_solver had
+  found are absent. Tetrominoes are the worst board: 578 records, 261 tilings.
+
+**Cause.** `build-polyform-atlas.ts` told tilings apart by the pattern of tile centroids in a window, under 12
+rotations. Centroids do not say which way a piece lies. Rows of dihexes and their mirror image have the same
+centroid lattice (merged), and the same tiling developed on another cell came out as a third record (kept). The
+"supercell" and "mirror closure" passes then worked on those keys. The fix is the test the composable shelf already
+uses, `exactComposableKeys` (primitive reduction, then one tile carried onto another and every tile checked), with a
+new `reflections = false` so chirality is kept; the centroid key, its self-test and its symmetry tables are deleted.
+
+**The shelf rebuilt from the Searcher.** `scripts/build-polyform-from-searcher.sh <out>`: palette to board, search,
+exact cells (`scripts/tilesearch-polyform-cells.ts`), builder; under three minutes for the nine boards. Result
+1,616 records: every shipped tiling, plus the 134 missing ones, no repeat, every chiral tiling with its mirror
+image, every k the geometry's (`check_rigid_shelf.py` exits 0 on it and 1 on the shipped file). It is in
+`experiments/polyform-searcher/`; `public/` is unchanged.
+
+⚑ **Not swapped in.** Every id changes (they are the engine's file names), 96 tilings move from k = 2 to k = 1 and
+the counts on the Polyforms pages drop from 2,047 to 1,616. AL decides; the canonical ids
+(`2026-11-08-canonical-tiling-ids-design.md`) would settle the first.
+
+⚑ **The plain Delaney-Dress symbol does not identify these tilings** (six shipped dihex records, two symbols); the
+dart map with corner angles does. The id design needs the labelled form from the start.
+
+⚑ **The girih shelf has the same kind of key**: one tiling per (k, tile multiset, cell area), 182 records to k = 4.
+The Searcher finds 585 tilings up to reflection there, all passing the area test, the 182 among them.
+
+⚑ **Tables compiled before `CLASS_SIGMA` carry no twins**, and both engines then count a tiling once per labelling
+and can file it under a k too high. composite-convex at k <= 2: 332 tilings in both engines on the repo's tables,
+233 by geometry; on tables compiled today, 271, all different. Of those 271, eu_solver's developed cells have 2 of
+the k = 1 ones only at k = 2, 28 of the k = 2 ones only at k = 3, and 10 not at all to k = 3. The composable shelf
+recounts k and has no repeat (its 231 records at k <= 2 pass `check_rigid_shelf.py --merged`), but it lacks those
+10 tilings at k = 2. 87 of the 194 table folders predate `CLASS_SIGMA`: compiled again, 67 have no twins, 7 have
+(composite-convex, composite-decomp, girih, e3cv-star4-z24, tetromino-free, tri45noedge, probe-q3), 13 did not
+compile in 150 s.
+
+**The checker on shelves known to be right.** `check_rigid_shelf.py --merged` on `reference-atlas.json.br` to
+k = 6 (Galebach's list and the star families, 2,992 records): no repeat, and its k equals the shelf's on every one.
+Planigon (1,055) and Penrose (116) pass too. It does not apply to tri45: the key holds no length, and that shelf has
+tilings that differ by scale alone (`experiments/results/rigid-shelf-check-2026-11-10.log`).
+
+Failed or set aside: comparing the composable shelf through `scripts/tilesearch-import.py` (on a board of regular
+polygons its candidate set is most of the atlas; it ran 50 minutes and died); my first geometric recount of k
+through `vertex_orbits.orbit_count` (it assumes no flat corners; wrong on 76 of 84 domino tilings, discarded).
+
+⚑ During this work I ran `git stash` by mistake in the main checkout (about 09:58, 12 modified files of several sessions
+out of the tree for about 20 seconds), then `git stash pop`: the tree came back identical, nothing was staged
+before. A build started in that window would have read the committed versions.
+
+Logs: `experiments/results/cross-engine-palettes-2026-11-10.log`, `cross-engine-shelves-2026-11-10.log`,
+`polyform-shelf-census-2026-11-10.log`, `polyform-from-searcher-2026-11-10.log`.
+
+## The three shelves swapped in: Polyforms, girih, composable (2026-11-10, CC)
+
+AL: "Yes to all" (swap the rebuilt Polyforms shelf in, rebuild girih, add the 10 composable tilings, commit).
+All three files are in `public/` and on R2; the shipped ones are kept in `experiments/shelf-backups-2026-11-10/`.
+
+**Ids are kept.** A tiling a shelf already had keeps its id; only a new tiling gets a new one, in the form of the
+id design, `<prefix>-k<k>-<digest>` (16 base32 characters of SHA-256 over the tiling's key).
+`check_rigid_shelf.py --write-plan` wrote the legacy ids once, from the shipped files, into
+`scripts/atlas/plans/{polyform,islamic,composable}-ids.json` (digest to id); `--ids` applies a plan to a new build.
+So the links in the update notes, the theory page and `info-panel-check.mjs` still resolve. Ids that named a
+repeat of another record are gone (565 on Polyforms).
+
+| Shelf | Before | After | By the check |
+|---|---|---|---|
+| Polyforms | 2,047 records, 1,482 tilings | 1,616 (1,482 old ids, 134 new) | no repeat, every mirror image, every k the geometry's |
+| Islamic (girih) | 192 (10 curated, 182 girih) | 592 (10 curated, 582 girih: 168 old ids, 414 new) | no repeat, every k the geometry's |
+| Convex irregular, k <= 2 | 231 | 241 (10 new at k = 2) | no repeat, every k the geometry's |
+
+**Girih.** `build-islamic-atlas.ts` now reads the Searcher's tilings (`scripts/build-girih-from-searcher.sh`); its
+(k, tile multiset, area) dedup, supercell filter and curated fingerprint are deleted, since the engine writes each
+tiling once and the id step knows the curated three. 11 old girih ids named tilings whose k was too high (the
+table defect): those tilings have new ids. The builder also read base-atlas cells without hydrating them, so a
+rebuild would have dropped the four `isl-reg-*` entries; fixed.
+
+**Composable.** `build-composable-atlas.ts --append-searcher` adds the Searcher's tilings a shelf file lacks. The
+full rebuild was not run: it takes ten minutes a pass, and its inputs now include k = 4 cells (10,610 + 8,012 raw
+solutions, developed 2026-08-08) that no shelf file holds.
+
+⚑ **Open, for AL.** (1) Girih k = 5 and 6: 1,087 and 2,733 tilings, found in a second, not shipped; the Islamic
+shelf is one eager file and they need shards by k like the other shelves'. (2) Composable k = 4 was developed and
+never shipped. (3) Composable k = 3 (1,220 records) comes from the same old tables as k <= 2 and has not been
+compared with a Searcher run. (4) The polyform eu_solver run folders (`tools/ctrnact-oracle/run-k*-<board>`) are
+no longer the shelf's source.
+
+Checked in the running app (new and kept ids on all three shelves draw; counts 1,616 / 592 / 1,461), and
+`data.thetilingatlas.com` serves the three files byte for byte.
