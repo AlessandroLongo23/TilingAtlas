@@ -63,6 +63,8 @@ identical 414,349 closed configurations; `experiments/results/searcher-node-gap-
 | solver as shipped (`15063414`) | 171.4e9 |
 | Searcher rc4.2.1 | 90.6e9 |
 | solver with orderly (uncommitted) | 75.5e9 (47.2 search, 28.3 prune) |
+| solver with orderly and direct output (2026-11-10) | 17.4e9 |
+| Searcher after the leaf, trie and replay work (2026-11-10, pinned plan: 90.0e9 before) | 34.4e9 |
 
 The Searcher writes all 200,730 tilings; the solver's run keeps the 103,082 at k = 13 exactly.
 
@@ -76,7 +78,13 @@ The Searcher writes all 200,730 tilings; the solver's run keeps the 103,082 at k
 - **Import path.** The atlas already imports Searcher output (`scripts/tilesearch-exact.ts`, the regular
   shelf above k = 10).
 - **Cost.** Per node the Searcher is about 1.2x behind the solver with orderly. Closing that is the first
-  work on the single baseline.
+  work on the single baseline. (2026-11-10: the solver's own cost fell to 17.4e9 at k <= 13, so the gap is now
+  about 5x. Face records with an undo trail, replays advanced in place, the automorphism shortcut for coverings
+  and direct output are what would port; DEVELOPMENT_NOTES, "The engine on the regular palette".)
+  (Same evening: the automorphism shortcut, the keyless leaf, the copy-free replay and the solver's covering test
+  are in the Searcher, 2.6x less work on regulars with the same bytes; the solver's second round took it to 5.7e9
+  and 20.2e9 at k <= 12 and 14, so the gap is 3.1x to 3.3x. What is left is the face records: DEVELOPMENT_NOTES,
+  "The Searcher 2.6 times faster on regulars".)
 
 ## Unknowns to settle before porting
 

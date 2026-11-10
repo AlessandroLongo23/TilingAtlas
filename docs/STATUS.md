@@ -6,6 +6,26 @@
 > entry of each ledger. **Never write history here.** — last updated 2026-08-23, CC
 > (acting as TA too, AL authorization 2026-07-10). Last touched 2026-09-06.
 
+## Both engines faster, and what an id costs (2026-11-10; c3d24a86, 90c722e1)
+
+**eu_solver.** `EU_ORDERLY=1 EU_PRUNED=1 ./eu_solver` writes the catalogue itself: regular k <= 12 in 5.7e9
+instructions and k <= 14 in 20.2e9, against 45.3e9 and 196.9e9 for the orderly solver plus pruner at HEAD (7.9x,
+9.7x); k <= 16 (1,792,287 tilings) in 73e9. `EU_FORK=10 EU_SPLIT=4` writes the same files. The default search is
+1.46x faster with unchanged output. Gates: `check-regular`, `check-orderly` (new), `check-deltahedra`.
+
+**Searcher.** 2.55x to 2.67x less work on regulars (k <= 14: 180e9 to 67.5e9 instructions), 2x on freedraw and
+bubble boards, 1.1x to 1.2x on star and isotoxal boards; the same certificate bytes on 19 boards. It is 3.1x to
+3.3x behind the solver on regulars. Left: face records in `Extender` (28% of the worker walks faces), the
+certificate text (18%).
+
+**Ids.** The fast path's serials are not the shipped ids (at k <= 14, 54% of tilings would carry another). A
+fingerprint of the dart structure costs +13% to +18% and maps every shipped id one to one (prototype in scratch).
+Decision open: which canonical form is hashed, with which geometric labels.
+
+Open besides: `gate_mt.sh` and `gate_resume.sh` need a reference from engine mark 5; the estimator's leaf model;
+the Windows `tilesearch.exe` is not rebuilt (the Mac app is, and installed). Detail: DEVELOPMENT_NOTES, the three sections of 2026-11-10
+from "The Searcher 2.6 times faster on regulars".
+
 ## Data on R2, experiments local, release 1.49.0 (2026-11-10)
 
 Pushed f38b8bb1 (v1.49.0, "Every k-uniform tiling to k = 16"). Shipped data is brotli `.json.br` mastered on R2

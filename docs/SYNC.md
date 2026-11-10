@@ -3458,7 +3458,20 @@ the wrong k. Builder fixed (exact congruence, no reflections); shelf rebuilt fro
 Every tiling a shelf had keeps its id (`scripts/atlas/plans/*-ids.json`); new ones are `<prefix>-k<k>-<digest>`.
 `check_rigid_shelf.py` passes all three. Open: girih k = 5, 6 (3,820, need shards), composable k = 4 never shipped.
 Detail: DEVELOPMENT_NOTES "The three shelves swapped in".
+
+2026-11-10 · CC · eu_solver on the regular palette: solve + prune 4.9x to 6.1x less work on one core (k <= 16:
+897e9 → 147e9 instructions, 88.8 s → 14.3 s), same catalogue bytes; 10 workers write one process's files (k <= 16
+in 5 to 7 s). Face records with an undo trail, replays in place, automorphism shortcut, `EU_PRUNED`, `merge_split`.
+Default search output unchanged (120 regression runs, traces, gates); new `make check-orderly`. c3d24a86.
+Detail: DEVELOPMENT_NOTES "The engine on the regular palette".
 2026-11-10 · CC · Fifth classification: simple-face-homogeneous (tile and edge neighbours), 346 tilings to k = 14,
 complete for every k. `homogeneous.py face-simple` (face-stars with simple figures claimed, 1 s) and the 13,144
 face-homogeneous filtered agree symbol by symbol; so does a shelf scan to k = 12. List on R2 (`data:sync` now takes
 paths). Detail: DEVELOPMENT_NOTES "Simple-face-homogeneous tilings".
+
+2026-11-10 · CC · Three fronts, same day. eu_solver's fast path 1.6x less again (k <= 12 5.73e9, k <= 14 20.2e9;
+7.9x and 9.7x under the old pipeline), same bytes. The Searcher 2.55x to 2.67x less on regulars (k <= 14 180e9 →
+67.5e9), 1.1x to 2.1x elsewhere, same certificate bytes on 19 boards: no key under coupled orderly, copy-free
+replays, face tests by the trie, one covering test shared with the solver (congruence.hpp). A fingerprint id costs
+the fast path +13% to +18% and maps every shipped id one to one (prototype, scratch). App reinstalled. c3d24a86,
+90c722e1. Detail: DEVELOPMENT_NOTES "The Searcher 2.6 times faster on regulars" and the two sections after it.

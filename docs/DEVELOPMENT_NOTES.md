@@ -22943,6 +22943,282 @@ no longer the shelf's source.
 Checked in the running app (new and kept ids on all three shelves draw; counts 1,616 / 592 / 1,461), and
 `data.thetilingatlas.com` serves the three files byte for byte.
 
+
+## The engine on the regular palette: 5 to 6 times less work per catalogue (2026-11-10, CC)
+
+AL: "focus on making the algorithm as fast as possible on the regular palette ... take a real shot at this".
+Solve and prune together, one core, instructions retired. Old is HEAD's solver under `EU_ORDERLY=1` followed by
+`eu_pruner`; new is `EU_ORDERLY=1 EU_PRUNED=1`, which writes the catalogue itself:
+
+| k <= | tilings | old solve + prune | new | gain | CPU old, new | 10 workers, wall |
+|---|---|---|---|---|---|---|
+| 12 | 97,648 | 31.1e9 + 14.1e9 | 9.3e9 | 4.9x | 4.6 s, 0.96 s | 0.8 s |
+| 14 | 413,361 | 127.3e9 + 69.6e9 | 33.1e9 | 5.9x | 19.8 s, 3.4 s | 0.8 s |
+| 16 | 1,792,287 | 551.9e9 + 345.2e9 | 147.2e9 | 6.1x | 88.8 s, 14.3 s | 5 to 7 s |
+
+At each k the old pipeline's catalogue, the new one and the forked one are the same files byte for byte. The
+default search (the one whose serials the shipped ctrnact ids carry) went from 74.6e9 to 51.2e9 at k <= 12 with
+its raw output unchanged (88.7e9 to 64.2e9 with its pruner). Log, step by step: `experiments/results/solver-speed-2026-11-10.log`.
+
+**Where the time was.** The old orderly solver at k <= 14: writing blocks 42% (26% of it the cycle text nothing
+reads), the covering test and its canonical hash 28%, the search 29%. Then the pruner, half the solver's cost
+again, to keep every block: orderly output has nothing to prune.
+
+**What changed** (`eu_solver.cpp` +745/−824, `congruence.hpp` +23/−14, one call in `eu_pruner.cpp`, a gate in the
+Makefile: +791/−841 in all):
+- **Open faces are records on the free darts.** Every free dart is the left end of one open face and the right end
+  of one, so a face is (right end, corners, lowest dart, class direction) on its left end, and a glue joins two
+  faces in O(1) with an undo trail (`face_join`, `cglue`, `undo_to`). The class sequence, the length against L,
+  the least-slack face and the zero-slack faces are read off the records. `checkface`, `checkpart_inc`,
+  `zero_slack` and `writecycle`, which walked every face of the configuration several times per node, are gone.
+  Free darts are a bitset.
+- **Replays advance in place.** An orderly replay was copied at every node; now there is one per undecided root,
+  advanced and taken back along the DFS (`rs_undo`). Its first move is read without building anything
+  (`first_move`: every frame of a type branches on the same dart first).
+- **The covering test.** (a) A replay that reads a closed configuration's whole code is an automorphism, its
+  orbits are a congruence, so the configuration is a covering and no test runs: 116,022 of the 117,503 coverings
+  at k <= 12. (b) A block size divides every seed class, so classes with no common factor mean no congruence
+  (`has_congruence`, shared with the pruner). (c) The canonical hash was only for the leaf set, which never hit
+  under orderly (0 on 58 palettes and modes), so orderly runs without it unless `EU_LEAF_MB` is given.
+- **The dynamic face test before the vertex exists.** The two faces a new vertex extends are known from the
+  candidate's stored keys; four vertices of five were built to fail that test.
+- **Blocks are built in one buffer and written once**, labels from a base and a vertex suffix copied as 8-byte
+  words; arrays that do not zero what they grow (`Arr`); 64 KB file buffers.
+- **`EU_PRUNED`** (needs `EU_ORDERLY`) writes `out/pruned/eupruned_<k>_<family>.txt` directly, the files the
+  pruner makes from the same run's raw output.
+- **`EU_FORK` with `EU_SPLIT` under orderly writes one process's files.** A single process emits blocks in branch
+  order and orderly emits each tiling from one branch, so workers head each block with its branch and
+  `merge_split` merges by it and recounts the serials. No ids collide and no worker folders are left.
+
+**Evidence.**
+- Regression after every step: 60 cases in both modes over 45 palettes (polyforms, stars, isotoxal, edge types,
+  complementary edges, spherical, hyperbolic, hollow, freedraw, girih, shards, forks, the diagnostic switches),
+  HEAD's solver against the new one: raw output md5 and node counts equal on all 120 runs.
+- The per-node debug trace (`-DEU_TRACE=1`) is byte-identical at k <= 5 in both modes (10.3 MB and 4.9 MB), and
+  a trace build now checks the least-slack face against a walk of every face at every node.
+- `check-regular` byte-identical, `check-deltahedra`, the three engine steps of `check-star`.
+- New `make check-orderly`: direct catalogue = pruned raw output = forked run = `golden/regular-orderly-k6.sha256`,
+  whose 33 files are the ones HEAD's solver and pruner wrote this morning.
+- The direct catalogue equals the pruner's output on 19 palettes of every kind, where the pruner also keeps every
+  raw block.
+- The new k <= 16 catalogue and the shipped `work/k16-run` pruned together keep the count of each at every k
+  (10, 20, 61, 151, 332, 673, 1472, 2850, 5960, 11866, 24459, 49794, 103082, 212631, 445289, 933637): the same
+  set of tilings. `experiments/results/solver-speed-union-2026-11-10.log`.
+
+**Measured and dropped.** `-O3 -mcpu=native`: nothing. A merge in which every process writes an equal share of
+blocks into the shared files: same output, three times slower (system time).
+
+⚑ **The fast path rides on orderly's serials**, a different labelled copy of each tiling than the shipped ids
+name. The golden now pins them; whether they ship is still the ids decision (canonical-ids design).
+⚑ **The parallel run is bound by its merge**: at k <= 16 the search takes 2.9 s on 10 workers and the merge 2.4 s,
+because one family (`16_346`, 515 MB of 1.1 GB) is merged by one process.
+⚑ **What is left per core** is flat: text 30 to 40% where tilings are dense, the covering test on the minimal
+closures, replays, glues. About 8 microseconds a tiling at k <= 16, catalogue written.
+⚑ **The Searcher is now behind on this board**: 90.6e9 instructions at k <= 13 (rc4.2.1, the audit's table)
+against 17.4e9. Face records, in-place replays, the automorphism shortcut and direct output are not tied to
+palettes and would port to its kernel.
+⚑ Found on the way: a branch `EU_HYPFEAS` rejected after taking an `EU_SPLIT` ticket never gave it back (the
+test now comes first). Orderly aborts on `probe-q3` ("has no rep in its orbit"), before and after. Under
+`EU_NOFILTER` on a palette whose filter would remove types, the early dynamic test can reject a dead branch one
+step sooner than before, so node counts may differ there; the output cannot. `check-star`'s fourth step still
+fails on the renamed shelf files, as before.
+
+## The Searcher 2.6 times faster on regulars, by what made the solver fast (2026-11-10, CC)
+
+AL: make the Searcher use the solver's fast path, or be as fast. A sample came first: on regulars k <= 13 the worker
+spent 61% of its time at the leaves (canonical form and fingerprint 25%, file appends 14%, certificate text 10%)
+and 38% searching. So most of the 5x was not in the search, and it came out without touching the search tree.
+
+Regulars, one thread, instructions; every run resumed from one recorded plan, because the planner's probes are
+timed and a fresh run moves by 3e9 (`experiments/results/searcher-speed-2026-11-10.log`):
+
+| | Before | After | |
+|---|---|---|---|
+| k <= 12 (97,648 tilings) | 45.8e9 | 18.0e9 | 2.55x |
+| k <= 13 (200,730) | 90.0e9 | 34.4e9 | 2.61x |
+| k <= 14 (413,361) | 180.4e9 | 67.5e9 | 2.67x |
+
+The certificate files are the same bytes, and nodes, complete and unique counts are the same numbers. Against the
+solver's fast path as it stood that morning (9.3e9 and 33.1e9 at k <= 12 and 14) the Searcher went from 5 times
+behind to 2. The solver moved the same day (next section: 5.7e9 and 20.2e9), so the gap that stands is 3.1x to 3.3x.
+In CPU seconds, back to back on the same machine state: k <= 14 took 10.6 s before and 3.7 s after (user plus
+system), the solver 1.2 s.
+
+**The gain follows how dense the output is.** Same plan and same bytes on every board:
+
+| Board | Tilings | Before | After | |
+|---|---|---|---|---|
+| stars45, k <= 20 | 6 | 6.45e9 | 1.40e9 | 4.61x |
+| bubble36, k <= 5 | 105,259 | 55.4e9 | 26.1e9 | 2.13x |
+| freedraw4, k <= 5 | 53,060 | 22.5e9 | 11.3e9 | 1.99x |
+| lavesF3, k <= 7 | 12,624 | 20.7e9 | 14.5e9 | 1.43x |
+| colors3_4, k <= 5 | 63,170 | 15.6e9 | 11.4e9 | 1.38x |
+| spear, k <= 8 | 12,975 | 35.6e9 | 27.4e9 | 1.30x |
+| girih, k <= 10 (fail first) | 176 | 15.1e9 | 12.4e9 | 1.22x |
+| hypbubble37, scaledB4C6, mixedA6, isotoxB6 | 72 to 442 | | | 1.12x to 1.20x |
+| star24full, k <= 4 (fail first) | 435 | 42.2e9 | 39.0e9 | 1.08x |
+
+A board that writes a few hundred tilings spends its time in the search, and the search still walks faces; what
+those boards gained is the trie (stars45, whose face words are long, most of all).
+
+What changed, in order:
+
+- **No key where orderly generation is exact.** Coupled orderly generation builds every closed configuration once,
+  so the canonical form and its fingerprint only fed a `seen` set that never said no. The argument is in the source
+  above `keyless`: at a closed node every other root is smaller, larger or an automorphism, because the one "decide
+  nothing" exit of the replay needs a full open face that a closed node cannot have. Off on a board with
+  recolourings, in decoupled runs and with `TILESEARCH_KEYS`. It also frees the fingerprint table (16 bytes a
+  tiling at most 70% full), and a unit writes no `keys` file.
+- **Automorphism ties.** A root whose whole code equals ours on a closed node is an automorphism, so the
+  configuration is a covering and needs no test (eu_solver's `ORD_AUTO`).
+- **File appends.** A megabyte of certificates was an open and a close per file (1.2 s of system time in 5 at
+  k <= 12) and 256 `write` calls of 4 KB. Now a unit holds up to 32 MB and spills its largest files only; the merge
+  opens each real file once and takes what the unit still holds from memory; every write goes through 1 MB.
+- **Certificate text.** Edges and faces through a cursor into the string. Each face is walked once: `faces_of`
+  copied its marks per face and walked every face twice.
+- **File names.** The stem is kept per (k, set of vertex types).
+- **One covering test.** `covers_quotient` calls eu_solver's `has_congruence` (`tools/ctrnact-oracle/congruence.hpp`,
+  its buffers per thread now). The Searcher's own union-find is deleted.
+- **Face tests by the trie.** With every word finite, a stretch is some word's exactly when the trie reads it. The
+  glue test, the forced-closure test and the ring check step it along their walk (`by_trie`, `full_open_face`,
+  `trie_rems`), where they matched the stretch against every word carrying its first letter.
+- **A coupled replay keeps no copy.** While another root's code equals ours for s moves, the copy its replay built
+  is our own ancestor after s moves, half-edge for half-edge. So the replay holds only a vertex map and reads the
+  face rule's choice and the forced closures off the path (`branch`, `fmark`); a root that its first move decides
+  gets no state at all (`first_move`). This one came from the solver's second round the same day, where it was
+  19% of the fast path; here it was 15%.
+
+`TILESEARCH_CHECK_ORDERLY=1` computes every key beside the keyless path and aborts on a repeat, on a verdict the
+canonical form does not share, or on an automorphism tie that is minimal.
+
+**Checked.** Against the source as it stood before (`ts_base1110`), one plan per board:
+- bytes of every file on 19 boards, plain;
+- the same with `TILESEARCH_CHECK_ORDERLY=1 TILESEARCH_CHECK_WRITER=1` and with `TILESEARCH_CROSSCHECK=1
+  TILESEARCH_CHECK_FORCE=1` (Marek's face checker beside every glue test);
+- `--gzip` by decompressed content on 9 boards;
+- 8 threads, 8 threads with forced units and 8 threads under fail first, by sorted certificates, on 19 boards;
+- stop and resume, each build resuming the other's run;
+- the disk-full gate;
+- the Windows engine compiles (mingw, to a scratch path; the shipped `tilesearch.exe` is not rebuilt).
+
+Results: `experiments/results/searcher-speed-2026-11-10.log`. The Mac app was rebuilt and reinstalled (0.5.1 with
+this engine; its bundled `tilesearch` gives the same bytes at k <= 12 in 18.0e9 instructions).
+
+**What is left.** At k <= 13 the worker now spends 36% at the leaves (certificate text 18%), 28% walking faces
+(glue test 8.5%, ring check 8.4%, face rule 7.5%, forced closure 3.6%), 6% in the orderly test and 5% on candidate
+lists. The solver does not walk: it keeps a record per open face and joins two in O(1) with an undo trail. Porting
+that into `Extender` keeps the search tree, so it keeps the order of the output; it is most of what the star and
+isotoxal boards would still gain.
+
+`tools/searcher/tilesearch.cpp` +339/-232 against the morning's source (4,363 lines to 4,470). The count rose: the
+comments stating why each shortcut is exact, the first-move test, the trie's flags and the piecewise merge outweigh
+the deleted union-find, replay copy and face walks.
+
+⚑ `gate_mt.sh` and `gate_resume.sh` compare against `ts_old`'s keys, which predate the vertex figure in the
+canonical form (engine mark 5): they report DIFFER on the unmodified build too. The checks above compare sorted
+certificates against the current build (scratch `srch/mt.sh`, `srch/resume.sh`); the two gates need a mark-5
+reference.
+⚑ `--gzip` files hold fewer, larger members, so their compressed bytes changed; decompressed they are the same.
+⚑ The estimator still fingerprints every leaf (`est::leaf_cost`), so its time for a coupled, output-dense run is
+now too high. It needs the keyless leaf and a new calibration.
+⚑ Decoupled runs (fail first) keep the key: a replay that broke at an open node stays broken, so two copies can
+both reach the leaf. Restarting a broken replay at a closed node would make them exact too, but changes which copy
+is written.
+⚑ Read on the way, not seen to bite: the old index for boards with many face words kept one word per stretch
+content, so the ring check there tested one word's missing length where two words of different length read the
+same stretch. The trie tests every reading. bubblestarA4p60 (290 words) gives the same nodes and tilings both ways.
+
+## eu_solver's fast path, second round: 1.6 times less again (2026-11-10, CC)
+
+AL asked for further low-level work on the fast path (`EU_ORDERLY=1 EU_PRUNED=1`, regular palette). One process,
+instructions, start of the round against its end, measured back to back
+(`experiments/results/solver-speed-2026-11-10.log`, "Second round"):
+
+| | Morning | Now | | Old pipeline (HEAD orderly solve + prune) | |
+|---|---|---|---|---|---|
+| k <= 12 | 9.30e9 | 5.73e9 | 1.62x | 45.3e9 | 7.9x |
+| k <= 14 | 33.1e9 | 20.2e9 | 1.64x | 196.9e9 | 9.7x |
+| k <= 16 | 124.5e9 | 73.3e9 | 1.70x | | |
+
+The k <= 16 figure of the morning (147.2e9) does not reproduce: the same source measured 124.5e9 in the evening.
+Instructions include the kernel's, and that run writes 1.1 GB. 10 workers at k <= 16: 4.3 s to 2.15 s of wall
+under a load average of 17, so neither is a quiet-machine time.
+
+Where k <= 14 stood before the round: block writer 7.4e9 (18,000 instructions a block), covering test 2.7e9, search
+and replays 23.0e9 (10,100 a node). The steps, with k <= 14 after each:
+
+- **Block text through a raw cursor** into one buffer, the glue line without dart stamps, family files as buffers
+  written with `write(2)`: 29.0e9.
+- **Counts before the glue.** A face longer than L, or closed at a length L is no multiple of, fails a join; a dart
+  or a vertex type that would make one is passed over before anything is glued or built (`doomed`, 5.1M of 8.5M
+  glues to placed darts at k <= 14): 26.4e9. Each test is a join's own, or holds because L is one number along a
+  face (`UNIFORM_L`, else those are off). A checking build that makes every passed-over glue and aborts if one
+  succeeds found none in 11.3M over the 64 regression cases in both modes (`fast/mkverify.py`).
+- **A replay keeps no copy.** The copy it built by making P's first s moves from another root was P's own ancestor
+  after s moves, dart for dart. The replay reads the dart the search branched on there and holds only a vertex map:
+  22.6e9. The Searcher took this the same day (section above).
+- **Covering test.** A pair of two seeds fails a candidate when it is met, and the solver counts its seed classes in
+  place (`congruence_from` in congruence.hpp, for a caller with its own classes): 21.6e9.
+- **Signature, count type and TES lines** kept per multiset of vertex types in a 4,096-slot table (77% of blocks
+  hit at k <= 14): 20.6e9.
+- **The merge reads worker files with `read(2)`.** Mapped, freshly written pages made it 2.4 s against 0.6 s.
+- Two smaller ones in the candidate loop and the glue line: 20.3e9. Stopped there: the last two gave 1.5%.
+
+Tried and dropped: looking two steps round the anchor and a candidate before closing anything in the covering test
+(1.84e9 to 2.00e9: wrong candidates part later than that).
+
+**Checked.** The 128 regression runs identical after every step; the direct catalogue equal to the pruner's on 19
+palettes; old pipeline, one process and forked run byte-identical at k <= 12, 14 and 16; `EU_TRACE` identical to
+HEAD at k <= 5; `make check-regular`, `check-orderly`, `check-deltahedra` pass. I reran the two `make` gates and the
+k <= 12 and 14 comparison on the final source (5.73e9 and 20.24e9, same bytes; 0.32 s and 1.11 s of CPU), and
+`check-star`: its three engine steps pass, its fourth fails on the renamed shelf files as before.
+
+`eu_solver.cpp` +371/-275 in the round (2,496 to 2,592 lines; +932/-915 against HEAD, where it had 2,575): the
+count rules, the signature table and the buffered merge reader are new code.
+
+## What a fingerprint id costs the fast path (2026-11-10, CC)
+
+AL asked what the ID problem is and how to fix it without losing the speed. A prototype measured it (scratch only,
+nothing in the repo; `experiments/results/canonical-key-cost-2026-11-10.log`).
+
+**The problem in one number.** An id today is a place: the family file and the tiling's serial in the order the
+search wrote it. The fast path writes the same tilings in another order. Regular palette, k <= 14: 409,837 of the
+413,361 tilings sit at another place in their file, and 223,292 (54%) would carry another `ctrnact-*` id. So the
+fast path cannot be dropped in under the shipped ids, and numbering k >= 17 by its serials would tie those ids to
+today's search order as well.
+
+**The fix measured.** A key computed from the closed dart structure alone: for each start dart of the rarest seed
+class, number the darts breadth-first along R, L, M, G, serialize, keep the least, hash to 128 bits (`key.hpp`, 72
+lines, in the scratch folder).
+
+| | k <= 12 | k <= 14 |
+|---|---|---|
+| tilings / distinct keys | 97,648 / 97,648 | 413,361 / 413,361 |
+| family files whose key sets differ, old order against fast path | 0 of 63 | 0 of 73 |
+| old id → key → place in the fast path is one to one | yes | yes |
+| fast path without keys, instructions | 9.29e9 | 33.09e9 |
+| with keys | 10.47e9, +12.7% | 38.96e9, +17.7% |
+| per tiling | 12,125 | 14,196 |
+| against the old pipeline, with keys | 4.3x less | 5.1x less |
+
+The key is computed once per written tiling, not per node, and each tiling's on its own, so the workers share it:
+on 10 workers k <= 14 took 0.92 s without keys and 0.93 s with. The forked run with keys is byte-identical to one
+process.
+
+**So the shipped ids stay.** A table from key to old id, built once from the old order (the prototype built it to
+k <= 14), lets the fast path write every shipped tiling under the id it has. A tiling with no entry is new and
+takes `<tag>-k<k>-<digest>`, as in `docs/superpowers/specs/2026-11-08-canonical-tiling-ids-design.md`.
+
+**What the prototype does not settle.**
+- Its seed is the palette's own numbers (corner class, edge type, figure id), so a key holds for one set of tables.
+  A shipped id needs the geometric labels of the design (tile shape, corner angle, edge mark, colour), and the same
+  serialization in the solver, the Searcher and the build's checker.
+- The design names the labelled Delaney-Dress symbol as the invariant. The dart form is the same idea and cheaper
+  to compute in the engines; which of the two is hashed is a decision, and three shelves already use a third key
+  (`tiling_key.family_key`, 558 ids).
+- Uniqueness was counted on the regular palette, not proved; gate G4 of the design catches a collision at build.
+- A start rule one refinement step sharper should bring the cost near its floor of +8% to +11% (one start a key).
+
 ## Simple-face-homogeneous tilings: 346, inside the 13,144 (2026-11-10, CC)
 
 AL: the same question for the simple face figure, the tile and the tiles that share a whole side with it (the full
