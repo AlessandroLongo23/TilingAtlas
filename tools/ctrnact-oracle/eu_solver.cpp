@@ -13,11 +13,15 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <charconv>
 #include <deque>
 #include <iterator>
 #include <ctime>
 #include <cerrno>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <filesystem>
+#include <functional>
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -43,7 +47,7 @@ constexpr int seen = 0;  // emit every k in [1, maxnum] (original used seen=13 t
 // that keeps that visible instead of enforcing a guess.
 static long max_nc = 0;   // most dent-fill vertices seen in any configuration
 static std::vector<int> NC_IDX;
-// FIX B — candidate index.  checkpart walks a face across a glue (x,y) and demands
+// FIX B: candidate index.  A face that crosses a glue (x,y) must have (face_join)
 //   lvert[rneig[y]] in {CLASS_NEXT, CLASS_PREV}[lvert[x]]
 // in BOTH directions.  For a glue of firstfree to a dart of a candidate type that is two O(1) class
 // equalities, knowable before the vertex is materialised.  Bucket every (type, rep) by the pair
@@ -52,8 +56,8 @@ static std::vector<int> NC_IDX;
 //
 // 4-BUCKET UNION (2026-08-08). That lookup is a SINGLE bucket only when CLASS_PREV == CLASS_NEXT and
 // NEXT is an involution — the BUCKET_OK property. Derive it without that assumption. Gluing free dart
-// e to candidate dart f makes the face walk cross the new glue in both directions, and checkface's
-// first step accepts either CLASS_NEXT or CLASS_PREV:
+// e to candidate dart f makes a face cross the new glue in each direction, and a face's first step
+// may be either CLASS_NEXT or CLASS_PREV:
 //     crossing e -> f :  lvert[rneig[f]] in {NEXT, PREV}[a]        , a = lvert[e]
 //     crossing f -> e :  lvert[rneig[e]] in {NEXT, PREV}[lvert[f]] , b = lvert[rneig[e]]
 // PREV is NEXT's inverse permutation, so the second reads lvert[f] in {PREV, NEXT}[b]. Two choices on
@@ -62,9 +66,9 @@ static std::vector<int> NC_IDX;
 // single bucket the fast path always used — which is why check-regular stays byte-identical.
 //
 // Soundness is one-directional and worth stating: the four conditions are NECESSARY (they come from
-// steps checkface performs), so the union never drops an admissible candidate. It is not sufficient —
-// checkface also LOCKS the direction after its first step, which the union deliberately forgets — so
-// the union admits some candidates that checkpart_inc then rejects. Costs work, cannot lose a tiling.
+// steps face_join checks), so the union never drops an admissible candidate. It is not sufficient:
+// a face also LOCKS its direction after its first step, which the union deliberately forgets, so
+// the union admits some candidates that face_join then rejects. Costs work, cannot lose a tiling.
 static bool BUCKET_OK = false;
 static int NCLS = 0;
 static inline int cand_key(int A, int B, bool mir) { return (A * NCLS + B) * 2 + (mir ? 1 : 0); }
@@ -102,10 +106,12 @@ static inline bool pair_ok_any(int tk, const int* qf, int n) {
     return false;
 }
 // FIX 3 — the key constrains a REP, not a type. Admitting a whole type because one of its ~12
-// reps matches meant the inner loop glued and checkpart-ed the other 11 for nothing: measured
+// reps matches meant the inner loop glued and checked the other 11 for nothing: measured
 // 6,691,818 reps iterated against 724,811 that can match, 89.2% waste. Entries are (type, rep),
 // built in ascending (type, rep-order) so the visit order is exactly what the full scan gave.
 // qf = the query keys of rneig(f), 1 under BUCKET_OK and up to 4 without it; tkrev = tkey(lneig(f)).
+// nqf holds their count in its low three bits and, above them, what extend's count rules ask of the dart:
+// 8 lneig(f) is f's mirror image, 16 rneig(f) is, 32 rneig(f) is f itself, 64 f is its own mirror image.
 // `ord` is the position this entry would occupy in a full ascending scan, so merging several buckets
 // by `ord` reproduces the single-bucket visit order exactly and emission order never depends on how
 // many buckets the union happened to touch.
@@ -152,12 +158,12 @@ static int shard_w = std::getenv("EU_SHARD_W") ? atoi(std::getenv("EU_SHARD_W"))
 // is therefore exact, the same argument as the depth-1 split one level down.
 //
 // The counter is safe to share across roots because the branch sequence does not depend on shard
-// state: a skipped branch sets and clears the same glue as a taken one, and checkpart_inc reads only
+// state: a skipped branch makes and undoes the same glue as a taken one, and the face rules read only
 // the configuration. Every shard with the same w1 walks the same roots in the same order and so
 // assigns the same numbers.
 //
 // TWO LEVELS, not one, because pure depth-2 would make every shard redo every root's level-1 work
-// (writecycle + the candidate scan + checkpart_inc per branch) — duplicated N times. Instead
+// (min_slack + the candidate scan + a glue per branch), duplicated N times. Instead
 // EU_SHARD_N is still the TOTAL shard count and EU_SHARD_D2 says how many ways each root is split:
 //   N1 = N / D2 roots slices, w1 = W / D2      (which roots this shard walks)
 //   D2      branch slices,    w2 = W % D2      (which of that root's branches it descends)
@@ -185,20 +191,29 @@ static long long branch_ctr = 0;   // root-level branch number; see shard_take_b
 // the next one (Martin Olivier's solver gets this balance from work donation between threads). Nothing a
 // worker finds below depth D may change its walk above it: orderly pruning (EU_ORDERLY) reads only the
 // node itself, and closures met above D are written by worker 0 alone.
+//
+// Under EU_ORDERLY the run then writes what one process writes, byte for byte (2026-11-10). A single
+// process emits its blocks in branch order, and orderly emits each tiling from one branch only, so every
+// worker heads each block with the branch it came from and merge_split puts them back in that order and
+// numbers the serials as it goes. (Without orderly which copy of a tiling is written first depends on
+// timing, and the serials still collide across workers.)
 static int split_depth = 0;            // D; 0 = off
 static long long* TICKET = nullptr;    // MAP_SHARED counter
 static long long my_ticket = -1;
+static long long in_branch = -1;       // the branch this worker is exploring, -1 above depth D
 static int fork_index = 0;
 
 // True iff this shard owns the next root-level branch (or, under EU_SPLIT, holds its ticket). Called
-// only after checkpart_inc has accepted the branch, so the numbering counts real work and skips nothing
+// only after the glue has passed the face rules, so the numbering counts real work and skips nothing
 // that another shard would also skip.
 static inline bool shard_take_branch() {
-    if (split_depth > 0) return branch_ctr++ == my_ticket;
-    return (branch_ctr++ % shard_d2) == shard_w2;
+    if (split_depth == 0) return (branch_ctr++ % shard_d2) == shard_w2;
+    if (branch_ctr++ != my_ticket) return false;
+    in_branch = my_ticket;
+    return true;
 }
 static inline void shard_done_branch() {
-    if (split_depth > 0) my_ticket = __atomic_fetch_add(TICKET, 1, __ATOMIC_RELAXED);
+    if (split_depth > 0) { in_branch = -1; my_ticket = __atomic_fetch_add(TICKET, 1, __ATOMIC_RELAXED); }
 }
 
 // EU_PROGRESS=<seconds>: throttled progress heartbeat to STDERR from initex() — the current first
@@ -211,15 +226,15 @@ static const int progress_sec = std::getenv("EU_PROGRESS") ? atoi(std::getenv("E
 
 // Per-node debug trace (euoutput1.txt: a line for every configuration the DFS touches). It is pure
 // hot-path overhead — string-building + I/O done once per search node — and never feeds the search
-// or the emitted solutions (those go to `globe` in writesolution). Default OFF; -DEU_TRACE=1 restores
-// Marek's original tracing. The mincycle computation inside writecycle() runs regardless of this flag.
+// or the emitted solutions. Default OFF; -DEU_TRACE=1 restores Marek's original tracing, and with it
+// trace_faces() checks min_slack against a walk of every face at every node.
 #ifndef EU_TRACE
 #define EU_TRACE 0
 #endif
 constexpr bool eu_trace = EU_TRACE;
 
 // EU_STREAM (runtime toggle, no rebuild needed): when set, writesolution() emits each solution
-// block to std::cout instead of to a per-family file under `globe`, so the solver can be piped
+// block to std::cout instead of to a per-family file, so the solver can be piped
 // straight into the pruner (eu_solver | eu_pruner) with raw blocks never landing on disk. The
 // block format itself is unchanged; only the sink changes.
 static const bool eu_stream = std::getenv("EU_STREAM") != nullptr;
@@ -238,6 +253,13 @@ static const bool eu_stream = std::getenv("EU_STREAM") != nullptr;
 //
 // The separator still goes out, because that is what the pruner's skip loop stops on.
 static const bool eu_nocycles = std::getenv("EU_NOCYCLES") != nullptr;
+
+// EU_PRUNED (with EU_ORDERLY): write the catalogue itself. Orderly emits every tiling once and nothing
+// else, so eu_pruner would keep every block and only reformat it, at about the cost of the search (regular
+// k<=12: 13.0e9 instructions against 11.7e9). With this each block goes out as the pruner writes it (no
+// "Number of vertex types" line, no cycles, a "Count type" line) into out/pruned/eupruned_<k>_<family>.txt,
+// the files the pruner would have made from this run's raw output, byte for byte.
+static const bool eu_pruned = std::getenv("EU_PRUNED") != nullptr;
 
 struct vertexdef {
     std::string symbol;
@@ -261,18 +283,57 @@ struct vertexdef {
     std::vector<int> reps;
 };
 
+// OPEN FACES, KEPT AS THE GLUES ARE MADE (2026-11-10). A face is a chain of corners (d, rneig[d]) linked by
+// glue[rneig[d]]. An open one runs from a free dart, its left end, to a free dart, its right end, and every
+// free dart is the left end of exactly one open face and the right end of exactly one. So the open faces are
+// records on the free darts: gluing x to y joins the face that ended at x to the face that started at y, in
+// O(1), and every rule the search reads off a face (the class sequence, the length against L, the least
+// slack, a face with no slack left) is read off its record. Before this each node walked every face of
+// the configuration several times over.
+// A growable array that does not initialise what it grows. add_vertex fills every entry it adds, and
+// std::vector::resize zeroed each one first: eight arrays for every vertex tried.
+template <class T> struct Arr {
+    T* p = nullptr;
+    int n = 0, cap = 0;
+    Arr() {}
+    Arr(const Arr&) = delete;
+    Arr& operator=(const Arr&) = delete;
+    ~Arr() { std::free(p); }
+    void resize(int m) {
+        if (m > cap) { cap = std::max(2 * cap, m + 64); p = (T*)std::realloc(p, sizeof(T) * (size_t)cap); }
+        n = m;
+    }
+    T& operator[](size_t i) { return p[i]; }
+    const T& operator[](size_t i) const { return p[i]; }
+    T* data() { return p; }
+    const T* data() const { return p; }
+    size_t size() const { return (size_t)n; }
+    const T* begin() const { return p; }
+    const T* end() const { return p + n; }
+};
+struct Face {
+    int rend, cnt, lo, dir;   // of the face this dart is the left end of: right end, corners, lowest dart, class direction (0 = one corner)
+    int lend;                 // of the face this dart is the right end of: left end
+};
+struct FaceUndo { int s, r; Face was; int lend; };   // a join: the left end's record and the right end's lend, as they were
 struct configuration {
-    std::vector<int> label;   // FIX 7: packed (base-string id, tile), rendered only for output
-    std::vector<int> lneig;
-    std::vector<int> rneig;
-    std::vector<int> mirro;
-    std::vector<int> lvert;   // corner-class ids (see vertexdef)
-    std::vector<int> etype;   // per-dart edge type, parallel to lvert (empty unless EDGE_TYPED)
-    std::vector<int> glue;
+    Arr<int> lneig;
+    Arr<int> rneig;
+    Arr<int> mirro;
+    Arr<int> lvert;           // corner-class ids (see vertexdef)
+    Arr<int> etype;           // per-dart edge type, parallel to lvert (empty unless EDGE_TYPED)
+    Arr<int> glue;
+    Arr<int> vof;             // dart -> vertex, and voff: vertex -> its first dart
+    std::vector<int> voff;
     std::vector<int> vertype;
-    int num;                  // total vertex types incl. noncounting (drives labels/framing)
-    int kcnt;                 // counting vertex types only (drives k, maxnum, file naming)
-    int dfs_depth;
+    int num = 0;              // total vertex types incl. noncounting (drives labels/framing)
+    int kcnt = 0;             // counting vertex types only (drives k, maxnum, file naming)
+    int dfs_depth = 0;
+    Arr<Face> face;
+    std::vector<unsigned long long> freeb;   // a bit per free dart
+    int nfree = 0;
+    std::vector<FaceUndo> ftrail;            // joins and glued darts, undone last first (undo_to)
+    std::vector<int> gtrail;
 };
 
 // EDGE TYPES. False for every palette that declares none (and for the whole compiled-table
@@ -402,89 +463,63 @@ int symbolcount;
 // the palette tables and a tile index, so intern the bases once and carry a packed int. Only the
 // output paths ever need the text, and the one hot read (does the label start with '*') becomes a
 // lookup on the interned base.
-std::string edgelabel(const std::string& edge, int tile);   // defined below
 static std::vector<std::string> LBASE;        // interned base strings
 static std::vector<char> LBASE_STAR;          // does base i start with '*'
 static std::map<std::string, int> LBASE_IDX;
 
+// A label piece of at most 8 bytes, written as one word: a base without its star, or a vertex's suffix.
+struct Tok { char c[8]; int n; };
+static Tok make_tok(const std::string& s) {
+    if (s.size() > 8) { std::cerr << "label piece longer than 8 bytes: " << s << "\n"; std::exit(2); }
+    Tok t = { { 0, 0, 0, 0, 0, 0, 0, 0 }, (int)s.size() };
+    std::memcpy(t.c, s.data(), s.size());
+    return t;
+}
+static inline char* put(char* p, const Tok& t) { std::memcpy(p, t.c, 8); return p + t.n; }   // needs 8 bytes of room
+static std::vector<Tok> LBASE_TOK;            // base i without its star
 static int lbase_id(const std::string& b) {
     std::map<std::string, int>::iterator it = LBASE_IDX.find(b);
     if (it != LBASE_IDX.end()) return it->second;
     int id = (int)LBASE.size();
     LBASE.push_back(b);
     LBASE_STAR.push_back(!b.empty() && b[0] == '*' ? 1 : 0);
+    LBASE_TOK.push_back(make_tok(b.substr(LBASE_STAR.back())));
     LBASE_IDX[b] = id;
     return id;
 }
 static std::vector<std::vector<int> > LBASE_OF;   // [type][dart] -> interned base id
-static inline int label_code(int base_id, int tile) { return base_id * 4096 + tile; }
-static inline bool label_star(int code) { return LBASE_STAR[code / 4096] != 0; }
-// FIX 16a — label_str RENDERED a string every time it was asked for one.
-// edgelabel() concatenates ("@" + to_string(tile), or one apostrophe per tile), so every call is a
-// fresh heap string, and writecyclefinal asks for two of them per dart per SOLUTION. The text depends
-// only on (base id, tile) — a few hundred bases against tile < num — so render each once and hand
-// back a reference. Same bytes, no allocation.
-// deque, NOT vector, and the difference is a dangling reference that check-regular caught.
-// writeconway holds `first` across the call that produces `second`; a vector growing inside that
-// second call MOVES the strings, and the held reference reads freed storage. The symptom was one
-// character in one block of one k=4 family — `(1 1')` printed as `( 1')` — with every star bucket
-// still byte-identical, because they had already warmed the row. std::deque guarantees references to
-// existing elements survive insertion at either end, which is what growth at the back is.
-static std::deque<std::deque<std::string> > LSTR_CACHE;
-static const std::string& label_str(int code) {
-    const int b = code / 4096, t = code % 4096;
-    if ((int)LSTR_CACHE.size() <= b) LSTR_CACHE.resize(b + 1);
-    std::deque<std::string>& row = LSTR_CACHE[b];
-    if ((int)row.size() <= t) row.resize(t + 1);
-    std::string& v = row[t];
-    if (v.empty()) v = edgelabel(LBASE[b], t);   // never legitimately empty: every base is non-empty
-    return v;
+// A dart's label is its type's base string and its vertex's number, so it is derived, not stored per dart:
+// the base, then one apostrophe per vertex up to three and "@n" beyond. (FIX 7 kept a packed int per dart
+// and FIX 16a a cache of rendered strings; both are gone with the per-dart copy.) Every base is digits
+// with an optional leading '*', so two labels are one text only as the same base on the same vertex.
+static inline int dart_base(configuration const& c, int d) {
+    const int v = c.vof[d];
+    return LBASE_OF[c.vertype[v]][d - c.voff[v]];
 }
-
-struct runt {
-    std::string soltype;
-    int solnum;
-};
-
-std::vector<runt> runtotal;
-
-struct vertypesolv {
-    std::vector<int> vertices;
-    int count;
-};
-
-std::vector<vertypesolv> vertypesolved;
+static inline bool dart_star(configuration const& c, int d) { return LBASE_STAR[dart_base(c, d)] != 0; }
+static std::vector<Tok> SUFFIX;   // a vertex's suffix: one apostrophe per vertex up to three, "@n" beyond
+static const Tok* suffix_toks(int n) {   // the first n of them
+    while ((int)SUFFIX.size() < n)
+        SUFFIX.push_back(make_tok(SUFFIX.size() > 3 ? "@" + std::to_string(SUFFIX.size()) : std::string(SUFFIX.size(), '\''))); 
+    return SUFFIX.data();
+}
+static std::string label_text(configuration const& c, int d) {
+    const Tok& t = suffix_toks(c.vof[d] + 1)[c.vof[d]];
+    return LBASE[dart_base(c, d)] + std::string(t.c, (size_t)t.n);
+}
 
 // long long, not int: this counts DFS nodes, and runs now reach billions. composite-convex k<=4
 // (2026-08-08) printed "nodes: -1898351957" — a signed 32-bit wrap at ~2.15e9, so every node figure
 // from a long run was silently wrong. The pricing arguments in docs/ctrnact-solver-optimizations.md
 // are built on this number, so a wrapped counter is a misleading measurement, not a cosmetic bug.
 long long solcount = 0;
-int solfound = 0;
 
-std::vector<int> mincycle;
-
-std::ofstream globe;
 std::ofstream gen;
 
-std::string fname(int num);
-std::string finename(configuration const& conf);
-int ferk(vertexdef const& x);
-std::string edgelabel(const std::string& edge, int tile);
 std::string conwaysymbol(std::string const& first, std::string const& second);
-void conway_append(std::string& out, std::string const& first, std::string const& second);
-const std::string& writeconway(configuration const& conf);
 std::string verbalvertices(std::vector<int> const& vertype);
-bool checkpart(configuration const& conf);
-static bool checkpart_inc(configuration const& conf, const int* changed, int nchanged);
-int writecycle(configuration const& conf, std::ostream& filen);
-std::vector<int> sigresult(std::vector<int> const& vertype);
-std::string sig(std::vector<int> const& result);
-std::string signature(std::vector<int> const& vertype);
-std::string filesignature(std::vector<int> const& vertype);
 int vertypesolvedadd(std::vector<int> const& vertype);
 int initex();
-int writecyclefinal(configuration const& conf, std::ostream& filen);
 int writesolution(configuration const& conf);
 
 bool simplify(configuration const& conf);
@@ -495,58 +530,20 @@ static inline bool edge_ok(configuration const& c, int x, int y) {
     return EDGE_COMPL ? a != b : a == b;
 }
 
-int extend(configuration& slist);
+int extend(configuration& slist, int firstfree, int minc);
 
-std::string finename(configuration const& conf) {
-    std::string m = fname(conf.kcnt) + "_";
-    for (int t = 0; t < (int)TILE_FAM.size(); t++) {
-        bool present = false;
-        for (int c : conf.lvert) if (CLASS_TILE[c] == t) { present = true; break; }
-        if (present) m += TILE_FAM[t];
-    }
-    return m;
-}
-
-std::string fname(int num) {
-    std::string m = std::to_string(num);
-    if (num < 10) {
-        m = "0" + m;
-    }
-    return m;
-}
-
-int ferk(vertexdef const& x) {
-    int r = x.lneig.size();
-    int q = r / x.ferkval;
-    return q;
-}
-
-std::string edgelabel(const std::string& edge, int tile) {
-    std::string m = edge;
-    if (tile > 3) {
-        m = m + "@" + std::to_string(tile);
-    }
-    else {
-        for (int i = 0; i < tile; i++) {
-            m = m + "'";
-        }
-    }
-    return m;
-}
-
-// Appending form, so writeconway builds no temporaries. Same bytes as conwaysymbol below, which is
-// kept for the trace path; the two are checked against each other by the golden catalogs.
-void conway_append(std::string& out, std::string const& first, std::string const& second) {
-    const char* f = first.c_str(); size_t fn = first.size();
-    const char* g = second.c_str(); size_t gn = second.size();
-    int mirrornum = 0;
-    if (fn && f[0] == '*') { f++; fn--; mirrornum++; }
-    if (gn && g[0] == '*') { g++; gn--; mirrornum++; }
-    const bool same = (fn == gn) && std::memcmp(f, g, fn) == 0;
-    out += (mirrornum != 1) ? '(' : '[';
-    out.append(f, fn);
-    if (!same) { out += ' '; out.append(g, gn); }
-    out += (mirrornum != 1) ? ')' : ']';
+// A BLOCK IS WRITTEN THROUGH A RAW CURSOR (2026-11-10). It has a few hundred pieces of one to a dozen bytes, and
+// an append apiece, with a std::to_string for every number, was a fifth of a run that is mostly tilings.
+// Each writer returns the cursor after what it wrote; the caller sizes the room (writesolution).
+static inline char* put_s(char* p, const std::string& s) { std::memcpy(p, s.data(), s.size()); return p + s.size(); }
+template <size_t N> static inline char* put_l(char* p, const char (&s)[N]) { std::memcpy(p, s, N - 1); return p + N - 1; }
+static inline char* put_n(char* p, long long v) { return std::to_chars(p, p + 20, v).ptr; }
+static inline char* put_k(char* p, int k) { if (k < 10) *p++ = '0'; return put_n(p, k); }   // a file name's k: two digits
+// What a cursor writer wrote, as a string (the trace's use of them).
+template <class F> static std::string text_of(size_t room, F f) {
+    std::string s(room, '\0');
+    s.resize((size_t)(f(&s[0]) - s.data()));
+    return s;
 }
 
 std::string conwaysymbol(std::string const& first, std::string const& second) {
@@ -580,29 +577,36 @@ std::string conwaysymbol(std::string const& first, std::string const& second) {
     }
 }
 
-// FIX 16c — same three costs as writecyclefinal, same three fixes. Returns a REFERENCE to a static
-// buffer: valid until the next call, which is enough for both call sites (writesolution streams it
-// before anything else can call this, and the trace path streams it immediately).
-static std::string CONWAY_BUF;
-const std::string& writeconway(configuration const& conf) {
-    static std::vector<unsigned> smet_stamp;
-    static unsigned smet_gen = 0;
+// The Conway glue line: at most 35 bytes a dart (two brackets, a space, four pieces of at most 8). A glue
+// drags its mirror image along, so the four darts {cy, glue, their mirror images} are written once, at the
+// lowest of them.
+static char* writeconway(configuration const& conf, char* p) {
+    const int* G = conf.glue.data(); const int* M = conf.mirro.data(); const int* VO = conf.vof.data();
+    const Tok* suffix = suffix_toks(conf.num);
     const int NDARTS = (int)conf.glue.size();
-    if ((int)smet_stamp.size() < NDARTS) smet_stamp.resize(NDARTS, 0u);
-    if (++smet_gen == 0u) { std::fill(smet_stamp.begin(), smet_stamp.end(), 0u); smet_gen = 1u; }
-    CONWAY_BUF.clear();
-    for (int cy = 0; cy < NDARTS; cy++) {
-        if (smet_stamp[cy] != smet_gen && conf.glue[cy] != -1) {
-            const std::string& first = label_str(conf.label[cy]);
-            const std::string& second = label_str(conf.label[conf.glue[cy]]);
-            smet_stamp[cy] = smet_gen;
-            smet_stamp[conf.glue[cy]] = smet_gen;
-            smet_stamp[conf.mirro[cy]] = smet_gen;
-            smet_stamp[conf.glue[conf.mirro[cy]]] = smet_gen;
-            conway_append(CONWAY_BUF, first, second);
+    static std::vector<const int*> base;   // per vertex: its type's label bases, placed so that a dart indexes them
+    base.resize(conf.num);
+    for (int v = 0; v < conf.num; v++) base[v] = LBASE_OF[conf.vertype[v]].data() - conf.voff[v];
+    for (int v1 = 0, cy = 0; v1 < conf.num; v1++) {
+        for (const int end = v1 + 1 < conf.num ? conf.voff[v1 + 1] : NDARTS; cy < end; cy++) {
+            const int g = G[cy], m = M[cy];
+            if (g < cy || m < cy || G[m] < cy) continue;   // free (-1), or written at a lower dart
+            // conwaysymbol's text: the two labels without their stars, once if they are one label, in
+            // square brackets when exactly one is on the mirror side
+            const int v2 = VO[g], b1 = base[v1][cy], b2 = base[v2][g];
+            const Tok& first = LBASE_TOK[b1];
+            const Tok& second = LBASE_TOK[b2];
+            const bool square = LBASE_STAR[b1] != LBASE_STAR[b2];
+            *p++ = square ? '[' : '(';
+            p = put(put(p, first), suffix[v1]);
+            if (v1 != v2 || first.n != second.n || std::memcmp(first.c, second.c, 8) != 0) {
+                *p++ = ' ';
+                p = put(put(p, second), suffix[v2]);
+            }
+            *p++ = square ? ']' : ')';
         }
     }
-    return CONWAY_BUF;
+    return p;
 }
 
 std::string verbalvertices(std::vector<int> const& vertype) {
@@ -612,18 +616,7 @@ std::string verbalvertices(std::vector<int> const& vertype) {
     return s;
 }
 
-// Face-cycle validity over corner CLASSES. Regular palette (period p=1, CLASS_NEXT=id,
-// L=n) degenerates to Marek's original: same class along the cycle, closed length divides
-// n, open length <= n. Star tiles (p=2, point/dent alternating word of length L=2n): the
-// class must advance +1 mod p along the walk, a closed cycle must be a whole number of
-// word periods (count % p == 0) AND a divisor of L (rotation symmetry of the tile), an
-// open cycle must not exceed L. For arbitrary p (composite tiles, and MIRROR placements
-// that traverse the boundary backwards) the walk direction is locked from the first
-// observed step to CLASS_NEXT or CLASS_PREV, so the advance rule is orientation-safe for
-// any p; p=1 (regular) locks +1 immediately since CLASS_PREV==CLASS_NEXT==id.
-// One face, walked from dart i. Extracted verbatim from the old checkpart body.
-
-// DYNAMIC FACE CLOSURE (probe). checkface's open branch returns `count <= L`, discarding the count.
+// DYNAMIC FACE CLOSURE (probe). An open face must have `count <= L`, which discards the count.
 // A face that has already walked `count` darts can only close at an admissible c > count, and the
 // remaining chain must be realizable: with the walk open at dart `rfree` and started at `i`,
 //     tkey(i) reachable from Q(rfree) in exactly (c - count - 1) key steps.
@@ -635,10 +628,9 @@ static std::vector<std::vector<unsigned long long> > DYN_ACC;   // per orbit, n*
 static std::vector<int> DYN_LOC, DYN_KORB, DYN_N;
 static std::vector<unsigned long long> DYN_ALLOWED;             // per orbit, bit c per admissible c
 static bool DYN_READY = false;
-static long dyn_open = 0, dyn_reject = 0;
 
-static inline bool dyn_can_close(configuration const& conf, int i, int rfree, int count) {
-    const int tk_i = cand_key(conf.lvert[i], conf.lvert[conf.rneig[i]], conf.mirro[i] == i);
+// The test on the two keys: tk_i = tkey(i), and qs = the query keys of rfree.
+static inline bool dyn_keys_close(int tk_i, const int* qs, int nq, int count) {
     const int o = DYN_KORB[tk_i];
     if (o < 0) return true;                                    // unknown -> do not reject
     const int lj = DYN_LOC[tk_i];
@@ -646,9 +638,6 @@ static inline bool dyn_can_close(configuration const& conf, int i, int rfree, in
     // The open dart has 1..4 query keys under the 4-bucket union. The face can still close if ANY of
     // them reaches tkey(i) at an admissible length, so this is a disjunction; requiring all of them
     // would reject branches that are genuinely closable and lose tilings.
-    int qs[4];
-    const int nq = qkeys(conf.lvert[rfree], conf.lvert[conf.rneig[rfree]],
-                         conf.mirro[rfree] == rfree, qs);
     for (int t = 0; t < nq; t++) {
         const int q_r = qs[t];
         if (DYN_KORB[q_r] != o) return true;                   // unknown/other orbit -> do not reject
@@ -661,239 +650,209 @@ static inline bool dyn_can_close(configuration const& conf, int i, int rfree, in
     }
     return false;
 }
-
-static inline bool checkface(configuration const& conf, int i) {
-    int free = i;
-    int rfree = conf.rneig[free];
-    int expect = conf.lvert[rfree];
-    const int L = CLASS_L[expect];
-    const int p = CLASS_P[expect];
-    int count = 1;
-    int dirlock = 0;
-    for (;;) {
-        free = conf.glue[rfree];
-        if (free == -1) {
-            if (!(count <= L)) return false;
-            // ACTIVE: an open face that cannot reach an admissible total length is a dead branch.
-            return !DYN_READY || dyn_can_close(conf, i, rfree, count);
-        }
-        if (free == i)  return (count % p == 0) && (L % count == 0);
-        rfree = conf.rneig[free];
-        int actual = conf.lvert[rfree];
-        if (dirlock == 0) {
-            if (actual == CLASS_NEXT[expect]) dirlock = 1;
-            else if (actual == CLASS_PREV[expect]) dirlock = -1;
-            else return false;
-        }
-        expect = (dirlock == 1) ? CLASS_NEXT[expect] : CLASS_PREV[expect];
-        count++;
-        if (actual != expect) return false;
-    }
+static inline int tkey_at(configuration const& c, int d) { return cand_key(c.lvert[d], c.lvert[c.rneig[d]], c.mirro[d] == d); }
+static inline int qkeys_at(configuration const& c, int d, int* out) { return qkeys(c.lvert[d], c.lvert[c.rneig[d]], c.mirro[d] == d, out); }
+static inline bool dyn_can_close(configuration const& conf, int i, int rfree, int count) {
+    int qs[4];
+    const int nq = qkeys_at(conf, rfree, qs);
+    return dyn_keys_close(tkey_at(conf, i), qs, nq, count);
 }
 
-bool checkpart(configuration const& conf) {
-    for (int i = 0; i < (int)conf.rneig.size(); i++)
-        if (!checkface(conf, i)) return false;
+// Add a vertex of type g: its darts, all free, each the one-corner face (d, rneig[d]).
+static void add_vertex(configuration& c, int g) {
+    const vertexdef& VD = mainlist[g];
+    const int l = (int)c.rneig.size(), sl = (int)VD.rneig.size(), n = l + sl, v = (int)c.vertype.size();
+    // One sized grow per array, then raw-pointer stores (FIX 8). Capacity persists across the DFS because
+    // drop_vertex shrinks with resize(), so the grow almost never reallocates.
+    c.rneig.resize(n); c.lneig.resize(n); c.mirro.resize(n); c.lvert.resize(n); c.glue.resize(n);
+    c.vof.resize(n); c.face.resize(n); c.freeb.resize(((size_t)n + 63) >> 6);
+    if (EDGE_TYPED) c.etype.resize(n);
+    int* RN = c.rneig.data(); int* LN = c.lneig.data(); int* MI = c.mirro.data(); int* LV = c.lvert.data();
+    int* GL = c.glue.data(); int* VO = c.vof.data(); Face* F = c.face.data();
+    const int* srn = VD.rneig.data(); const int* sln = VD.lneig.data();
+    const int* smi = VD.mirro.data(); const int* slv = VD.lvert.data();
+    for (int j = 0; j < sl; j++) {
+        const int d = l + j;
+        RN[d] = l + srn[j]; LN[d] = l + sln[j]; MI[d] = l + smi[j]; LV[d] = slv[j];
+        GL[d] = -1; VO[d] = v;
+        F[d].rend = l + srn[j]; F[d].cnt = 1; F[d].lo = d; F[d].dir = 0; F[d].lend = l + sln[j];
+        c.freeb[(size_t)d >> 6] |= 1ULL << (d & 63);
+    }
+    if (EDGE_TYPED) for (int j = 0; j < sl; j++) c.etype[l + j] = VD.etype[j];
+    c.voff.push_back(l); c.vertype.push_back(g);
+    c.num++; c.kcnt += VD.counting; c.nfree += sl;
+}
+// Remove the last vertex, whose darts are all free again.
+static void drop_vertex(configuration& c) {
+    const int l = c.voff.back(), n = (int)c.rneig.size();
+    for (int d = l; d < n; d++) c.freeb[(size_t)d >> 6] &= ~(1ULL << (d & 63));
+    c.rneig.resize(l); c.lneig.resize(l); c.mirro.resize(l); c.lvert.resize(l); c.glue.resize(l);
+    c.vof.resize(l); c.face.resize(l); c.freeb.resize(((size_t)l + 63) >> 6);
+    if (EDGE_TYPED) c.etype.resize(l);
+    c.num--; c.kcnt -= mainlist[c.vertype.back()].counting; c.nfree -= n - l;
+    c.voff.pop_back(); c.vertype.pop_back();
+}
+
+// Face validity over corner CLASSES, checked where two faces join. Regular palette (period p=1,
+// CLASS_NEXT=id, L=n) degenerates to Marek's original: same class along the face, closed length divides
+// n, open length <= n. Star tiles (p=2, point/dent alternating word of length L=2n): the class must
+// advance +1 mod p along the face, a closed face must be a whole number of word periods (count % p == 0)
+// AND a divisor of L (rotation symmetry of the tile), an open face must not exceed L. For arbitrary p
+// (composite tiles, and MIRROR placements that traverse the boundary backwards) the direction is locked
+// by the face's first step to CLASS_NEXT or CLASS_PREV (Face::dir), so the advance rule is
+// orientation-safe for any p; p=1 (regular) locks +1 immediately since CLASS_PREV==CLASS_NEXT==id.
+//
+// x has just been glued to y: the face that ended at x runs on into the face that started at y. False when
+// the joined face breaks a rule. Marek's checkface applied these rules by walking the face from each of
+// its darts; a face that kept them on both sides of the seam keeps them iff the seam does.
+static inline bool face_join(configuration& c, int x, int y) {
+    Face* F = c.face.data();
+    const int s = F[x].lend, cx = c.lvert[x], cy = c.lvert[c.rneig[y]];
+    if (s == y) {   // the face closes on itself
+        const int n = F[y].cnt;
+        if (n % CLASS_P[cx] != 0 || CLASS_L[cx] % n != 0) return false;
+        return n == 1 || cy == (F[y].dir > 0 ? CLASS_NEXT[cx] : CLASS_PREV[cx]);
+    }
+    int d = F[s].dir;
+    if (d == 0) { if (cy == CLASS_NEXT[cx]) d = 1; else if (cy == CLASS_PREV[cx]) d = -1; else return false; }
+    else if (cy != (d > 0 ? CLASS_NEXT[cx] : CLASS_PREV[cx])) return false;
+    if (F[y].dir != 0 && F[y].dir != d) return false;
+    const int n = F[s].cnt + F[y].cnt, r = F[y].rend;
+    if (n > CLASS_L[cx]) return false;
+    c.ftrail.push_back({ s, r, F[s], F[r].lend });
+    F[s].rend = r; F[s].cnt = n; F[s].dir = d; F[r].lend = s;
+    if (F[y].lo < F[s].lo) F[s].lo = F[y].lo;
+    return true;
+}
+// Glue free darts a and b (a == b: a dart to itself). False when a face through the seam breaks a rule; the
+// caller undoes to its mark either way.
+static inline bool cglue(configuration& c, int a, int b) {
+    c.glue[a] = b; c.glue[b] = a;
+    c.freeb[(size_t)a >> 6] &= ~(1ULL << (a & 63)); c.freeb[(size_t)b >> 6] &= ~(1ULL << (b & 63));
+    c.gtrail.push_back(a); c.nfree--;
+    if (a == b) return face_join(c, a, a);
+    c.gtrail.push_back(b); c.nfree--;
+    return face_join(c, a, b) && face_join(c, b, a);
+}
+static inline void undo_to(configuration& c, size_t fmark, size_t gmark) {
+    for (Face* F = c.face.data(); c.ftrail.size() > fmark; c.ftrail.pop_back()) {
+        const FaceUndo& u = c.ftrail.back();
+        F[u.s] = u.was; F[u.r].lend = u.lend;
+    }
+    for (; c.gtrail.size() > gmark; c.gtrail.pop_back()) {
+        const int d = c.gtrail.back();
+        c.glue[d] = -1; c.freeb[(size_t)d >> 6] |= 1ULL << (d & 63); c.nfree++;
+    }
+}
+// The joins since `from` name the faces a glue touched. None of them, if still open, may be unable to reach
+// an admissible length. Asking from the left end is enough: a walk from any other dart of the face asks
+// the same of a suffix, which the chain already built then answers.
+// known: two faces already asked about, each as left end, right end and count; one that still reads so
+// is not asked again.
+static inline bool faces_can_close(configuration const& c, size_t from, const int* known = nullptr) {
+    if (DYN_READY)
+        for (size_t i = from; i < c.ftrail.size(); i++) {
+            const int s = c.ftrail[i].s;
+            if (c.glue[s] != -1) continue;
+            const Face& f = c.face[s];
+            if (known && ((s == known[0] && f.rend == known[1] && f.cnt == known[2]) ||
+                          (s == known[3] && f.rend == known[4] && f.cnt == known[5]))) continue;
+            if (!dyn_can_close(c, s, f.rend, f.cnt)) return false;
+        }
     return true;
 }
 
-// FIX 4 — the parent configuration already passed, and gluing one edge can only change the faces whose
-// walk REACHES that edge. The forward step is free -> glue[rneig[free]], so the starts that reach a
-// changed position x are found by stepping backwards from lneig[x] via free -> lneig[glue[free]].
-// Walking those and nothing else is equivalent to the full scan, and costs chain length instead of
-// configuration size.
-static bool checkpart_inc(configuration const& conf, const int* changed, int nchanged) {
-    // FIX 19 — the four changed positions are not four different faces. Gluing firstfree to i puts
-    // both on the SAME face chain, and their mirror images often land on it too, so the backward
-    // walks repeat each other: the second walk re-derives the same set of starts and calls checkface
-    // on every one of them again. Stamp the starts. A start already visited in this call had
-    // checkface run on it AND on every predecessor the new walk would reach, and all of them
-    // returned true (any false and we would have returned already), so skipping is exact.
-    static std::vector<unsigned> start_stamp;
-    static unsigned start_gen = 0;
-    const int NDARTS = (int)conf.rneig.size();
-    if ((int)start_stamp.size() < NDARTS) start_stamp.resize(NDARTS, 0u);
-    // ⚑ WRAP. A generation stamp is only sound while the counter is injective, and this one is bumped
-    // once per checkpart_inc — 2.48e9 times in a single star24full k=2 run, which is within a factor
-    // of two of 2^32. On the wrap a stale stamp reads as current, the walk is skipped, and a face
-    // that was never checked passes: a lost tiling, silently. One compare per call buys it back.
-    if (++start_gen == 0u) { std::fill(start_stamp.begin(), start_stamp.end(), 0u); start_gen = 1u; }
-    for (int t = 0; t < nchanged; t++) {
-        const int x = changed[t];
-        if (x < 0) continue;
-        const int start = conf.lneig[x];
-        if (start_stamp[start] == start_gen) continue;
-        int free = start;
-        for (;;) {
-            start_stamp[free] = start_gen;
-            if (!checkface(conf, free)) return false;
-            const int prev = conf.glue[free];
-            if (prev == -1) break;
-            free = conf.lneig[prev];
-            if (free == start) break;         // closed cycle: every start on it already checked
-        }
-    }
-    return true;
-}
-
-// FORCED CLOSURE (from Martin Olivier's solver, 2026-11-06). An open face whose walk has reached its full
-// length L (slack 0) can neither grow nor close elsewhere, so its two free ends must be glued now. Without
-// this every such move cost a node: writecycle picks the zero-slack face, and every candidate but one
-// fails checkpart. After each branch glue the faces through the changed darts are closed to a fixpoint.
-// Only nodes with a single surviving child disappear, so the same configurations close in the same order
-// and the catalogue is byte-identical. Regular k<=12: 7.68M -> 2.24M nodes. EU_NOFORCE=1 turns it off.
+// FORCED CLOSURE (from Martin Olivier's solver, 2026-11-06). An open face that has reached its full length L
+// (slack 0) can neither grow nor close elsewhere, so its two free ends must be glued now. Without this
+// every such move cost a node: the search picks the zero-slack face, and every candidate but one fails.
+// After each branch glue the faces it touched (the joins since `from`) are closed to a fixpoint. Only
+// nodes with a single surviving child disappear, so the same configurations close in the same order and the
+// catalogue is byte-identical. Regular k<=12: 7.68M -> 2.24M nodes. EU_NOFORCE=1 turns it off.
 static const bool no_force = std::getenv("EU_NOFORCE") != nullptr;
-static std::vector<int> FTRAIL, FWORK;   // darts glued by propagation (undone LIFO), worklist
 static long long forced_glues = 0;
-
-// Is the face through corner `start` open with slack 0? Then s and r are its left and right free ends.
-static inline bool zero_slack(configuration const& c, int start, int& s, int& r) {
-    int x = start;
-    for (int g; (g = c.glue[x]) != -1; ) { x = c.lneig[g]; if (x == start) return false; }   // closed
-    s = x;
-    int rr = c.rneig[s], count = 1;
-    const int L = CLASS_L[c.lvert[rr]];
-    for (int g; (g = c.glue[rr]) != -1; ) { rr = c.rneig[g]; if (++count > L) return false; }
-    r = rr;
-    return count == L;
-}
-static inline void fglue(configuration& c, int a, int b) {
-    c.glue[a] = b; FTRAIL.push_back(a);
-    if (a != b) { c.glue[b] = a; FTRAIL.push_back(b); }
-}
-// False = the branch is dead.
-static bool propagate_forced(configuration& c, const int* chg, int nchg) {
+// False = the branch is dead. The caller's undo_to takes the forced glues back with its own.
+static bool propagate_forced(configuration& c, size_t from) {
     if (no_force) return true;
-    FWORK.clear();
-    for (int t = 0; t < nchg; t++) if (chg[t] >= 0) FWORK.push_back(chg[t]);
-    while (!FWORK.empty()) {
-        const int x = FWORK.back(); FWORK.pop_back();
-        int s, r;
-        if (!zero_slack(c, c.lneig[x], s, r)) continue;
+    for (size_t i = from; i < c.ftrail.size(); i++) {
+        const int s = c.ftrail[i].s;
+        if (c.glue[s] != -1) continue;                        // closed, or joined on under another left end
+        const int r = c.face[s].rend;
+        if (c.face[s].cnt != CLASS_L[c.lvert[r]]) continue;
         const bool ms = c.mirro[s] == s;
         if (ms != (c.mirro[r] == r)) return false;
         if (EDGE_TYPED && (!edge_ok(c, s, r) || (!ms && !edge_ok(c, c.mirro[s], c.mirro[r])))) return false;
-        fglue(c, s, r);
+        const size_t m = c.ftrail.size();
+        if (!cglue(c, s, r)) return false;
         if (!ms) {
             const int a = c.mirro[s], b = c.mirro[r];
             if (c.glue[a] != -1 || c.glue[b] != -1) { if (c.glue[a] != b) return false; }
-            else fglue(c, a, b);
+            else if (!cglue(c, a, b)) return false;
         }
         forced_glues++;
-        const int ch[4] = { s, r, ms ? -1 : c.mirro[s], ms ? -1 : c.mirro[r] };
-        if (!checkpart_inc(c, ch, 4)) return false;
-        for (int t = 0; t < 4; t++) if (ch[t] >= 0) FWORK.push_back(ch[t]);
+        if (!faces_can_close(c, m)) return false;
     }
     return true;
 }
-static inline void undo_forced(configuration& c, size_t mark) {
-    while (FTRAIL.size() > mark) { c.glue[FTRAIL.back()] = -1; FTRAIL.pop_back(); }
+
+// The open face with the least slack, the first in dart order among equals (the one holding the lowest
+// dart): its left free end, and its slack. The search branches on it; Marek's writecycle found it by
+// walking every face at every node.
+static inline int min_slack(configuration const& c, int& slack) {
+    int best = -1, bs = TABLE_MAXL + 1, blo = 0;
+    const Face* F = c.face.data(); const int* LV = c.lvert.data(); const int* RN = c.rneig.data();
+    for (size_t w = 0; w < c.freeb.size(); w++)
+        for (unsigned long long bits = c.freeb[w]; bits; bits &= bits - 1) {
+            const int f = (int)(w << 6) + __builtin_ctzll(bits);
+            const int sl = CLASS_L[LV[RN[f]]] - F[f].cnt;
+            if (sl < bs || (sl == bs && F[f].lo < blo)) { best = f; bs = sl; blo = F[f].lo; }
+        }
+    slack = bs;
+    return best;
+}
+// The lowest free dart >= from, -1 when there is none.
+static inline int next_free(configuration const& c, int from) {
+    for (size_t w = (size_t)from >> 6; w < c.freeb.size(); w++, from = (int)(w << 6)) {
+        const unsigned long long bits = c.freeb[w] & (~0ULL << (from & 63));
+        if (bits) return (int)(w << 6) + __builtin_ctzll(bits);
+    }
+    return -1;
 }
 
-int writecycle(configuration const& conf, std::ostream& filen) {
-    mincycle = { -1,TABLE_MAXL + 1 };
-    int v = 0;
-    // was: std::vector<int> smet + std::find per dart => O(darts^2) and an allocation per node.
-    // Generation stamp: bump a counter instead of clearing the array, so the per-call O(darts) fill
-    // (3.1e9 writes at k=2) disappears.
-    static std::vector<unsigned> smet_stamp;
-    static unsigned smet_gen = 0;
-    const int NDARTS = (int)conf.glue.size();
-    if ((int)smet_stamp.size() < NDARTS) smet_stamp.resize(NDARTS, 0u);
-    if (++smet_gen == 0u) { std::fill(smet_stamp.begin(), smet_stamp.end(), 0u); smet_gen = 1u; }
-    for (int cy = 0; cy < NDARTS; cy++) {
+// EU_TRACE: every face as Marek's writecycle printed it, and a check of min_slack against the walk of
+// every face that it replaced.
+static void trace_faces(configuration const& conf, std::ostream& filen, int ff, int slack) {
+    int best = -1, bs = TABLE_MAXL + 1;
+    std::vector<char> met(conf.glue.size(), 0);
+    for (int cy = 0; cy < (int)conf.glue.size(); cy++) {
+        if (met[cy]) continue;
+        int left = cy;
+        while (conf.glue[left] != -1 && conf.glue[left] != conf.rneig[cy]) left = conf.lneig[conf.glue[left]];
+        const bool open = conf.glue[left] == -1;
+        if (!open) left = cy;
+        const int first = left, L = CLASS_L[conf.lvert[conf.rneig[left]]];
         std::string mainst;
         int count = 0;
-        bool complete = false;
-        if (smet_stamp[cy] != smet_gen) {
-            int left = cy;
-            while ((conf.glue[left] != -1) && (conf.glue[left] != conf.rneig[cy])) {
-                left = conf.lneig[conf.glue[left]];
-            }
-            if (conf.glue[left] == -1) {
-                int stable = left;
-                int right = conf.rneig[left];
-                int vstable = CLASS_L[conf.lvert[right]];
-                bool cont = true;
-                while (cont) {
-                    smet_stamp[left] = smet_gen;
-                    if (eu_trace) mainst = mainst + label_str(conf.label[left]) + "/" + label_str(conf.label[right]) + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
-                    count++;
-                    left = conf.glue[right];
-                    if (left != -1) {
-                        right = conf.rneig[left];
-                    }
-                    else {
-                        int dif = vstable - count;
-                        if (dif < mincycle[1]) {
-                            mincycle = { stable,dif };
-                        }
-                        cont = false;
-                    }
-                }
-            }
-            else {
-                left = cy;
-                int right = conf.rneig[left];
-                v = CLASS_L[conf.lvert[right]];
-                bool cont = true;
-                complete = true;
-                while (cont) {
-                    smet_stamp[left] = smet_gen;
-                    if (eu_trace) mainst = mainst + label_str(conf.label[left]) + "/" + label_str(conf.label[right]) + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
-                    count++;
-                    left = conf.glue[right];
-                    if (left != cy) {
-                        right = conf.rneig[left];
-                    }
-                    else {
-                        cont = false;
-                    }
-                }
-            }
-            if (eu_trace) {
-                if (complete) {
-                    mainst = mainst.substr(0, mainst.size() - 1);
-                    int ratio = v / count;
-                    if (ratio != 1) {
-                        mainst = " [" + mainst + "]x" + std::to_string(ratio);
-                    }
-                    else {
-                        mainst = " " + mainst;
-                    }
-                }
-                filen << mainst << "\n";
-            }
+        do {
+            const int right = conf.rneig[left];
+            met[left] = 1;
+            mainst += label_text(conf, left) + "/" + label_text(conf, right) + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
+            count++;
+            left = conf.glue[right];
+        } while (left != -1 && left != first);
+        if (open) { if (L - count < bs) { best = first; bs = L - count; } }
+        else {
+            mainst.pop_back();
+            mainst = L / count != 1 ? " [" + mainst + "]x" + std::to_string(L / count) : " " + mainst;
         }
+        filen << mainst << "\n";
     }
-    return 0;
-}
-
-std::string sig(std::vector<int> const& result) {
-    std::string s = "";
-    for (int i = 0; i < (int)result.size(); i++) {
-        if (result[i] > 0) {
-            s = s + mainlist[i].symbol;
-            if (result[i] > 1) {
-                s = s + "x" + std::to_string(result[i]);
-            }
-            s = s + ", ";
-        }
-    }
-    return s.substr(0, s.size() - 2);
-}
-
-std::vector<int> sigresult(std::vector<int> const& vertype) {
-    std::vector<int> result(symbolcount, 0);
-    for (int i : vertype) result[i]++;
-    return result;
+    if (best != ff || bs != slack) { std::cerr << "trace: min_slack disagrees with the walk of every face\n"; std::abort(); }
 }
 
 // FIX 16d — both signatures walked a vector as long as the WHOLE ALPHABET to read `num` non-zeros.
-// sigresult allocates symbolcount ints and sig/filesignature then loop over all of them, twice per
-// solution. Sorting the vertype (conf.num ints) visits the same types in the same ascending order, so
-// the text is identical, and the cost stops depending on how big the palette is: star24full's 60,927
-// entries were being scanned to find at most a dozen.
+// Sorting the vertype (conf.num ints) visits the same types in the same ascending order, so the text is
+// identical, and the cost stops depending on how big the palette is: star24full's 60,927 entries were
+// being scanned to find at most a dozen.
 static std::vector<int> SIG_SORT;
 static const std::vector<int>& sorted_vertype(std::vector<int> const& vertype) {
     SIG_SORT.assign(vertype.begin(), vertype.end());
@@ -901,32 +860,30 @@ static const std::vector<int>& sorted_vertype(std::vector<int> const& vertype) {
     return SIG_SORT;
 }
 
-std::string signature(std::vector<int> const& vertype) {
-    const std::vector<int>& v = sorted_vertype(vertype);
-    std::string s;
-    for (size_t a = 0; a < v.size(); ) {
-        size_t b = a; while (b < v.size() && v[b] == v[a]) b++;
-        s += mainlist[v[a]].symbol;
-        if (b - a > 1) { s += "x"; s += std::to_string((int)(b - a)); }
-        s += ", ";
-        a = b;
-    }
-    if (s.size() >= 2) s.resize(s.size() - 2);
-    return s;
+// Room for one mention of every type in v: its symbol or its code, a count and a separator.
+static size_t types_room(std::vector<int> const& v) {
+    size_t n = 0;
+    for (int t : v) n += std::max(mainlist[t].symbol.size(), mainlist[t].code.size()) + 16;
+    return n;
 }
-
-std::string filesignature(std::vector<int> const& vertype) {
-    const std::vector<int>& v = sorted_vertype(vertype);
-    std::string s;
-    for (size_t a = 0; a < v.size(); ) {
-        size_t b = a; while (b < v.size() && v[b] == v[a]) b++;
-        s += mainlist[v[a]].code;
-        if (b - a > 1) s += std::to_string((int)(b - a));
-        s += " ";
-        a = b;
+// Both take the SORTED types.
+static char* signature(std::vector<int> const& v, char* p) {
+    for (size_t a = 0, b; a < v.size(); a = b) {
+        for (b = a; b < v.size() && v[b] == v[a]; b++) {}
+        if (a) p = put_l(p, ", ");
+        p = put_s(p, mainlist[v[a]].symbol);
+        if (b - a > 1) { *p++ = 'x'; p = put_n(p, (long long)(b - a)); }
     }
-    if (s.size() >= 1) s.resize(s.size() - 1);
-    return s;
+    return p;
+}
+static char* filesignature(std::vector<int> const& v, char* p) {
+    for (size_t a = 0, b; a < v.size(); a = b) {
+        for (b = a; b < v.size() && v[b] == v[a]; b++) {}
+        if (a) *p++ = ' ';
+        p = put_s(p, mainlist[v[a]].code);
+        if (b - a > 1) p = put_n(p, (long long)(b - a));
+    }
+    return p;
 }
 
 // FIX 15 — the emission counter was O(solutions x signatures x alphabet), with a COPY per compare.
@@ -941,7 +898,7 @@ std::string filesignature(std::vector<int> const& vertype) {
 // star-wide bucket b00002 at k<=3 emits 187,522, and `sample` puts memmove + __assign_with_size +
 // memcmp under this one function at 64% of the whole search.
 //
-// Two vertype vectors have equal sigresult() exactly when they are equal as MULTISETS, so the sorted
+// Two vertype vectors have equal occurrence counts exactly when they are equal as MULTISETS, so the sorted
 // vertype (length = conf.num, a handful of ints) is a faithful key and the alphabet-sized vector is
 // not needed at all. Hash it; the counts, the numbering and therefore every .tes name are unchanged.
 namespace {
@@ -955,24 +912,11 @@ struct VecHash {
 }
 #include <unordered_map>
 #include <string_view>
-static std::unordered_map<std::vector<int>, int, VecHash> VTS_IDX;   // sorted vertype -> index
+static std::unordered_map<std::vector<int>, int, VecHash> VTS_COUNT;   // sorted vertype -> solutions so far
 
-int vertypesolvedadd(std::vector<int> const& vertype) {
-    std::vector<int> key(vertype);
-    std::sort(key.begin(), key.end());
-    std::unordered_map<std::vector<int>, int, VecHash>::iterator it = VTS_IDX.find(key);
-    if (it != VTS_IDX.end()) {
-        vertypesolved[it->second].count++;
-        return it->second;
-    }
-    const int x = (int)vertypesolved.size();
-    // `vertices` used to hold the alphabet-sized occurrence vector and nothing ever read it back
-    // (the one use was the comparison this replaces). It holds the sorted multiset now, which is the
-    // same information in conf.num ints instead of symbolcount.
-    vertypesolved.push_back({ key, 1 });
-    VTS_IDX.emplace(key, x);
-    return x;
-}
+// Count one more solution of this vertex-type multiset; returns its serial, and leaves the types sorted
+// in SIG_SORT.
+int vertypesolvedadd(std::vector<int> const& vertype) { return ++VTS_COUNT[sorted_vertype(vertype)]; }
 
 // EU_STAR_ROOTS=1 — root the search ONLY at star-bearing vertex types (AL, 2026-08-31).
 //
@@ -990,6 +934,7 @@ static const bool star_roots = std::getenv("EU_STAR_ROOTS") != nullptr;
 
 static const bool orderly = std::getenv("EU_ORDERLY") != nullptr;
 static bool orderly_ok(configuration const& P, bool full);
+static int branch_dart(configuration const& c, int& slack);
 int initex() {
     long t_start = (long)time(nullptr), last_progress = t_start;
     const int root_end = (star_roots && STAR_ROOTS >= 0) ? STAR_ROOTS : symbolcount;
@@ -1008,41 +953,21 @@ int initex() {
             }
         }
         configuration newconf;
-        newconf.label.clear();
-        for (size_t q = 0; q < mainlist[i].label.size(); q++)
-            newconf.label.push_back(label_code(LBASE_OF[i][q], 0));
-        newconf.lneig = mainlist[i].lneig;
-        newconf.rneig = mainlist[i].rneig;
-        newconf.mirro = mainlist[i].mirro;
-        newconf.lvert = mainlist[i].lvert;
-        if (EDGE_TYPED) newconf.etype = mainlist[i].etype;
-        newconf.vertype = { i };
-        newconf.num = 1;
-        newconf.kcnt = mainlist[i].counting;
-        newconf.dfs_depth = 0;
-        newconf.glue = std::vector<int>(newconf.lneig.size(), -1);
+        add_vertex(newconf, i);
+        int slack;
+        const int ff = branch_dart(newconf, slack);
         if (orderly) (void)orderly_ok(newconf, false);   // forms ALIVE[0]: the root's other frames
-        extend(newconf);
+        extend(newconf, ff, slack);
     }
     return 0;
 }
 
 
-// FIX 16b — the emission path was HALF the cost of a star search, and this function was most of it.
-//
-// `sample` on star-wide bucket b00002 at k<=3 (187,522 solutions): writecyclefinal 29.7% of self time
-// against checkface's 15.9%. Three things, all of them bookkeeping:
-//   * `smet` was a std::vector searched with std::find INSIDE a loop over every dart — the same
-//     O(darts^2)-plus-an-allocation pattern fix 5 removed from writecycle. It was left alone then
-//     because this function is "output only", which was true when a run emitted a few hundred
-//     solutions and is false for a star search that emits millions.
-//   * every `mainst = mainst + a + "/" + b + "(" + c + ")-"` built a chain of temporaries; += into a
-//     reused buffer builds none.
-//   * mainstlist was a fresh vector<string> per call, so every cycle string was an allocation.
-// Static buffers keep their capacity across calls. Output bytes are unchanged.
-int writecyclefinal(configuration const& conf, std::ostream& filen) {
-    if (eu_nocycles) { filen << "---\n"; return 0; }
-    int v = 0;
+// The face cycles of a block, appended to `out`. FIX 16b: on a star search that emits millions of blocks
+// this was most of the emission path, itself half the run (star-wide b00002, k<=3), so the dart stamps and
+// the cycle strings are reused buffers. Nothing reads the lines (EU_NOCYCLES drops them).
+static void writecyclefinal(configuration const& conf, std::string& out) {
+    if (eu_nocycles) { out += "---\n"; return; }
     static std::vector<unsigned> smet_stamp;
     static unsigned smet_gen = 0;
     const int NDARTS = (int)conf.glue.size();
@@ -1050,162 +975,103 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
     if (++smet_gen == 0u) { std::fill(smet_stamp.begin(), smet_stamp.end(), 0u); smet_gen = 1u; }
     static std::vector<std::string> mainstlist;
     static std::vector<int> sublist;
-    static std::vector<int> repeatlist;
-    static std::string mainst;
+    suffix_toks(conf.num);
     size_t nmain = 0;                     // entries of mainstlist in use this call
-    sublist.clear(); repeatlist.clear();
+    sublist.clear();
     bool ultrachiral = true;
-    for (int cy = 0; cy < NDARTS; cy++) {
+    // The face from dart `first` as the next entry; returns the lowest mirror image of its darts. ratio is
+    // the first face's for its mirror image too (0 = work it out).
+    auto walk = [&](int first, int& ratio) {
+        if (mainstlist.size() <= nmain) mainstlist.resize(nmain + 1);
+        std::string& mainst = mainstlist[nmain++];
         mainst.clear();
-        int count = 0;
-        int minmirror = conf.glue.size();
-        if (smet_stamp[cy] != smet_gen) {
-            int left = cy;
-            int right = conf.rneig[left];
-            v = CLASS_L[conf.lvert[right]];
-            bool cont = true;
-            while (cont) {
-                smet_stamp[left] = smet_gen;
-                if (conf.mirro[right] < minmirror) {
-                    minmirror = conf.mirro[right];
-                }
-                mainst += label_str(conf.label[left]); mainst += '/';
-                mainst += label_str(conf.label[right]); mainst += '(';
-                mainst += CLASS_DISP[conf.lvert[right]]; mainst += ")-";
-                count++;
-                left = conf.glue[right];
-                if (left != cy) {
-                    right = conf.rneig[left];
-                }
-                else {
-                    cont = false;
-                }
-            }
-            // guard: substr(0, size()-1) on an empty string returns "", resize(size()-1)
-            // wraps to SIZE_MAX and throws. The walk always appends at least once, so this
-            // cannot fire — but the old form could not crash and this one can.
-            if (!mainst.empty()) mainst.resize(mainst.size() - 1);
-            int ratio = v / count;
-            repeatlist.push_back(ratio);
-            if (ratio != 1) {
-                mainst.insert(mainst.begin(), '[');
-                mainst += "]x"; mainst += std::to_string(ratio);
-            }
-            if (mainstlist.size() <= nmain) mainstlist.resize(nmain + 1);
-            mainstlist[nmain++] = mainst;
-            // minmirror starts at glue.size(); the walk always lowers it, but the old
-            // std::find simply failed to find an out-of-range value where an index into the
-            // stamp array would read past the darts.
-            if (minmirror < NDARTS && smet_stamp[minmirror] == smet_gen) {
-                sublist.push_back(0);
-                ultrachiral = false;
-            }
-            else {
-                int left = minmirror;
-                mainst.clear();
-                right = conf.rneig[left];
-                v = CLASS_L[conf.lvert[right]];
-                cont = true;
-                while (cont) {
-                    smet_stamp[left] = smet_gen;
-                    mainst += label_str(conf.label[left]); mainst += '/';
-                    mainst += label_str(conf.label[right]); mainst += '(';
-                    mainst += CLASS_DISP[conf.lvert[right]]; mainst += ")-";
-                    count++;
-                    left = conf.glue[right];
-                    if (left != minmirror) {
-                        right = conf.rneig[left];
-                    }
-                    else {
-                        cont = false;
-                    }
-                }
-                if (!mainst.empty()) mainst.resize(mainst.size() - 1);
-                repeatlist.push_back(ratio);
-                if (ratio != 1) {
-                    mainst.insert(mainst.begin(), '[');
-                    mainst += "]x"; mainst += std::to_string(ratio);
-                }
-                if (mainstlist.size() <= nmain) mainstlist.resize(nmain + 1);
-                mainstlist[nmain++] = mainst;
-                sublist.push_back(1);
-                sublist.push_back(2);
-            }
-        }
+        int count = 0, minmirror = NDARTS, left = first;
+        do {
+            const int right = conf.rneig[left];
+            smet_stamp[left] = smet_gen;
+            if (conf.mirro[right] < minmirror) minmirror = conf.mirro[right];
+            const Tok vs = SUFFIX[conf.vof[left]];   // left and right are darts of one vertex
+            mainst += LBASE[dart_base(conf, left)]; mainst.append(vs.c, (size_t)vs.n); mainst += '/';
+            mainst += LBASE[dart_base(conf, right)]; mainst.append(vs.c, (size_t)vs.n); mainst += '(';
+            mainst += CLASS_DISP[conf.lvert[right]]; mainst += ")-";
+            count++;
+            left = conf.glue[right];
+        } while (left != first);
+        mainst.pop_back();
+        if (ratio == 0) ratio = CLASS_L[conf.lvert[conf.rneig[first]]] / count;
+        if (ratio != 1) { mainst.insert(mainst.begin(), '['); mainst += "]x"; mainst += std::to_string(ratio); }
+        return minmirror;
+    };
+    for (int cy = 0; cy < NDARTS; cy++) {
+        if (smet_stamp[cy] == smet_gen) continue;
+        int ratio = 0;
+        const int minmirror = walk(cy, ratio);
+        if (smet_stamp[minmirror] == smet_gen) { sublist.push_back(0); ultrachiral = false; }
+        else { walk(minmirror, ratio); sublist.push_back(1); sublist.push_back(2); }
     }
-    static std::string header, subheader;
-    for (int m = 0; m < (int)nmain; m++) {
-        const std::string& mainst = mainstlist[m];
-        int sub = sublist[m];
-        if (sub == 0) {
-            filen << std::to_string(m) << ": " << mainst;
+    static std::string header;
+    for (size_t m = 0; m < nmain; m++) {
+        if (sublist[m] == 0) { out += std::to_string(m); out += ": "; }
+        else if (sublist[m] == 1) {
+            header = ultrachiral ? std::to_string(m / 2) + ": " : std::to_string(m) + "/" + std::to_string(m + 1) + ": ";
+            out += header;
         }
-        else if (sub == 1) {
-            header.clear();
-            if (!ultrachiral) {
-                header += std::to_string(m); header += '/';
-                header += std::to_string(m + 1); header += ": ";
-            }
-            else {
-                header += std::to_string(m / 2); header += ": ";
-            }
-            subheader.assign(header.size(), ' ');
-            filen << header << mainst;
-        }
-        else {
-            filen << subheader << mainst;
-        }
-        filen << "\n";
+        else out.append(header.size(), ' ');
+        out += mainstlist[m]; out += '\n';
     }
-    filen << "---\n";
-    return 0;
+    out += "---\n";
 }
 
-// FIX 18 — the file path OPENED AND CLOSED a file per solution.
-//
-// writesolution appended one block at a time, reopening `out/eusolver_<family>.txt` each time and
-// closing it before returning. On star-wide bucket b00002 at k<=3 (187,522 solutions) that is 3.0 s
-// of SYSTEM time against 3.8 s of user — the run costs 6.9 s writing files and 1.7 s streaming the
-// identical bytes to a pipe. On b00000, with 1,076,011 solutions, it is what made the bucket look
-// like it would never finish.
-//
-// Hold the handles open instead. A bounded LRU, because the family count is data-dependent (up to
-// one per k per subset of tile families) and macOS ships a 256-descriptor soft limit — evicting to
-// append mode reopens exactly where it left off, so the bytes do not change. The first open of a
-// family truncates and every later one appends, which is what the old `found` flag encoded.
-static const size_t FSTREAM_CAP = 48;
-static std::map<std::string, std::ofstream*> FSTREAMS;
-static std::deque<std::string> FSTREAM_LRU;      // front = least recently used
-static std::map<std::string, bool> FSTREAM_SEEN; // has this family been opened before (=> append)
+// FAMILY FILES. Marek's writesolution opened and closed out/eusolver_<family>.txt for every block (3.0 s of
+// system time against 3.8 s of user on star-wide b00002 at k<=3). Each family now has a buffer, written out
+// with write(2) when it reaches 64 KB. The first write of a family truncates its file and every later one
+// appends. At most 48 descriptors stay open, the least recently written closed first (macOS ships a soft
+// limit of 256, and the family count is data-dependent: up to one per k per subset of tile families). All
+// buffers together are held to 32 MB: past that every one is written and freed.
+struct FamOut { std::string path, buf; int fd = -1; bool made = false; long long used = 0; };
+static std::map<std::string, FamOut> FAMS;
+static std::string FAM_LAST;
+static FamOut* FAM_LASTP = nullptr;
+static int FAM_OPEN = 0;
+static size_t FAM_HELD = 0;
 
-static std::ostream& family_stream(const std::string& fine) {
-    std::map<std::string, std::ofstream*>::iterator it = FSTREAMS.find(fine);
-    if (it != FSTREAMS.end()) {
-        for (std::deque<std::string>::iterator q = FSTREAM_LRU.begin(); q != FSTREAM_LRU.end(); ++q)
-            if (*q == fine) { FSTREAM_LRU.erase(q); break; }
-        FSTREAM_LRU.push_back(fine);
-        return *it->second;
+static FamOut& family_out(const char* fine, size_t n) {
+    if (!FAM_LASTP || FAM_LAST.size() != n || std::memcmp(FAM_LAST.data(), fine, n) != 0) {
+        FAM_LAST.assign(fine, n);
+        FAM_LASTP = &FAMS[FAM_LAST];
+        if (FAM_LASTP->path.empty()) FAM_LASTP->path = filepath + (eu_pruned ? "pruned/eupruned_" : listfile) + FAM_LAST + ".txt";
     }
-    while (FSTREAMS.size() >= FSTREAM_CAP && !FSTREAM_LRU.empty()) {
-        const std::string victim = FSTREAM_LRU.front();
-        FSTREAM_LRU.pop_front();
-        std::map<std::string, std::ofstream*>::iterator v = FSTREAMS.find(victim);
-        if (v != FSTREAMS.end()) { v->second->close(); delete v->second; FSTREAMS.erase(v); }
-    }
-    const bool seen = FSTREAM_SEEN[fine];
-    FSTREAM_SEEN[fine] = true;
-    std::ofstream* f = new std::ofstream(filepath + listfile + fine + ".txt",
-                                         seen ? std::ios::app : std::ios::out);
-    FSTREAMS[fine] = f;
-    FSTREAM_LRU.push_back(fine);
-    return *f;
+    return *FAM_LASTP;
 }
-
-static void family_streams_close() {
-    for (std::map<std::string, std::ofstream*>::iterator q = FSTREAMS.begin(); q != FSTREAMS.end(); ++q) {
-        q->second->close(); delete q->second;
+static void family_write(FamOut& o) {
+    static long long clock = 0;
+    if (o.fd < 0) {
+        if (FAM_OPEN >= 48) {
+            FamOut* v = nullptr;
+            for (auto& kv : FAMS) if (kv.second.fd >= 0 && (!v || kv.second.used < v->used)) v = &kv.second;
+            close(v->fd); v->fd = -1; FAM_OPEN--;
+        }
+        if (eu_pruned) mkdir((filepath + "pruned").c_str(), 0755);
+        o.fd = open(o.path.c_str(), O_WRONLY | O_CREAT | (o.made ? O_APPEND : O_TRUNC), 0644);
+        if (o.fd >= 0) FAM_OPEN++;
+        o.made = true;
     }
-    FSTREAMS.clear(); FSTREAM_LRU.clear();
+    o.used = ++clock;
+    for (size_t done = 0; done < o.buf.size(); ) {
+        const ssize_t w = o.fd < 0 ? -1 : write(o.fd, o.buf.data() + done, o.buf.size() - done);
+        if (w <= 0) { std::cerr << "cannot write " << o.path << "\n"; std::exit(2); }
+        done += (size_t)w;
+    }
+    FAM_HELD -= o.buf.size();
+    o.buf.clear();
+}
+// Write every buffer out and free it; with `done`, close the files too.
+static void family_streams_close(bool done = true) {
+    for (auto& kv : FAMS) {
+        FamOut& o = kv.second;
+        if (!o.buf.empty()) { family_write(o); std::string().swap(o.buf); }
+        if (done && o.fd >= 0) { close(o.fd); o.fd = -1; FAM_OPEN--; }
+    }
 }
 
 // A lossy set of 128-bit hashes: 4-way buckets, round-robin eviction, all-zero = empty. Mapped MAP_SHARED
@@ -1252,11 +1118,38 @@ static bool tables_shared = false;   // EU_FORK: the leaf set lives in shared me
 // is not written, but its serial (the n of "eu raw <sig> <n>.tes", carried by ctrnact-* ids) is still
 // counted, so every kept block stays byte-identical. Regular k<=8: 14,849 minimal closures, 5,569 written,
 // exactly the final count. Lossy: an evicted hash only lets a duplicate through. EU_LEAF_MB (default 256)
-// sizes it; 0 turns it off.
-static const long leaf_mb = std::getenv("EU_LEAF_MB") ? atol(std::getenv("EU_LEAF_MB")) : 256;
+// sizes it; 0 turns it off, and so does EU_ORDERLY unless a size is given: orderly builds every closed
+// configuration once (leaf_dups read 0 on 58 palettes and modes), so the hash would be refined for nothing.
+static const long leaf_mb = std::getenv("EU_LEAF_MB") ? atol(std::getenv("EU_LEAF_MB")) : orderly ? 0 : 256;
 static long long leaf_dups = 0;
 static HashSet128 LEAF_SET;
 extern unsigned long long LEAF_H1, LEAF_H2;
+
+// The catalogue's "Count type" line, as eu_pruner's buildvertextypes derives it from the vertex list: the
+// number of distinct vertex figures (a symbol up to its first ')'), then, when one repeats, how often each
+// occurs, largest first.
+static char* count_type(std::vector<int> const& vertype, char* p) {
+    static std::vector<int> figure, slot, ids, times;   // slot[figure]: its place in ids and times, -1 between calls
+    if (figure.empty()) {
+        std::map<std::string, int> seen;
+        for (const vertexdef& V : mainlist)
+            figure.push_back(seen.emplace(V.symbol.substr(0, V.symbol.find(')') + 1), (int)seen.size()).first->second);
+        slot.assign(seen.size(), -1);
+    }
+    ids.clear(); times.clear();
+    for (int t : vertype) {
+        int& at = slot[figure[t]];
+        if (at < 0) { at = (int)ids.size(); ids.push_back(figure[t]); times.push_back(1); } else times[at]++;
+    }
+    for (int f : ids) slot[f] = -1;
+    p = put_n(p, (long long)ids.size());
+    std::sort(times.begin(), times.end(), std::greater<int>());
+    if (times[0] == 1) return p;
+    p = put_l(p, " (");
+    for (int m : times) p = put_n(p, m);
+    *p++ = ')';
+    return p;
+}
 
 int writesolution(configuration const& conf) {
     if (leaf_mb > 0) {
@@ -1267,33 +1160,182 @@ int writesolution(configuration const& conf) {
             return 0;
         }
     }
-    solfound++;
-    std::string fine = finename(conf);
-    std::string vv = verbalvertices(conf.vertype);
-    std::string versig = signature(conf.vertype);
-    const std::string& wc = writeconway(conf);   // static buffer, streamed below before any other call
-    int re = vertypesolvedadd(conf.vertype);
-    std::string ret = std::to_string(vertypesolved[re].count);
-    std::string filesig = filesignature(conf.vertype);
-    // dirsig prefix (NN/NN_fam/filesig/) so decode.py/develop.py's tes_id() can parse the id —
-    // matches the Python solver's tesline; the C++ original omitted it.
-    std::string tesfile1 = fname(conf.kcnt) + "/" + fine + "/" + filesig + "/"
-                         + solvercode + " raw " + filesig + " " + ret + ".tes";
-
-    std::ostream* blkp;
-    if (eu_stream) {
-        blkp = &std::cout;
-    } else {
-        blkp = &family_stream(fine);
+    static Arr<char> blk;
+    static std::vector<char> present;
+    static std::string cycles;
+    static size_t fam_room = 0;
+    if (!fam_room) for (const std::string& f : TILE_FAM) fam_room += f.size() + 1;
+    const int serial = vertypesolvedadd(conf.vertype);   // leaves the types sorted in SIG_SORT
+    blk.resize((int)(4 * types_room(conf.vertype) + 12 * conf.vertype.size() + 35 * conf.glue.size() + fam_room + 256));
+    char* p = blk.data();
+    if (!eu_pruned) { p = put_l(p, "Number of vertex types: "); p = put_n(p, conf.num); *p++ = '\n'; }
+    for (int t : conf.vertype) { p = put_s(p, mainlist[t].symbol); p = put_l(p, ", "); }   // verbalvertices
+    p[-2] = '\n'; p--;
+    // What stands between the vertex list and the serial depends on the types as a multiset alone, and
+    // tilings of one multiset come close together: the text is kept for the last multisets met, one per
+    // slot of a small table (it serves 77% of the blocks at regular k<=14 and 83% at k<=16).
+    struct Mid { std::vector<int> types; std::string text; size_t sig_at = 0; FamOut* fam = nullptr; };
+    static std::vector<Mid> mids(1 << 12);
+    const size_t hs = VecHash()(SIG_SORT);
+    Mid& mid = mids[(hs ^ hs >> 29) & (mids.size() - 1)];
+    if (mid.types != SIG_SORT) {
+        char* const p0 = p;
+        p = signature(SIG_SORT, p);
+        if (eu_pruned) { p = put_l(p, "\nCount type: "); p = count_type(conf.vertype, p); }
+        // dirsig prefix (NN/NN_fam/filesig/) so decode.py/develop.py's tes_id() can parse the id. It
+        // matches the Python solver's tesline; the C++ original omitted it.
+        p = put_l(p, "\nTES file: ");
+        mid.sig_at = (size_t)(p - p0);
+        p = put_k(p, conf.kcnt); *p++ = '/';
+        const char* const fine = p;   // the family: k, then the tile families present
+        p = put_k(p, conf.kcnt); *p++ = '_';
+        present.assign(TILE_FAM.size(), 0);
+        for (int c : conf.lvert) if ((size_t)CLASS_TILE[c] < present.size()) present[CLASS_TILE[c]] = 1;
+        for (size_t t = 0; t < present.size(); t++) if (present[t]) p = put_s(p, TILE_FAM[t]);
+        mid.fam = eu_stream ? nullptr : &family_out(fine, (size_t)(p - fine));
+        *p++ = '/';
+        const char* const filesig = p;
+        p = filesignature(SIG_SORT, p);
+        const size_t nfilesig = (size_t)(p - filesig);
+        *p++ = '/'; p = put_s(p, solvercode); p = put_l(p, " raw ");
+        std::memcpy(p, filesig, nfilesig); p += nfilesig; *p++ = ' ';
+        mid.types = SIG_SORT;
+        mid.text.assign(p0, (size_t)(p - p0));
+        p = p0;
     }
-    std::ostream& blk = *blkp;
-    blk << "Number of vertex types: " << conf.num << "\n"
-        << vv << "\n" << versig << "\n"
-        << "TES file: " << tesfile1 << "\n"
-        << wc << "\n";
-    writecyclefinal(conf, blk);
-    blk << "\n\n";
+    const size_t sig_at = (size_t)(p - blk.data()) + mid.sig_at;
+    p = put_s(p, mid.text);
+    const size_t serial_at = (size_t)(p - blk.data());
+    p = put_n(p, serial); p = put_l(p, ".tes\n");
+    p = writeconway(conf, p); *p++ = '\n';
+    if (eu_pruned) p = put_l(p, "---\n\n");
+    else {
+        cycles.clear();
+        writecyclefinal(conf, cycles);
+        cycles += "\n\n";
+        const size_t at = (size_t)(p - blk.data());
+        blk.resize((int)(at + cycles.size()));
+        p = put_s(blk.data() + at, cycles);
+    }
+    const size_t len = (size_t)(p - blk.data());
+    if (eu_stream) { std::cout.write(blk.data(), (std::streamsize)len); return 0; }
+    FamOut& o = *mid.fam;
+    const size_t was = o.buf.size();
+    // for merge_split: the block's place in a single process's order (a closure above the split falls
+    // between two branches), its length, and where its signature and its serial start
+    if (split_depth > 0 && orderly) {
+        char h[96], *q = h;
+        *q++ = '#'; q = put_n(q, in_branch >= 0 ? 2 * in_branch + 1 : 2 * branch_ctr); *q++ = ' ';
+        q = put_n(q, (long long)len); *q++ = ' '; q = put_n(q, (long long)sig_at); *q++ = ' ';
+        q = put_n(q, (long long)serial_at); *q++ = '\n';
+        o.buf.append(h, (size_t)(q - h));
+    }
+    o.buf.append(blk.data(), len);
+    FAM_HELD += o.buf.size() - was;
+    if (o.buf.size() >= (1u << 16)) family_write(o);
+    else if (FAM_HELD > (32u << 20)) family_streams_close(false);
     return 0;
+}
+
+// EU_SPLIT under EU_ORDERLY: the workers' family files, merged into the files one process would have
+// written. Each worker's blocks are in branch order already, so this is a merge by the heading
+// writesolution gave them, with the serial of "eu raw <sig> <n>.tes" counted afresh per signature.
+static void merge_split(int nfork) {
+    namespace fs = std::filesystem;
+    const std::string sub = filepath + (eu_pruned ? "pruned/" : "");
+    auto dir = [&](int c) { return "fork" + std::to_string(c) + "/" + sub; };
+    std::map<std::string, uintmax_t> sizes;
+    for (int c = 0; c < nfork; c++)
+        if (fs::is_directory(dir(c)))
+            for (const fs::directory_entry& e : fs::directory_iterator(dir(c))) if (e.is_regular_file()) sizes[e.path().filename().string()] += e.file_size();
+    fs::create_directories(sub);
+    // The files are independent, so the workers' count of processes merges them, largest first.
+    std::vector<std::pair<uintmax_t, std::string> > names;
+    for (const auto& kv : sizes) names.push_back({ kv.second, kv.first });
+    std::sort(names.rbegin(), names.rend());
+    // A worker's file of one family, read in order through a buffer. Mapped instead, the pages the workers
+    // had just written and the system had not yet put on disk made every fault wait for them: 2.4 s for the
+    // 1.1 GB of k<=16, against 0.6 s for the same files once on disk. read(2) takes them from the cache.
+    struct In {
+        int fd = -1;
+        std::vector<char> buf;
+        size_t at = 0, end = 0;   // buf[at, end) is unread
+        long long tag = 0;
+        size_t len = 0, sig = 0, serial = 0;
+        bool live = false;
+        const char* need(size_t n) {   // n unread bytes in a row, or what is left of the file
+            if (end - at < n) {
+                if (at) { std::memmove(buf.data(), buf.data() + at, end - at); end -= at; at = 0; }
+                if (buf.size() < n) buf.resize(std::max(n, (size_t)1 << 20));
+                for (ssize_t r; end < buf.size() && (r = read(fd, buf.data() + end, buf.size() - end)) > 0; ) end += (size_t)r;
+            }
+            return buf.data() + at;
+        }
+        void head() {   // read "#<place> <length> <signature at> <serial at>\n"; the block is next
+            const char* h = need(96);
+            if (!(live = at < end)) return;
+            char* q;
+            tag = strtoll(h + 1, &q, 10); len = strtoull(q, &q, 10); sig = strtoull(q, &q, 10); serial = strtoull(q, &q, 10);
+            at += (size_t)(q + 1 - h);
+        }
+    };
+    auto merge_one = [&](const std::string& name) {
+        std::vector<In> in(nfork);
+        for (int c = 0; c < nfork; c++)
+            if ((in[c].fd = open((dir(c) + name).c_str(), O_RDONLY)) >= 0) in[c].head();
+        const int ofd = open((sub + name).c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (ofd < 0) { std::cerr << "merge_split: cannot write " << sub << name << "\n"; _exit(2); }
+        std::string out;
+        auto flush = [&]() {
+            for (size_t done = 0; done < out.size(); ) {
+                const ssize_t w = write(ofd, out.data() + done, out.size() - done);
+                if (w <= 0) { std::cerr << "merge_split: write failed on " << sub << name << "\n"; _exit(2); }
+                done += (size_t)w;
+            }
+            out.clear();
+        };
+        std::unordered_map<std::string_view, int> serial;   // a signature lives in one family, so per file
+        std::deque<std::string> sigs;                       // the text the map's keys point into
+        for (;;) {
+            In* b = nullptr;
+            for (In& s : in) if (s.live && (!b || s.tag < b->tag)) b = &s;
+            if (!b) break;
+            const char* blk = b->need(b->len);
+            const char* dot = (const char*)memchr(blk + b->serial, '.', b->len - b->serial);   // the worker's serial ends at ".tes"
+            const std::string_view sig(blk + b->sig, b->serial - 1 - b->sig);
+            auto it = serial.find(sig);
+            if (it == serial.end()) { sigs.emplace_back(sig); it = serial.emplace(sigs.back(), 0).first; }
+            char num[24];
+            out.append(blk, b->serial);
+            out.append(num, (size_t)(put_n(num, ++it->second) - num));
+            out.append(dot, (size_t)(blk + b->len - dot));
+            if (out.size() > (4u << 20)) flush();
+            b->at += b->len;
+            b->head();
+        }
+        flush();
+        close(ofd);
+        for (int c = 0; c < nfork; c++) if (in[c].fd >= 0) { close(in[c].fd); fs::remove(dir(c) + name); }
+    };
+    std::vector<pid_t> kids;
+    for (int c = 0; c < nfork; c++) {
+        const pid_t pid = fork();
+        if (pid < 0) { std::cerr << "fork failed\n"; std::exit(2); }
+        if (pid == 0) {
+            for (size_t i = (size_t)c; i < names.size(); i += (size_t)nfork) merge_one(names[i].second);
+            _exit(0);
+        }
+        kids.push_back(pid);
+    }
+    for (pid_t pid : kids) {
+        int st = 0;
+        waitpid(pid, &st, 0);
+        if (!WIFEXITED(st) || WEXITSTATUS(st)) { std::cerr << "merge_split: a merge process failed\n"; std::exit(2); }
+    }
+    std::error_code ec;   // the workers' folders, when nothing else is left in them
+    for (int c = 0; c < nfork; c++)
+        for (const std::string& d : { dir(c), "fork" + std::to_string(c) + "/" + filepath, "fork" + std::to_string(c) }) fs::remove(d, ec);
+    std::cerr << "split: " << names.size() << " files of " << nfork << " workers merged into " << sub << "\n";
 }
 
 // Instrumentation for pricing isomorph-free generation (2026-08-07). simplify() is a WL refinement
@@ -1469,22 +1511,42 @@ static bool refine(configuration const& c, const long long* seed, const long lon
 
 unsigned long long LEAF_H1 = 0, LEAF_H2 = 0;   // canonical hash of the last minimal closure (leaf dedup)
 static std::vector<long long> SIMP_SEED, SIMP_TAG;
+// Set by orderly_ok on a closed P when a replay read P's whole code off it: an automorphism of P. Its
+// orbits are a congruence (it keeps R, L, M, G, corner class, edge type and vertex type, and moves every
+// dart), so P is a covering and the test below need not run.
+static bool ORD_AUTO = false;
 bool simplify_inner(configuration const& conf) {
-    const int le = (int)conf.rneig.size();
+    if (ORD_AUTO) return false;
+    const int le = (int)conf.rneig.size(), ets = EDGE_TYPED ? ETSPAN : 1;
+    const int* R = conf.rneig.data(); const int* L = conf.lneig.data(); const int* M = conf.mirro.data(); const int* G = conf.glue.data();
+    auto seed_of = [&](int d, int fam) { return (long long)(EDGE_TYPED ? conf.lvert[d] * ETSPAN + conf.etype[d] : conf.lvert[d]) * NFAM + fam; };
+    // covering test first: congruence.hpp. Seeds are small numbers on all but the widest alphabets, so
+    // without the leaf set their classes are counted in place (the hash of the seeds was two fifths of the
+    // test): count[seed] is zero between calls, seen lists the seeds met, in the order of their first darts.
+    static std::vector<int> cls, count, seen;
+    if (leaf_mb <= 0 && (long long)NCLS * ets * NFAM <= (1 << 20)) {
+        if (count.empty()) count.assign((size_t)NCLS * ets * NFAM, 0);
+        cls.resize(le); seen.clear();
+        for (int v = 0, d = 0; v < conf.num; v++) {
+            const int end = v + 1 < conf.num ? conf.voff[v + 1] : le, f = wl_only ? 0 : TYPE_FAM[conf.vertype[v]];
+            for (; d < end; d++) if (count[cls[d] = (int)seed_of(d, f)]++ == 0) seen.push_back(cls[d]);
+        }
+        int g = 0, least = seen[0], a = 0;
+        for (int sd : seen) { g = std::gcd(g, count[sd]); if (count[sd] < count[least]) least = sd; }
+        for (int sd : seen) count[sd] = 0;
+        if (g <= 1) return true;
+        while (cls[a] != least) a++;
+        return !congruence_from(le, R, L, M, G, cls.data(), a);
+    }
     SIMP_SEED.resize(le); SIMP_TAG.resize(le);
-    for (size_t v = 0, d = 0; v < conf.vertype.size(); v++) {
-        const int f = TYPE_FAM[conf.vertype[v]];
-        for (size_t q = 0; q < mainlist[conf.vertype[v]].rneig.size() && d < (size_t)le; q++, d++) {
-            SIMP_SEED[d] = (long long)(EDGE_TYPED ? conf.lvert[d] * ETSPAN + conf.etype[d] : conf.lvert[d])
-                           * NFAM + (wl_only ? 0 : f);
+    for (int v = 0, d = 0; v < conf.num; v++)
+        for (const int end = v + 1 < conf.num ? conf.voff[v + 1] : le; d < end; d++) {
+            SIMP_SEED[d] = seed_of(d, wl_only ? 0 : TYPE_FAM[conf.vertype[v]]);
             SIMP_TAG[d] = conf.vertype[v];
         }
-    }
-    const long long* sd = SIMP_SEED.data();   // covering test first: congruence.hpp
-    if (has_congruence(le, conf.rneig.data(), conf.lneig.data(), conf.mirro.data(), conf.glue.data(),
-                       (int)mainlist[conf.vertype[0]].rneig.size(), [sd](int x, int y) { return sd[x] == sd[y]; }))
-        return false;
-    if (!refine(conf, SIMP_SEED.data(), SIMP_TAG.data(), LEAF_H1, LEAF_H2)) {
+    if (has_congruence(le, R, L, M, G, SIMP_SEED.data())) return false;
+    // the refinement is for the leaf set's hash alone
+    if (leaf_mb > 0 && !refine(conf, SIMP_SEED.data(), SIMP_TAG.data(), LEAF_H1, LEAF_H2)) {
         std::cerr << "simplify: refinement and congruence test disagree\n"; std::abort();
     }
     return true;
@@ -1511,9 +1573,10 @@ bool simplify_inner(configuration const& conf) {
 static std::vector<std::vector<std::vector<int> > > T_AUT, T_AUTINV;   // [type][frame][local dart]
 static std::vector<std::vector<int> > T_TOREP, T_REPOF;   // [type][dart]: frame taking it to its rep, the rep
 static std::vector<int> T_ID;                             // [type]: the identity frame
+static std::vector<int> T_FIRST;                          // [type]: the dart a search rooted at it branches on first
 static void type_auts(int t) {
     if (T_AUT.empty()) { T_AUT.resize(symbolcount); T_AUTINV.resize(symbolcount); T_TOREP.resize(symbolcount);
-                         T_REPOF.resize(symbolcount); T_ID.assign(symbolcount, -1); }
+                         T_REPOF.resize(symbolcount); T_ID.assign(symbolcount, -1); T_FIRST.assign(symbolcount, -1); }
     if (!T_AUT[t].empty()) return;
     const vertexdef& V = mainlist[t];
     const int n = (int)V.rneig.size();
@@ -1549,6 +1612,11 @@ static void type_auts(int t) {
     }
     for (int q = 0; q < n; q++)
         if (T_TOREP[t][q] < 0) { std::cerr << "orderly: type " << t << " dart " << q << " has no rep in its orbit\n"; std::abort(); }
+    configuration one;
+    add_vertex(one, t);
+    int slack;
+    const int ff = min_slack(one, slack);
+    T_FIRST[t] = dart_star(one, ff) ? one.mirro[ff] : ff;
 }
 // Any fixed order on moves is exact; this one exposes a wrong root soonest of the five measured: a fresh
 // vertex before a glue to a placed dart, higher types first. Regular k<=11: 373K nodes against 467K for
@@ -1556,112 +1624,83 @@ static void type_auts(int t) {
 static inline long long enc_exist(int i) { return (1LL << 50) + i; }
 static inline long long enc_new(int g, int r) { return ((1LL << 32) - g) * 4096 + r; }
 static std::vector<long long> MOVES;      // MOVES[d]: the branch move at code position d
-// A replay in progress: the copy Q built so far and the vertex map to P (Q's local dart = AUT[type][frame]
-// of P's).
+// A REPLAY KEEPS NO COPY (2026-11-10). The copy Q a replay built by making P's first s moves from another
+// root was, dart for dart, P's own ancestor after s moves: both start from one vertex of the root's type,
+// and the search is a function of the moves. So the dart the replay branches on at step s is the dart
+// the search branched on there (BRANCH[s]), its vertices are P's first ones under the same numbers, and
+// all a replay holds is where it sends them: the vertex of P and the frame for each. It used to build
+// and undo a configuration of its own, a fifth of a run.
 struct RState {
-    configuration Q;
-    std::vector<int> qvof, qoff;   // Q dart -> Q vertex; Q vertex -> first dart (nv + 1 entries)
-    std::vector<int> qv2p, qaut;   // Q vertex -> P vertex, frame
-    std::vector<int> pv2q;         // P vertex -> Q vertex, -1 = not reached
-    int s, nfree;
+    std::vector<int> qv2p, qaut;   // its vertex -> P's vertex, frame (its local dart = AUT[type][frame] of P's)
+    std::vector<int> pv2q;         // P's vertex -> its vertex, -1 = not reached
+    int s;                         // code positions matched
 };
-static std::deque<RState> RPOOL;          // stack slots: ALIVE[D]'s states live below POOL_END[D]
+static std::vector<int> BRANCH;           // BRANCH[d]: the dart the search branches on after d moves
+static std::deque<RState> RPOOL;          // stack slots: the replays first needed at code length D live below POOL_END[D]
 static std::vector<int> POOL_END;
 static int pool_used = 0;
 static inline int pool_alloc() { if (pool_used == (int)RPOOL.size()) RPOOL.emplace_back(); return pool_used++; }
-struct AltRoot { int v, a, wait, st; };   // wait: the P dart its replay stalled on; st: its state slot
+// wait: the P dart its replay stalled on; st: its replay, -1 while the first move is undecided (it needs
+// none); nv, s: where the replay stood before this node advanced it (nv < 0: it did not).
+struct AltRoot { int v, a, wait, st, nv, s; };
 static std::vector<std::vector<AltRoot> > ALIVE;   // ALIVE[D]: undecided roots at code length D
 static std::vector<int> ALIVE_NV;                  // P's vertex count when ALIVE[D] was formed
 static long long ord_pruned = 0, ord_rejected = 0, ord_replays = 0, ord_skips = 0;
-static std::vector<int> P_OFF, P_VOF, RWORK;
-enum { R_TIED, R_PRUNE, R_DROP };
+enum { R_TIED, R_PRUNE, R_DROP, R_GO };
 static int REPLAY_WAIT = -1;
-// Q carries only what writecycle and zero_slack read: no edge types, and labels only in a trace build.
-static std::ostream ORD_NULL(nullptr);   // writecycle's trace output for replays goes nowhere
-static void rs_add_vertex(RState& R, int g, int pv, int a) {
-    const vertexdef& VD = mainlist[g];
-    configuration& Q = R.Q;
-    const int l = (int)Q.rneig.size(), sl = (int)VD.rneig.size(), qv = (int)Q.vertype.size(), n = l + sl;
-    Q.rneig.resize(n); Q.lneig.resize(n); Q.mirro.resize(n); Q.lvert.resize(n); Q.glue.resize(n); R.qvof.resize(n);
-    if (eu_trace) Q.label.resize(n);
-    for (int j = 0; j < sl; j++) {
-        Q.rneig[l + j] = l + VD.rneig[j]; Q.lneig[l + j] = l + VD.lneig[j]; Q.mirro[l + j] = l + VD.mirro[j];
-        Q.lvert[l + j] = VD.lvert[j]; Q.glue[l + j] = -1; R.qvof[l + j] = qv;
-        if (eu_trace) Q.label[l + j] = label_code(LBASE_OF[g][j], Q.num);
-    }
-    Q.vertype.push_back(g); Q.num++; Q.kcnt += VD.counting;
-    R.qoff.push_back(l + sl); R.qv2p.push_back(pv); R.qaut.push_back(a);
-    R.pv2q[pv] = qv;
-    R.nfree += sl;
+
+static void rs_undo(RState& R, AltRoot const& m) {
+    for (; (int)R.qv2p.size() > m.nv; R.qv2p.pop_back(), R.qaut.pop_back()) R.pv2q[R.qv2p.back()] = -1;
+    R.s = m.s;
 }
-static void rs_init(RState& R, configuration const& P, int v, int a) {
-    configuration& Q = R.Q;
-    Q.label.clear(); Q.lneig.clear(); Q.rneig.clear(); Q.mirro.clear(); Q.lvert.clear(); Q.etype.clear();
-    Q.glue.clear(); Q.vertype.clear(); Q.num = 0; Q.kcnt = 0; Q.dfs_depth = 0;
-    R.qvof.clear(); R.qoff.assign(1, 0); R.qv2p.clear(); R.qaut.clear();
-    R.pv2q.assign(P.vertype.size(), -1);
-    R.s = 0; R.nfree = 0;
-    rs_add_vertex(R, P.vertype[v], v, a);
+// The least-slack dart of c, or its mirror image when its label is starred: where the search branches.
+static int branch_dart(configuration const& c, int& slack) {
+    const int ff = min_slack(c, slack), d = (int)c.dfs_depth;
+    if ((int)BRANCH.size() <= d) BRANCH.resize(d + 1);
+    BRANCH[d] = dart_star(c, ff) ? c.mirro[ff] : ff;
+    return ff;
 }
-static inline void rs_glue(RState& R, int a, int b) {   // a dart glued to its mirror repeats a pair: count once
-    if (R.Q.glue[a] == -1) R.nfree--;
-    if (b != a && R.Q.glue[b] == -1) R.nfree--;
-    R.Q.glue[a] = b; R.Q.glue[b] = a;
-}
-static inline bool rs_star(RState const& R, int d) {   // label_star without the label
-    const int qv = R.qvof[d];
-    return LBASE_STAR[LBASE_OF[R.Q.vertype[qv]][d - R.qoff[qv]]] != 0;
-}
-static inline int rs_q2p(RState const& R, int d) {
-    const int qv = R.qvof[d];
-    return P_OFF[R.qv2p[qv]] + T_AUTINV[R.Q.vertype[qv]][R.qaut[qv]][d - R.qoff[qv]];
+// The first move of the replay rooted at (v, a), read before it has a state: every frame of a type branches
+// on the same dart first. R_GO = it is P's own first move, so the replay goes on.
+static int first_move(configuration const& P, int v, int a, int D, bool full) {
+    const int t0 = P.vertype[v];
+    const int x = P.voff[v] + T_AUTINV[t0][a][T_FIRST[t0]], y = P.glue[x];
+    REPLAY_WAIT = -1;
+    if (y < 0) { REPLAY_WAIT = x; return R_TIED; }
+    const int pv = P.vof[y], g = P.vertype[pv], qy = y - P.voff[pv];
+    long long code;
+    if (pv == v) code = enc_exist(T_AUT[t0][a][qy]);
+    else { type_auts(g); code = enc_new(g, T_REPOF[g][qy]); }
+    if (D <= 0) return full ? R_DROP : R_TIED;
+    if (code != MOVES[0]) return code < MOVES[0] ? R_PRUNE : R_DROP;
+    return R_GO;
 }
 // Continue the replay in R on P, whose code has length D. full = P is closed.
 static int replay_from(configuration const& P, RState& R, int D, bool full) {
     ord_replays++;
     REPLAY_WAIT = -1;
     R.pv2q.resize(P.vertype.size(), -1);
-    configuration& Q = R.Q;
     for (;; R.s++) {
         const int s = R.s;
-        if (R.nfree == 0) return full && s < D ? R_PRUNE : R_TIED;   // a strict prefix is smaller; equal = automorphism
-        writecycle(Q, ORD_NULL);
-        int ff = mincycle[0];
-        if (rs_star(R, ff)) ff = Q.mirro[ff];
-        const int x = rs_q2p(R, ff), y = P.glue[x];
+        if (s == D && full) { ORD_AUTO = true; return R_TIED; }   // P's whole code, read off another root: an automorphism
+        const int ff = BRANCH[s], qv = P.vof[ff];
+        const int x = P.voff[R.qv2p[qv]] + T_AUTINV[P.vertype[qv]][R.qaut[qv]][ff - P.voff[qv]], y = P.glue[x];
         if (y < 0) { REPLAY_WAIT = x; return R_TIED; }
-        const int pv = P_VOF[y], qv = R.pv2q[pv], g = P.vertype[pv], qy = y - P_OFF[pv];
-        int partner = -1;
+        if (s == D) return R_TIED;
+        const int pv = P.vof[y], q2 = R.pv2q[pv], g = P.vertype[pv], qy = y - P.voff[pv];
         long long code;
-        if (qv >= 0) { partner = R.qoff[qv] + T_AUT[g][R.qaut[qv]][qy]; code = enc_exist(partner); }
+        if (q2 >= 0) code = enc_exist(P.voff[q2] + T_AUT[g][R.qaut[q2]][qy]);
         else { type_auts(g); code = enc_new(g, T_REPOF[g][qy]); }
-        if (s >= D) return full ? R_DROP : R_TIED;
         if (code != MOVES[s]) return code < MOVES[s] ? R_PRUNE : R_DROP;
-        if (qv < 0) { const int nq = (int)Q.vertype.size(); rs_add_vertex(R, g, pv, T_TOREP[g][qy]); partner = R.qoff[nq] + T_REPOF[g][qy]; }
-        const bool mir = Q.mirro[ff] == ff;
-        rs_glue(R, ff, partner);
-        if (!mir) rs_glue(R, Q.mirro[ff], Q.mirro[partner]);
-        RWORK.assign({ ff, partner });
-        if (!mir) { RWORK.push_back(Q.mirro[ff]); RWORK.push_back(Q.mirro[partner]); }
-        while (!RWORK.empty()) {   // forced closure, as propagate_forced does it
-            const int z = RWORK.back(); RWORK.pop_back();
-            int s1, r1;
-            if (no_force || !zero_slack(Q, Q.lneig[z], s1, r1)) continue;
-            const bool ms = Q.mirro[s1] == s1;
-            // P passed these checks, so neither can fail; if one did, deciding nothing is safe.
-            if (ms != (Q.mirro[r1] == r1) || P.glue[rs_q2p(R, s1)] != rs_q2p(R, r1)) return R_TIED;
-            rs_glue(R, s1, r1);
-            if (!ms) {
-                const int a2 = Q.mirro[s1], b2 = Q.mirro[r1];
-                if (Q.glue[a2] != -1 || Q.glue[b2] != -1) { if (Q.glue[a2] != b2) return R_TIED; }
-                else rs_glue(R, a2, b2);
-            }
-            RWORK.push_back(s1); RWORK.push_back(r1);
-            if (!ms) { RWORK.push_back(Q.mirro[s1]); RWORK.push_back(Q.mirro[r1]); }
-        }
+        // The move is P's own, so are the forced closures after it: nothing to make, only the vertex to map.
+        if (q2 < 0) { R.pv2q[pv] = (int)R.qv2p.size(); R.qv2p.push_back(pv); R.qaut.push_back(T_TOREP[g][qy]); }
     }
 }
-// False = prune P (full: reject the closure).
+// Take back what orderly_ok did to the replays at code length D.
+static void orderly_undo(int D) {
+    for (const AltRoot& r : ALIVE[D]) if (r.nv >= 0) rs_undo(RPOOL[r.st], r);
+}
+// False = prune P (full: reject the closure). True: the caller calls orderly_undo when P's subtree is done.
 static bool orderly_ok(configuration const& P, bool full) {
     const int D = P.dfs_depth, nv = (int)P.vertype.size(), t0 = P.vertype[0];
     type_auts(t0);
@@ -1670,59 +1709,59 @@ static bool orderly_ok(configuration const& P, bool full) {
     std::vector<AltRoot>& out = ALIVE[D];
     out.clear();
     ALIVE_NV[D] = nv;
-    POOL_END[D] = pool_used;
-    static std::vector<AltRoot> cand;
-    cand.clear();
-    if (D == 0) { for (int a = 0; a < (int)T_AUT[t0].size(); a++) if (a != T_ID[t0]) cand.push_back({ 0, a, -1, -1 }); }
-    else {
-        cand = ALIVE[D - 1];
-        for (int v = ALIVE_NV[D - 1]; v < nv; v++)
-            if (P.vertype[v] == t0) for (int a = 0; a < (int)T_AUT[t0].size(); a++) cand.push_back({ v, a, -1, -1 });
-    }
-    bool maps = false;   // P's dart maps, built on the first replay: most nodes run none
-    for (const AltRoot& r : cand) {
-        if (!full && r.st >= 0 && r.wait >= 0 && P.glue[r.wait] == -1) { ord_skips++; out.push_back(r); continue; }
-        if (!maps) {
-            maps = true;
-            P_OFF.resize(nv + 1); P_VOF.resize(P.glue.size());
-            for (int v = 0, o = 0; v < nv; v++) {
-                P_OFF[v] = o;
-                const int sz = (int)mainlist[P.vertype[v]].rneig.size();
-                for (int j = 0; j < sz; j++) P_VOF[o + j] = v;
-                o += sz; P_OFF[v + 1] = o;
+    ORD_AUTO = false;
+    auto decide = [&](AltRoot r) {   // false = P is not canonical
+        r.nv = -1;
+        if (!full && r.wait >= 0 && P.glue[r.wait] == -1) { ord_skips++; out.push_back(r); return true; }
+        int res = R_GO;
+        const bool fresh = r.st < 0;
+        if (fresh) {
+            res = first_move(P, r.v, r.a, D, full);
+            if (res == R_GO) {
+                RState& R = RPOOL[r.st = pool_alloc()];
+                R.qv2p.assign(1, r.v); R.qaut.assign(1, r.a); R.pv2q.assign(nv, -1); R.pv2q[r.v] = 0; R.s = 0;
             }
+        } else {
+            r.nv = (int)RPOOL[r.st].qv2p.size(); r.s = RPOOL[r.st].s;
         }
-        const int slot = pool_alloc();
-        if (r.st >= 0) RPOOL[slot] = RPOOL[r.st]; else rs_init(RPOOL[slot], P, r.v, r.a);
-        const int res = replay_from(P, RPOOL[slot], D, full);
-        if (res == R_PRUNE) { (full ? ord_rejected : ord_pruned)++; POOL_END[D] = pool_used; return false; }
-        if (res == R_DROP) { pool_used--; continue; }
-        out.push_back({ r.v, r.a, REPLAY_WAIT, slot });
+        if (res == R_GO) res = replay_from(P, RPOOL[r.st], D, full);
+        if (res == R_TIED) { r.wait = REPLAY_WAIT; out.push_back(r); return true; }
+        if (!fresh) rs_undo(RPOOL[r.st], r);   // the parent's replay goes on from where it stood
+        else if (r.st >= 0) pool_used--;
+        return res == R_DROP;
+    };
+    bool ok = true;
+    const int frames = (int)T_AUT[t0].size();
+    if (D == 0) { for (int a = 0; a < frames && ok; a++) if (a != T_ID[t0]) ok = decide({ 0, a, -1, -1, -1, 0 }); }
+    else {
+        for (size_t i = 0; i < ALIVE[D - 1].size() && ok; i++) ok = decide(ALIVE[D - 1][i]);
+        for (int v = ALIVE_NV[D - 1]; v < nv && ok; v++)
+            if (P.vertype[v] == t0) for (int a = 0; a < frames && ok; a++) ok = decide({ v, a, -1, -1, -1, 0 });
     }
+    if (!ok) { (full ? ord_rejected : ord_pruned)++; orderly_undo(D); out.clear(); return false; }
     POOL_END[D] = pool_used;
     return true;
 }
 
-// A branch glue has passed checkpart_inc: close the forced faces, then emit the configuration if it is
-// closed or recurse into it. True when it recursed (the old `success`).
-static bool visit_child(configuration& c, const int* chg) {
-    const size_t fmark = FTRAIL.size();
-    bool recursed = false;
-    if (propagate_forced(c, chg, 4)) {
-        if (std::find(c.glue.begin(), c.glue.end(), -1) == c.glue.end()) {
-            if (split_depth > 0 && c.dfs_depth < split_depth && fork_index != 0) {}   // worker 0 writes these
-            else if (c.kcnt > seen) { if ((!orderly || orderly_ok(c, true)) && simplify(c)) writesolution(c); }
-            else nckzero++;   // closed but zero counting vertices: not a tiling record
-        } else if (!orderly || orderly_ok(c, false)) {
-            extend(c);
-            recursed = true;
-        }
-    }
-    undo_forced(c, fmark);
-    return recursed;
+// A branch glue has been accepted: close the forced faces (the joins since `from` name the faces it
+// touched), then emit the configuration if it is closed or recurse into it. True when it recursed (the old
+// `success`). The caller's undo_to takes everything back.
+static bool visit_child(configuration& c, size_t from) {
+    if (!propagate_forced(c, from)) return false;
+    const bool closed = c.nfree == 0;
+    if (closed && split_depth > 0 && c.dfs_depth < split_depth && fork_index != 0) return false;   // worker 0 writes these
+    if (closed && c.kcnt <= seen) { nckzero++; return false; }   // closed but zero counting vertices: not a tiling record
+    int slack = 0;
+    const int ff = closed ? -1 : branch_dart(c, slack);
+    if (orderly && !orderly_ok(c, closed)) return false;
+    if (!closed) extend(c, ff, slack);
+    else if (simplify(c)) writesolution(c);
+    if (orderly) orderly_undo(c.dfs_depth);
+    return !closed;
 }
 
-int extend(configuration& slist) {
+// firstfree: the least-slack dart of slist (branch_dart), minc: its slack.
+int extend(configuration& slist, int firstfree, const int minc) {
     slist.dfs_depth++;
     // Root level (the one-vertex seed from initex) is where the depth-2 cut is made. Deeper calls
     // never consult the shard, so the subtree below a taken branch is explored whole.
@@ -1737,24 +1776,19 @@ int extend(configuration& slist) {
         }
         gen << "Resolving configuration " << solcount + 1 << "\n";
         gen << verbalvertices(slist.vertype) << "\n";
-        gen << signature(slist.vertype) << "\n";
+        gen << text_of(types_room(slist.vertype), [&](char* p) { return signature(sorted_vertype(slist.vertype), p); }) << "\n";
         gen << std::to_string(slist.num) << "\n";
-        gen << writeconway(slist) << "\n";
+        gen << text_of(35 * slist.glue.size() + 8, [&](char* p) { return writeconway(slist, p); }) << "\n";
     }
-    writecycle(slist, gen);   // computes global mincycle (read below) — must run even without tracing
-    int firstfree;
-    int minc;
-    firstfree = mincycle[0];
-    minc = mincycle[1];
-    if (label_star(slist.label[firstfree])) {
-        firstfree = slist.mirro[firstfree];
-    }
-    bool mirrored = (slist.mirro[firstfree] == firstfree);
-    if (eu_trace) gen << "firstfree = " << std::to_string(firstfree) << "(" << label_str(slist.label[firstfree]) << "), between " <<
-        CLASS_DISP[slist.lvert[firstfree]] << " and " << CLASS_DISP[slist.lvert[slist.mirro[firstfree]]] <<
+    if (eu_trace) trace_faces(slist, gen, firstfree, minc);
+    firstfree = BRANCH[slist.dfs_depth - 1];
+    const int mff = slist.mirro[firstfree];
+    const bool mirrored = mff == firstfree;
+    if (eu_trace) gen << "firstfree = " << std::to_string(firstfree) << "(" << label_text(slist, firstfree) << "), between " <<
+        CLASS_DISP[slist.lvert[firstfree]] << " and " << CLASS_DISP[slist.lvert[mff]] <<
         ". Difference = " << std::to_string(minc) << "\n";
     // FIX 9 — the SAME two class equalities fix 2 hoisted for the add-a-vertex branch also govern this
-    // one, and nothing was checking them here: checkpart_inc was called 2.48e9 times at k=2, mostly
+    // one, and nothing was checking them here: the face rules were asked 2.48e9 times at k=2, mostly
     // from this loop, to reject gluings that two comparisons rule out. a_cls/b_cls are loop-invariant.
     const int a_cls = slist.lvert[firstfree];
     const int b_cls = slist.lvert[slist.rneig[firstfree]];
@@ -1762,46 +1796,61 @@ int extend(configuration& slist) {
     // A in {NEXT,PREV}[b]. Under BUCKET_OK the two alternatives coincide and this is the old test.
     const int wB1 = CLASS_NEXT[a_cls], wB2 = CLASS_PREV[a_cls];
     const int wA1 = CLASS_NEXT[b_cls], wA2 = CLASS_PREV[b_cls];
-    for (int i = 0; i < (int)slist.rneig.size(); i++) {
-        if (slist.glue[i] == -1) {
-            bool mirroredi = slist.mirro[i] == i;
-            if (mirrored == mirroredi) {
-                {
-                    const int Bi = slist.lvert[slist.rneig[i]], Ai = slist.lvert[i];
-                    if ((Bi != wB1 && Bi != wB2) || (Ai != wA1 && Ai != wA2)) continue;
-                }
-                // EDGE TYPES: a leg may not be glued to a hypotenuse. Checked on the mirror pair
-                // too, since a non-mirrored glue drags its mirror image along with it.
-                if (EDGE_TYPED) {
-                    if (!edge_ok(slist, firstfree, i)) continue;
-                    if (!mirrored && !edge_ok(slist, slist.mirro[firstfree], slist.mirro[i])) continue;
-                }
-                slist.glue[firstfree] = i;
-                slist.glue[i] = firstfree;
-                if (!mirrored) {
-                    slist.glue[slist.mirro[firstfree]] = slist.mirro[i];
-                    slist.glue[slist.mirro[i]] = slist.mirro[firstfree];
-                }
-                configuration& newconf = slist;
-                const int chg1[4] = { firstfree, i,
-                                      mirrored ? -1 : newconf.mirro[firstfree],
-                                      mirrored ? -1 : newconf.mirro[i] };
-                if (checkpart_inc(newconf, chg1, 4) && (!shard_here || shard_take_branch())) {
-                    if (orderly) { MOVES.resize(std::max<size_t>(MOVES.size(), slist.dfs_depth)); MOVES[slist.dfs_depth - 1] = enc_exist(i); }
-                    if (visit_child(newconf, chg1)) {
-                        success++;
-                        if (eu_trace) potential.push_back(conwaysymbol(label_str(newconf.label[firstfree]), label_str(newconf.label[i])));
-                    }
-                    if (shard_here) shard_done_branch();
-                }
-                slist.glue[firstfree] = -1;
-                slist.glue[i] = -1;
-                if (!mirrored) {
-                    slist.glue[slist.mirro[firstfree]] = -1;
-                    slist.glue[slist.mirro[i]] = -1;
-                }
-            }
+    // Every child is the glue of firstfree to a dart i (and of their mirror images, unless both lie on a
+    // mirror or i is firstfree's own image), taken back by undo_to before the next.
+    const size_t fm = slist.ftrail.size(), gm = slist.gtrail.size();
+    // COUNTS BEFORE THE GLUE (2026-11-10). Write X for the face that starts at firstfree and Y for the one
+    // that ends there. Gluing firstfree to i puts the face that ends at i before X and the face that starts
+    // at i after Y, and the mirror glue does the same to the mirror images. A face longer than L, or closed
+    // at a length L is no multiple of, fails a join, so a dart or a vertex type that would make one is
+    // passed over before anything is glued or built: regular k<=14, 5.1M of 8.5M glues to placed darts
+    // and 2.0M of 5.9M fresh vertices. Each test is a join's own (same counts, same class) or, where it
+    // adds up several faces, holds because L is one number along a face (UNIFORM_L, else those are off).
+    static const bool UNIFORM_L = []() {
+        for (size_t c = 0; c < CLASS_L.size(); c++)
+            if (CLASS_L[CLASS_NEXT[c]] != CLASS_L[c] || CLASS_L[CLASS_PREV[c]] != CLASS_L[c]) return false;
+        return true;
+    }();
+    auto bad_close = [](int n, int cls) { return n % CLASS_P[cls] != 0 || CLASS_L[cls] % n != 0; };
+    const int sY = slist.face[firstfree].lend, rX = slist.face[firstfree].rend;
+    const int cntX = slist.face[firstfree].cnt, cntY = slist.face[sY].cnt;
+    const int LX = CLASS_L[b_cls], LY = CLASS_L[a_cls];
+    auto doomed = [&](int i) {   // a placed dart i
+        const Face* F = slist.face.data();
+        const int si = F[i].lend, Ai = slist.lvert[i];
+        if (sY == i ? bad_close(cntY, a_cls) : cntY + F[i].cnt > LY) return true;   // the first join, as face_join decides it
+        if (si == firstfree ? i != firstfree && bad_close(cntX, Ai) : UNIFORM_L && F[si].cnt + cntX > LX) return true;   // the second
+        if (!UNIFORM_L || mirrored || i == mff) return false;
+        const int mi = slist.mirro[i];   // X or Y its own mirror image: the mirror glue lengthens it again
+        return (rX == mff && si != firstfree && si != mi && cntX + F[si].cnt + F[mi].cnt > LX) ||
+               (sY == mff && F[i].rend != mi && cntY + F[i].cnt + F[F[mi].lend].cnt > LY);
+    };
+    auto glue_to = [&](int i, const int* known = nullptr) {
+        return cglue(slist, firstfree, i) && (mirrored || i == mff || cglue(slist, mff, slist.mirro[i]))
+            && faces_can_close(slist, fm, known);
+    };
+    for (int i = next_free(slist, 0); i >= 0; i = next_free(slist, i + 1)) {
+        if (mirrored != (slist.mirro[i] == i)) continue;
+        {
+            const int Bi = slist.lvert[slist.rneig[i]], Ai = slist.lvert[i];
+            if ((Bi != wB1 && Bi != wB2) || (Ai != wA1 && Ai != wA2)) continue;
         }
+        // EDGE TYPES: a leg may not be glued to a hypotenuse. Checked on the mirror pair
+        // too, since a non-mirrored glue drags its mirror image along with it.
+        if (EDGE_TYPED) {
+            if (!edge_ok(slist, firstfree, i)) continue;
+            if (!mirrored && !edge_ok(slist, mff, slist.mirro[i])) continue;
+        }
+        if (doomed(i)) continue;
+        if (glue_to(i) && (!shard_here || shard_take_branch())) {
+            if (orderly) { MOVES.resize(std::max<size_t>(MOVES.size(), slist.dfs_depth)); MOVES[slist.dfs_depth - 1] = enc_exist(i); }
+            if (visit_child(slist, fm)) {
+                success++;
+                if (eu_trace) potential.push_back(conwaysymbol(label_text(slist, firstfree), label_text(slist, i)));
+            }
+            if (shard_here) shard_done_branch();
+        }
+        undo_to(slist, fm, gm);
     }
     bool canK = slist.kcnt < maxnum;
     {
@@ -1852,117 +1901,80 @@ int extend(configuration& slist) {
         // PAIR FILTER — gluing firstfree to f fixes successor(x) = f for x = lneig[firstfree], so the
         // face through x must still be able to close. tkey(x) is loop-invariant. Reject before
         // materialising, and skip a type entirely when none of its reps survives.
-        const int px = slist.lneig[firstfree];
-        const int tk_x = cand_key(slist.lvert[px], slist.lvert[slist.rneig[px]], slist.mirro[px] == px);
+        const int tk_x = tkey_at(slist, slist.lneig[firstfree]);
         // The gluing is symmetric, so it also fixes successor(lneig(f)) = firstfree. That REVERSE face
         // must be able to close as well, and nothing checked it: one more bit lookup per candidate.
         // NOTE the dart: successor(y) = glue[rneig[y]], so the chain continues from Q(rneig[firstfree]),
         // NOT Q(firstfree). Using the bucket key here is off by one dart and mixes two class orbits.
-        const int rf = slist.rneig[firstfree];
         int qf_x[4];
-        const int nqf_x = qkeys(slist.lvert[rf], slist.lvert[slist.rneig[rf]],
-                                slist.mirro[rf] == rf, qf_x);
-        while (gidx < gend) {
-            const int gr = (*pool)[gidx].gr;
-            {
-                bool any = false;
-                for (int q = gidx; q < gend && (*pool)[q].gr == gr; q++)
-                    if (pair_ok_any(tk_x, (*pool)[q].qf, (*pool)[q].nqf) &&
-                        pair_ok_any((*pool)[q].tkrev, qf_x, nqf_x)) { any = true; break; }
-                if (!any) { while (gidx < gend && (*pool)[gidx].gr == gr) gidx++; continue; }
+        const int nqf_x = qkeys_at(slist, slist.rneig[firstfree], qf_x);
+        // THE SAME TWO FACES, WITH THEIR LENGTHS (2026-11-10). The face that ends at firstfree gains the
+        // corner (f, rneig f) and the face that starts there gains (lneig f, f), so the dynamic test on
+        // both is known from the candidate's keys before its vertex exists. Four of five vertices were
+        // built only to fail it. Exact: a face that passes after the whole glue passed at this stage too.
+        const int c1 = slist.face[slist.face[firstfree].lend].cnt + 1, c2 = slist.face[firstfree].cnt + 1;
+        const int tk_s1 = tkey_at(slist, slist.face[firstfree].lend);
+        int q_r2[4];
+        const int nq_r2 = qkeys_at(slist, slist.face[firstfree].rend, q_r2);
+        auto cand_ok = [&](CandEnt const& e) {
+            const int nqf = e.nqf & 7;
+            return pair_ok_any(tk_x, e.qf, nqf) && pair_ok_any(e.tkrev, qf_x, nqf_x) &&
+                   (!DYN_READY || (dyn_keys_close(tk_s1, e.qf, nqf, c1) && dyn_keys_close(e.tkrev, q_r2, nq_r2, c2)));
+        };
+        // A fresh vertex glued at its dart q puts the corner (lneig q, q) before X and (q, rneig q) after Y,
+        // and the mirror glue puts their mirror images after X's mirror image and before Y's. So a corner
+        // that is its own mirror image joins a face to its mirror image, or closes a face that is its own;
+        // one that is not lengthens such a face twice.
+        const bool xself = rX == mff, yself = sY == mff, xy = sY == firstfree;
+        const bool x1 = xself ? bad_close(cntX + 1, slist.lvert[mff]) : UNIFORM_L && cntX + 1 + slist.face[slist.face[mff].lend].cnt > LX;
+        const bool y1 = !yself && UNIFORM_L && cntY + 1 + slist.face[mff].cnt > LY;
+        const bool x2 = xself && UNIFORM_L && cntX + 2 > LX, y2 = yself && UNIFORM_L && cntY + 2 > LY;
+        auto doomed_new = [&](CandEnt const& e) {
+            const vertexdef& VD = mainlist[e.gr];
+            const int q = e.rrep;
+            if (e.nqf & 32)   // one corner (q, q), after Y and before X
+                return xy ? bad_close(cntX + 1, VD.lvert[q]) : cntY + 1 + cntX > CLASS_L[VD.lvert[q]];
+            if (!(e.nqf & 64)) {
+                if (e.nqf & 8 ? x1 : x2) return true;
+                if (e.nqf & 16 ? (yself ? bad_close(cntY + 1, VD.lvert[VD.mirro[q]]) : y1) : y2) return true;
             }
+            return xy && cntX + 2 > CLASS_L[VD.lvert[q]];   // X is Y: both corners go to it
+        };
+        // One pass: a type's vertex is built when the first of its reps passes the filters, and stays
+        // for the rest of them.
+        const int l = (int)slist.rneig.size();
+        int built = -1;
+        for (; gidx < gend; gidx++) {
+            const CandEnt& e = (*pool)[gidx];
+            const vertexdef& VD = mainlist[e.gr];
             // Counting types are bounded by maxnum (= k). Noncounting (dent-fill) types are not
             // bounded at all any more — see the max_nc note at the top.
-            bool skip = false;
-            if (mainlist[gr].counting && !canK) skip = true;
-            if (skip) { while (gidx < gend && (*pool)[gidx].gr == gr) gidx++; continue; }
-            int l = slist.rneig.size();
-            configuration& newconf = slist;
-            // FIX 8 — was 6 push_backs per dart: 10.6e9 capacity-checked appends at k=2. One sized
-            // grow per array, then raw-pointer stores. Capacity persists across the DFS because
-            // teardown shrinks with resize(), so the grow almost never reallocates.
-            const vertexdef& VD = mainlist[gr];
-            const int symbollength = (int)VD.rneig.size();
-            const int newsz = l + symbollength;
-            newconf.rneig.resize(newsz); newconf.lneig.resize(newsz); newconf.mirro.resize(newsz);
-            newconf.lvert.resize(newsz); newconf.label.resize(newsz); newconf.glue.resize(newsz);
-            if (EDGE_TYPED) newconf.etype.resize(newsz);
-            int* RN = newconf.rneig.data(); int* LN = newconf.lneig.data();
-            int* MI = newconf.mirro.data(); int* LV = newconf.lvert.data();
-            int* LB = newconf.label.data(); int* GL = newconf.glue.data();
-            const int* srn = VD.rneig.data(); const int* sln = VD.lneig.data();
-            const int* smi = VD.mirro.data(); const int* slv = VD.lvert.data();
-            int* ET = EDGE_TYPED ? newconf.etype.data() : nullptr;
-            const int* set_ = EDGE_TYPED ? VD.etype.data() : nullptr;
-            const int* sbo = LBASE_OF[gr].data();
-            const int tilenum = newconf.num;
-            for (int gg = 0; gg < symbollength; gg++) {
-                const int d = l + gg;
-                RN[d] = l + srn[gg];
-                LN[d] = l + sln[gg];
-                MI[d] = l + smi[gg];
-                LV[d] = slv[gg];
-                if (ET) ET[d] = set_[gg];
-                LB[d] = label_code(sbo[gg], tilenum);
-                GL[d] = -1;
+            if (!cand_ok(e) || mirrored != ((e.nqf & 64) != 0) || doomed_new(e) || (VD.counting && !canK)) continue;
+            if (built != e.gr) {
+                if (built >= 0) drop_vertex(slist);
+                add_vertex(slist, built = e.gr);
             }
-            newconf.vertype.push_back(gr);
-            newconf.num++;
-            newconf.kcnt += mainlist[gr].counting;
-            while (gidx < gend && (*pool)[gidx].gr == gr) {
-                const int rrep = (*pool)[gidx].rrep;
-                const bool pok = pair_ok_any(tk_x, (*pool)[gidx].qf, (*pool)[gidx].nqf) &&
-                                 pair_ok_any((*pool)[gidx].tkrev, qf_x, nqf_x);
-                gidx++;
-                if (!pok) continue;
-                int i = l + rrep;
-                configuration& newconf2 = newconf;
-                bool mirroredi = newconf2.mirro[i] == i;
-                if (mirrored == mirroredi) {
-                    if (EDGE_TYPED) {
-                        if (!edge_ok(newconf2, firstfree, i)) continue;
-                        if (!mirrored && !edge_ok(newconf2, newconf2.mirro[firstfree], newconf2.mirro[i])) continue;
-                    }
-                    newconf2.glue[firstfree] = i;
-                    newconf2.glue[i] = firstfree;
-                    if (!mirrored) {
-                        newconf2.glue[newconf2.mirro[firstfree]] = newconf2.mirro[i];
-                        newconf2.glue[newconf2.mirro[i]] = newconf2.mirro[firstfree];
-                    }
-                    const int chg2[4] = { firstfree, i,
-                                          mirrored ? -1 : newconf2.mirro[firstfree],
-                                          mirrored ? -1 : newconf2.mirro[i] };
-                    // EU_HYPFEAS, after the cheap structural test: if the block's types cannot close
-                    // together, neither can any block grown from it (types only accumulate). Proven, so
-                    // nothing is lost; see hyp_feas.h. Cached per type set, so the other reps are free.
-                    if (checkpart_inc(newconf2, chg2, 4) && (!shard_here || shard_take_branch()) &&
-                        (!hf::mode || hf::feasible_with(newconf2.vertype, gr))) {
-                        if (orderly) { MOVES.resize(std::max<size_t>(MOVES.size(), slist.dfs_depth)); MOVES[slist.dfs_depth - 1] = enc_new(gr, rrep); }
-                        if (visit_child(newconf2, chg2)) {
-                            success++;
-                            if (eu_trace) potential.push_back(conwaysymbol(label_str(newconf2.label[firstfree]), label_str(newconf2.label[i])) + " " + mainlist[gr].symbol);
-                        }
-                        if (shard_here) shard_done_branch();
-                    }
-                    newconf2.glue[firstfree] = -1;
-                    newconf2.glue[i] = -1;
-                    if (!mirrored) {
-                        newconf2.glue[newconf2.mirro[firstfree]] = -1;
-                        newconf2.glue[newconf2.mirro[i]] = -1;
-                    }
+            const int i = l + e.rrep;
+            if (EDGE_TYPED) {
+                if (!edge_ok(slist, firstfree, i)) continue;
+                if (!mirrored && !edge_ok(slist, mff, slist.mirro[i])) continue;
+            }
+            // EU_HYPFEAS, after the cheap structural test: if the block's types cannot close
+            // together, neither can any block grown from it (types only accumulate). Proven, so
+            // nothing is lost; see hyp_feas.h. Cached per type set, so the other reps are free.
+            const int known[6] = { sY, l + VD.rneig[e.rrep], c1, l + VD.lneig[e.rrep], rX, c2 };   // cand_ok's two
+            if (glue_to(i, known) && (!hf::mode || hf::feasible_with(slist.vertype, e.gr)) &&
+                (!shard_here || shard_take_branch())) {
+                if (orderly) { MOVES.resize(std::max<size_t>(MOVES.size(), slist.dfs_depth)); MOVES[slist.dfs_depth - 1] = enc_new(e.gr, e.rrep); }
+                if (visit_child(slist, fm)) {
+                    success++;
+                    if (eu_trace) potential.push_back(conwaysymbol(label_text(slist, firstfree), label_text(slist, i)) + " " + VD.symbol);
                 }
+                if (shard_here) shard_done_branch();
             }
-            newconf.num--;
-            newconf.kcnt -= mainlist[gr].counting;
-            newconf.vertype.pop_back();
-            newconf.rneig.resize(l);
-            newconf.lneig.resize(l);
-            newconf.mirro.resize(l);
-            newconf.lvert.resize(l);
-            if (EDGE_TYPED) newconf.etype.resize(l);
-            newconf.label.resize(l);
-            newconf.glue.resize(l);
+            undo_to(slist, fm, gm);
         }
+        if (built >= 0) drop_vertex(slist);
     }
     if (eu_trace) {
         gen << "Added " << std::to_string(success) << " partial solution";
@@ -2004,7 +2016,7 @@ static long XORB_STEPS = 0;
 
 // FACE-CLOSURE FILTER — deletes vertex types that cannot occur in any tiling, at any k.
 //
-// checkface says a CLOSED face satisfies count % p == 0 && L % count == 0, so it is not enough for a
+// face_join says a CLOSED face satisfies count % p == 0 && L % count == 0, so it is not enough for a
 // dart to lie on SOME cycle of the face-successor digraph: a length-5 cycle around a triangle (L=3)
 // is not a face. Measured on star24full: 60,927 types -> 2,372.
 //
@@ -2107,7 +2119,7 @@ static void face_filter() {
             // qkeys_of — all 1..4 admissible successor keys — but this test used to start its chain
             // from qkey_of, which is only qkeys_of's element 0. On a palette where CLASS_PREV !=
             // CLASS_NEXT that declares impossible every face which must be walked in the PREV
-            // direction, and checkface locks its direction only at the first step and accepts either.
+            // direction, and a face locks its direction only at its first step and accepts either.
             // THAT is the trihex 475 -> 2 and tetromino 76 -> 20 catastrophe, not the reflex corner it
             // was blamed on. Under BUCKET_OK the two forms are the same key, so every pinned table and
             // all three gate palettes are untouched (measured: regular 44/44, tri-only 16/16,
@@ -2314,6 +2326,7 @@ int main() {
                   << " (and not exceed it) — refusing to run an incomplete partition\n";
         return 2;
     }
+    if (eu_pruned && !orderly) { std::cerr << "EU_PRUNED needs EU_ORDERLY: the default search writes a tiling more than once\n"; return 2; }
     if (orderly)
         std::cerr << "EU_ORDERLY: same tilings, each written once from its canonical root, so the serials in "
                      "ctrnact-* ids differ from a default run. Not for shipping until ids are canonical.\n";
@@ -2404,7 +2417,7 @@ int main() {
     // the filters off until someone gates them properly.
     //
     // The CANDIDATE INDEX is unaffected and stays on either way — it is a necessary-condition prune
-    // straight out of checkface's first step, with no closure model in it (EU_NOFILTER=1, i.e.
+    // straight out of a face's first step, with no closure model in it (EU_NOFILTER=1, i.e.
     // bucketing only, reproduces the old 76 on tetromino exactly).
     if (std::getenv("EU_NOBUCKET")) {
         TYPE_OK.assign(mainlist.size(), 1);
@@ -2441,7 +2454,8 @@ int main() {
                 if (!TYPE_OK[gr]) continue;
                 const vertexdef& V = mainlist[gr];
                 CandEnt e; e.gr = gr; e.rrep = rrep; e.ord = ord++;
-                e.nqf = qkeys_of(V, V.rneig[rrep], e.qf);
+                e.nqf = qkeys_of(V, V.rneig[rrep], e.qf) | (V.lneig[rrep] == V.mirro[rrep]) << 3 | (V.rneig[rrep] == V.mirro[rrep]) << 4 |
+                        (V.rneig[rrep] == rrep) << 5 | (V.mirro[rrep] == rrep) << 6;
                 e.tkrev = tkey_of(V, V.lneig[rrep]);
                 if (force_full) {
                     FULL_ALL.push_back(e);
@@ -2494,8 +2508,10 @@ int main() {
             if (shard_n > 1) { std::cerr << "EU_SPLIT replaces EU_SHARD_N; set one or the other\n"; return 2; }
             TICKET = (long long*)mmap(nullptr, 4096, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
             if (TICKET == MAP_FAILED) { std::cerr << "mmap failed\n"; return 2; }
-            std::cerr << "EU_SPLIT: counts are exact, but every worker numbers its own serials, so ctrnact-* "
-                         "ids collide across workers (60,447 of 413,361 at regular k<=14). Not for shipping.\n";
+            if (!orderly)
+                std::cerr << "EU_SPLIT: counts are exact, but every worker numbers its own serials, so ctrnact-* "
+                             "ids collide across workers (60,447 of 413,361 at regular k<=14). Not for shipping. "
+                             "With EU_ORDERLY the run writes what one process writes.\n";
         }
         else if (shard_n % nfork != 0) {
             std::cerr << "EU_FORK=" << nfork << " must divide EU_SHARD_N=" << shard_n
@@ -2546,6 +2562,7 @@ int main() {
             if (!WIFEXITED(st) || WEXITSTATUS(st)) bad++;
         }
         if (bad) { std::cerr << bad << " fork worker(s) failed\n"; return 2; }
+        if (split_depth > 0 && orderly) merge_split(nfork);
         return 0;
     }
     initex();

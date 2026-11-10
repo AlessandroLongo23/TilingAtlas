@@ -154,8 +154,10 @@ static bool simplify(const Graph& g) {
 			if (!seen[x]) { seen[x] = 1; reached++; stack.push_back(x); }
 	}
 	if (reached != le) { std::cerr << "eu_pruner: disconnected block (" << reached << " of " << le << " darts)\n"; std::exit(3); }
-	return !has_congruence(le, g.rneig.data(), g.lneig.data(), g.mirro.data(), g.glue.data(), 16,
-		[&g](int x, int y) { return g.cls[x] == g.cls[y] && g.fam[x] == g.fam[y] && g.etype[x] == g.etype[y]; });
+	static std::vector<long long> seed;   // (cls, etype, fam) in one word: etype under 4096, fam under 2^32
+	seed.resize(le);
+	for (int i = 0; i < le; i++) seed[i] = (((long long)g.cls[i] << 12 | g.etype[i]) << 32) | (unsigned)g.fam[i];
+	return !has_congruence(le, g.rneig.data(), g.lneig.data(), g.mirro.data(), g.glue.data(), seed.data());
 }
 
 // ---------- comparesolutions: is graph x isomorphic to stored solution `sol`? (bitset WL) ----------

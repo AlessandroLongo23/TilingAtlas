@@ -1,5 +1,5 @@
 // congruence.hpp — is a closed, connected dart structure a covering of a smaller one? Shared by
-// eu_solver (simplify_inner) and eu_pruner (simplify). 2026-11-06.
+// eu_solver (simplify_inner), eu_pruner (simplify) and the Tiling Searcher (covers_quotient). 2026-11-06.
 //
 // The structure is a covering iff it has a nontrivial congruence: a partition into classes of equal seed
 // colour that R, L, M and G respect. The darts form one orbit under these permutations, so a congruence
@@ -10,41 +10,58 @@
 // the old refinement verdict (bisimilarity is the coarsest congruence refining the seed) at a fraction of
 // the cost; 83% of closures at regular k<=12 are coverings, which the refinement had to run to its end.
 //
-// same(x, y): do darts x and y carry the same seed colour. The anchor is the dart among the first `deg0`
-// whose seed is rarest, which keeps the candidate list short; any anchor gives the same answer.
+// seed[i] is dart i's seed colour. Every seed class is a union of blocks, so the block size divides the
+// size of every class: when those sizes have no common factor there is no congruence, and nothing is
+// closed at all (2026-11-10). The anchor is a dart of the smallest class, which keeps the candidate list
+// short; any anchor gives the same answer.
 #pragma once
+#include <numeric>
 #include <utility>
 #include <vector>
 
-template <class Same>
-static bool has_congruence(int n, const int* R, const int* L, const int* M, const int* G, int deg0, Same same) {
-    static std::vector<int> par, touched;
-    static std::vector<std::pair<int, int> > work;
+// The closures, for a caller that has numbered the seed classes itself and found their sizes to share a
+// factor: cls[i] is dart i's class (any numbers), a the first dart of a class of least size.
+static bool congruence_from(int n, const int* R, const int* L, const int* M, const int* G, const int* cls, int a) {
+    static thread_local std::vector<int> par, touched;   // per thread: the Searcher's workers share this test
+    static thread_local std::vector<std::pair<int, int> > work;
     for (int i = (int)par.size(); i < n; i++) par.push_back(i);
+    if (work.size() < 4 * (size_t)n + 4) work.resize(4 * (size_t)n + 4);   // a union adds four pairs at most
+    std::pair<int, int>* const stack = work.data();
     auto find = [&](int x) { while (par[x] != x) { par[x] = par[par[x]]; x = par[x]; } return x; };
-    int a = 0, best = n + 1;
-    for (int d = 0; d < deg0 && d < n; d++) {
-        int cnt = 0;
-        for (int i = 0; i < n; i++) cnt += same(i, d);
-        if (cnt < best) { best = cnt; a = d; }
-    }
-    for (int b = 0; b < n && best > 1; b++) {
-        if (b == a || !same(a, b)) continue;
+    for (int b = a + 1; b < n; b++) {
+        if (cls[b] != cls[a]) continue;
         bool ok = true;
-        work.assign(1, { a, b });
-        while (ok && !work.empty()) {
-            const std::pair<int, int> p = work.back(); work.pop_back();
+        int top = 0;
+        // A pair of two seeds fails the candidate when it is met, not when it would be popped.
+        auto push = [&](int p, int q) { if (cls[p] != cls[q]) ok = false; else if (p != q) stack[top++] = { p, q }; };
+        push(a, b);
+        while (ok && top) {
+            const std::pair<int, int> p = stack[--top];
             const int x = find(p.first), y = find(p.second);
             if (x == y) continue;
-            if (!same(x, y)) { ok = false; break; }
             par[y] = x; touched.push_back(y);
             const int u = p.first, v = p.second;
-            work.push_back({ R[u], R[v] }); work.push_back({ L[u], L[v] });
-            work.push_back({ M[u], M[v] }); work.push_back({ G[u], G[v] });
+            push(R[u], R[v]); push(L[u], L[v]); push(M[u], M[v]); push(G[u], G[v]);
         }
         for (int t : touched) par[t] = t;
         touched.clear();
         if (ok) return true;
     }
     return false;
+}
+
+static bool has_congruence(int n, const int* R, const int* L, const int* M, const int* G, const long long* seed) {
+    static thread_local std::vector<int> cls, size, first, slot;
+    int cap = 16;
+    while (cap < 2 * n) cap *= 2;
+    slot.assign(cap, -1); cls.resize(n); size.clear(); first.clear();
+    for (int i = 0; i < n; i++) {   // seed classes, through an open hash of first members
+        int p = (int)(((unsigned long long)seed[i] * 0x9e3779b97f4a7c15ULL) >> 40) & (cap - 1);
+        while (slot[p] >= 0 && seed[slot[p]] != seed[i]) p = (p + 1) & (cap - 1);
+        if (slot[p] < 0) { slot[p] = i; cls[i] = (int)size.size(); size.push_back(1); first.push_back(i); }
+        else size[cls[i] = cls[slot[p]]]++;
+    }
+    int g = 0, least = 0;
+    for (size_t c = 0; c < size.size(); c++) { g = std::gcd(g, size[c]); if (size[c] < size[least]) least = (int)c; }
+    return g > 1 && congruence_from(n, R, L, M, G, cls.data(), first[least]);
 }

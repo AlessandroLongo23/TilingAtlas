@@ -95,6 +95,35 @@ and writes only the distinct blocks to `<dir>/pruned/eupruned_<NN>.txt`. Default
 still runs the file-based pipeline unchanged. `EU_TRACE=1` restores the solver's per-node debug trace
 (off by default).
 
+## The fast path: orderly, direct, forked (2026-11-10)
+
+```sh
+make MAXNUM=<k> && mkdir -p out
+EU_ORDERLY=1 EU_PRUNED=1 ./eu_solver                         # one process
+EU_ORDERLY=1 EU_PRUNED=1 EU_FORK=10 EU_SPLIT=4 ./eu_solver   # ten workers, the same files
+```
+
+`EU_ORDERLY` builds every closed configuration once, from its canonical root, so the solver's output holds each
+tiling once and nothing else. `EU_PRUNED` then writes the catalogue itself, `out/pruned/eupruned_<k>_<family>.txt`,
+the files `eu_pruner` makes from the same run's raw output, and the pruner pass is left out. `EU_FORK` with
+`EU_SPLIT=<depth>` shares the search among worker processes by tickets and merges their blocks back into the
+files one process writes, serials included. `make check-orderly` gates all three claims at k <= 6.
+
+Regular palette, instructions retired for solve and prune together, one core (2026-11-10):
+
+| k <= | tilings | default search + pruner | orderly + pruner, before | fast path, morning | fast path, evening |
+|---|---|---|---|---|---|
+| 12 | 97,648 | 64.2e9 (was 88.7e9) | 45.3e9 | 9.3e9 | 5.7e9 |
+| 14 | 413,361 | | 196.9e9 | 33.1e9 | 20.2e9 |
+| 16 | 1,792,287 | | | 124.5e9 | 73.3e9 |
+
+The k <= 16 counts include the kernel's work on 1.1 GB of output and moved between runs (147.2e9 in the morning for
+the source that measured 124.5e9 in the evening). Ten workers wrote k <= 16 in 2.15 s under a loaded machine.
+
+The serials in `eu raw <sig> <n>.tes` under orderly are not the default search's, so its ids differ from the
+shipped ctrnact ids. The default search and its output are unchanged. Detail:
+`docs/DEVELOPMENT_NOTES.md`, "The engine on the regular palette" and "eu_solver's fast path, second round".
+
 ## Performance (Apple M5, 2026-07)
 
 Two optimizations landed after the initial port, each validated against a golden capture of the

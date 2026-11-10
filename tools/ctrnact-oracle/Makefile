@@ -10,7 +10,7 @@ PALETTE  ?= regular
 TB       := tables/$(PALETTE)
 SFX      := $(if $(filter regular,$(PALETTE)),,.$(PALETTE))
 
-.PHONY: all clean check-regular check-star check-deltahedra
+.PHONY: all clean check-regular check-orderly check-star check-deltahedra
 all: eu_solver$(SFX) eu_pruner$(SFX) eu_classify eu_develop$(SFX) eu_sphfill
 
 # Regenerate tables when the palette spec or the generator changes. The generator
@@ -107,6 +107,24 @@ check-regular:
 	rm -rf check-k6 && ./run-oracle.sh 6 "$(CURDIR)/check-k6"
 	cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
 	@echo "check-regular: PASS (byte-identical catalogs vs golden)"
+
+# The ORDERLY gate: the fast path (EU_ORDERLY, where every tiling is written once) at k<=6. Three claims:
+#   1. EU_PRUNED writes the catalogue eu_pruner makes from the same run's raw output, byte for byte, so
+#      the pruner pass can be left out.
+#   2. A forked run (EU_FORK, EU_SPLIT) writes the files one process writes.
+#   3. Those files are the golden ones, which pins orderly's serials. They hold the same tilings as
+#      check-regular's golden (10, 20, 61, 151, 332, 673), each under another labelling.
+check-orderly:
+	$(MAKE) PALETTE=regular MAXNUM=6
+	rm -rf check-k6-orderly && mkdir -p check-k6-orderly/one/out check-k6-orderly/raw/out check-k6-orderly/forked/out
+	cd check-k6-orderly/one && EU_ORDERLY=1 EU_PRUNED=1 ../../eu_solver >/dev/null 2>&1
+	cd check-k6-orderly/raw && EU_ORDERLY=1 ../../eu_solver >/dev/null 2>&1 \
+		&& EU_OUT=out EU_KMIN=1 EU_KMAX=6 ../../eu_pruner >/dev/null 2>&1
+	cd check-k6-orderly/forked && EU_ORDERLY=1 EU_PRUNED=1 EU_FORK=3 EU_SPLIT=2 ../../eu_solver >/dev/null 2>&1
+	diff -rq check-k6-orderly/one/out/pruned check-k6-orderly/raw/out/pruned
+	diff -rq check-k6-orderly/one/out check-k6-orderly/forked/out
+	cd check-k6-orderly/one && shasum -a 256 -c ../../golden/regular-orderly-k6.sha256 --quiet
+	@echo "check-orderly: PASS (direct catalogue = pruned raw output = forked run = golden)"
 
 # The DELTAHEDRON gate. check-regular proves the Euclidean catalogue is undisturbed and check-star
 # does the same for the star machinery; both run on alphabets whose corner classes tell the darts
