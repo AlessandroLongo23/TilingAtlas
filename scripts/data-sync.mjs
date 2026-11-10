@@ -123,15 +123,11 @@ if (args.includes("--pull")) {
 	}
 	const keys = localKeys();
 	keys.forEach((k) => fs.rmSync(path.join(PUBLIC, k)));
-	// Next 16 on Vercel runs Vercel's build adapter inside `next build` ("Running onBuildComplete from Vercel"),
-	// which has already copied public/ into the build output by now: delete the data there too (2026-11-10, the
-	// first deploy shipped all 21,013 files that way).
-	const outputs = ["/vercel/output/static", path.join(process.cwd(), ".vercel", "output", "static")];
-	for (const out of outputs.filter((o) => fs.existsSync(o))) {
-		const there = keys.filter((k) => fs.existsSync(path.join(out, k)));
-		there.forEach((k) => fs.rmSync(path.join(out, k)));
-		console.log(`data-sync: ${there.length} data files removed from ${out}`);
-	}
-	if (!outputs.some((o) => fs.existsSync(o))) console.log(`data-sync: no build output at ${outputs.join(" or ")} yet`);
-	console.log(`data-sync: ${keys.length} data files left out of the deployment`);
+	// Next 16 on Vercel runs Vercel's build adapter inside `next build` ("Running onBuildComplete from Vercel"):
+	// its handlePublicFiles (@vercel/next 28, dist/adapter) has already copied public/ into .next/output/static,
+	// which is what deploys. Delete the data there too (2026-11-10: the first two deploys shipped all 21,013).
+	const out = path.join(process.cwd(), ".next", "output", "static");
+	const there = keys.filter((k) => fs.existsSync(path.join(out, k)));
+	there.forEach((k) => fs.rmSync(path.join(out, k)));
+	console.log(`data-sync: ${keys.length} data files left out of the deployment (${there.length} from ${out})`);
 }
