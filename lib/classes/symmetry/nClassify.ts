@@ -68,18 +68,43 @@ function inLattice(T1: Vec, T2: Vec, w: Vec): boolean {
 	return eqVec(addLC([0, 0, 0, 0], al, T1, be, T2), w);
 }
 
-// g preserves the tiling iff every seed vertex maps into (seed + Λ): g(v) ≡ some seed w (mod Λ).
-function preserves(T1: Vec, T2: Vec, seed: Vec[], g: (z: Vec) => Vec): boolean {
-	for (const v of seed) {
-		const gv = g(v);
-		let ok = false;
-		for (const w of seed)
-			if (inLattice(T1, T2, sub(gv, w))) {
-				ok = true;
-				break;
-			}
-		if (!ok) return false;
+// Λ = ℤT1 + ℤT2 as two integer 4-vectors in echelon form (Euclid on the first column they do not both leave 0). A
+// point reduced by them in turn, to 0 ≤ x[pivot] < pivot, is the same 4-vector exactly when it is the same point
+// mod Λ: a difference a·r1 + b·r2 of two reduced points is under r1's pivot in its column, so a = 0, then b = 0.
+type Quotient = { rows: Vec[]; piv: number[] };
+function quotient(T1: Vec, T2: Vec): Quotient {
+	let [r1, r2] = [T1, T2];
+	let p1 = 0;
+	while (r1[p1] === 0 && r2[p1] === 0) p1++;
+	while (r2[p1] !== 0) {
+		const q = Math.trunc(r1[p1] / r2[p1]);
+		[r1, r2] = [r2, r1.map((x, i) => x - q * r2[i])];
 	}
+	let p2 = p1 + 1;
+	while (r2[p2] === 0) p2++;
+	return { rows: [r1[p1] < 0 ? r1.map((x) => -x) : r1, r2[p2] < 0 ? r2.map((x) => -x) : r2], piv: [p1, p2] };
+}
+function reduced(q: Quotient, v: Vec): string {
+	let x = v;
+	for (let i = 0; i < 2; i++) {
+		const [r, p] = [q.rows[i], q.piv[i]];
+		const f = Math.floor(x[p] / r[p]);
+		if (f !== 0) x = [x[0] - f * r[0], x[1] - f * r[1], x[2] - f * r[2], x[3] - f * r[3]];
+	}
+	return keyOf(x);
+}
+
+// g preserves the tiling iff every seed vertex maps into (seed + Λ): g(v) ≡ some seed w (mod Λ). The seed's
+// classes are kept per seed, so a test is a lookup per vertex: scanning the seed for each made the classification
+// quadratic, two thirds of it on a k = 17 cell.
+const seedClasses = new WeakMap<Vec[], { T1: Vec; T2: Vec; q: Quotient; classes: Set<string> }>();
+function preserves(T1: Vec, T2: Vec, seed: Vec[], g: (z: Vec) => Vec): boolean {
+	let c = seedClasses.get(seed);
+	if (!c || c.T1 !== T1 || c.T2 !== T2) {
+		const q = quotient(T1, T2);
+		seedClasses.set(seed, (c = { T1, T2, q, classes: new Set(seed.map((w) => reduced(q, w))) }));
+	}
+	for (const v of seed) if (!c.classes.has(reduced(c.q, g(v)))) return false;
 	return true;
 }
 

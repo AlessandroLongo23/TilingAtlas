@@ -23308,3 +23308,45 @@ linking, incremental gzip counts, the repack), and `win/gzwide.h` gone with the 
 
 Not fixed: past about k = 22 the certificate format itself (2.5 KB of text a tiling) is the limit; and the search's
 own parallelism on this board, one thread busy through the tail, is untouched.
+
+## Regular records 25 times faster to build, and k = 17 and 18 within memory (2026-11-11, CC)
+
+AL asked for the record builder (`scripts/build-regular-shards.ts`) to be fast enough for k = 17 and 18 before any of
+them ships; shipping above k = 16 stays AL's call. A k = 17 record cost 41 ms of CPU, 34 of them in
+`reconstructOracleCell` rebuilding the polygons from the seeds in BigInt arithmetic on a 7 x 7 window. k = 16 took 6.2
+hours on 9 processes, and the main process held every record of a k at 5.1 KB of heap each, 23 GB at k = 18.
+
+- The polygons come from the engine. `eu_develop` already had them (`EU_FACES`); it gains `--shard i/n` and `--lines`
+  (each record a line as it is developed, `--out -` for stdout) and reads a pruned file a block at a time. Each
+  worker runs its own share and reads the pipe, so there is no cells file (k = 19 with faces would be about 45 GB) and
+  no record held. Its default and faces output are byte-identical to before at k <= 12, three shards give the same
+  97,648 records, and `check-regular` passes. A cell whose faces fail the engine's area check is rebuilt from its
+  seeds as before (none at k = 17).
+- `cellMap` (lib/tilings/dsymFromMap.ts) tries a vertex class only at the translates that can land within `eps` of a
+  side, a subset of the old range by construction: half a million tests on a k = 17 cell before. 2.5 to 0.9 ms.
+- `nClassify` tests a candidate symmetry with a set lookup per seed vertex: Λ in echelon form over ℤ⁴ gives each point
+  an exact integer representative of its class mod Λ. None of 102,582 cells differs from before; 5 to 6 times faster.
+- `minimalBlocks` (DSymbol.ts) numbers each round's signatures through nested integer maps, not strings: the same
+  partition and numbering by construction, none of 102,582 symbols differs, 3.2 times faster.
+- The main process keeps each record's id and place (the workers write an index beside their records), sorts those
+  and cuts the parts, which `jobs` processes write: a part's brotli at quality 10 is about 17 s. `--out <dir>` writes
+  the shards somewhere other than `public/`.
+
+A k = 17 record is now 1.7 ms of CPU. Gate (`--check`, every field against the shelf): k = 8 to 16, 1,792,287
+records, none differ. Build mode on k = 11 to 13 writes the shipped shards' content byte for byte (the brotli bytes
+differ, the shipped files having been packed with other settings), and the k = 13 part boundaries are the shipped
+ones. Times on 9 processes with the machine at load 20 to 50 from other sessions (k = 13 to 16 from the gate runs):
+
+| k | tilings | before | now |
+|---|---|---|---|
+| 13 | 103,082 | 10.8 min | 1.8 min |
+| 14 | 212,631 | 23.3 min | 6.1 min |
+| 15 | 445,289 | 86.4 min | 9.1 min |
+| 16 | 933,637 | 372.9 min | 14.2 min, before the nClassify, minimalBlocks and parts changes |
+| 17 | 1,972,148 | about 13 hours, estimated | 7.8 min written: 20 shards, 45 MB, 3 GB across the processes |
+
+The 252 Searcher records the shelf holds at k = 17 are all among the engine's tilings. The k = 18 build was stopped at
+40% (AL); its 391 Searcher records are still to be matched. The k = 17 shards sit in a scratch folder, not in
+`public/`. Profiles and the old-against-new harnesses: `experiments/record-builder-2026-11-11/`.
+
+⚑ The site still rebuilds a drawn record's polygons with `reconstructOracleCell`, about 35 ms a k = 17 thumbnail.

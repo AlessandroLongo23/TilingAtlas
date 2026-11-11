@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <complex>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <filesystem>
 
@@ -243,16 +244,15 @@ static DevResult develop(const vector<int>& rneig, const vector<int>& cls,
 }
 
 // ===================== block IO + driver =====================
-static vector<vector<string>> read_blocks(std::istream& in) {
-	vector<vector<string>> blocks; vector<string> buf; string raw;
-	while (std::getline(in, raw)) {
-		std::string s = raw; while (!s.empty() && (s.back()=='\r')) s.pop_back();
-		std::string t = s; size_t a = t.find_first_not_of(" \t\r\n"); // strip() test
-		if (a == std::string::npos) { if (!buf.empty()) { blocks.push_back(buf); buf.clear(); } }
+// The blocks of a pruned file, one at a time: a k = 18 file is gigabytes, and was held whole.
+template<class F> static void each_block(std::istream& in, F f) {
+	vector<string> buf; string s;
+	while (std::getline(in, s)) {
+		while (!s.empty() && s.back() == '\r') s.pop_back();
+		if (s.find_first_not_of(" \t\r\n") == std::string::npos) { if (!buf.empty()) { f(buf); buf.clear(); } }   // strip() test
 		else buf.push_back(s);
 	}
-	if (!buf.empty()) blocks.push_back(buf);
-	return blocks;
+	if (!buf.empty()) f(buf);
 }
 static string tes_id(const string& tes) {
 	vector<string> parts; string cur; for (char c : tes) { if (c == '/') { parts.push_back(cur); cur.clear(); } else cur += c; } parts.push_back(cur);
@@ -267,11 +267,33 @@ static void jstr(std::ostream& o, const string& s) { o << '"'; for (char c : s) 
 static void jvec(std::ostream& o, const Vec& v) { o << '[' << v[0] << ',' << v[1] << ',' << v[2] << ',' << v[3] << ']'; }
 
 struct Rec { int k; string id; Vec T1, T2; vector<Vec> seeds; vector<Face> faces; bool areaOk; };
+static void write_rec(std::ostream& of, const Rec& r, bool wantFaces) {
+	of << "{\"id\":"; jstr(of, r.id);
+	of << ",\"k\":" << r.k << ",\"T1\":"; jvec(of, r.T1);
+	of << ",\"T2\":"; jvec(of, r.T2);
+	of << ",\"Seed\":[";
+	for (size_t s = 0; s < r.seeds.size(); s++) { if (s) of << ','; jvec(of, r.seeds[s]); }
+	of << "]";
+	if (wantFaces) {
+		of << ",\"areaOk\":" << (r.areaOk ? "true" : "false") << ",\"faces\":[";
+		for (size_t fi = 0; fi < r.faces.size(); fi++) {
+			if (fi) of << ',';
+			of << "{\"tile\":"; jstr(of, TILE_NAME[r.faces[fi].tile]); of << ",\"verts\":[";
+			for (size_t vi = 0; vi < r.faces[fi].verts.size(); vi++) { if (vi) of << ','; jvec(of, r.faces[fi].verts[vi]); }
+			of << "]}";
+		}
+		of << "]";
+	}
+	of << "}";
+}
 
 int main(int argc, char** argv) {
 	std::fesetround(FE_TONEAREST);
 	bool wantFaces = std::getenv("EU_FACES") != nullptr; // emit tile polygons + area certificate (doubled/render)
-	int kmin = 1, kmax = 8, sign = 1; string pruned = "work/out/pruned", out;
+	// --lines: one record per line, written as it is developed and held by no one (with faces a k = 17 record is
+	// about 30 KB in memory), in the files' order, not sorted; --out - is stdout. --shard i/n: every n-th block from
+	// the i-th, so n processes develop a k between them (scripts/build-regular-shards.ts).
+	int kmin = 1, kmax = 8, sign = 1, shard = 0, shards = 1; bool lines = false; string pruned = "work/out/pruned", out;
 	for (int i = 1; i < argc; i++) {
 		string a = argv[i];
 		auto nxt = [&]() { return string(argv[++i]); };
@@ -280,10 +302,15 @@ int main(int argc, char** argv) {
 		else if (a == "--sign") sign = std::stoi(nxt());
 		else if (a == "--pruned") pruned = nxt();
 		else if (a == "--out") out = nxt();
+		else if (a == "--lines") lines = true;
+		else if (a == "--shard") { string v = nxt(); shard = std::stoi(v); shards = std::stoi(v.substr(v.find('/') + 1)); }
 	}
 	if (out.empty()) out = "work/ctrnact-cells-k" + std::to_string(kmax) + ".json";
 
-	vector<Rec> records; long errors = 0; std::unordered_map<int,long> perK;
+	vector<Rec> records; long errors = 0, block = 0; std::unordered_map<int,long> perK;
+	std::ofstream lfile;
+	std::ostream* lout = &std::cout;
+	if (lines && out != "-") lfile.open(out), lout = &lfile;
 	for (int k = kmin; k <= kmax; k++) {
 		// accept streamed (eupruned_NN.txt) and family (eupruned_NN_*.txt) naming, NN zero-padded or not
 		char pad[8]; std::snprintf(pad, sizeof pad, "%02d", k);
@@ -298,10 +325,11 @@ int main(int argc, char** argv) {
 		std::sort(files.begin(), files.end());
 		for (const auto& f : files) {
 			std::ifstream in(f);
-			for (auto& b : read_blocks(in)) {
+			each_block(in, [&](const vector<string>& b) {
 				int tesLine = -1;
 				for (size_t i = 0; i < b.size(); i++) if (b[i].rfind("TES file:", 0) == 0) { tesLine = (int)i; break; }
-				if (tesLine < 0) continue;
+				if (tesLine < 0) return;
+				if (block++ % shards != shard) return;
 				string tes = b[tesLine].substr(9); size_t z = tes.find_first_not_of(" \t"); tes = (z==std::string::npos)?"":tes.substr(z);
 				string tid = tes_id(tes);
 				// Counting-vertex k = the eupruned_<k> file this block came from (the pruner
@@ -311,35 +339,27 @@ int main(int argc, char** argv) {
 				int kk = k;
 				Graph gph = decode(b[0], b[4]);
 				DevResult dr = develop(gph.rneig, gph.cls, gph.glue, sign, wantFaces);
-				if (!dr.ok) { errors++; std::fprintf(stderr, "  ERR %-32s %s\n", tid.c_str(), dr.err.c_str()); continue; }
-				records.push_back({kk, tid, dr.T1, dr.T2, dr.seeds, dr.faces, dr.areaOk});
+				if (!dr.ok) { errors++; std::fprintf(stderr, "  ERR %-32s %s\n", tid.c_str(), dr.err.c_str()); return; }
+				Rec r{kk, tid, dr.T1, dr.T2, dr.seeds, dr.faces, dr.areaOk};
+				if (lines) write_rec(*lout, r, wantFaces), *lout << '\n';
+				else records.push_back(std::move(r));
 				perK[kk]++;
-			}
+			});
 		}
+	}
+	if (lines) {
+		lout->flush();
+		if (!*lout) { std::fprintf(stderr, "cannot write %s\n", out.c_str()); return 1; }
+		long n = 0; for (auto& kv : perK) n += kv.second;
+		std::fprintf(stderr, "developed %ld tilings -> %s%s\n", n, out.c_str(), errors ? "  (ERRORS above)" : "");
+		return errors ? 1 : 0;
 	}
 	std::sort(records.begin(), records.end(), [](const Rec& x, const Rec& y) { return x.k != y.k ? x.k < y.k : x.id < y.id; });
 	std::ofstream of(out);
 	of << '[';
 	for (size_t i = 0; i < records.size(); i++) {
-		const Rec& r = records[i];
 		if (i) of << ',';
-		of << "{\"id\":"; jstr(of, r.id);
-		of << ",\"k\":" << r.k << ",\"T1\":"; jvec(of, r.T1);
-		of << ",\"T2\":"; jvec(of, r.T2);
-		of << ",\"Seed\":[";
-		for (size_t s = 0; s < r.seeds.size(); s++) { if (s) of << ','; jvec(of, r.seeds[s]); }
-		of << "]";
-		if (wantFaces) {
-			of << ",\"areaOk\":" << (r.areaOk ? "true" : "false") << ",\"faces\":[";
-			for (size_t fi = 0; fi < r.faces.size(); fi++) {
-				if (fi) of << ',';
-				of << "{\"tile\":"; jstr(of, TILE_NAME[r.faces[fi].tile]); of << ",\"verts\":[";
-				for (size_t vi = 0; vi < r.faces[fi].verts.size(); vi++) { if (vi) of << ','; jvec(of, r.faces[fi].verts[vi]); }
-				of << "]}";
-			}
-			of << "]";
-		}
-		of << "}";
+		write_rec(of, records[i], wantFaces);
 	}
 	of << ']';
 	of.close();

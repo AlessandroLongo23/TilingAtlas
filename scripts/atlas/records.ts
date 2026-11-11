@@ -13,7 +13,16 @@ import { canonicalVC, classifyVCs } from "@/lib/services/vertexConfig";
 import { cellMap } from "@/lib/tilings/dsymFromMap";
 import { starAt } from "./symbols";
 
-export type Cell = { id: string; k: number; T1: number[]; T2: number[]; Seed: number[][] };
+/** An exact cell; from eu_develop with EU_FACES, also its tile polygons and whether they passed its area check. */
+export type Cell = {
+	id: string;
+	k: number;
+	T1: number[];
+	T2: number[];
+	Seed: number[][];
+	areaOk?: boolean;
+	faces?: { tile: string; verts: number[][] }[];
+};
 export type Rec = { id: string; source: string; k: number; [f: string]: unknown };
 type Hydrated = Rec & {
 	renderCell: { cellPolygons: { n: number }[] };
@@ -23,10 +32,10 @@ type Hydrated = Rec & {
 export type Facts = { sym: DSymbol; m: number; partition: number[]; vcs: string[]; cell: Hydrated };
 
 /** A record's symbol facts: the symbol under the full symmetry group, its vertex types, and a copy of the record
- *  with its cell derived. Throws unless the vertex orbits are its k. */
-export function facts(t: Rec): Facts {
-	const cell = { ...t } as Hydrated;
-	hydrateRenderCells([cell as never]);
+ *  with its cell derived, or `renderCell` when given. Throws unless the vertex orbits are its k. */
+export function facts(t: Rec, renderCell?: Hydrated["renderCell"]): Facts {
+	const cell = (renderCell ? { ...t, renderCell } : { ...t }) as Hydrated;
+	hydrateRenderCells([cell as never]); // leaves a given cell alone
 	const map = cellMap(cell.renderCell as never);
 	if (!map) throw new Error(`${t.id}: no symbol`);
 	const sym = minimalBlocks(map.sym).sym;
@@ -43,6 +52,18 @@ export function symbolSignature(sym: DSymbol): string {
 	return signature(vertex.length, classifyVCs(vertex.map(([x]) => canonicalVC(starAt(sym, x).map(String)))));
 }
 
+/** A point of ℤ[ζ₁₂], [a, b, c, d] = a + bζ₁₂ + cζ₁₂² + dζ₁₂³, as the shelf draws it. */
+const ZETA = [0, 1, 2, 3].map((j) => [Math.cos((j * Math.PI) / 6), Math.sin((j * Math.PI) / 6)]);
+const point = (z: number[]) => [0, 1].map((xy) => z.reduce((s, c, j) => s + c * ZETA[j][xy], 0));
+
+/** A cell's render cell from the engine's own faces, in place of rebuilding them from the seeds
+ *  (reconstructOracleCell: 34 of a k = 17 record's 41 ms of CPU; this, 0.02). None unless they passed its area check. */
+function facesCell(c: Cell): Hydrated["renderCell"] | undefined {
+	if (!c.faces?.length || !c.areaOk) return undefined;
+	const cellPolygons = c.faces.map((f) => ({ n: f.verts.length, vertices: f.verts.map(point) }));
+	return { cellPolygons, basis: [point(c.T1), point(c.T2)] } as Hydrated["renderCell"];
+}
+
 /** One exact cell as a shelf record, with its facts. */
 export function seedRecord(
 	c: Cell,
@@ -51,7 +72,7 @@ export function seedRecord(
 ): { rec: Rec; facts: Facts } {
 	const exactSource = { kind: "seed" as const, T1: c.T1, T2: c.T2, Seed: c.Seed };
 	const t = { id: c.id, source, k: c.k, exactSource } as Rec;
-	const f = facts(t);
+	const f = facts(t, facesCell(c));
 	annotatePolygonFacets([f.cell as never]);
 	const ns = f.cell.renderCell.cellPolygons.map((p) => p.n);
 	const { group, latticeShape } = nClassify(c.T1, c.T2, c.Seed);

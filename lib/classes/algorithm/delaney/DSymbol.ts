@@ -356,29 +356,42 @@ export function minimalImage(sym: DSymbol): DSymbol {
  */
 export function minimalBlocks(sym: DSymbol, labels?: readonly number[]): { sym: DSymbol; block: number[] } {
 	const n = sym.n;
-	// Blocks are renumbered every round: a signature built from the previous round's signatures would
-	// grow fourfold per round, which a period cell of a few thousand chambers cannot afford.
-	const number = (keys: string[]) => {
+	// Blocks are renumbered every round, in first-appearance order: a signature built from the previous round's
+	// signatures would grow fourfold per round, which a period cell of a few thousand chambers cannot afford. A
+	// round's signature (a chamber's block and its three neighbours') is two numbers looked up in nested maps: as a
+	// string it was most of the time on a k = 17 cell.
+	let block: number[] = [];
+	let prev = 0;
+	{
 		const id = new Map<string, number>();
-		return keys.map((k) => {
-			if (!id.has(k)) id.set(k, id.size);
-			return String(id.get(k));
-		});
-	};
-	let block: string[] = number(Array.from({ length: n }, (_, c) => `${sym.m01[c]},${sym.m12[c]},${labels?.[c] ?? 0}`));
-	let prev = new Set(block).size;
-	for (;;) {
-		const sig: string[] = new Array(n);
 		for (let c = 0; c < n; c++) {
-			sig[c] = `${block[c]}|${block[sym.s[0][c]]}|${block[sym.s[1][c]]}|${block[sym.s[2][c]]}`;
+			const k = `${sym.m01[c]},${sym.m12[c]},${labels?.[c] ?? 0}`;
+			let b = id.get(k);
+			if (b === undefined) id.set(k, (b = id.size));
+			block.push(b);
 		}
-		block = number(sig);
-		const cnt = new Set(block).size;
+		prev = id.size;
+	}
+	const [s0n, s1n, s2n] = sym.s;
+	for (;;) {
+		const id = new Map<number, Map<number, number>>();
+		const next: number[] = new Array(n);
+		let cnt = 0;
+		for (let c = 0; c < n; c++) {
+			const hi = block[c] * n + block[s0n[c]];
+			const lo = block[s1n[c]] * n + block[s2n[c]];
+			let inner = id.get(hi);
+			if (!inner) id.set(hi, (inner = new Map()));
+			let b = inner.get(lo);
+			if (b === undefined) inner.set(lo, (b = cnt++));
+			next[c] = b;
+		}
+		block = next;
 		if (cnt === prev) break;
 		prev = cnt;
 	}
 	// assign ids in first-appearance order; rep = first chamber of each block
-	const ids = new Map<string, number>();
+	const ids = new Map<number, number>();
 	const rep: number[] = [];
 	for (let c = 0; c < n; c++) {
 		if (!ids.has(block[c])) {

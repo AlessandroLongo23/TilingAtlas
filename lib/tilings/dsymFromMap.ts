@@ -337,6 +337,11 @@ export function cellMap(cell: TranslationalCellData): DrawnMap | null {
 	// Split each side at every vertex class lying strictly inside it, `eps` (a thousandth of a typical
 	// tile, far above the shipped rounding) from either end and from the line.
 	const eps = 1e-3 * unit;
+	// A point that close to a side lies in the side's box widened by `eps`, which is `mu` and `mv` in the cell's
+	// coordinates: only the translates of a class that land in that box are tried. Trying every class at every
+	// translate near the side was half a million tests on a k = 17 regular cell, a third of building its record.
+	const mu = (2 * eps * Math.hypot(c, d)) / Math.abs(det);
+	const mv = (2 * eps * Math.hypot(a, b)) / Math.abs(det);
 	let bad = tiles.length > 5000;
 	const faces: { v: number; at: number[] }[][] = bad
 		? []
@@ -349,14 +354,15 @@ export function cellMap(cell: TranslationalCellData): DrawnMap | null {
 					const [qu, qv] = frac(q);
 					if (Math.abs(pu - qu) > 2 || Math.abs(pv - qv) > 2) bad = true; // not a period cell
 					const len2 = (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2;
+					const len = Math.sqrt(len2);
+					const [u0, u1, v0, v1] = [Math.min(pu, qu) - mu, Math.max(pu, qu) + mu, Math.min(pv, qv) - mv, Math.max(pv, qv) + mv];
 					const inner: { t: number; v: number; at: number[] }[] = [];
 					reps.forEach(([ru, rv], v) => {
-						for (let iu = Math.floor(Math.min(pu, qu) - ru) - 1; iu <= Math.ceil(Math.max(pu, qu) - ru) + 1; iu++)
-							for (let iv = Math.floor(Math.min(pv, qv) - rv) - 1; iv <= Math.ceil(Math.max(pv, qv) - rv) + 1; iv++) {
+						for (let iu = Math.ceil(u0 - ru); iu <= Math.floor(u1 - ru); iu++)
+							for (let iv = Math.ceil(v0 - rv); iv <= Math.floor(v1 - rv); iv++) {
 								const x = (ru + iu) * a + (rv + iv) * c;
 								const y = (ru + iu) * b + (rv + iv) * d;
 								const t = ((x - p[0]) * (q[0] - p[0]) + (y - p[1]) * (q[1] - p[1])) / len2;
-								const len = Math.sqrt(len2);
 								if (t * len < eps || (1 - t) * len < eps) continue; // an end of the side, rounded
 								const off = (x - p[0]) * (q[1] - p[1]) - (y - p[1]) * (q[0] - p[0]);
 								if (Math.abs(off) / len < eps) inner.push({ t, v, at: [x, y] });
