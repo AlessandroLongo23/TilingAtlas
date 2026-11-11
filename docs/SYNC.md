@@ -3475,3 +3475,13 @@ paths). Detail: DEVELOPMENT_NOTES "Simple-face-homogeneous tilings".
 replays, face tests by the trie, one covering test shared with the solver (congruence.hpp). A fingerprint id costs
 the fast path +13% to +18% and maps every shipped id one to one (prototype, scratch). App reinstalled. c3d24a86,
 90c722e1. Detail: DEVELOPMENT_NOTES "The Searcher 2.6 times faster on regulars" and the two sections after it.
+
+2026-11-11 · CC · The Searcher gzips certificates during the run on writer threads, never on the search thread, at
+level 2 (the app repacks at level 6 after). The regular board to k = 19, which filled the disk at about 77 GB, runs in
+106 s with 2.9 GB at the most; k <= 18 holds 1.3 GB (was 32 GB) and runs faster than plain text did. Same
+certificates. App reinstalled. efc9ed3a. Detail: DEVELOPMENT_NOTES "The Searcher's certificates gzipped during the run".
+
+2026-11-11 · CC · Regular shelf records 25 times faster (1.7 ms of CPU a k = 17 record, was 41): polygons from
+eu_develop (--shard, --lines) instead of the BigInt rebuild; cellMap, nClassify and minimalBlocks faster with the same
+results; parts sorted from an index and written in parallel. Every field k = 8 to 16 reproduced; k = 16 in 14 min
+(was 6.2 hours); k = 17 built in 7.8 min, not shipped. a1442e46. Detail: DEVELOPMENT_NOTES "Regular records 25 times".
