@@ -23254,3 +23254,57 @@ mirror image are one, regular polygons edge to edge.
   hero-rotator work.
 - Results and logs: `experiments/results/homogeneous-2026-11-10-simple/`. +93/-43 lines, mostly the new
   classification entry and doc comments.
+
+## The Searcher's certificates gzipped during the run, off the search thread (2026-11-11, CC)
+
+AL ran the regular board to k = 19 from the app: the run wrote about 77 GB, the app stopped it at its 10 GB floor, and
+the run's Files figure said 21.7 GB. The engine wrote plain text during the run and the app gzipped it only once the
+run finished; a k = 18 certificate is 2,460 bytes of text and 77 gzipped at level 6. Two things put the peak above
+the text: root 6 holds 79% of the catalogue (6.26M of 7.94M tilings to k = 18), its text waited under `.part` until
+the root finished, and the merge then copied it into the real files (mostly appends: its file names are shared with
+other roots), so the disk held it twice. The Files figure counted the real files, not `.part`.
+
+`--gzip` existed but cost time: 93 s against 64 s at k <= 18, gzip level 1 under the root's lock. A profile (k <= 17,
+`sample`) said why: through the long tail one search thread of 23 is busy, and its time goes 45% to formatting
+certificates, 20% to other output bookkeeping, 7-10% to file writes, 10% to dedup and about 15% to the search itself.
+Anything added to that thread is added to the run.
+
+What changed (tilesearch.cpp `Writer`, `hand_over`, `checkpoint`, `merge`, the resume's merge undo):
+
+- A spill moves the unit's largest texts out under the lock and hands them to writer threads, one per core; the search
+  thread goes on. A writer gzips each text as one member and appends it to the unit's file under `.part`, under the
+  unit's own lock. Plain mode goes through the same writers, so the search thread does no file I/O in either mode.
+- Level 2, not 6: at k <= 13 (a run of 1.3 s) level 6 cost a third of the run, levels 1 and 2 nothing measurable, and
+  2 is a sixth smaller than 1. The app repacks at level 6 when the run finishes, as it gzipped before, so the final
+  size is today's.
+- On macOS gzip writers run at utility QoS: at the search's priority, ten busy writers took the busy search thread's
+  fast core (k <= 18: 49-55 s against 43 s). Starved by other programs they could stall a merge, so nobody waits on
+  them: a merge waiting for its texts, and a spill past 1 GB queued, write texts themselves.
+- The merge links a file of one piece not yet in place, and removes each file's pieces once the file holds them.
+  A merge cut short can then not be redone from `.part`, so the resume's undo also drops that root's units from
+  units.done and searches the root again. Checked by hand: a merge.pending written for root 22 with 102 units saved
+  gave the same certificates and census as an uninterrupted run.
+- The app passes `--gzip` (Settings, "Compress them"), repacks at level 6 after the run, counts a gzipped file
+  incrementally from the end of its last member (the engine appends whole members; checked on a file grown by one
+  member), carries counts across the repack, and shows the run folder's size on disk when `.part` makes it larger
+  than the files.
+
+Every certificate the same, file for file (sorted per file, blake2b), against the engine as installed before: k <= 12
+in both modes, k <= 14 with units forced (`TILESEARCH_UNITS=8`), k <= 14 stopped at 1.5 s and resumed, k <= 14
+resumed from a merge cut short. Counts to k <= 19 equal the regular catalogue's to k = 18 (k = 19: 8,896,555).
+
+Measured on the regular board, 20 threads, nice 10, the machine shared with other sessions' runs (log
+`experiments/results/searcher-gzip-during-run-2026-11-11.log`):
+
+| run | engine | time | most on disk | at the end |
+|---|---|---|---|---|
+| k <= 18 | before (plain text) | 65-106 s | 31.4-31.9 GB | 17.4-17.6 GB |
+| k <= 18 | writers, level 2 | 47.8-57.9 s | 1.29 GB | 1.26 GB |
+| k <= 19 | before (AL's run) | stopped, disk full | about 77 GB | |
+| k <= 19 | writers, level 2 | 106 s | 2.91 GB | 2.73 GB |
+
+The app's level-6 repack takes the k <= 18 files to about 0.6 GB, as before. Code +204/-95: new machinery (writers,
+linking, incremental gzip counts, the repack), and `win/gzwide.h` gone with the last `gzopen`.
+
+Not fixed: past about k = 22 the certificate format itself (2.5 KB of text a tiling) is the limit; and the search's
+own parallelism on this board, one thread busy through the tail, is untouched.

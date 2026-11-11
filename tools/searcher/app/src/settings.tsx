@@ -69,15 +69,16 @@ export function SettingsModal({
 					</Field>
 				</section>
 				<section className="space-y-3">
-					<h3 className="text-body font-semibold text-fg">When a search finishes</h3>
+					<h3 className="text-body font-semibold text-fg">Tiling files</h3>
 					<Checkbox
-						label="Compress its tiling files (gzip)"
+						label="Compress them (gzip)"
 						checked={settings.compressFinished}
 						onCheckedChange={(compressFinished) => save({ compressFinished })}
 						hint={
 							<InfoDot>
-								Certificate text shrinks 10 to 90 times. The app reads compressed files as they are; other programs need
-								them unpacked (Decompress on the run&rsquo;s page, or zcat, 7-Zip). A run you decompress stays so.
+								A search writes its files compressed as it goes, and packs them tighter when it finishes. Certificate
+								text shrinks 10 to 90 times. The app reads compressed files as they are; other programs need them
+								unpacked (Decompress on the run&rsquo;s page, or zcat, 7-Zip). A run you decompress stays so.
 							</InfoDot>
 						}
 					/>

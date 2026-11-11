@@ -239,7 +239,7 @@ function start(id: string, options: RunOptions, estimate = true): string | null 
 	if (!run) return "That run no longer exists.";
 	if (!fs.existsSync(ENGINE)) return `tilesearch is missing (looked for ${ENGINE}).`;
 	if (runs.freeBytes() < MIN_FREE_BYTES) return (run.note = "Not started: under 10 GB free on disk");
-	return run.start(ENGINE, options, estimate ? ESTIMATOR : undefined, app.getVersion());
+	return run.start(ENGINE, options, estimate ? ESTIMATOR : undefined, app.getVersion(), saved.compressFinished !== false);
 }
 
 /**
@@ -548,13 +548,13 @@ function capRunning() {
 	}
 }
 
-/** Gzip each run as it finishes (compressFinished), once: a run unpacked by hand stays so, and a run its raise
- *  rule replaces is left as it is, to be deleted. */
+/** Gzip each run as it finishes (compressFinished), once, at level 6 (repacking what the engine gzipped as it went):
+ *  a run unpacked by hand stays so, and a run its raise rule replaces is left as it is, to be deleted. */
 function compressFinished() {
 	for (const r of runs.runs) {
 		if (!r.fresh) continue;
 		r.fresh = false;
-		if (!r.raised && saved.compressFinished !== false) void r.compress().then(push);
+		if (!r.raised && saved.compressFinished !== false) void r.compress(false, undefined, true).then(push);
 	}
 }
 

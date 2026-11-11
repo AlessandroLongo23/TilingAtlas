@@ -351,7 +351,11 @@ tilesearch board.txt [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume]
 
 `--k` overrides the board's range for one run. Threads never change the result, so they live on the
 command line and not in the board. `--nice 10` runs the search at low priority. `--gzip` writes the
-certificate files as `.txt.gz`, about 14 times smaller at no measurable cost in time; `zcat` reads them.
+certificate files as `.txt.gz`, each a run of gzip members (`zcat` reads it whole), about 12 times smaller
+than the text. Threads of their own compress and write the text, never the search's, so it costs the run
+no time: the regular board to k = 18 holds 1.3 GB on disk at its largest, where plain text held 32 GB.
+The app passes `--gzip` unless its Compress setting is off, and packs the files at level 6 once the run
+finishes.
 
 A stopped run continues with `--resume` in the same folder. The search is split by root vertex (the
 first vertex placed; a tiling is found only under its lowest-numbered vertex type), and the output of

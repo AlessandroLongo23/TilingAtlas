@@ -59,10 +59,12 @@ export function RunOverview({ run, k, onPick }: { run: Run; k: number | null; on
 			value: RULE_NAME[run.branching],
 			sub: run.options?.rule ? "forced" : "auto",
 		});
+	// the folder when it holds much more than the files: the roots in progress, under .part until they finish
+	const fileBytes = run.files.reduce((t, f) => t + f.bytes, 0);
 	facts.push({
 		label: "Files",
 		value: n(run.files.length),
-		sub: run.files.length ? bytes(run.files.reduce((t, f) => t + f.bytes, 0)) : undefined,
+		sub: (run.disk ?? 0) > 1.2 * fileBytes ? `${bytes(run.disk!)} on disk` : run.files.length ? bytes(fileBytes) : undefined,
 	});
 
 	// One band, short enough that the tilings below fit on the first screen: the total and the roots, the

@@ -37,17 +37,18 @@ const read = (f: string) => {
 // run's files or tilings (never at startup: the output folder can hold gigabytes), one file at a time, then only
 // over the bytes appended since: the engine only appends, except when it undoes a merge cut short, which shrinks
 // the file and recounts it. A run keeps its counts in tilings.json, so they are counted once. `bytes` is the size
-// counted; `from`, where its last complete certificate ended, is where the next count of a plain file starts.
-// A count kept before 9 November 2026 has no `faces`, and is counted again.
+// counted; `from`, where its last complete certificate ended, is where the next count starts: in a gzipped file the
+// end of a gzip member, as the engine appends whole members. A count kept before 9 November 2026 has no `faces`, and
+// is counted again.
 type Count = { bytes: number; n: number; faces?: Record<number, number>; from?: number };
 const counted = new Map<string, Count>();
 const counting = new Set<string>();
 
 /**
- * Every complete certificate in a certificate file, from byte `from` of a plain file (a gzipped one is read
- * whole), with its face orbits: the lines that start with a corner, as `1/0(A3) - *0'/1'(A3) - …` does, one per
- * orbit. `visit` gets the certificate's text when it asks, and answers false to stop. Answers the bytes read and
- * the offset past the last line that left no certificate open.
+ * Every complete certificate in a certificate file, from byte `from` (of a gzipped one, the start of a gzip member),
+ * with its face orbits: the lines that start with a corner, as `1/0(A3) - *0'/1'(A3) - …` does, one per orbit.
+ * `visit` gets the certificate's text when it asks, and answers false to stop. Answers the bytes read and the offset
+ * past the last line that left no certificate open; of a gzipped file read to its end, both its bytes read.
  */
 export async function eachCertificate(
 	p: string,
@@ -55,8 +56,8 @@ export async function eachCertificate(
 	visit: (faces: number, text: () => string) => boolean | void,
 ): Promise<{ bytes: number; end: number }> {
 	const gz = p.endsWith(".gz");
-	const file = fs.createReadStream(p, gz ? {} : { start: from });
-	let [at, end, faces] = [gz ? 0 : from, gz ? 0 : from, 0];
+	const file = fs.createReadStream(p, { start: from });
+	let [at, end, faces] = [from, from, 0];
 	let lines: Buffer[] = [];
 	let carry: Buffer = Buffer.alloc(0);
 	try {
@@ -83,21 +84,20 @@ export async function eachCertificate(
 	} finally {
 		file.destroy();
 	}
-	return { bytes: at + carry.length, end };
+	return gz ? { bytes: from + file.bytesRead, end: from + file.bytesRead } : { bytes: at + carry.length, end };
 }
 
 async function countTilings(p: string, bytes: number) {
 	if (counting.has(p)) return;
 	counting.add(p);
 	try {
-		// a compressed file no longer grows, and is read whole; a plain one from where its last count ended
-		const gz = p.endsWith(".gz");
+		// from where its last count ended
 		const had = counted.get(p);
-		const on = !gz && had?.faces && typeof had.from === "number" && had.bytes <= bytes ? had : null;
+		const on = had?.faces && typeof had.from === "number" && had.bytes <= bytes ? had : null;
 		const faces: Record<number, number> = { ...on?.faces };
 		let n = on?.n ?? 0;
 		const read = await eachCertificate(p, on?.from ?? 0, (f) => void (n++, (faces[f] = (faces[f] ?? 0) + 1)));
-		counted.set(p, gz ? { bytes, n, faces } : { bytes: read.bytes, n, faces, from: read.end });
+		counted.set(p, { bytes: read.bytes, n, faces, from: read.end });
 	} catch {
 		// unreadable: not tried again until its size changes
 		counted.set(p, { bytes, n: -1 });
@@ -473,7 +473,8 @@ export class RunFolder {
 		} catch {}
 	}
 
-	start(engine: string, options: RunOptions, estimator?: string, app = ""): string | null {
+	/** `gzip`: certificates written gzipped as they are found (a resume keeps the kind the run started with). */
+	start(engine: string, options: RunOptions, estimator?: string, app = "", gzip = false): string | null {
 		if (this.state === "running" || this.state === "finished") return null;
 		const resume = fs.existsSync(this.out);
 		// --resume needs the same k; the run keeps its own raise rule, and drops it once a ceiling stopped it: a
@@ -499,6 +500,7 @@ export class RunFolder {
 		if (options.nice && !windows) args.push("--nice", String(options.nice));
 		if (options.find) args.push("--find", "--seconds", String(options.find.seconds));
 		else if (resume) args.push("--resume");
+		else if (gzip) args.push("--gzip");
 		let child: ChildProcess;
 		try {
 			child = spawn(engine, args, {
@@ -592,24 +594,32 @@ export class RunFolder {
 
 		/**
 	 * A finished run's certificate files gzipped in place (.txt → .txt.gz; certificate text shrinks 10 to
-	 * 90 times by kind), or with `unpack` back to plain text. Each file is written whole before its original goes,
-	 * so a stop midway leaves every file readable. The app and zcat read gzipped files as they are, and the
-	 * `gzip` marker tells a resume which kind to write. Unpacking stops while under MIN_FREE_BYTES free.
+	 * 90 times by kind), or with `unpack` back to plain text. With `repack` the files the engine gzipped as it went
+	 * (at level 2, cheap enough not to slow a run) are gzipped again at level 6 too: a third smaller. Each file is written whole
+	 * before its original goes, so a stop midway leaves every file readable, and keeps its count. The app and zcat
+	 * read gzipped files as they are, and the `gzip` marker tells a resume which kind to write. Unpacking stops
+	 * while under MIN_FREE_BYTES free.
 	 */
-	async compress(unpack = false, free = () => Infinity): Promise<{ error?: string }> {
+	async compress(unpack = false, free = () => Infinity, repack = false): Promise<{ error?: string }> {
 		if (unpack ? this.state === "running" : this.state !== "finished")
 			return { error: unpack ? "Stop the run first." : "Only a finished run can be compressed." };
 		if (this.packing) return {};
-		const todo = this.files.filter((f) => f.path.endsWith(".gz") === unpack);
+		const todo = this.files.filter((f) => (repack && !unpack) || f.path.endsWith(".gz") === unpack);
 		this.packing = { done: 0, all: todo.length, unpack };
 		try {
 			for (const f of todo) {
 				if (unpack && free() < MIN_FREE_BYTES) return { error: "Decompressing stopped: under 10 GB free on disk." };
-				const to = unpack ? f.path.slice(0, -3) : `${f.path}.gz`;
-				const step = unpack ? zlib.createGunzip() : zlib.createGzip({ level: 6 });
-				await pipeline(fs.createReadStream(f.path), step, fs.createWriteStream(`${to}.part`));
+				const gz = f.path.endsWith(".gz");
+				const to = unpack ? f.path.slice(0, -3) : gz ? f.path : `${f.path}.gz`;
+				const [from, into] = [fs.createReadStream(f.path), fs.createWriteStream(`${to}.part`)];
+				if (unpack) await pipeline(from, zlib.createGunzip(), into);
+				else if (gz) await pipeline(from, zlib.createGunzip(), zlib.createGzip({ level: 6 }), into);
+				else await pipeline(from, zlib.createGzip({ level: 6 }), into);
 				fs.renameSync(`${to}.part`, to);
-				fs.rmSync(f.path);
+				if (to !== f.path) fs.rmSync(f.path);
+				const c = counted.get(f.path); // the same certificates, now ending where the file does
+				const bytes = fs.statSync(to).size;
+				if (c?.faces && c.n >= 0 && c.bytes === f.bytes && c.from === f.bytes) counted.set(to, { ...c, bytes, from: bytes });
 				this.packing.done++;
 			}
 			const marker = path.join(this.out, "gzip");

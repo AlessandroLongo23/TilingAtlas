@@ -218,7 +218,7 @@ export interface Settings {
 	maxRunning: number;
 	/** On launch, start again the runs the last quit, or a crash, left unfinished. */
 	resumeOnLaunch: boolean;
-	/** Gzip a run's tiling files as it finishes. */
+	/** Gzip a run's tiling files as the engine writes them, and again at level 6 when it finishes. */
 	compressFinished: boolean;
 	/** Ask, at launch, whether a newer version is out. */
 	checkUpdates: boolean;

@@ -27,6 +27,9 @@
 #include <random>
 #include <sys/resource.h>
 #include <zlib.h>
+#ifdef __APPLE__
+#include <pthread.h>   // pthread_set_qos_class_self_np (Writer)
+#endif
 #include <atomic>
 #include <bit>
 #include <climits>
@@ -1010,22 +1013,18 @@ static void drop_torn_line(fs::path const& file) {
     if (ec) errno = ec.value(), io_failed("write", file);
 }
 
-// The pieces of one file appended to `to` under one open, in order: a file's bytes, a block at a time (`out <<
-// in.rdbuf()` moved them one character at a time: 2-18% of the CPU on the output boards, and the merge of the last
-// root is the end of an 8-thread run), then a text held in memory.
-struct Piece { fs::path file; std::string const* text = nullptr; };
-static void append_pieces(std::vector<Piece> const& pieces, fs::path const& to) {
+// The pieces of one file appended to `to` under one open, in order, a block at a time (`out << in.rdbuf()` moved
+// them one character at a time: 2-18% of the CPU on the output boards, and the merge of the last root is the end of
+// an 8-thread run).
+static void append_pieces(std::vector<fs::path> const& pieces, fs::path const& to) {
     thread_local std::vector<char> buf(1 << 20);
     std::ofstream out;
     big_buffer(out);
     out.open(to, std::ios::app | std::ios::binary);
     for (auto const& p : pieces) {
-        if (!p.file.empty()) {
-            std::ifstream in(p.file, std::ios::binary);
-            while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) out.write(buf.data(), in.gcount());
-            if (!in.eof()) io_failed("read", p.file);
-        }
-        if (p.text) out.write(p.text->data(), (std::streamsize)p.text->size());
+        std::ifstream in(p, std::ios::binary);
+        while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) out.write(buf.data(), in.gcount());
+        if (!in.eof()) io_failed("read", p);
     }
     out.close();
     if (!out) io_failed("write", to);
@@ -1336,6 +1335,8 @@ struct Unit {
     std::map<std::string, std::string> out;
     size_t buffered = 0;
     std::vector<Fingerprints::Key> keys;
+    int writing = 0;                     // its texts handed to the Writer and not yet in their files (the Writer's lock)
+    std::mutex file;                     // one append at a time to its files under .part
 };
 struct Root {
     Fingerprints seen;                   // shared by its units, so dedup spans them
@@ -1350,6 +1351,93 @@ struct Root {
     Root() { units[0]; }
 };
 
+// A unit's text goes to its files under .part on threads of their own, never on the search thread that found it. In
+// the regular board's long tail one search thread finds nearly every tiling while the rest wait for work (k <= 17,
+// 2026-11-11: 1 of 23 threads busy, 45% of it formatting certificates), so a write or a gzip there is time the whole
+// run waits: --gzip at level 1 under the root's lock took k <= 18 from 64 s to 93 s. A spill hands its texts over and
+// goes on; a writer gzips each as one member (zcat reads a file of them whole) and appends it under the unit's lock.
+// Level 2: 12 times smaller than the text at 170 MB/s a core, as fast as level 1 and a sixth smaller; level 6 is 21
+// times smaller at 45 MB/s, and cost a run of a second or two a third of its time (the app packs at level 6 once the
+// run has finished). On macOS the writers gzip below the search (utility QoS): at its own priority ten busy writers
+// took the busy search thread's fast core, k <= 18 in 49-55 s against 43 s. Below it they can starve while other
+// programs are busy, so no one waits for them: a merge waiting for its texts, and a spill past BACKLOG bytes waiting,
+// write texts themselves.
+class Writer {
+    struct Job { Unit* unit; fs::path file; std::string text; };
+    static size_t const BACKLOG = size_t(1) << 30;
+    std::mutex m;
+    std::condition_variable work, written;
+    std::deque<Job> jobs;
+    size_t queued = 0;
+    bool stop = false;
+    bool const gzip;
+    std::vector<std::thread> threads;
+    void one(std::unique_lock<std::mutex>& l) {   // the first job, done on this thread (l held on entry and return)
+        thread_local std::string packed;
+        Job job = std::move(jobs.front());
+        jobs.pop_front();
+        queued -= job.text.size();
+        l.unlock();
+        if (gzip) gzip_member(job.text, packed, job.file);
+        {
+            std::lock_guard<std::mutex> f(job.unit->file);
+            make_dirs(job.file.parent_path());
+            write_file(job.file, gzip ? packed : job.text, std::ios::app | std::ios::binary);
+        }
+        l.lock();
+        if (--job.unit->writing == 0) written.notify_all();
+    }
+    static void gzip_member(std::string const& text, std::string& out, fs::path const& file) {
+        z_stream z{};
+        bool ok = deflateInit2(&z, 2, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) == Z_OK;
+        if (ok) {
+            out.resize(deflateBound(&z, (uLong)text.size()));
+            z.next_in = (Bytef*)text.data(), z.avail_in = (uInt)text.size();
+            z.next_out = (Bytef*)out.data(), z.avail_out = (uInt)out.size();
+            ok = deflate(&z, Z_FINISH) == Z_STREAM_END;
+            out.resize(z.total_out);
+            deflateEnd(&z);
+        }
+        if (!ok) errno = 0, io_failed("compress", file);
+    }
+public:
+    explicit Writer(bool gzip) : gzip(gzip) {
+        for (unsigned i = 0; i < std::max(1u, std::thread::hardware_concurrency()); i++)
+            threads.emplace_back([this] {
+#ifdef __APPLE__
+                if (this->gzip) pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0);   // plain text: no work to yield, and utility I/O is throttled
+#endif
+                for (std::unique_lock<std::mutex> l(m);;) {
+                    work.wait(l, [&] { return stop || !jobs.empty(); });
+                    if (jobs.empty()) return;
+                    one(l);
+                }
+            });
+    }
+    ~Writer() {
+        { std::lock_guard<std::mutex> l(m); stop = true; }
+        work.notify_all();
+        for (auto& t : threads) t.join();
+    }
+    /** Each (name, text) of `out` appended to the file of that name in `dir` (.gz added under --gzip); out emptied. */
+    void push(Unit& u, fs::path const& dir, std::vector<std::pair<std::string, std::string>>& out) {
+        std::unique_lock<std::mutex> l(m);
+        for (auto& [name, text] : out) {
+            while (queued >= BACKLOG) one(l);
+            u.writing++, queued += text.size();
+            jobs.push_back({ &u, dir / (gzip ? name + ".gz" : name), std::move(text) });
+            work.notify_one();
+        }
+        out.clear();
+    }
+    /** Back once every text handed over for `u` is in its file. */
+    void wait(Unit& u) {
+        for (std::unique_lock<std::mutex> l(m); u.writing;)
+            if (jobs.empty()) written.wait(l);
+            else one(l);
+    }
+};
+
 // Counters for the end-of-run statistics, kept per thread and summed when a worker exits.
 static std::atomic<uint64_t> total_nodes{ 0 }, total_complete{ 0 };
 static thread_local uint64_t my_nodes = 0, my_complete = 0;
@@ -1359,6 +1447,13 @@ static std::atomic<uint64_t> node_cap{ UINT64_MAX };
 static std::atomic<bool> capped{ false };
 // Hand-off depth in edges below a task's start; 2 measured best across the bench boards. TILESEARCH_SPLIT overrides it.
 static int split_depth = 2;
+// Deeper than that, a node is handed off while it has room for split_room more vertices: its subtree is large enough to
+// pay for the copy. Without it the regular board's long tail ran on one thread of 20 (k <= 16, 2026-11-11: one busy for
+// the last 15 s of 24): its work lies past the top of one task, where no node was ever handed off. A node's subtree
+// doubles with each vertex of room (mean 1 node at room 0, 90 at 6, 3,859 at 12), and a hand-off costs about 3 nodes
+// (26 us, half of it the copy): room 6 kept 16 threads busy to the end for no more instructions (361e9 against 360e9;
+// any depth, 552,203 hand-offs, cost 419e9). TILESEARCH_SPLIT_ROOM overrides it.
+static size_t split_room = 6;
 // Units (search): when the plan predicts UNIT_NODES nodes or more per root (a minute or more of one thread at
 // 1-3 us a node), each root is split into one unit per node at the least depth where it has UNIT_TARGET nodes, at
 // most UNIT_DEPTH edges. Depth in edges alone does not do: at 3 edges a root of squares_edges has 3,245 nodes and
@@ -2994,20 +3089,22 @@ static void search(std::vector<int> const& roots, int kmax, vertex_classificatio
                     clone.unit = u, clone.task_nodes = 0, clone.base_edges = clone.conf.num_edges();
                     { std::lock_guard<std::mutex> l(st.mutex); clone.part = &st.units[u]; }
                     st.tasks++;
-                    found.push_back([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
+                    found.push_back([clone = std::move(clone), &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
                     return false;
                 }
                 // Give this node's subtree away only when a thread is waiting for work, and only near the top
-                // of this task's own subtree, where the work is (his engine gave away whatever node it was at,
-                // every 10 nodes while 64 tasks were not yet queued: mostly small deep subtrees, handed back and
-                // forth through the lock). Never at a task's first node, or a task would only pass itself on.
-                if (s.task_nodes < 2 || !pool.hungry() || s.conf.num_edges() - s.base_edges > split_depth) return true;
+                // of this task's own subtree, where the work is, or with room for split_room more vertices (his engine
+                // gave away whatever node it was at, every 10 nodes while 64 tasks were not yet queued: mostly small
+                // deep subtrees, handed back and forth through the lock). Never at a task's first node, or a task would
+                // only pass itself on.
+                if (s.task_nodes < 2 || !pool.hungry()) return true;
+                if (s.conf.num_edges() - s.base_edges > split_depth && s.max_num_vertices - s.num_vertices_added < split_room) return true;
                 auto clone{ s };
                 clone.task_nodes = 0;
                 clone.base_edges = clone.conf.num_edges();
                 state[clone.first_vertex]->tasks++;
                 clone.part->tasks++;
-                pool.push([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
+                pool.push([clone = std::move(clone), &finish]() mutable { clone.extend(); finish(clone.first_vertex, clone.unit, clone.part); });
                 return false;
             },
             [&](auto const& s) {
@@ -3829,6 +3926,7 @@ int main(int argc, char** argv) {
         std::cout << "colours: tilings that differ only by permuting colours count once (" << recolorings.size() + 1
                   << " recolourings keep the board)" << std::endl;
     if (char const* t = std::getenv("TILESEARCH_SPLIT")) split_depth = std::atoi(t);
+    if (char const* t = std::getenv("TILESEARCH_SPLIT_ROOM")) split_room = std::atoll(t);
 
     // the roots first (see `vertex_order`); a run ranks them below, once it knows whether it resumes
     auto [order, n_initial] = vertex_order(b);
@@ -3927,14 +4025,18 @@ int main(int argc, char** argv) {
         }
         df.close();
         // A merge cut short: the files it was appending to go back to their recorded sizes, unless
-        // the root reached roots.done, in which case the merge had finished.
+        // the root reached roots.done, in which case the merge had finished. Its pieces may be gone (merge), so the
+        // root is searched again whole: its units in units.done no longer count.
+        int undone = -1;
         if (std::ifstream pf{ pending_file }) {
             int r; pf >> r;
-            if (!done.count(r))
+            if (!done.count(r)) {
+                undone = r;
                 for (long long size; pf >> size;) {
                     std::string name; pf.get(); std::getline(pf, name);
                     if (size < 0) fs::remove(dir / name); else fs::resize_file(dir / name, size);
                 }
+            }
             fs::remove(pending_file);
         }
         // units finished by roots not yet merged: their output and keys stay under .part, their counts count
@@ -3943,7 +4045,7 @@ int main(int argc, char** argv) {
         for (std::string line; std::getline(uf, line);) {
             std::istringstream ls(line);
             int r, u;
-            if (!(ls >> r >> u) || done.count(r) || !kept[r].insert(u).second) continue;
+            if (!(ls >> r >> u) || done.count(r) || r == undone || !kept[r].insert(u).second) continue;
             live << line << "\n";
             for (std::string kv; ls >> kv;) {
                 size_t const k = std::stoi(kv), n = std::stoull(kv.substr(kv.find(':') + 1));
@@ -4174,12 +4276,13 @@ int main(int argc, char** argv) {
     // a unit's folder under .part/ is made when it first has output: most have none, and making 77,075 of
     // them up front took 12 s on a star board.
     // An append is an open and a close, and a board of hundreds of files paid one per file per megabyte (regulars
-    // k <= 12: 1.2 s of system time in 5 s). So a unit holds up to SPILL_AT bytes, and a spill before its end writes
-    // its largest files only, down to `keep` bytes held; what stays is written at its end, or by the merge straight
-    // into the real file.
+    // k <= 12: 1.2 s of system time in 5 s). So a unit holds up to SPILL_AT bytes, and a spill before its end hands
+    // its largest files to the writers, down to `keep` bytes held; what stays goes at its end.
     static size_t const SPILL_AT = 32 << 20;
-    auto spill = [&](int r, int u, Unit& p, size_t keep = 0) {   // caller holds the root's mutex, or is the only one left
-        size_t least = 0;   // the size from which a file is written
+    Writer files(gzip);
+    using Texts = std::vector<std::pair<std::string, std::string>>;
+    auto take = [](Unit& p, size_t keep, Texts& out) {   // caller holds the root's mutex, or is the only one left
+        size_t least = 0;   // the size from which a file is taken
         if (keep) {
             std::vector<size_t> sizes;
             for (auto const& [name, text] : p.out) sizes.push_back(text.size());
@@ -4187,22 +4290,17 @@ int main(int argc, char** argv) {
             size_t held = p.buffered;
             for (size_t i = 0; i < sizes.size() && held > keep; i++) held -= least = sizes[i];
         }
-        bool made = false;
         for (auto it = p.out.begin(); it != p.out.end();) {
-            auto const& [name, text] = *it;
-            if (text.size() < least) { ++it; continue; }
-            if (!made) make_dirs(unit_dir(r, u)), made = true;
-            if (!gzip) write_file(unit_dir(r, u) / name, text, std::ios::app | std::ios::binary);
-            else {   // one gzip member per spill; level 1: this text compresses ~10x even so, and level 6 costs more time
-                fs::path const gz = unit_dir(r, u) / (name + ".gz");
-                gzFile z = gzopen(gz.c_str(), "ab1");
-                if (!z) io_failed("write", gz);
-                bool const wrote = gzwrite(z, text.data(), (unsigned)text.size()) == (int)text.size();
-                if (gzclose(z) != Z_OK || !wrote) io_failed("write", gz);
-            }
-            p.buffered -= text.size();
+            if (it->second.size() < least) { ++it; continue; }
+            p.buffered -= it->second.size();
+            out.emplace_back(it->first, std::move(it->second));
             it = p.out.erase(it);
         }
+    };
+    auto spill = [&](int r, int u, Unit& p) {   // all of a finished unit's text, to the writers
+        Texts out;
+        take(p, 0, out);
+        files.push(p, unit_dir(r, u), out);
     };
     auto t0 = std::chrono::steady_clock::now();
     auto report = [&] {
@@ -4227,13 +4325,18 @@ int main(int argc, char** argv) {
     auto hand_over = [&] {   // this thread's batch, into its unit's buffer
         if (batch.root < 0) return;
         Root& st = *state[batch.root];
-        std::lock_guard<std::mutex> lock(st.mutex);
-        Unit& p = st.units.at(batch.unit);
-        for (auto const& [k, n] : batch.counts) st.counts[k] += n, p.counts[k] += n;
-        for (auto& [file, text] : batch.out) p.out[file] += text;
-        p.keys.insert(p.keys.end(), batch.keys.begin(), batch.keys.end());
-        p.buffered += batch.bytes;
-        if (p.buffered > SPILL_AT) spill(batch.root, batch.unit, p, SPILL_AT / 2);
+        thread_local Texts spilled;
+        Unit* p;
+        {
+            std::lock_guard<std::mutex> lock(st.mutex);
+            p = &st.units.at(batch.unit);
+            for (auto const& [k, n] : batch.counts) st.counts[k] += n, p->counts[k] += n;
+            for (auto& [file, text] : batch.out) p->out[file] += text;
+            p->keys.insert(p->keys.end(), batch.keys.begin(), batch.keys.end());
+            p->buffered += batch.bytes;
+            if (p->buffered > SPILL_AT) take(*p, SPILL_AT / 2, spilled);
+        }
+        if (!spilled.empty()) files.push(*p, unit_dir(batch.root, batch.unit), spilled);
         batch = Batch{};
     };
     // k: the vertex orbits that count (`flat_max`); the certificate still lists every orbit
@@ -4317,34 +4420,34 @@ int main(int argc, char** argv) {
     auto checkpoint = [&](int r, int u) {
         if (done.count(r)) return;   // its root finished meanwhile, and was merged with it
         Root& st = *state[r];
-        std::lock_guard<std::mutex> l(st.mutex);
-        Unit& p = st.units.at(u);
+        Unit* p;   // finished: no search thread has it, and the lock is only for the map of units
+        { std::lock_guard<std::mutex> l(st.mutex); p = &st.units.at(u); }
         if (!st.skip.count(u)) {
-            spill(r, u, p);
-            if (!p.keys.empty()) {
+            spill(r, u, *p);
+            files.wait(*p);
+            if (!p->keys.empty()) {
                 make_dirs(unit_dir(r, u));
-                write_file(unit_dir(r, u) / "keys", { (char const*)p.keys.data(), p.keys.size() * sizeof p.keys[0] }, std::ios::binary);
+                write_file(unit_dir(r, u) / "keys", { (char const*)p->keys.data(), p->keys.size() * sizeof p->keys[0] }, std::ios::binary);
             }
             std::ostringstream uf;
             uf << r << " " << u;
-            for (auto const& [k, n] : p.counts) uf << " " << k << ":" << n;
+            for (auto const& [k, n] : p->counts) uf << " " << k << ":" << n;
             uf << "\n";
             write_file(units_file, uf.str(), std::ios::app);
         }
+        std::lock_guard<std::mutex> l(st.mutex);
         st.units.erase(u);
     };
     auto merge = [&](int r) {
         Root& st = *state[r];
-        if (gzip) for (auto& [u, p] : st.units) spill(r, u, p);   // a member per spill, so through .part
-        // per file, its pieces in unit order (a file gets its units' text in their order): a unit's file under
-        // .part, then the text the unit still holds
-        std::map<fs::path, std::map<int, Piece>> names;
+        for (auto& [u, p] : st.units) spill(r, u, p);
+        for (auto& [u, p] : st.units) files.wait(p);
+        // per file, its pieces under .part in unit order (a file gets its units' text in their order)
+        std::map<fs::path, std::map<int, fs::path>> names;
         if (fs::exists(part / std::to_string(r)))
             for (auto const& d : fs::directory_iterator(part / std::to_string(r)))
                 for (auto const& e : fs::directory_iterator(d.path()))
-                    if (e.path().filename() != "keys") names[e.path().filename()][std::stoi(d.path().filename().string())].file = e.path();
-        for (auto const& [u, p] : st.units)
-            for (auto const& [name, text] : p.out) names[name][u].text = &text;
+                    if (e.path().filename() != "keys") names[e.path().filename()][std::stoi(d.path().filename().string())] = e.path();
         {   // whole or not at all: a half-written list would undo the wrong files (written under .part, then moved)
             std::ostringstream pf;
             pf << r << "\n";
@@ -4356,11 +4459,19 @@ int main(int argc, char** argv) {
             fs::rename(part / "merge.pending", pending_file, ec);
             if (ec) errno = ec.value(), io_failed("write", pending_file);
         }
-        std::vector<Piece> in_order;
+        // The root is never on disk twice (the merge of regulars k <= 18's root 6, 79% of its tilings, held 32 GB for
+        // 18 GB of text): a file of one piece and none in place yet is linked, not copied (a disk without links
+        // copies; merge.pending's -1 removes either), and a file's pieces go once it holds them. A merge cut short
+        // then cannot be done again from .part, so its undo searches the root again, units and all.
+        std::vector<fs::path> in_order;
         for (auto const& [f, pieces] : names) {
-            in_order.clear();
-            for (auto const& [u, piece] : pieces) in_order.push_back(piece);
-            append_pieces(in_order, dir / f);
+            std::error_code ec;
+            if (!(pieces.size() == 1 && !fs::exists(dir / f) && (fs::create_hard_link(pieces.begin()->second, dir / f, ec), !ec))) {
+                in_order.clear();
+                for (auto const& [u, piece] : pieces) in_order.push_back(piece);
+                append_pieces(in_order, dir / f);
+            }
+            for (auto const& [u, piece] : pieces) fs::remove(piece, ec);
         }
         {
             std::ostringstream df;
