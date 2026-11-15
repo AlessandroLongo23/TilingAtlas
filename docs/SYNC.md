@@ -3485,3 +3485,8 @@ certificates. App reinstalled. efc9ed3a. Detail: DEVELOPMENT_NOTES "The Searcher
 eu_develop (--shard, --lines) instead of the BigInt rebuild; cellMap, nClassify and minimalBlocks faster with the same
 results; parts sorted from an index and written in parallel. Every field k = 8 to 16 reproduced; k = 16 in 14 min
 (was 6.2 hours); k = 17 built in 7.8 min, not shipped. a1442e46. Detail: DEVELOPMENT_NOTES "Regular records 25 times".
+
+2026-11-15 · CC · Vercel CPU for the site from about 60 to about 5 min a month at current traffic: the proxy runs on
+/api/pipeline only (it refreshed Supabase sessions nobody has), and `/` and `/catalogue/view` are static (the landing
+deals its picks in the browser, the viewer prerenders an empty-query shell). `/catalogue` stays per request: its first
+render follows the query string. Not deployed. 958fb4c1. Detail: DEVELOPMENT_NOTES "Vercel CPU: the site from 1 h".

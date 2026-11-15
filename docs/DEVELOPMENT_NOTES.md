@@ -23350,3 +23350,59 @@ The 252 Searcher records the shelf holds at k = 17 are all among the engine's ti
 `public/`. Profiles and the old-against-new harnesses: `experiments/record-builder-2026-11-11/`.
 
 ⚑ The site still rebuilds a drawn record's polygons with `reconstructOracleCell`, about 35 ms a k = 17 thumbnail.
+
+## Vercel CPU: the site from 1 h to 5 min a month (2026-11-15, CC)
+
+The Vercel team `falesteos-projects` shares one Hobby allowance of 4 h of Active CPU per 30 days. In the 30 days to
+2026-11-15 it used 4.78 h, Vercel paused every project, and AL paid a month of Pro to bring them back. tiling-atlas was
+the largest consumer at 2.05 h: 1.21 h of proxy, 0.84 h of functions.
+
+That window was out of date. About half of it stopped on 2026-11-10 with no change aimed at it: the move to R2 took every
+data-file request off the proxy (its matcher excluded images but not `.json.gz`, so each shard fetch ran it), and the
+/play merge retired the busiest function route. Proxy CPU fell from 2 to 10 min a day to about 0.5. From 2026-11-11 to
+2026-11-15 (4.45 days, scaled to 30): proxy 18 min, `/catalogue/view` 21, `/` 16 (214 ms of CPU a render, mostly cold
+starts), `/catalogue` 5. About 60 min.
+
+What changed (958fb4c1):
+- The proxy matches `/api/pipeline/:path*` only. It ran `supabase.auth.getUser()` on every page request, but the site
+  has no sign-in and nothing reads a session. `lib/supabase/session.ts` is gone. If accounts arrive, the pattern is
+  Sapiens' `src/proxy.ts`: refresh only when an `sb-…-auth-token` cookie is present.
+- `/catalogue/view` is static. The `(atlas)` layout's `force-dynamic` came with 49625014, when the layout fetched the
+  catalogue server-side; the fetch went later and the flag stayed. Removing the flag alone empties the page:
+  `useSearchParams` in a prerender renders the nearest Suspense fallback, which was `null`. The fallback is now
+  `AtlasShell`, the viewer with an empty query string. The viewer's first render ignores the query string (the link is
+  applied in effects), so the prerendered HTML matched production's per-request HTML word for word. `ReferenceShelf`
+  takes the params as a prop: its own `useSearchParams` would have bailed out of the fallback too.
+- `/` is static. It was force-dynamic so each request dealt a new hero, mosaic and card picks. The deal moved to the
+  browser: the page ships the pools (`LANDING_POOLS`) and `components/landing/dealt.tsx` deals on mount through
+  `useSyncExternalStore` with a null server snapshot, so hydration matches and the deal arrives as an ordinary update.
+  Everything dealt is a canvas, blank until drawn either way. The deal is in `lib/services/landing-deal.ts`, which has
+  no runtime imports, so `referenceAtlas.ts` stays out of the landing bundle.
+
+What did not go in:
+- A static `/catalogue`. The grid's first render follows `?geo=`, `?dec=` and the shelf's filters through `useState`
+  initializers, which a prerender cannot know. Static, `/catalogue?geo=hyperbolic` painted the Euclidean defaults for
+  2.3 s (Fast 4G, CPU 4x slower) before switching; production paints Hyperbolic at first paint. It stays per request,
+  about 5 min a month, until AL decides otherwise.
+- `force-static` on the layout. It makes `useSearchParams` return empty values at prerender, so the real tree would
+  prerender; but a `?geo=hyperbolic` load then hydrates against Euclidean HTML, and React 19 in production does not patch
+  attribute-only mismatches, so a selected segment could stay wrong. The fallback is never hydrated (its boundary is
+  rendered on the client), so it cannot fail that way.
+- ISR on `/`, one deal per window: a reload would show the same picks.
+
+What remains different: the hero caption appears with the tiling (1.56 s throttled) instead of at first paint over the
+blank plate (0.67 s); the tiling and mosaic draw when they did before. The landing HTML grows from 30.5 to 40.5 KB
+brotli, the 64 hyperbolic patch records and 657 spherical ids the deal draws from, and the CDN serves it with no render
+in front.
+
+Checked on a production build (`next start`) and on production with the same Playwright script: three visits to `/`,
+three different deals; the share link `/catalogue/view?source=reference&tiling=t2001` gives the same screenshot, title
+and description, also as `facebookexternalhit`; `?geo=hyperbolic` lands on the same tiling; prefetches with `RSC: 1` and
+`Next-Router-Prefetch: 1` return 200; a request with an `sb-` cookie gets the same page and no Set-Cookie; the pipeline
+answers 401 without or with a wrong secret. `next build`, `tsc`, ESLint, `ds:check` and Vitest (3,397 tests) pass.
+Scripts and the metrics pulled: `experiments/vercel-cpu-2026-11-15/`.
+
+⚑ Unchecked: four force-static shelves seed `useState` from `useSearchParams` the same way (`/isohedral` ?type,
+`/colors` ?g ?c ?k, `/freedraw` ?geo, `/aperiodic` ?view, which the /substitutions and /multigrid redirects land on), so
+a hard load of such a link hydrates against HTML prerendered with the defaults. Whether any of them shows the
+attribute-mismatch problem above has not been looked at.
