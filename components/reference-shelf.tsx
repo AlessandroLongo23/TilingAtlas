@@ -11,7 +11,6 @@ import {
 	type ReactNode,
 	type SetStateAction,
 } from "react";
-import { useSearchParams } from "next/navigation";
 import { Check, ChevronRight, Download, Library, Link2, Shapes, X } from "lucide-react";
 import { InfoDot } from "@/design-system/components/info-dot";
 import { Spinner } from "@/design-system/components/spinner";
@@ -836,6 +835,8 @@ const pick = (f: ReferenceFilter, keys: readonly (keyof ReferenceFilter)[]): Ref
 	Object.fromEntries(keys.filter((k) => f[k] !== undefined).map((k) => [k, f[k]])) as ReferenceFilter;
 
 interface ReferenceShelfProps {
+	/** The page's query string, read once for the opening filters; empty in the prerendered shell. */
+	searchParams: URLSearchParams;
 	/** The page's one store of records (null until the base atlas lands) and the way to add to it. Every
 	 *  loader below writes there, so the viewer and the grid hold the same tilings. */
 	tilings: ReferenceTiling[] | null;
@@ -861,6 +862,7 @@ interface ReferenceShelfProps {
 }
 
 export function ReferenceShelf({
+	searchParams,
 	tilings,
 	append,
 	geometry: cellGeometry,
@@ -875,7 +877,6 @@ export function ReferenceShelf({
 	notLoaded,
 	pending,
 }: ReferenceShelfProps) {
-	const searchParams = useSearchParams();
 	// Parse the URL exactly once, on mount. After this we only WRITE the URL (one-way, via replaceState
 	// below) — we never re-read it, so browser back/forward inside the page isn't a filter-state source.
 	const [initialView] = useState(() => parseViewState(searchParams));

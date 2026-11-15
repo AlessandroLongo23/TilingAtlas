@@ -2,6 +2,7 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import { type ReferenceTiling, compactVertexConfig, geometryOf } from "@/lib/services/referenceAtlas";
 import { GEOMETRIES, SOURCES } from "@/lib/vocabulary";
+import { pickDistinct } from "./landing-deal";
 
 // Pure landing-page logic, shared by the runtime loader (landingData.ts) and the build-time
 // generator (scripts/gen-landing-data.ts). Deliberately imports NEITHER node:fs NOR the generated
@@ -22,35 +23,15 @@ export interface LandingSpecimen {
 	cell: TranslationalCellData;
 }
 
-export interface LandingData {
-	counts: LandingCounts;
-	/** Rotation pool for the hero: distinct random Euclidean specimens; the client cycles through
-	 *  them with the radial-wave transition. First entry is the one on stage at load. */
-	heroPool: LandingSpecimen[];
-	/** 3×3 mosaic for the Library card — distinct random Euclidean entries. */
-	mosaic: LandingSpecimen[];
-	/** The 11 uniform tilings (Galebach k=1 regular shelf), ordered by id — the Theory ring. */
-	uniformEleven: LandingSpecimen[];
-	/** Cell for the Play card's interactive patch (4.6.12, the truncated trihexagonal). */
-	play: LandingSpecimen;
-	/** Developed-patch id for the Hyperbolic card. */
-	hyperbolicPatch: string | null;
-	/** The record for that patch, so the card renders without fetching the 9.9 MB developed catalogue
-	 *  to read one 350-byte entry out of it. Null if the payload predates the inlining. */
-	hyperbolicPatchData: CataloguePatch | null;
-	/** Solid id for the Spherical card. */
-	sphericalSolid: string | null;
-}
-
 /** The small artifact scripts/gen-landing-data.ts bakes at build time and the runtime loader reads
- *  instead of the ~23 MB atlas. `euclideanPool` is a capped, deterministic sample; the runtime
- *  shuffles it per request into the hero pool and mosaic. */
+ *  instead of the ~23 MB atlas. `euclideanPool` is a capped, deterministic sample; the browser
+ *  deals it per visit into the hero pool and mosaic (landing-deal.ts). */
 export interface LandingPayload {
 	counts: LandingCounts;
 	euclideanPool: LandingSpecimen[];
 	uniformEleven: LandingSpecimen[];
 	play: LandingSpecimen;
-	/** Renderable developed-patch ids the Hyperbolic card picks one from per request (one representative
+	/** Renderable developed-patch ids the Hyperbolic card picks one from per visit (one representative
 	 *  per vertex-config family, so successive reloads look different, not two near-identical 7.7.7s). */
 	hyperbolicPool: string[];
 	/** The developed record for every id in `hyperbolicPool`, inlined by the generator. A record is
@@ -58,7 +39,7 @@ export interface LandingPayload {
 	 *  of public/hyperbolic-developed.json (28,453 records) to read exactly one of them. Absent on a
 	 *  payload generated before this existed; the card falls back to the fetch. */
 	hyperbolicPatches?: Record<string, CataloguePatch>;
-	/** Distinct spherical solid ids the Spherical card picks one from per request. */
+	/** Distinct spherical solid ids the Spherical card picks one from per visit. */
 	sphericalPool: string[];
 	/** Stable fallbacks used only if the pool is empty (kept from the original fixed picks). */
 	hyperbolicPatch: string | null;
@@ -80,17 +61,6 @@ export function pickUniformEleven(atlas: ReferenceTiling[]): ReferenceTiling[] {
 	return atlas
 		.filter((t) => t.source === SOURCES.GALEBACH && t.k === 1 && !t.family.includes("*"))
 		.sort((a, b) => a.id.localeCompare(b.id));
-}
-
-/** Distinct random picks (Fisher–Yates prefix) — rng injectable for tests. */
-export function pickDistinct<T>(pool: T[], n: number, rng: () => number = Math.random): T[] {
-	const arr = [...pool];
-	const take = Math.min(n, arr.length);
-	for (let i = 0; i < take; i++) {
-		const j = i + Math.floor(rng() * (arr.length - i));
-		[arr[i], arr[j]] = [arr[j], arr[i]];
-	}
-	return arr.slice(0, take);
 }
 
 /** A render cell is drawable iff it carries at least one polygon — the hero and mosaic must never
@@ -117,7 +87,7 @@ function mulberry32(seed: number): () => number {
 	};
 }
 
-/** Deterministic seed-pool sample the runtime shuffles per request into the 14-slot hero pool and
+/** Deterministic seed-pool sample the browser deals per visit into the 14-slot hero pool and
  *  9-slot mosaic. Only the *instant* first-paint set — the hero then lazy-fetches from the full
  *  per-cell hero files (scripts/gen-landing-data.ts) so every Euclidean tiling can appear. Kept small
  *  since the long tail no longer rides in the bundled payload. */
@@ -137,7 +107,7 @@ export function buildLandingPayload(atlas: ReferenceTiling[], poolSize: number =
 
 	const eleven = pickUniformEleven(atlas);
 	// 4.6.12 (t1003) is the Play card's fallback patch — big dodecagons read well at card size. The
-	// runtime re-picks the Play specimen from euclideanPool per request, so this is only the seed.
+	// browser re-picks the Play specimen from euclideanPool per visit, so this is only the seed.
 	const play = atlas.find((t) => t.id === "t1003") ?? eleven[0] ?? euclideanDrawable[0];
 
 	// Hyperbolic pool: one representative patch per vertex-config family (7.7.7, 3.3.3.3.7, 4.4.4.5, …),

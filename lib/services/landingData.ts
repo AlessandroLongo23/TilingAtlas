@@ -6,42 +6,29 @@
 // ENTIRE 255 MB public/ tree into the root serverless function, pushing it to 254 MB (over Vercel's
 // 250 MB limit). See docs/DEVELOPMENT_NOTES.md.
 //
-// Now the counts and the specimen pool are precomputed at build time into landing-data.generated.json
-// (scripts/gen-landing-data.ts, run by `pnpm build`). That file is tiny (~150 KB) and imported —
-// so it is bundled with the function, never read from disk, and never drags public/ into the trace.
-// The only per-request work is shuffling the pool into the hero rotation and mosaic, preserving the
-// original "fresh specimen each request" behaviour (app/page.tsx stays force-dynamic).
-import { type LandingData, type LandingPayload, pickDistinct } from "./landing-core";
+// Now the counts and the specimen pools are precomputed at build time into landing-data.generated.json
+// (scripts/gen-landing-data.ts, run by `pnpm build`). That file is tiny (~150 KB) and imported, so it is
+// bundled, never read from disk, and never drags public/ into the trace. The page is prerendered once per
+// deploy; the per-visit picks (hero rotation, mosaic, collection previews) are dealt in the browser from
+// LANDING_POOLS (components/landing/dealt.tsx). Until 2026-11-15 they were dealt here on every request,
+// which made the page a function render at ~210 ms of CPU each.
+import type { LandingPayload } from "./landing-core";
+import type { LandingPools } from "./landing-deal";
 import payload from "./landing-data.generated.json";
 
-export { countsOf, pickDistinct, pickUniformEleven, toSpecimen } from "./landing-core";
-export type { LandingCounts, LandingData, LandingPayload, LandingSpecimen } from "./landing-core";
+export { countsOf } from "./landing-core";
+export { pickDistinct } from "./landing-deal";
+export type { LandingSpecimen } from "./landing-core";
 
-const LANDING = payload as LandingPayload;
+export const LANDING = payload as LandingPayload;
 
-export async function loadLandingData(rng: () => number = Math.random): Promise<LandingData> {
-	// Hero pool + mosaic re-pick independently from the same capped pool — a duplicate between the
-	// two is harmless and rare.
-	const heroPool = pickDistinct(LANDING.euclideanPool, 14, rng);
-	const mosaic = pickDistinct(LANDING.euclideanPool, 9, rng);
-
-	// The Play/Hyperbolic/Spherical thumbnails re-deal per request too (page.tsx is force-dynamic), so
-	// the three collection previews change on every reload instead of always showing the baked picks.
-	const play = pickDistinct(LANDING.euclideanPool, 1, rng)[0] ?? LANDING.play;
-	const hyperbolicPatch = pickDistinct(LANDING.hyperbolicPool, 1, rng)[0] ?? LANDING.hyperbolicPatch;
-	const sphericalSolid = pickDistinct(LANDING.sphericalPool, 1, rng)[0] ?? LANDING.sphericalSolid;
-
-	return {
-		counts: LANDING.counts,
-		heroPool,
-		mosaic,
-		uniformEleven: LANDING.uniformEleven,
-		play,
-		hyperbolicPatch,
-		// Ship the chosen patch's record with the page. Without it the Hyperbolic card fetches the whole
-		// 9.9 MB developed catalogue client-side to read one entry; the pool's records are inlined in the
-		// payload at build time (~20 KB) precisely so it doesn't have to.
-		hyperbolicPatchData: (hyperbolicPatch && LANDING.hyperbolicPatches?.[hyperbolicPatch]) || null,
-		sphericalSolid,
-	};
-}
+/** The part of the payload a deal reads, shipped with the page. */
+export const LANDING_POOLS: LandingPools = {
+	euclideanPool: LANDING.euclideanPool,
+	hyperbolicPool: LANDING.hyperbolicPool,
+	hyperbolicPatches: LANDING.hyperbolicPatches,
+	sphericalPool: LANDING.sphericalPool,
+	play: LANDING.play,
+	hyperbolicPatch: LANDING.hyperbolicPatch,
+	sphericalSolid: LANDING.sphericalSolid,
+};

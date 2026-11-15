@@ -336,8 +336,20 @@ type Lens = "grid" | "tiling";
 const lensOf = (path: string | null): Lens => (path?.startsWith("/catalogue/view") ? "tiling" : "grid");
 const LENS_PATH: Record<Lens, string> = { grid: "/catalogue", tiling: "/catalogue/view" };
 
+/** The atlas as the URL asks for it. Reading the query string keeps this out of the prerender. */
 export function AtlasClient() {
-	const searchParams = useSearchParams();
+	return <Atlas searchParams={useSearchParams()} />;
+}
+
+/** The viewer with no query string: what the prerendered /catalogue/view carries until AtlasClient replaces
+ *  it (layout.tsx). The viewer's first render ignores the query string, so the two agree; the grid's first
+ *  render follows it, so /catalogue renders per request instead (catalogue/page.tsx) and needs no shell. */
+export function AtlasShell() {
+	return lensOf(usePathname()) === "tiling" ? <Atlas searchParams={NO_PARAMS} /> : null;
+}
+const NO_PARAMS = new URLSearchParams();
+
+function Atlas({ searchParams }: { searchParams: URLSearchParams }) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const lens = lensOf(pathname);
@@ -2225,6 +2237,7 @@ export function AtlasClient() {
 					{gridVisited ? (
 						<div className={cn("flex min-h-0 min-w-0 flex-1", lens !== "grid" && "hidden")}>
 							<ReferenceShelf
+								searchParams={searchParams}
 								tilings={baseLoaded ? (records?.get(`${geometry}|${decoration}`) ?? NO_RECORDS) : null}
 								append={appendRefs}
 								geometry={geometry}

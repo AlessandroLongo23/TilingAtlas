@@ -3,20 +3,14 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 
 // The id of the tiling currently on the hero stage, shared between the rotator (which owns the
-// rotation) and the hero CTA (which links to it). Seeded with the first specimen so the server HTML
-// already carries the right deep link; the rotator republishes on every swap.
+// rotation) and the hero CTA (which links to it). Null until the rotator, dealt in the browser
+// (dealt.tsx), puts its first specimen on stage; it republishes on every swap.
 
 const HeroSpecimenContext = createContext<string | null>(null);
 const SetHeroSpecimenContext = createContext<(id: string) => void>(() => {});
 
-export function HeroSpecimenProvider({
-	initialId = null,
-	children,
-}: {
-	initialId?: string | null;
-	children: ReactNode;
-}) {
-	const [id, setId] = useState<string | null>(initialId);
+export function HeroSpecimenProvider({ children }: { children: ReactNode }) {
+	const [id, setId] = useState<string | null>(null);
 	const publish = useCallback((next: string) => {
 		setId((prev) => (prev === next ? prev : next));
 	}, []);

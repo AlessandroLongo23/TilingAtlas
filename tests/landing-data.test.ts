@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { countsOf, loadLandingData, pickDistinct } from "@/lib/services/landingData";
+import { LANDING, LANDING_POOLS, countsOf, pickDistinct } from "@/lib/services/landingData";
+import { dealLanding } from "@/lib/services/landing-deal";
 import payload from "@/lib/services/landing-data.generated.json";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
@@ -39,9 +40,9 @@ describe("pickDistinct", () => {
 	});
 });
 
-describe("loadLandingData (real atlas files)", () => {
-	it("returns consistent counts and well-formed specimens", async () => {
-		const data = await loadLandingData(seededRng());
+describe("the landing payload and its deal (real atlas files)", () => {
+	it("has consistent counts and deals well-formed specimens", () => {
+		const data = { ...LANDING, ...dealLanding(LANDING_POOLS, seededRng()) };
 		const { euclidean, hyperbolic, spherical, total } = data.counts;
 		expect(total).toBe(euclidean + hyperbolic + spherical);
 		expect(euclidean).toBeGreaterThan(1000);
@@ -63,12 +64,14 @@ describe("loadLandingData (real atlas files)", () => {
 		for (const m of data.mosaic) expect(polysOf(m).length).toBeGreaterThan(0);
 
 		// The three collection-preview specimens. They are RE-DEALT from the baked pools on every
-		// request (landingData.ts), so pinning them to specific ids would make every atlas addition
+		// visit (landing-deal.ts), so pinning them to specific ids would make every atlas addition
 		// look like a regression — the invariant is that each pick comes from its own pool and is
 		// drawable, not which one the rng happened to land on.
 		expect(payload.euclideanPool.map((t) => t.id)).toContain(data.play.id);
 		expect(polysOf(data.play)).not.toHaveLength(0);
 		expect(payload.hyperbolicPool).toContain(data.hyperbolicPatch);
 		expect(payload.sphericalPool).toContain(data.sphericalSolid);
+		// The Hyperbolic card ships its record, so it never fetches the developed catalogue.
+		expect(data.hyperbolicPatchData).not.toBeNull();
 	});
 });
