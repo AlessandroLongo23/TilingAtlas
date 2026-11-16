@@ -129,7 +129,8 @@ function Row({
 	const numeric = typeof value === "number" || (typeof value === "string" && /^[\d\s.,·\[\]—-]+$/.test(value));
 	const valueClass = muted
 		? "text-ui italic text-fg-muted"
-		: `text-ui font-medium text-fg${numeric ? " font-mono tabular-nums" : ""}`;
+		: // break-words: an amalgama's partition, 21 counts long, would run off the panel on one line
+			`text-ui font-medium text-fg${numeric ? " font-mono tabular-nums break-words" : ""}`;
 	// A phone has no hover, so the gloss a title would carry is printed under the row there.
 	const gloss = title ? <p className="hidden text-small leading-tight text-fg-muted max-md:block">{title}</p> : null;
 	if (stack) {
@@ -450,11 +451,7 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 				value={spec.k ?? "—"}
 			/>
 			{spec.m != null ? (
-				// a break may fall after each "·": an amalgama's 21 counts ran off the panel on one line
-				<Row
-					label="VC types (m)"
-					value={spec.partition ? `${spec.m} [${spec.partition.join("·\u200b")}]` : String(spec.m)}
-				/>
+				<Row label="VC types (m)" value={spec.partition ? `${spec.m} [${spec.partition.join("·")}]` : String(spec.m)} />
 			) : null}
 			{spec.edgeOrbits != null ? <Row label="Edges (e)" value={spec.edgeOrbits} /> : null}
 			{spec.faceOrbits != null ? <Row label="Tiles (t)" value={spec.faceOrbits} /> : null}
