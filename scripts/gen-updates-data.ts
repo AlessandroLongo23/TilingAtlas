@@ -26,7 +26,12 @@ import { drawableEuclidean, toSpecimen, type LandingSpecimen } from "@/lib/servi
 import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewLabel } from "@/lib/updates/preview-ids";
-import { EXTERNAL_CELL_CATALOGUES, lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
+import {
+	catalogueRows,
+	EXTERNAL_CELL_CATALOGUES,
+	lengthFamilyRows,
+	type ReferenceTiling,
+} from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
@@ -73,9 +78,7 @@ async function loadAtlas(): Promise<ReferenceTiling[]> {
 	const parts = await Promise.all(
 		EAGER_ATLAS_FILES.map(async (name, i) => {
 			try {
-				return hydrateRenderCells(
-					decodeAtlas<ReferenceTiling>(readDataJson(path.join(dir, name))),
-				);
+				return hydrateRenderCells(decodeAtlas<ReferenceTiling>(readDataJson(path.join(dir, name))));
 			} catch (e) {
 				if (i === 0) throw e;
 				return [] as ReferenceTiling[];
@@ -145,7 +148,7 @@ async function fillFromExternal(missing: Set<string>): Promise<Map<string, Refer
 			if (!missing.size) break;
 			let rows: unknown[];
 			try {
-				rows = readDataJson(path.join(process.cwd(), "public", url)) as unknown[];
+				rows = catalogueRows(readDataJson(path.join(process.cwd(), "public", url)));
 			} catch {
 				continue; // a missing catalogue just leaves its ids without a preview
 			}

@@ -3092,9 +3092,14 @@ export async function loadBubbleDecorAtlas(): Promise<ReferenceTiling[]> {
  * Declared as DATA and not as a function per shelf. `scripts/gen-updates-data.ts` iterates this and
  * names no shelf; a fourth catalogue that ships a real cell adds one entry here and the generator
  * needs no edit. The first version of that generator had a `fillFromBubble` written into it, which is
- * how the next shelf would have got a `fillFromColors` beside it (AL, 2026-08-24).
+ * how the next shelf would have got a `fillFromColors` beside it (AL, 2026-08-24). Read a file's rows with
+ * `catalogueRows`: most are plain arrays, and a classification list carries its own records.
  */
+export const catalogueRows = (body: unknown): never[] =>
+	(Array.isArray(body) ? body : decodeAtlas((body as { records: unknown }).records)) as never[];
 export const EXTERNAL_CELL_CATALOGUES: { files: readonly string[]; build: (row: never) => ReferenceTiling }[] = [
+	// the amalgamas sit on no shelf (lib/classifications.ts), so their list file holds their records
+	{ files: ["classifications/amalgamas.json"], build: (r: ReferenceTiling) => hydrateRenderCells([r])[0] },
 	{ files: BUBBLE_FILES, build: bubbleToReference as (row: never) => ReferenceTiling },
 	// Tegula's plane rows carry no cell; it is bent from the type on first read, as the loader does.
 	{

@@ -6,7 +6,12 @@ import type { Metadata } from "next";
 import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewIdsIn } from "@/lib/updates/unseen";
-import { EXTERNAL_CELL_CATALOGUES, lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
+import {
+	catalogueRows,
+	EXTERNAL_CELL_CATALOGUES,
+	lengthFamilyRows,
+	type ReferenceTiling,
+} from "@/lib/services/referenceAtlas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { UpdatesClient } from "./_updates-client";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
@@ -104,7 +109,7 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 		for (const url of files) {
 			if ([...wanted].every((id) => out[id])) return out;
 			try {
-				for (const row of JSON.parse(await read(url)) as never[]) {
+				for (const row of catalogueRows(JSON.parse(await read(url)))) {
 					const t = build(row);
 					if (wanted.has(t.id) && !out[t.id] && t.renderCell) out[t.id] = t.renderCell;
 				}

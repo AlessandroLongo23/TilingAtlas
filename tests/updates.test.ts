@@ -6,7 +6,7 @@ import { formatMonth, groupByMonth } from "@/lib/updates/grouping";
 import { bumpBetween, compareVersions, isVersion, parseVersion, releaseLevel } from "@/lib/updates/version";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { parseShelfPreviewId, previewHref } from "@/lib/updates/preview-ids";
-import { EXTERNAL_CELL_CATALOGUES, lengthFamilyRows } from "@/lib/services/referenceAtlas";
+import { catalogueRows, EXTERNAL_CELL_CATALOGUES, lengthFamilyRows } from "@/lib/services/referenceAtlas";
 import { previewIdsIn, shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataText } from "../scripts/atlas/io.mjs";
@@ -45,7 +45,7 @@ function atlasIds(): Set<string> {
 	for (const { files } of EXTERNAL_CELL_CATALOGUES) {
 		for (const url of files) {
 			try {
-				for (const row of JSON.parse(readDataText(path.join(dir, url))) as { id?: string }[]) {
+				for (const row of catalogueRows(JSON.parse(readDataText(path.join(dir, url)))) as { id?: string }[]) {
 					if (row.id) ids.add(row.id);
 				}
 			} catch {
