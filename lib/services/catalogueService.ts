@@ -6,6 +6,7 @@ import type { TegulaCell } from "@/lib/tilings/tegula";
 import type { WallpaperGroup, LatticeShape } from "@/lib/classes/symmetry/types";
 import type { TranslationalCellData } from "@/lib/classes/algorithm/types";
 import type { Geometry } from "@/lib/vocabulary";
+import type { AmalgamaFacts } from "@/lib/services/referenceAtlas";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
 // method wrote found_tilings — torus today, orbifold later (DESIGN INTENT, gated on the Phase-1
@@ -54,6 +55,8 @@ export interface CatalogueTiling {
 	/** How this repo derived the record: searched by the engine, constructed from a parent solid, or
 	 *  classical tabulated coordinates. Spherical shelf only; see ReferenceEntry.derivation. */
 	derivation?: "searched" | "constructed" | "tabulated";
+	/** An amalgama's vertex types (see ReferenceTiling.amalgama). */
+	amalgama?: AmalgamaFacts;
 	// Hyperbolic shelf: id of a developed Poincaré patch (public/hyperbolic-developed.json). Its presence
 	// routes /play + the sidebar/library thumbnails to the per-pixel Poincaré-disk renderer instead of the
 	// Euclidean cell path. Carried through from ReferenceTiling by referenceToCatalogue. Present on every

@@ -7,6 +7,7 @@ import { colorLetter } from "@/lib/colors/pattern";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import { ROLE_LABEL, type Credit } from "@/lib/attribution";
 import { compactVertexConfig } from "@/lib/services/referenceAtlas";
+import { compactVC } from "@/lib/services/vertexConfig";
 import { TILING_LEVEL_LABEL, TILING_LEVEL_NOTE } from "@/lib/tilings/tiling-level";
 import { isNobleFamily, nobleFaceShape, nobleFamilySolid, nobleSolid } from "@/lib/render/nobleSolids";
 import { useConfiguration } from "@/stores/configuration";
@@ -15,6 +16,7 @@ import { loadDevelopedPatch, type CataloguePatch } from "@/lib/tilings/hyp-devel
 import { familyMember } from "@/lib/render/hypStarFamily";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
 import { Button } from "@/design-system/components/button";
+import { HoverPill } from "@/design-system/components/hover-pill";
 import { Modal } from "@/design-system/components/modal";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
@@ -24,6 +26,8 @@ interface TilingInfoProps {
 	spec: TilingSpec | null;
 	/** Euclidean vertex-configuration thumbnails, computed by the flat canvas. Empty for other geometries. */
 	vcs?: VCWithOccurrences[];
+	/** An amalgama's vertex type under the pointer (null when it leaves): the canvas lights its vertices. */
+	onVertexType?: (vc: string | null) => void;
 }
 
 const GEOMETRY_LABEL: Record<TilingSpec["geometry"], string> = {
@@ -446,7 +450,11 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 				value={spec.k ?? "—"}
 			/>
 			{spec.m != null ? (
-				<Row label="VC types (m)" value={spec.partition ? `${spec.m} [${spec.partition.join("·")}]` : String(spec.m)} />
+				// a break may fall after each "·": an amalgama's 21 counts ran off the panel on one line
+				<Row
+					label="VC types (m)"
+					value={spec.partition ? `${spec.m} [${spec.partition.join("·\u200b")}]` : String(spec.m)}
+				/>
 			) : null}
 			{spec.edgeOrbits != null ? <Row label="Edges (e)" value={spec.edgeOrbits} /> : null}
 			{spec.faceOrbits != null ? <Row label="Tiles (t)" value={spec.faceOrbits} /> : null}
@@ -566,7 +574,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 }
 
 // The same card as a panel of its own: the catalogue's Info tab, beside the view options.
-export function TilingInfoPanel({ spec, vcs = [] }: TilingInfoProps) {
+export function TilingInfoPanel({ spec, vcs = [], onVertexType }: TilingInfoProps) {
 	return (
 		<div
 			role="region"
@@ -577,7 +585,7 @@ export function TilingInfoPanel({ spec, vcs = [] }: TilingInfoProps) {
 			{spec ? (
 				<div className="flex flex-col gap-4">
 					{heading(spec)}
-					{body(spec, vcs)}
+					{body(spec, vcs, onVertexType)}
 				</div>
 			) : null}
 		</div>
@@ -635,7 +643,7 @@ function heading(spec: TilingSpec) {
 // shelf, so a reader who has found the symmetry once knows where it is on the next record: what it
 // IS (symmetry, then its shape), how it is counted (orbits), then where it comes from (attribution,
 // derivation).
-function body(spec: TilingSpec, vcs: VCWithOccurrences[]) {
+function body(spec: TilingSpec, vcs: VCWithOccurrences[], onVertexType?: (vc: string | null) => void) {
 	const mono = (v: ReactNode) => <span className="font-mono">{v}</span>;
 	const withOrbifold = (group: string, orbifold: string | null) => (
 		<span className="font-mono">
@@ -819,6 +827,36 @@ function body(spec: TilingSpec, vcs: VCWithOccurrences[]) {
 
 			{/* Orbits — every geometry that knows any of them */}
 			{hasOrbitFacts(spec) ? <OrbitSection spec={spec} /> : null}
+
+			{/* An amalgama's every vertex type, with its orbits here: pointing at one lights its vertices on the
+			    canvas, so a reader can see that each is there (the amalgamas classification). */}
+			{spec.geometry === GEOMETRIES.EUCLIDEAN && spec.amalgama ? (
+				<Section title={`Vertex types (all ${spec.amalgama.types.length})`}>
+					<div className="relative flex flex-col">
+						<HoverPill />
+						{spec.amalgama.types.map(({ vc, orbits }) => (
+							<div key={vc}>
+								<button
+									type="button"
+									className="flex w-full items-baseline justify-between gap-4 rounded-control px-1.5 py-0.5 text-left focus-visible:bg-surface-overlay"
+									onMouseEnter={() => onVertexType?.(vc)}
+									onMouseLeave={() => onVertexType?.(null)}
+									onFocus={() => onVertexType?.(vc)}
+									onBlur={() => onVertexType?.(null)}
+								>
+									<span className="font-mono text-ui text-fg">{compactVC(vc)}</span>
+									<span className="font-mono text-ui text-fg-secondary tabular-nums">
+										{orbits === 1 ? "1 orbit" : `${orbits} orbits`}
+									</span>
+								</button>
+							</div>
+						))}
+					</div>
+					{onVertexType ? (
+						<p className="text-caption leading-tight text-fg-muted">Point at a type to light its vertices.</p>
+					) : null}
+				</Section>
+			) : null}
 
 			{/* Vertex-configuration thumbnails — Euclidean only */}
 			{spec.geometry === GEOMETRIES.EUCLIDEAN && vcs.length > 0 ? (

@@ -36,9 +36,12 @@ export interface Classification {
 	history: string;
 	/** URL of the member list. */
 	list: string;
+	/** A part of another classification's list, a row under it in the tree: the parent's slug, and the `part` of the
+	 *  members it keeps. */
+	of?: { parent: string; part: string };
 }
 
-export const CLASSIFICATIONS: Classification[] = [
+const LISTS: Classification[] = [
 	{
 		slug: "krotenheerdt",
 		title: "Krötenheerdt tilings",
@@ -118,6 +121,80 @@ export const CLASSIFICATIONS: Classification[] = [
 			"Proved complete in 2026 by {source}, a Delaney–Dress search with no bound on k; the largest has k = 14. Every one is also face-homogeneous, since two tiles with the same corners have the same sides. Filtering every k-uniform tiling to k = 12 finds the same list.",
 		list: "/classifications/simple-face-homogeneous.json.br",
 	},
+	{
+		slug: "equitransitive",
+		title: "Equitransitive tilings",
+		cell: "euclidean|tilings",
+		by: "Debroey and Landuyt, 1981",
+		definition:
+			"Tilings by regular polygons in which any two tiles of the same kind of polygon are images of each other under a symmetry: one tile class per polygon.",
+		source: {
+			text: "Ingrid Debroey and Françoise Landuyt, Equitransitive edge-to-edge tilings by regular convex polygons, Geometriae Dedicata 11 (1981) 47–60",
+			url: "https://doi.org/10.1007/BF00183189",
+		},
+		count: 22,
+		history:
+			"Proved complete by {source}, where Grünbaum and Shephard had conjectured 19. Confirmed in 2026 by the Atlas's own search, which has no bound on k; the largest has k = 4. Every one is also simple-face-homogeneous.",
+		list: "/classifications/equitransitive.json.br",
+	},
+	{
+		slug: "amalgamas",
+		title: "Amalgamas",
+		cell: "euclidean|tilings",
+		by: "the Atlas, 2026",
+		definition:
+			"Tilings by regular polygons, alone or with one kind of isotoxal star, that hold every vertex type those tiles can form in a periodic tiling: every way they meet at a vertex, all in one tiling. A vertex type that never shares a tiling with another is left out.",
+		source: {
+			text: "the Atlas's searches with the Tiling Searcher",
+			url: "https://github.com/AlessandroLongo23/TilingAtlas/tree/master/tools/searcher",
+		},
+		count: 153,
+		history:
+			"Each palette's list is complete to its k, by {source}: the regular polygons first at k = 24 (136 to k = 34), with the 12-pointed 60° star at 42 (4 to k = 43), the 12-pointed 30° star at 43 (4 to k = 43), the 6-pointed 30° star at 44 (1 to k = 44, holding the 17 of its 19 vertex types that can share a tiling) and the 12-pointed 90° star at 50 (8 to k = 50). The first ones are p6m, except the 12-pointed 30° star's, which are pmm.",
+		list: "/classifications/amalgamas.json.br",
+	},
+];
+
+/** The amalgamas by palette, a row each under the list. */
+const AMALGAMA_PARTS: [part: string, title: string, count: number, history: string][] = [
+	[
+		"regular",
+		"Regular polygons",
+		136,
+		"Every one to k = 34, by {source}: the first at k = 24, and every one to k = 29 p6m.",
+	],
+	[
+		"a12p60",
+		"With the 12-pointed 60° star",
+		4,
+		"Every one to k = 43, by {source}: two at k = 42 and two at 43, all p6m.",
+	],
+	[
+		"a12p30",
+		"With the 12-pointed 30° star",
+		4,
+		"Every one to k = 43, by {source}: four, all at k = 43 and all pmm, the one palette whose first amalgamas are not p6m.",
+	],
+	[
+		"a6p30",
+		"With the 6-pointed 30° star",
+		1,
+		"Every one to k = 44, by {source}: one, at k = 44, p6m. It holds 17 of the star's 19 vertex types; the other two never share a tiling with another.",
+	],
+	["a12p90", "With the 12-pointed 90° star", 8, "Every one to k = 50, by {source}: eight, all at k = 50 and p6m."],
+];
+const amalgamas = LISTS.find((c) => c.slug === "amalgamas")!;
+
+export const CLASSIFICATIONS: Classification[] = [
+	...LISTS,
+	...AMALGAMA_PARTS.map(([part, title, count, history]) => ({
+		...amalgamas,
+		slug: `amalgamas-${part}`,
+		title,
+		count,
+		history,
+		of: { parent: amalgamas.slug, part },
+	})),
 ];
 
 export const CLASSIFICATION_BY_SLUG = new Map(CLASSIFICATIONS.map((c) => [c.slug, c]));
@@ -126,8 +203,10 @@ export const CLASSIFICATION_BY_SLUG = new Map(CLASSIFICATIONS.map((c) => [c.slug
  *  is, if shipped, with its Delaney–Dress symbol in Delgado-Friedrichs' compressed form. */
 export interface ListMember {
 	ref?: number;
-	/** edge orbits, the parameter Galebach counts along */
-	e: number;
+	/** edge orbits, the parameter Galebach counts along (shown only for a member the Atlas lacks) */
+	e?: number;
+	/** The part of its list it belongs to (Classification.of), as an amalgama's palette. */
+	part?: string;
 	id?: string;
 	k?: number;
 	dsym?: string;
@@ -155,7 +234,8 @@ export function loadClassification(slug: string): Promise<MemberList | null> {
 				if (!res.ok) throw new Error(`${c.list}: HTTP ${res.status}`);
 				return shardBody<{ members: ListMember[]; records?: unknown }>(res);
 			})
-			.then(({ members, records }) => {
+			.then(({ members: all, records }) => {
+				const members = c.of ? all.filter((m) => m.part === c.of!.part) : all;
 				const l = {
 					members,
 					byId: new Map(members.flatMap((m) => (m.id ? [[m.id, m] as const] : []))),

@@ -8,7 +8,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { ORBIFOLD_SIGNATURE } from "@/lib/classes/symmetry/types";
-import { geometryOf, hyperbolicParams } from "@/lib/services/referenceAtlas";
+import { geometryOf, hyperbolicParams, type AmalgamaFacts } from "@/lib/services/referenceAtlas";
 import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { colorCensus, colorsGridOf } from "@/lib/colors/pattern";
@@ -140,6 +140,8 @@ export interface EuclideanSpec extends BaseSpec {
 	isohedral: IsohedralFacts | null;
 	// Present iff this is a /pentagons entry.
 	pentagon: PentagonFacts | null;
+	// Present iff this is an amalgama: the palette's vertex types, which the panel lists and lights.
+	amalgama?: AmalgamaFacts | null;
 }
 
 export interface HyperbolicSpec extends BaseSpec {
@@ -368,6 +370,7 @@ export function buildTilingSpec(
 		// directly, since neither has a CatalogueTiling behind it.
 		isohedral: null,
 		pentagon: null,
+		amalgama: selected.amalgama ?? null,
 		...base,
 		faceOrbits: cp ? cp.tileOrbits : stats ? stats.faceOrbits : base.faceOrbits,
 		edgeOrbits: cp ? cp.edgeOrbits : base.edgeOrbits,

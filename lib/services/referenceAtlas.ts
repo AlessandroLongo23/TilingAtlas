@@ -33,7 +33,15 @@ import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
 import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
 import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
 import ABSORBED_ALIASES from "@/lib/services/absorbedFamilyAliases.json";
-import { decodeAtlas, decodeShard, defineLazy, fetchData, isLazy, readAtlas, shardBody } from "@/lib/services/atlasCodec";
+import {
+	decodeAtlas,
+	decodeShard,
+	defineLazy,
+	fetchData,
+	isLazy,
+	readAtlas,
+	shardBody,
+} from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
@@ -249,6 +257,13 @@ export type Certification = "proven" | "reproduced" | "candidate";
 /** How a polygon selection combines. See ReferenceFilter.polygonMode. */
 export type PolygonMode = "all" | "any" | "only";
 
+/** An amalgama (lib/classifications.ts): its palette, and every vertex type of the palette with its orbits here,
+ *  canonical (lib/services/vertexConfig.ts, star corners "n*p<angle>" and "n*d<point angle>"). */
+export interface AmalgamaFacts {
+	palette: string;
+	types: { vc: string; orbits: number }[];
+}
+
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
 	source: TilingSource;
@@ -433,6 +448,8 @@ export interface ReferenceTiling {
 	// "searched" the moment a run actually finds it. "62 of the 92 Johnson solids" means fifty found and
 	// twelve built, and a catalogue that cannot say which is not a catalogue.
 	derivation?: "searched" | "constructed" | "tabulated";
+	/** An amalgama's vertex types, which the tiling view lists and lights (the amalgamas classification). */
+	amalgama?: AmalgamaFacts;
 	// Rigorous completeness status of this tiling's enumeration level:
 	//   proven      — this work's method has a completeness certificate (regular k≤3)
 	//   reproduced  — count matches a published enumeration, not independently proven here
@@ -1869,6 +1886,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		edge: r.edge,
 		discoverer: r.discoverer,
 		derivation: r.derivation,
+		amalgama: r.amalgama,
 		developed: r.developed,
 		hypFamily: r.hypFamily,
 		spherical: r.spherical,

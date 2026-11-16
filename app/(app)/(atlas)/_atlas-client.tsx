@@ -176,6 +176,7 @@ import { TegulaCellEditor } from "@/components/tegula-cell-editor";
 import { OrbifoldMorphControls } from "@/components/orbifold-morph-controls";
 import { conePoints, morphSurface, morphTiling, withOrders } from "@/lib/tilings/orbifoldMorph";
 import { cellMap, drawnPoints, latticeMembers, solidMap } from "@/lib/tilings/dsymFromMap";
+import { vertexTypePoints } from "@/lib/tilings/vertexTypes";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { morphHues, recordShape, recordSymbol } from "@/lib/tilings/recordSymbol";
 import { useOrbifoldMorph } from "@/stores/orbifoldMorph";
@@ -627,6 +628,8 @@ function Atlas({ searchParams }: { searchParams: URLSearchParams }) {
 			{ re: /^euh[a-z]+-k(\d+)-/, load: loadEuHalfAtlasShard, ks: EUHALF_SHARD_KS },
 			// "fh-30-12": a face-homogeneous tiling above the shelf's k, on no shelf: its record is in the list.
 			{ re: /^fh-(\d+)-/, load: () => loadClassification("face-homogeneous").then((l) => l?.records ?? []) },
+			// "am-a12p90-50-3": an amalgama, on no shelf: its record is in the list too.
+			{ re: /^am-[a-z0-9]+-(\d+)-/, load: () => loadClassification("amalgamas").then((l) => l?.records ?? []) },
 		];
 		const hit = RESOLVERS.map((r) => ({ r, m: requestedKey.match(r.re) })).find((x) => x.m);
 		if (!hit?.m) return;
@@ -1971,6 +1974,21 @@ function Atlas({ searchParams }: { searchParams: URLSearchParams }) {
 			extra: corner ? undefined : hoverPoints.points.map(([x, y]) => ({ x, y, orbit: 0 })),
 		};
 	}, [hoverPoints, drawCell]);
+	// An amalgama's vertex type under the pointer in the Info panel: its vertices lit, as the symmetry hover lights
+	// points. Kept with the cell it was pointed at on, so a new tiling starts dark.
+	const [litType, setLitType] = useState<{ cell: typeof drawCellId; vc: string } | null>(null);
+	const onVertexType = useCallback(
+		(vc: string | null) => setLitType(vc ? { cell: drawCellId, vc } : null),
+		[drawCellId],
+	);
+	const litTypeOrbit = useMemo<OrbitData | null>(() => {
+		const basis = drawCell?.basis ?? drawCell?.b;
+		if (!litType || litType.cell !== drawCellId || !drawCell || !basis) return null;
+		const points = vertexTypePoints(drawCell).get(litType.vc);
+		if (!points) return null;
+		const lit = latticeMembers(basis, points);
+		return { k: 1, force: true, orbitAt: (x, y) => (lit(x, y) ? 0 : -1) };
+	}, [litType, drawCell, drawCellId]);
 	const sphereMarks = hoverPoints?.solid ? hoverPoints.points : undefined;
 	// AN EDIT BELONGS TO THE CELL IT WAS MADE ON, so a new cell starts a new session. The doc names
 	// edges, rings and vertices by content key; those keys mean nothing on another tiling and can resolve
@@ -2148,7 +2166,10 @@ function Atlas({ searchParams }: { searchParams: URLSearchParams }) {
 		() => <OptionsTab selected={selected} symmetry={symmetryPanel} />,
 		[selected, symmetryPanel],
 	);
-	const infoPanel = useMemo(() => <TilingInfoPanel spec={tilingSpec} vcs={vcs} />, [tilingSpec, vcs]);
+	const infoPanel = useMemo(
+		() => <TilingInfoPanel spec={tilingSpec} vcs={vcs} onVertexType={onVertexType} />,
+		[tilingSpec, vcs, onVertexType],
+	);
 	// The phone dock's header row: what is on the canvas, and the three ways to step off it.
 	const stepDisabled = stepList.length < 2 || studioActive;
 	// Memoized like everything else the sidebar takes: the page re-renders on every slider tick.
@@ -2283,7 +2304,7 @@ function Atlas({ searchParams }: { searchParams: URLSearchParams }) {
 										translationalCellId={drawCellId}
 										paramCell={squaringActive || morph ? null : (paramCell ?? null)}
 										symmetryData={squaringActive || morph ? null : symmetryData}
-										orbitData={hoverOrbit ?? (squaringActive || morph ? null : orbitData)}
+										orbitData={hoverOrbit ?? litTypeOrbit ?? (squaringActive || morph ? null : orbitData)}
 										onVcs={setVcs}
 										showTilingRuleInput={false}
 										cellHasTiles={cellHasTiles}

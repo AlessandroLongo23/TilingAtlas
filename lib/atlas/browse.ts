@@ -21,7 +21,7 @@ import {
 	type TileClass,
 } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
-import { CLASSIFICATIONS } from "@/lib/classifications";
+import { CLASSIFICATIONS, type Classification } from "@/lib/classifications";
 import type { UnloadedTier } from "@/lib/services/atlasManifest";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { hypPolyBoardOfSub, hypPolyTileCodes } from "@/lib/tilings/hyp-poly";
@@ -290,7 +290,8 @@ export function buildBrowseTree(items: readonly CatalogueTiling[], unloaded: rea
  * to its members, and the grid fetches the shards they live in. The count is the source's.
  */
 export function classificationNodes(cell: string): BrowseNode[] {
-	return CLASSIFICATIONS.filter((c) => c.cell === cell).map((c) => ({
+	// a classification that is part of another's list is a row under it
+	const node = (c: Classification): BrowseNode => ({
 		id: `x:${c.slug}`,
 		kind: "classification",
 		label: c.title,
@@ -298,10 +299,11 @@ export function classificationNodes(cell: string): BrowseNode[] {
 		count: c.count,
 		pending: 0,
 		scope: { classification: c.slug },
-		children: [],
+		children: CLASSIFICATIONS.filter((x) => x.of?.parent === c.slug).map(node),
 		slices: [],
 		kRange: null,
-	}));
+	});
+	return CLASSIFICATIONS.filter((c) => c.cell === cell && !c.of).map(node);
 }
 
 const SCOPE_KEYS = ["tileClass", "family", "board", "sub", "colorsCount", "polySet", "classification"] as const;

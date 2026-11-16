@@ -227,7 +227,7 @@ function dissolveDegreeTwo(faces: Side[][]): Side[][] {
  * so a grid key alone would split a point that straddles a grid line. Each point is binned on a grid of
  * pitch `tol` and looked up in its bin and the eight around it.
  */
-class TorusSnap {
+export class TorusSnap {
 	private bins = new Map<string, { u: number; v: number; id: number }[]>();
 	size = 0;
 	/** Find without adding: −1 for a point not in the set. */
@@ -355,7 +355,12 @@ export function cellMap(cell: TranslationalCellData): DrawnMap | null {
 					if (Math.abs(pu - qu) > 2 || Math.abs(pv - qv) > 2) bad = true; // not a period cell
 					const len2 = (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2;
 					const len = Math.sqrt(len2);
-					const [u0, u1, v0, v1] = [Math.min(pu, qu) - mu, Math.max(pu, qu) + mu, Math.min(pv, qv) - mv, Math.max(pv, qv) + mv];
+					const [u0, u1, v0, v1] = [
+						Math.min(pu, qu) - mu,
+						Math.max(pu, qu) + mu,
+						Math.min(pv, qv) - mv,
+						Math.max(pv, qv) + mv,
+					];
 					const inner: { t: number; v: number; at: number[] }[] = [];
 					reps.forEach(([ru, rv], v) => {
 						for (let iu = Math.ceil(u0 - ru); iu <= Math.floor(u1 - ru); iu++)
