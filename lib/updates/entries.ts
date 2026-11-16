@@ -78,6 +78,49 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.50.0",
+		date: "2026-11-16",
+		title: "Tilings that hold every vertex type",
+		commit: "e93c45d3",
+		changes: [
+			{
+				kind: "content",
+				text: "**Amalgamas**, a new classification of 153 tilings that hold every vertex type their tiles can form, each palette's list complete to its k. The regular polygons give 136, from k = 24 to 34, and four isotoxal stars give 17, from k = 42 to 50.",
+				tilings: ["am-regular-24-1", "am-a12p30-43-1", "am-a6p30-44-1", "am-a12p90-50-1"],
+				href: "/catalogue?set=amalgamas",
+			},
+			{
+				kind: "feature",
+				text: "An amalgama's sidebar lists its **vertex types**; point at one and every vertex of that type lights up in the tiling.",
+				tilings: ["am-a12p60-42-1"],
+			},
+			{
+				kind: "feature",
+				text: "**Two more classifications** of tilings by regular polygons, each a list proved complete with no bound on k.",
+				items: [
+					"**346 simple-face-homogeneous tilings**, in which tiles with the same neighbours across their sides form one orbit; the largest has k = 14.",
+					"**The 22 equitransitive tilings**, one tile class per polygon, which Debroey and Landuyt proved complete in 1981 and the Atlas's own search confirms.",
+				],
+				tilings: ["t4014", "ctrnact-14_346c-3c5_4a_4d_4k2_4m_5e3_6f-1", "t3022", "t4017"],
+			},
+			{
+				kind: "content",
+				text: "The **girih** shelf holds each girih tiling to k = 4 once, 585 where it held 179.",
+				tilings: ["isl-girih-k3-23vwd726f65inlpb", "isl-girih-k4-272ypvdawcd2peji"],
+			},
+			{
+				kind: "fix",
+				text: "The **Polyforms** shelf holds each tiling once: 2,047 records become 1,616, 134 of them tilings it lacked.",
+				tilings: ["tro-k2-zseq6dpsqqdnrhvo", "dia-k5-5556h77gvplp2jyi"],
+			},
+			{
+				kind: "content",
+				text: "The **composable** shelf gains the 10 tilings of k = 2 it lacked, so 231 become 241.",
+				tilings: ["composable-k2-2gibvkka7h4wqkg3", "composable-k2-atht3g3hatk34vrc"],
+			},
+		],
+	},
+	{
 		version: "1.49.0",
 		date: "2026-11-10",
 		title: "Every k-uniform tiling to k = 16",
