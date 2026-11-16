@@ -1098,9 +1098,12 @@ export function ReferenceShelf({
 		.reduce((a, t) => a + t.count, 0);
 
 	// A list classification's members arrive as one small file, with the records of those on the lazy shards, so
-	// no shard loads for them. Once it is in, a fresh filters object re-runs every memo keyed on the filters,
-	// since inClassification can now answer for each tiling.
+	// no shard loads for them. Once it is in, `listsIn` moves, and the scope memo below runs again, since
+	// inClassification can now answer for each tiling. The scope is keyed on its fields, so a fresh filters object
+	// did not reach it: a list whose records were already in (its members on the eager shards, or another part of
+	// the same list file) kept the empty scope it had before the list arrived.
 	const [listError, setListError] = useState<string | null>(null);
+	const [listsIn, setListsIn] = useState(0);
 	useEffect(() => {
 		const slug = filters.classification;
 		if (!slug) return;
@@ -1109,7 +1112,7 @@ export function ReferenceShelf({
 			.then((l) => {
 				if (!alive || !l) return;
 				setTilings(l.records);
-				setFilters((f) => (f.classification === slug ? { ...f } : f));
+				setListsIn((n) => n + 1);
 			})
 			.catch((e) => alive && setListError(e instanceof Error ? e.message : String(e)));
 		return () => {
@@ -1980,6 +1983,7 @@ export function ReferenceShelf({
 			polySet: filters.polySet,
 			classification: filters.classification,
 		}),
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- listsIn: a list arrived, so inClassification answers
 		[
 			filters.geometry,
 			filters.decoration,
@@ -1990,6 +1994,7 @@ export function ReferenceShelf({
 			filters.colorsCount,
 			filters.polySet,
 			filters.classification,
+			listsIn,
 		],
 	);
 	const scopedTilings = useMemo(() => inScope(cellRecords, scope), [cellRecords, scope]);
