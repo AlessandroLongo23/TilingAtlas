@@ -36,9 +36,9 @@ export interface Classification {
 	history: string;
 	/** URL of the member list. */
 	list: string;
-	/** A part of another classification's list, a row under it in the tree: the parent's slug, and the `part` of the
-	 *  members it keeps. */
-	of?: { parent: string; part: string };
+	/** A part of another classification's list, a row under it in the tree: the parent's slug, and the `part`s of the
+	 *  members it keeps (a group row keeps several). */
+	of?: { parent: string; parts: string[] };
 }
 
 const LISTS: Classification[] = [
@@ -143,58 +143,104 @@ const LISTS: Classification[] = [
 		cell: "euclidean|tilings",
 		by: "the Atlas, 2026",
 		definition:
-			"Tilings by regular polygons, alone or with one kind of isotoxal star, that hold every vertex type those tiles can form in a periodic tiling: every way they meet at a vertex, all in one tiling. A vertex type that never shares a tiling with another is left out.",
+			"Tilings by regular polygons, alone or with one other kind of tile (an isotoxal star, or a regular polygon with longer sides), that hold every vertex type those tiles can form in a periodic tiling: every way they meet at a vertex, all in one tiling. A vertex type that never shares a tiling with another is left out.",
 		source: {
 			text: "the Atlas's searches with the Tiling Searcher",
 			url: "https://github.com/AlessandroLongo23/TilingAtlas/tree/master/tools/searcher",
 		},
-		count: 153,
+		count: 160,
 		history:
-			"Each palette's list is complete to its k, by {source}: the regular polygons first at k = 24 (136 to k = 34), with the 12-pointed 60° star at 42 (4 to k = 43), the 12-pointed 30° star at 43 (4 to k = 43), the 6-pointed 30° star at 44 (1 to k = 44, holding the 17 of its 19 vertex types that can share a tiling) and the 12-pointed 90° star at 50 (8 to k = 50). The first ones are p6m, except the 12-pointed 30° star's, which are pmm.",
+			"Each palette's list is complete to its k, by {source}: the regular polygons first at k = 24 (136 to k = 34); with the 12-pointed 60° star at 42 (4 to k = 43), the 12-pointed 30° star at 43 (4 to k = 43), the 6-pointed 30° star at 44 (1 to k = 44, holding the 17 of its 19 vertex types that can share a tiling) and the 12-pointed 90° star at 50 (8 to k = 50); with the dodecagon of side 2 at 53 (7 to k = 53). The first ones are p6m, except those of the 12-pointed 30° star and of the dodecagon of side 2, which are pmm.",
 		list: "/classifications/amalgamas.json.br",
 	},
 ];
 
-/** The amalgamas by palette, a row each under the list. */
-const AMALGAMA_PARTS: [part: string, title: string, count: number, history: string][] = [
+/** The amalgamas by palette, a row each under the list; the palettes with a star, and those with a polygon of longer
+ *  sides, each under a row of their own. */
+type AmalgamaRow = [part: string, title: string, count: number, history: string];
+const AMALGAMA_GROUPS: [group: string | null, title: string, history: string, rows: AmalgamaRow[]][] = [
 	[
-		"regular",
-		"Regular polygons",
-		136,
-		"Every one to k = 34, by {source}: the first at k = 24, and every one to k = 29 p6m.",
+		null,
+		"",
+		"",
+		[
+			[
+				"regular",
+				"Regular polygons",
+				136,
+				"Every one to k = 34, by {source}: the first at k = 24, and every one to k = 29 p6m.",
+			],
+		],
 	],
 	[
-		"a12p60",
-		"With the 12-pointed 60° star",
-		4,
-		"Every one to k = 43, by {source}: two at k = 42 and two at 43, all p6m.",
+		"stars",
+		"With one star",
+		"Regular polygons with one kind of isotoxal star, each palette complete to its k, by {source}.",
+		[
+			[
+				"a12p60",
+				"With the 12-pointed 60° star",
+				4,
+				"Every one to k = 43, by {source}: two at k = 42 and two at 43, all p6m.",
+			],
+			[
+				"a12p30",
+				"With the 12-pointed 30° star",
+				4,
+				"Every one to k = 43, by {source}: four, all at k = 43 and all pmm, the one star whose first amalgamas are not p6m.",
+			],
+			[
+				"a6p30",
+				"With the 6-pointed 30° star",
+				1,
+				"Every one to k = 44, by {source}: one, at k = 44, p6m. It holds 17 of the star's 19 vertex types; the other two never share a tiling with another.",
+			],
+			["a12p90", "With the 12-pointed 90° star", 8, "Every one to k = 50, by {source}: eight, all at k = 50 and p6m."],
+		],
 	],
 	[
-		"a12p30",
-		"With the 12-pointed 30° star",
-		4,
-		"Every one to k = 43, by {source}: four, all at k = 43 and all pmm, the one palette whose first amalgamas are not p6m.",
+		"scaled",
+		"With one longer-sided polygon",
+		"Regular polygons with one regular polygon whose sides are two or three units long, each palette complete to its k, by {source}. A vertex can sit in the middle of a long side, where the side runs straight on: its vertex types write that corner 180.",
+		[
+			[
+				"b12",
+				"With the dodecagon of side 2",
+				7,
+				"Every one to k = 53, by {source}: seven, all at k = 53 and all pmm. The dodecagon is written 12₂.",
+			],
+		],
 	],
-	[
-		"a6p30",
-		"With the 6-pointed 30° star",
-		1,
-		"Every one to k = 44, by {source}: one, at k = 44, p6m. It holds 17 of the star's 19 vertex types; the other two never share a tiling with another.",
-	],
-	["a12p90", "With the 12-pointed 90° star", 8, "Every one to k = 50, by {source}: eight, all at k = 50 and p6m."],
 ];
 const amalgamas = LISTS.find((c) => c.slug === "amalgamas")!;
+const part = (slug: string, title: string, count: number, history: string, parent: string, parts: string[]) => ({
+	...amalgamas,
+	slug,
+	title,
+	count,
+	history,
+	of: { parent, parts },
+});
 
 export const CLASSIFICATIONS: Classification[] = [
 	...LISTS,
-	...AMALGAMA_PARTS.map(([part, title, count, history]) => ({
-		...amalgamas,
-		slug: `amalgamas-${part}`,
-		title,
-		count,
-		history,
-		of: { parent: amalgamas.slug, part },
-	})),
+	...AMALGAMA_GROUPS.flatMap(([group, title, history, rows]) => {
+		const parent = group ? `amalgamas-${group}` : amalgamas.slug;
+		const leaves = rows.map(([p, t, n, h]) => part(`amalgamas-${p}`, t, n, h, parent, [p]));
+		if (!group) return leaves;
+		const all = rows.map(([p]) => p);
+		return [
+			part(
+				parent,
+				title,
+				rows.reduce((a, r) => a + r[2], 0),
+				history,
+				amalgamas.slug,
+				all,
+			),
+			...leaves,
+		];
+	}),
 ];
 
 export const CLASSIFICATION_BY_SLUG = new Map(CLASSIFICATIONS.map((c) => [c.slug, c]));
@@ -235,7 +281,7 @@ export function loadClassification(slug: string): Promise<MemberList | null> {
 				return shardBody<{ members: ListMember[]; records?: unknown }>(res);
 			})
 			.then(({ members: all, records }) => {
-				const members = c.of ? all.filter((m) => m.part === c.of!.part) : all;
+				const members = c.of ? all.filter((m) => c.of!.parts.includes(m.part!)) : all;
 				const l = {
 					members,
 					byId: new Map(members.flatMap((m) => (m.id ? [[m.id, m] as const] : []))),

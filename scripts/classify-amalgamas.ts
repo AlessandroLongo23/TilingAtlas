@@ -11,6 +11,8 @@
  * As built on 2026-11-16 (DEVELOPMENT_NOTES "The amalgamas in the Atlas"), the run folders in AL's Searcher output:
  * regular=…/regulars/amalgama-20261111-141726, a12p60=…/stars/amalgama/12/A12p60_(17)-20261111-161621,
  * a6p30=…/stars/amalgama/6/A6p30_(17)-20261116-112023, a12p90=…/stars/amalgama/12/A12p90_(21)-20261116-123150.
+ * Added since: a12p30=…/stars/amalgama/12/A12p30_(20)-20261116-141903, and on 2026-11-17
+ * b12=…/scaled/amalgama/B/B12-20261117-161952 (the dodecagon of side 2, every arrangement required).
  * When the regular shelf takes k >= 24, its records of these tilings replace the list's (match them, as
  * scripts/classify-face-homogeneous.ts does), so no tiling appears twice.
  */
@@ -18,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
 import { canonicalVC } from "@/lib/services/vertexConfig";
-import { vertexTypePoints } from "@/lib/tilings/vertexTypes";
+import { polygonCorners, vertexTypePoints } from "@/lib/tilings/vertexTypes";
 import { parse } from "@/tools/searcher/app/src/board";
 import {
 	certificatesIn,
@@ -28,6 +30,7 @@ import {
 	vertexWords,
 	withSymbols,
 } from "@/tools/searcher/app/src/develop";
+import { SOURCES } from "@/lib/vocabulary";
 import { writeClassification } from "./atlas/symbols";
 
 const OUT = path.join(process.cwd(), "public", "classifications", "amalgamas.json.br");
@@ -40,8 +43,15 @@ const key = (w: string[]) =>
 const read = (f: string) =>
 	f.endsWith(".gz") ? gunzipSync(fs.readFileSync(f)).toString("utf8") : fs.readFileSync(f, "utf8");
 
-/** A board symbol as a canonical token: A<n> the regular n-gon's corner "n", A<n>p<a> and A<n>d<a> a star's point and dent. */
-const token = (c: string) => c.replace(/^A(\d+)$/, "$1").replace(/^A(\d+)([pd])(\d+)$/, "$1*$2$3");
+/** A board symbol as a canonical token (lib/tilings/vertexTypes.ts): A<n> the regular n-gon's corner "n", A<n>p<a> and
+ *  A<n>d<a> a star's point and dent, B<n> and C<n> the corner of an n-gon of side 2 and 3, Pi a long side's middle. */
+const token = (c: string) =>
+	c
+		.replace(/^A(\d+)$/, "$1")
+		.replace(/^A(\d+)([pd])(\d+)$/, "$1*$2$3")
+		.replace(/^B(\d+)$/, "$1₂")
+		.replace(/^C(\d+)$/, "$1₃")
+		.replace(/^Pi$/, "180");
 const vcOf = (w: string[]) => canonicalVC(w.map(token));
 
 const members: { id: string; k: number; part: string }[] = [];
@@ -76,7 +86,10 @@ for (const [palette, dir] of runs) {
 			const group = out.symmetry?.()?.group;
 			if (!group) throw new Error(`${f}: no wallpaper group`);
 			const polys = (out.cell.p ?? []) as { v: number[][]; n: number; star?: boolean }[];
-			const labels = [...new Set(polys.map((p) => (p.star ? `${p.n}*` : String(p.n))))];
+			// a longer-sided polygon, drawn with a vertex at each unit, takes its corners' token ("12₂")
+			const labels = [
+				...new Set(polys.map((p) => (p.star ? `${p.n}*` : polygonCorners(p).find((c) => c.token !== "180")!.token))),
+			];
 			const id = `am-${palette}-${k}-${++n}`;
 			// every vertex type with its orbits here, most first, in the shelf's canonical form: the vcs filter
 			// and the orbit row read them, and the tiling view lists and lights them (lib/tilings/vertexTypes.ts)
@@ -95,7 +108,8 @@ for (const [palette, dir] of runs) {
 			members.push({ id, k, part: palette });
 			records.push({
 				id,
-				source: "tilesearch",
+				// a palette with a longer-sided polygon files under Scaled polygons, as that shelf does
+				source: /^[bc]\d/.test(palette) ? SOURCES.SCALED : "tilesearch",
 				k,
 				family: labels.sort((a, b) => parseInt(a) - parseInt(b) || a.length - b.length).join("."),
 				discoverer: `Čtrnáct engine (Tiling Searcher), ${started}`,
